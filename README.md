@@ -11,7 +11,6 @@ const n = 1000000
 
 // create a new ECS and destruct desirable functions
 const {
-    entities,
     addEntity,
     addComponent,
     removeComponent,
