@@ -1,0 +1,26 @@
+{
+  "name": "bitecs",
+  "version": "0.0.1",
+  "description": "Tiny, data-driven, high performance ECS library written in Javascript",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NateTheGreatt/bitecs.git"
+  },
+  "keywords": [
+    "ecs",
+    "game",
+    "performance",
+    "data-driven"
+  ],
+  "author": "Nathaniel Martin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NateTheGreatt/bitecs/issues"
+  },
+  "homepage": "https://github.com/NateTheGreatt/bitecs#readme"
+}
