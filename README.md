@@ -37,7 +37,7 @@ registerSystem({
         pos.y[eid] += vel.y[eid]
         pos.z[eid] += vel.z[eid]
     },
-    onEnter: (pos, vel) => eid => {} // optional
+    onEnter: (pos, vel) => eid => {}, // optional
     onExit: (pos, vel) => eid => {} // optional
 })
 
