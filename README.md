@@ -49,7 +49,15 @@ for(let i = 0; i < n; i++) {
     addComponent('velocity', eid, {x: Math.random(), y: Math.random()})
 }
 
+// node
 setInterval(() => {
     update()
 }, 16) // yes, this ECS can process one million entities in under 16ms (depending on the CPU)
+
+// browser
+const loop = () => {
+    requestAnimationFrame(loop)
+    update()
+}
+loop()
 ```
