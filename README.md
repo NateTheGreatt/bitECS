@@ -2,7 +2,7 @@
 
 Tiny, data-driven, high performance ECS library written in Javascript.
 
-```
+```javascript
 // imports a factory function
 import bitECS from 'bitECS'
 
