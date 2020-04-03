@@ -15,16 +15,20 @@ const primitives = {
 }
 
 let currentBitflag = 1
-export default (n, schema={}) => {
+const DataManager = (n, schema={}) => {
     const manager = {}
     manager.props = Object.keys(schema)
     manager.props.forEach(prop => {
         const type = schema[prop]
-        const totalBytes = n * primitives[type].BYTES_PER_ELEMENT
-
-        const buffer = new ArrayBuffer(totalBytes)
-
-        manager[prop] = new primitives[type](buffer)
+        if(typeof type === 'object') {
+            manager[prop] = DataManager(n, type)
+        }
+        if(typeof type === 'string') {
+            const totalBytes = n * primitives[type].BYTES_PER_ELEMENT
+            
+            const buffer = new ArrayBuffer(totalBytes)
+            manager[prop] = new primitives[type](buffer)
+        }
     })
     
     manager._bitflag = currentBitflag
@@ -32,3 +36,5 @@ export default (n, schema={}) => {
 
     return manager
 }
+
+export default DataManager
