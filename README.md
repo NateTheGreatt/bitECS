@@ -1,7 +1,19 @@
 # 👾 bitECS 👾
 
-Tiny, data-driven, high performance ECS library written in Javascript.
+Tiny, data-driven, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
+## Features
+- `<3kb` gzipped
+- zero dependencies
+- node or browser
+- [_fast_](https://github.com/NateTheGreatt/bitECS/blob/master/examples/benchmark.js)
+
+## Install
+```
+npm i bitecs
+```
+
+## Example
 ```javascript
 // imports a factory function
 import bitECS from 'bitECS'
@@ -45,8 +57,8 @@ registerSystem({
 // create n entities with random position and velocity
 for(let i = 0; i < n; i++) {
     let eid = addEntity()
-    addComponent('position', eid, {x: Math.random(), y: Math.random()})
-    addComponent('velocity', eid, {x: Math.random(), y: Math.random()})
+    addComponent('position', eid, {x: Math.random(), y: Math.random(), z: Math.random()})
+    addComponent('velocity', eid, {x: Math.random(), y: Math.random(), z: Math.random()})
 }
 
 // node

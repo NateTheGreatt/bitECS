@@ -50,6 +50,9 @@ export default (n) => {
 
     const addComponent = (name, eid, values={}) => {
         let componentManager = registry.components[name]
+
+        if(componentManager == undefined)
+            throw new Error(`bitECS Error: cannot add component to entityId ${eid}, '${name}' is not registered.`)
         
         // first, add bitflag to entity bitmask
         entities[eid] |= componentManager._bitflag
@@ -62,14 +65,10 @@ export default (n) => {
         }
 
         // zero out each property value
-        for(let prop of componentManager.props) {
-            componentManager[prop][eid] = 0
-        }
+        componentManager._reset(eid)
         
         // set values if any
-        for(let prop in values) {
-            componentManager[prop][eid] = values[prop]
-        }
+        componentManager._set(eid, values)
 
     }
 
@@ -86,6 +85,9 @@ export default (n) => {
     }
 
     const removeComponent = (name, eid, immediate=false) => {
+        if(registry.components[name] == undefined)
+            throw new Error(`bitECS Error: cannot remove component from entityId ${eid}, '${name}' is not registered.`)
+
         if(immediate) _removeComponent(name, eid)
         else deferredComponentRemovals.push(() => _removeComponent(name, eid))
     }
@@ -93,21 +95,37 @@ export default (n) => {
 
     // system //
 
-    const registerSystem = ({ name, components: componentDependencies, update=()=>null, onEnter=()=>null, onExit=()=>null }) => {
+    const registerSystem = ({ 
+        name,
+        components: componentDependencies,
+        update=()=>null,
+        onEnter=()=>null,
+        onExit=()=>null,
+        onBefore=()=>null,
+        onAfter=()=>null
+    }) => {
+
         let system = { name, components: componentDependencies, update, onEnter, onExit }
         let localEntities = []
         
-        let componentManagers = componentDependencies.map(dep => registry.components[dep])
+        let componentManagers = componentDependencies.map(dep => {
+            if(registry.components[dep] == undefined )
+                throw new Error(`bitECS Error: cannot register '${name}' system, '${dep}' is not a registered component.`)
+            return registry.components[dep]
+        })
         
         // partially apply component managers onto the provided callbacks
         let process = update(...componentManagers)
         let enter = onEnter(...componentManagers)
         let exit = onExit(...componentManagers)
+        let before = onBefore(...componentManagers)
+        let after = onAfter(...componentManagers)
 
         // define process function which processes each local entity
         system.process = () => {
-            // console.log(process)
+            if(before) before()
             if(process) localEntities.forEach(eid => process(eid))
+            if(after) after()
         }
         
         // reduce bitflags to create mask
@@ -127,13 +145,13 @@ export default (n) => {
             if(exit) exit(eid)
         }
 
-        // set in the registry
-        registry.systems[name] = system
-        
         // populate with matching entities
         entities.forEach((mask,eid) => {
             if(system.check(mask)) system.add(eid)
         })
+
+        // set in the registry
+        registry.systems[name] = system      
 
         return system
     }
