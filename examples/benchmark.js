@@ -1,4 +1,4 @@
-import Timer from '../src/Timer.js'
+import Timer from './Timer.js'
 import bitECS from '../src/bitECS.js'
 
 const timer = Timer()
@@ -8,7 +8,6 @@ timer.start()
 const n = 1000000
 
 const {
-    entities,
     addEntity,
     addComponent,
     registerComponent,
@@ -34,8 +33,8 @@ registerSystem({
 
 for(let i = 0; i < n; i++) {
     let eid = addEntity()
-    addComponent('position', eid, {x: Math.random(), y: Math.random()})
-    addComponent('velocity', eid, {x: Math.random(), y: Math.random()})
+    addComponent('position', eid, {x: Math.random(), y: Math.random(), z: Math.random()})
+    addComponent('velocity', eid, {x: Math.random(), y: Math.random(), z: Math.random()})
 }
 
 timer.check('setup')
