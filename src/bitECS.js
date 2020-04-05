@@ -18,6 +18,12 @@ export default (n) => {
 
     // entity //
     
+    
+    /**
+     * Add an entity
+     *
+     * @returns {uint32} eid
+     */
     const addEntity = () => {
         // assign a removed ID if there are any, otherwise eid = count
         let eid = removed.length ? removed.shift() : count
@@ -35,6 +41,12 @@ export default (n) => {
         removed.push(eid)
         count--
     }
+    /**
+     * Remove an entity by eid
+     *
+     * @param {uint32} eid entity id
+     * @param {boolean} [immediate=false] optional flag for immediate execution (removal is deferred if false)
+     */
     const removeEntity = (eid, immediate=false) => {
         if(immediate) _removeEntity(eid)
         else deferredEntityRemovals.push(() => _removeEntity(eid))
@@ -43,11 +55,25 @@ export default (n) => {
     
     // component //
 
+    /**
+     * Register a new type of component
+     *
+     * @param {string} name name of component type
+     * @param {object} schema structure used for the component
+     * @returns {object} DataManager for the component type
+     */
     const registerComponent = (name, schema) => {
         registry.components[name] = DataManager(n, schema)
         return registry.components[name]
     }
 
+    /**
+     * Add a new component type onto an entity
+     *
+     * @param {string} name name of the component type
+     * @param {uint32} eid entity id
+     * @param {object} [values={}] optional values to set upon component initialization
+     */
     const addComponent = (name, eid, values={}) => {
         let componentManager = registry.components[name]
 
@@ -84,6 +110,13 @@ export default (n) => {
         }
     }
 
+    /**
+     * Remove a component type from an entity
+     *
+     * @param {string} name name of the component type
+     * @param {uint32} eid entity id
+     * @param {boolean} [immediate=false] optional flag for immediate execution (removal is deferred if false)
+     */
     const removeComponent = (name, eid, immediate=false) => {
         if(registry.components[name] == undefined)
             throw new Error(`bitECS Error: cannot remove component from entityId ${eid}, '${name}' is not registered.`)
@@ -95,6 +128,20 @@ export default (n) => {
 
     // system //
 
+    /**
+     * Register a new system
+     *
+     * @param {object} { 
+     *         name,
+     *         components: componentDependencies,
+     *         update=()=>null,
+     *         onEnter=()=>null,
+     *         onExit=()=>null,
+     *         onBefore=()=>null,
+     *         onAfter=()=>null
+     *     }
+     * @returns {object}
+     */
     const registerSystem = ({ 
         name,
         components: componentDependencies,
@@ -105,7 +152,7 @@ export default (n) => {
         onAfter=()=>null
     }) => {
 
-        let system = { name, components: componentDependencies, update, onEnter, onExit }
+        let system = { name, components: componentDependencies, update, onEnter, onExit, onBefore, onAfter }
         let localEntities = []
         
         let componentManagers = componentDependencies.map(dep => {
@@ -173,7 +220,10 @@ export default (n) => {
         deferredEntityRemovals.forEach(fn => fn())
     }
 
-    // walk thru each system and call process
+    /**
+     * Update the state of all systems
+     *
+     */
     const update = () => {
         for(let s in registry.systems) {
             registry.systems[s].process()

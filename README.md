@@ -32,25 +32,33 @@ const {
 } = bitECS(n)
 
 // register components
-const Vector3 = { x: 'float32', y: 'float32', z: 'float32' }
+const Vector3 = { x: 'float32', y: 'float32', z: 'float32' } // nested structures are fully supported
 registerComponent('position', Vector3)
 registerComponent('velocity', Vector3)
 
 // register a movement system
 registerSystem({
     name: 'movement', 
-    // only applies to entities with position & velocity components
+    // update will only apply to these components
+    // in this case entities with both a position & velocity component will be processed
     components: ['position', 'velocity'], 
     // update function provides component managers and the entity ID to do work on
     update: (pos, vel) => eid => {
-        // entity data is obtained from the respective component managers, which are objects with typedarray properties
+        // entity data is obtained from the respective component managers
+        // managers are objects with typedarray properties
         // this is how high performance is reaped and maintained
         pos.x[eid] += vel.x[eid]
         pos.y[eid] += vel.y[eid]
         pos.z[eid] += vel.z[eid]
     },
-    onEnter: (pos, vel) => eid => {}, // optional
-    onExit: (pos, vel) => eid => {} // optional
+    // called whenever an entity is added to the system (has required components)
+    onEnter: (pos, vel) => eid => {},
+    // called whenever an entity is removed from the system (no longer has required components)
+    onExit: (pos, vel) => eid => {},
+    // called once, before the system update
+    onBefore: (pos, vel) => eid => {},
+    // called once, after the system update
+    onAfter: (pos, vel) => eid => {}
 })
 
 
