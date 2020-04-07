@@ -138,7 +138,9 @@ export default (n) => {
      *         onEnter=()=>null,
      *         onExit=()=>null,
      *         onBefore=()=>null,
-     *         onAfter=()=>null
+     *         onAfter=()=>null,
+     *         onBeforeEach=()=>null,
+     *         onAfterEach=()=>null
      *     }
      * @returns {object}
      */
@@ -149,10 +151,22 @@ export default (n) => {
         onEnter=()=>null,
         onExit=()=>null,
         onBefore=()=>null,
-        onAfter=()=>null
+        onAfter=()=>null,
+        onBeforeEach=()=>null,
+        onAfterEach=()=>null
     }) => {
 
-        let system = { name, components: componentDependencies, update, onEnter, onExit, onBefore, onAfter }
+        let system = {
+            name, 
+            components: componentDependencies, 
+            update, 
+            onEnter, 
+            onExit,
+            onBefore, 
+            onAfter,
+            onBeforeEach,
+            onAfterEach
+        }
         let localEntities = []
         
         let componentManagers = componentDependencies.map(dep => {
@@ -165,14 +179,18 @@ export default (n) => {
         let process = update(...componentManagers)
         let enter = onEnter(...componentManagers)
         let exit = onExit(...componentManagers)
-        let before = onBefore(...componentManagers)
-        let after = onAfter(...componentManagers)
+        let beforeEach = onBeforeEach(...componentManagers)
+        let afterEach = onAfterEach(...componentManagers)
 
         // define process function which processes each local entity
         system.process = () => {
-            if(before) before()
-            if(process) localEntities.forEach(eid => process(eid))
-            if(after) after()
+            if(onBefore) onBefore(...componentManagers)
+            localEntities.forEach(eid => {
+                if(beforeEach) beforeEach(eid)
+                if(process) process(eid)
+                if(afterEach) afterEach(eid)
+            })
+            if(onAfter) onAfter(...componentManagers)
         }
         
         // reduce bitflags to create mask

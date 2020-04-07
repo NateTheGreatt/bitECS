@@ -55,10 +55,14 @@ registerSystem({
     onEnter: (pos, vel) => eid => {},
     // called whenever an entity is removed from the system (no longer has required components)
     onExit: (pos, vel) => eid => {},
-    // called once, before the system update
-    onBefore: (pos, vel) => eid => {},
+    // called once, before the system update (not per entity, no eid passed in)
+    onBefore: (pos, vel) => {},
     // called once, after the system update
-    onAfter: (pos, vel) => eid => {}
+    onAfter: (pos, vel) => {}
+    // called per entity, before the system updates it
+    onBeforeEach: (pos, vel) => eid => {},
+    // called per entity, after the system updates it
+    onAfterEach: (pos, vel) => eid => {}
 })
 
 
