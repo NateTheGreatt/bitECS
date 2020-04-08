@@ -79,6 +79,8 @@ export default (n) => {
 
         if(componentManager == undefined)
             throw new Error(`bitECS Error: cannot add component to entityId ${eid}, '${name}' is not registered.`)
+
+        if((entities[eid] & componentManager._bitflag) === componentManager._bitflag) return
         
         // first, add bitflag to entity bitmask
         entities[eid] |= componentManager._bitflag
@@ -86,7 +88,8 @@ export default (n) => {
         // then, add to systems that match the entity bitmask
         for(let s in registry.systems) {
             let system = registry.systems[s]
-            if(system.check(entities[eid])) 
+            if((system.mask & componentManager._bitflag) === componentManager._bitflag
+                && system.check(entities[eid]))
                 system.add(eid)
         }
 
@@ -99,6 +102,9 @@ export default (n) => {
     }
 
     const _removeComponent = (name, eid) => {
+        
+        if(!(entities[eid] & componentManager._bitflag)) return
+
         // first, remove flag from entity bitmask
         entities[eid] &= ~registry.components[name]._bitflag
         
@@ -222,20 +228,16 @@ export default (n) => {
     }
 
     
-    // thread //
-    // TODO
-    const registerThread = ({ name, dependencies }) => {
-        registry.threads[name] = { name, dependencies }
-        return registry.threads[name]
-    }
-
-
     // update //
 
     // call all queued removal functions
     const applyRemovalDeferrals = () => {
-        deferredComponentRemovals.forEach(fn => fn())
-        deferredEntityRemovals.forEach(fn => fn())
+        while(deferredComponentRemovals.length > 0){
+            deferredComponentRemovals.shift()()
+        }
+        while(deferredEntityRemovals.length > 0){
+            deferredEntityRemovals.shift()()
+        }
     }
 
     /**
