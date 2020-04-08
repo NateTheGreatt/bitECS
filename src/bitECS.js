@@ -260,7 +260,6 @@ export default (n) => {
         addComponent,
         removeComponent,
         registerSystem,
-        registerThread,
         update
     }
 }
