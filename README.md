@@ -58,7 +58,7 @@ registerSystem({
     // called once, before the system update (not per entity, no eid passed in)
     onBefore: (pos, vel) => {},
     // called once, after the system update
-    onAfter: (pos, vel) => {}
+    onAfter: (pos, vel) => {},
     // called per entity, before the system updates it
     onBeforeEach: (pos, vel) => eid => {},
     // called per entity, after the system updates it
