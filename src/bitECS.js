@@ -85,6 +85,9 @@ export default (n) => {
         // first, add bitflag to entity bitmask
         entities[eid] |= componentManager._bitflag
 
+        // set values if any
+        componentManager._set(eid, values)
+
         // then, add to systems that match the entity bitmask
         for(let s in registry.systems) {
             let system = registry.systems[s]
@@ -93,20 +96,16 @@ export default (n) => {
                 system.add(eid)
         }
 
-        // zero out each property value
-        componentManager._reset(eid)
-        
-        // set values if any
-        componentManager._set(eid, values)
-
     }
 
     const _removeComponent = (name, eid) => {
+
+        let componentManager = registry.components[name]
         
         if(!(entities[eid] & componentManager._bitflag)) return
 
         // first, remove flag from entity bitmask
-        entities[eid] &= ~registry.components[name]._bitflag
+        entities[eid] &= ~componentManager._bitflag
         
         // then, remove from systems that no longer match the entity bitmask
         for(let s in registry.systems) {
@@ -114,6 +113,9 @@ export default (n) => {
             if(!system.check(entities[eid])) 
                 system.remove(eid)
         }
+
+        // zero out each property value
+        componentManager._reset(eid)
     }
 
     /**
