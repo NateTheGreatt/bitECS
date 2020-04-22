@@ -2,7 +2,7 @@ import DataManager from './DataManager.js'
 
 export default (n) => {
 
-    let count = 0
+    let entityCount = 0
     const removed = []
     const entities = new Uint32Array(n)
 
@@ -26,9 +26,9 @@ export default (n) => {
      */
     const addEntity = () => {
         // assign a removed ID if there are any, otherwise eid = count
-        let eid = removed.length ? removed.shift() : count
+        let eid = removed.length ? removed.shift() : entityCount
         entities[eid] = 0b0
-        count++
+        entityCount++
         return eid
     }
     const _removeEntity = eid => {
@@ -39,7 +39,7 @@ export default (n) => {
                 system.remove(eid)
         }
         removed.push(eid)
-        count--
+        entityCount--
     }
     /**
      * Remove an entity by eid
@@ -256,6 +256,7 @@ export default (n) => {
     return {
         entities,
         registry,
+        entityCount,
         addEntity,
         removeEntity,
         registerComponent,
