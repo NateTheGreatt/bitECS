@@ -3,7 +3,7 @@
 Tiny, data-driven, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
 ## Features
-- `<3kb` gzipped
+- `<5kb` gzipped
 - zero dependencies
 - node or browser
 - [_fast_](https://github.com/NateTheGreatt/bitECS/blob/master/examples/benchmark.js)
@@ -42,11 +42,17 @@ registerSystem({
     // update will only apply to these components
     // in this case entities with both a position & velocity component will be processed
     components: ['position', 'velocity'], 
-    // update function provides component managers and the entity ID to do work on
+    // update function passes in each component as an object
+    update: (pos, vel) => {
+        pos.x += vel.x
+        pos.y += vel.y
+        pos.z += vel.z
+    },
+    // high performance update function signature (about 1.6x faster)
     update: (pos, vel) => eid => {
-        // entity data is obtained from the respective component managers
-        // managers are objects with typedarray properties
-        // this is how high performance is reaped and maintained
+        // entity data is obtained from the respective "component managers"
+        // these managers are objects with typedarray properties
+        // the index of which represents an entity's component value
         pos.x[eid] += vel.x[eid]
         pos.y[eid] += vel.y[eid]
         pos.z[eid] += vel.z[eid]
@@ -55,14 +61,10 @@ registerSystem({
     onEnter: (pos, vel) => eid => {},
     // called whenever an entity is removed from the system (no longer has required components)
     onExit: (pos, vel) => eid => {},
-    // called once, before the system update (not per entity, no eid passed in)
+    // called before the system update (not per entity)
     onBefore: (pos, vel) => {},
-    // called once, after the system update
-    onAfter: (pos, vel) => {},
-    // called per entity, before the system updates it
-    onBeforeEach: (pos, vel) => eid => {},
-    // called per entity, after the system updates it
-    onAfterEach: (pos, vel) => eid => {}
+    // called after the system update
+    onAfter: (pos, vel) => {}
 })
 
 

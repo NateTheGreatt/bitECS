@@ -1,11 +1,11 @@
 {
   "name": "bitecs",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Tiny, data-driven, high performance ECS library written in Javascript",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    
   },
   "repository": {
     "type": "git",
@@ -13,8 +13,11 @@
   },
   "keywords": [
     "ecs",
+    "entitycomponentsystem",
     "game",
+    "gamedev",
     "performance",
+    "high-performance",
     "data-driven"
   ],
   "author": "Nathaniel Martin",

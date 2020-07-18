@@ -1,10 +1,11 @@
 import DataManager from './DataManager.js'
+import {injectorUnroller} from './InjectorUnroller.js'
 
 export default (n) => {
 
     let entityCount = 0
     const removed = []
-    const entities = new Uint32Array(n)
+    const entities = new BigUint64Array(n)
 
     const registry = {
         components: {},
@@ -18,7 +19,6 @@ export default (n) => {
 
     // entity //
     
-    
     /**
      * Add an entity
      *
@@ -27,7 +27,7 @@ export default (n) => {
     const addEntity = () => {
         // assign a removed ID if there are any, otherwise eid = count
         let eid = removed.length ? removed.shift() : entityCount
-        entities[eid] = 0b0
+        entities[eid] = 0n
         entityCount++
         return eid
     }
@@ -146,9 +146,7 @@ export default (n) => {
      *         onEnter=()=>null,
      *         onExit=()=>null,
      *         onBefore=()=>null,
-     *         onAfter=()=>null,
-     *         onBeforeEach=()=>null,
-     *         onAfterEach=()=>null
+     *         onAfter=()=>null
      *     }
      * @returns {object}
      */
@@ -159,9 +157,7 @@ export default (n) => {
         onEnter=()=>null,
         onExit=()=>null,
         onBefore=()=>null,
-        onAfter=()=>null,
-        onBeforeEach=()=>null,
-        onAfterEach=()=>null
+        onAfter=()=>null
     }) => {
 
         let system = {
@@ -171,9 +167,7 @@ export default (n) => {
             onEnter, 
             onExit,
             onBefore, 
-            onAfter,
-            onBeforeEach,
-            onAfterEach
+            onAfter
         }
         let localEntities = []
         
@@ -184,25 +178,27 @@ export default (n) => {
         })
         
         // partially apply component managers onto the provided callbacks
-        let process = update(...componentManagers)
+        let process
+        try {
+            // high performance mode
+            update()
+            process = update(...componentManagers)
+        } catch {
+            // clean syntax mode
+            process = injectorUnroller(componentManagers, update)
+        }
         let enter = onEnter(...componentManagers)
         let exit = onExit(...componentManagers)
-        let beforeEach = onBeforeEach(...componentManagers)
-        let afterEach = onAfterEach(...componentManagers)
 
         // define process function which processes each local entity
         system.process = () => {
             if(onBefore) onBefore(...componentManagers)
-            localEntities.forEach(eid => {
-                if(beforeEach) beforeEach(eid)
-                if(process) process(eid)
-                if(afterEach) afterEach(eid)
-            })
+            if(process) localEntities.forEach(process)
             if(onAfter) onAfter(...componentManagers)
         }
         
         // reduce bitflags to create mask
-        let mask = componentManagers.reduce((mask, manager) => mask | manager._bitflag, 0b0)
+        let mask = BigInt(componentManagers.reduce((mask, manager) => mask | manager._bitflag, 0n))
         system.mask = mask
 
         // checks if an entity mask matches the system's

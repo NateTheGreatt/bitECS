@@ -1,5 +1,7 @@
 // a DataManager takes an optional [schema] and creates a [typedarray of length n] per property
 
+import {unrolledGet,unrolledSet} from './DataUnroller.js'
+
 const primitives = {
     int8: Int8Array,
     uint8: Uint8Array,
@@ -15,7 +17,7 @@ const primitives = {
 }
 
 let globalBitflag = 1
-const DataManager = (n, schema={}, currentBitflag = globalBitflag) => { 
+const DataManager = (n, schema={}, base=true) => { 
     const manager = {}
 
     Object.defineProperty(manager, '_schema', {
@@ -28,8 +30,7 @@ const DataManager = (n, schema={}, currentBitflag = globalBitflag) => {
 
     Object.keys(schema).forEach(prop => {
         if(typeof schema[prop] === 'object') {
-            let leafCurrentBitflag = 1
-            manager[prop] = DataManager(n, schema[prop], leafCurrentBitflag)
+            manager[prop] = DataManager(n, schema[prop], false)
         } else if(typeof schema[prop] === 'string') {
             const type = schema[prop].toLowerCase()
             const totalBytes = n * primitives[type].BYTES_PER_ELEMENT
@@ -65,7 +66,6 @@ const DataManager = (n, schema={}, currentBitflag = globalBitflag) => {
     })
 
     // aggregate all typedarrays into single kvp array
-    
     Object.defineProperty(manager, '_flatten', {
         value: (kvp = []) => {
             for(let prop of manager._props) {
@@ -78,14 +78,25 @@ const DataManager = (n, schema={}, currentBitflag = globalBitflag) => {
         }
     })
 
+
+    const flyweight = {}
+    const get = unrolledGet(manager, flyweight)
+    const set = unrolledSet(manager, flyweight)
+
+    // return flyweight object
+    Object.defineProperty(manager, 'get', {
+        value: (eid) => get(eid)
+    })
+    Object.defineProperty(manager, 'set', {
+        value: (eid) => set(eid)
+    })
+
     Object.defineProperty(manager, '_bitflag', {
-        value: currentBitflag
+        value: BigInt(globalBitflag)
     })
     
-    // TODO: check this
-    // console.log(manager._bitflag)
-    currentBitflag *= 2
-    globalBitflag *= 2
+    // only increment bitflag for the base object
+    if(base) globalBitflag *= 2
 
     return manager
 }
