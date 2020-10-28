@@ -1,0 +1,6 @@
+.vscode
+.gitignore
+__tests__
+scripts
+rollup.config.js
+src
