@@ -1,29 +1,50 @@
 {
   "name": "bitecs",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "description": "Tiny, data-driven, high performance ECS library written in Javascript",
-  "main": "index.js",
-  "type": "module",
+  "main": "./dist/index.min.js",
+  "module": "./dist/index.es.js",
+  "author": {
+    "name": "Nathaniel Martin",
+    "email": "mrtn.nathaniel@gmail.com",
+    "url": "http://n8bit.io/"
+  },
+  "contributors": [{
+    "name": "Randy Lebeau",
+    "email": "randylebeau@gmail.com",
+    "url": "https://github.com/SupremeTechnopriest"
+  }],
   "scripts": {
-    
+    "build": "rollup -c",
+    "test": "jest",
+    "docs": "node scripts/docs.js",
+    "dist": "npm run test && npm run build && npm run docs"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/NateTheGreatt/bitecs.git"
+  "devDependencies": {
+    "@babel/preset-env": "^7.12.1",
+    "@rollup/plugin-babel": "^5.2.1",
+    "dmd-readable": "SupremeTechnopriest/dmd-readable",
+    "globby": "^11.0.1",
+    "jest": "^26.6.1",
+    "jsdoc-to-markdown": "^6.0.1",
+    "rollup": "^2.32.1",
+    "rollup-plugin-terser": "^7.0.2"
   },
-  "keywords": [
-    "ecs",
-    "entitycomponentsystem",
-    "game",
-    "gamedev",
-    "performance",
-    "high-performance",
-    "data-driven"
-  ],
-  "author": "Nathaniel Martin",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/NateTheGreatt/bitecs/issues"
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ]
+    ]
   },
-  "homepage": "https://github.com/NateTheGreatt/bitecs#readme"
+  "jest": {
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ]
+  }
 }
