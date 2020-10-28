@@ -3,8 +3,6 @@ const { writeFileSync } = require('fs')
 const glob = require('globby')
 const jsdoc2md = require('jsdoc-to-markdown')
 
-const header = '# 👾 Documentation 👾'
-
 async function render (pattern, output) {
   const files = await glob([
     pattern,
@@ -16,7 +14,7 @@ async function render (pattern, output) {
     files,
     plugin: 'dmd-readable'
   })
-  writeFileSync(output, header + md)
+  writeFileSync(output, md)
 }
 
 async function build () {

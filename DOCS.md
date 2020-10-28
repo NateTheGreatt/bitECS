@@ -1,4 +1,4 @@
-# 👾 Documentation 👾
+
 <br><a name="module_World"></a>
 
 ## World
@@ -12,12 +12,6 @@
 | config | <code>Object</code> | <code>{}</code> | The world configuration. |
 | config.maxEntities | <code>number</code> | <code>100000</code> | Maximum entities allowed in world. |
 | config.maxComponentTypes | <code>number</code> | <code>128</code> | Maximum component registrations allowed in world. |
-| config.devtools | <code>boolean</code>, <code>Object</code> | <code>false</code> | Enable the devtools server. |
-| config.devtools.port | <code>number</code> | <code>9001</code> | Port to run devtools server on. |
-| config.devtools.updateInterval | <code>number</code> | <code>1000</code> | How often to send snapshot to devtools in milliseconds. |
-| config.devtools.ssl | <code>object</code> | <code>{}</code> | SSL configuration for devtools server. |
-| config.devtools.ssl.key | <code>object</code> | <code>&#x27;&#x27;</code> | Path to SSL key. |
-| config.devtools.ssl.cert | <code>object</code> | <code>&#x27;&#x27;</code> | Path to SSL certificate. |
 
 **Example** *(Create a new ECS World.)*  
 ```js

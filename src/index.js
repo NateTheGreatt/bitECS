@@ -22,12 +22,6 @@ import { TYPES_ENUM, DataManager } from './utils/DataManager.js'
  * @param {Object} config={}                            - The world configuration.
  * @param {number} config.maxEntities=100000            - Maximum entities allowed in world.
  * @param {number} config.maxComponentTypes=128             - Maximum component registrations allowed in world.
- * @param {boolean|Object} config.devtools=false        - Enable the devtools server.
- * @param {number} config.devtools.port=9001            - Port to run devtools server on.
- * @param {number} config.devtools.updateInterval=1000  - How often to send snapshot to devtools in milliseconds.
- * @param {object} config.devtools.ssl={}               - SSL configuration for devtools server.
- * @param {object} config.devtools.ssl.key=''           - Path to SSL key.
- * @param {object} config.devtools.ssl.cert=''          - Path to SSL certificate.
  *
  * @returns {World} Returns the ECS API for the created world instance.
  */
