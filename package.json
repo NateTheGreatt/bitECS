@@ -1,6 +1,6 @@
 {
   "name": "bitecs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Tiny, data-driven, high performance ECS library written in Javascript",
   "main": "./dist/index.min.js",
   "module": "./dist/index.es.js",
@@ -9,11 +9,13 @@
     "email": "mrtn.nathaniel@gmail.com",
     "url": "http://n8bit.io/"
   },
-  "contributors": [{
-    "name": "Randy Lebeau",
-    "email": "randylebeau@gmail.com",
-    "url": "https://github.com/SupremeTechnopriest"
-  }],
+  "contributors": [
+    {
+      "name": "Randy Lebeau",
+      "email": "randylebeau@gmail.com",
+      "url": "https://github.com/SupremeTechnopriest"
+    }
+  ],
   "scripts": {
     "build": "rollup -c",
     "test": "jest",
