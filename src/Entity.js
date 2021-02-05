@@ -1,6 +1,10 @@
+import { Bitmask } from './utils/Bitmask.js'
+
 export const Entity = (config, registry) => {
   const { entities, systems } = registry
   const removed = []
+  const entityEnabledBitmask = Bitmask(config.maxEntities, Uint32Array)
+
   const deferredEntityRemovals = []
 
   /**
@@ -46,6 +50,7 @@ export const Entity = (config, registry) => {
     const eid = removed.length ? removed.shift() : _entityCount
     _entityCount++
     entities.forEach(typedArray => { typedArray[eid] = 0 })
+    entityEnabledBitmask.on(eid)
     return eid
   }
 
@@ -56,7 +61,7 @@ export const Entity = (config, registry) => {
    */
   const _removeEntity = eid => {
     // Check if entity is already removed
-    if (removed.indexOf(eid) > -1) return
+    if (!entityEnabledBitmask.get(eid)) return
 
     // Remove entity from all systems
     for (const s in systems) {
@@ -65,6 +70,7 @@ export const Entity = (config, registry) => {
     }
     removed.push(eid)
     _entityCount--
+    entityEnabledBitmask.off(eid)
 
     // Clear component bitmasks
     entities.forEach(arr => { arr[eid] = 0 })

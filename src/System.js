@@ -8,6 +8,8 @@ export const System = (
 ) => {
   const { entities, components, systems } = registry
 
+  const systemArray = []
+
   /**
    * World enabled
    *
@@ -161,10 +163,12 @@ export const System = (
     system.execute = force => {
       if (force || system.enabled) {
         if (before) before(...componentManagers)
-        const to = system.count
-        for (let i = to - 1; i >= 0; i--) {
-          const eid = localEntities[i]
-          if (updateFn) updateFn(eid)
+        if (updateFn) {
+          const to = system.count
+          for (let i = to - 1; i >= 0; i--) {
+            const eid = localEntities[i]
+            updateFn(eid)
+          }
         }
         if (after) after(...componentManagers)
       }
@@ -202,9 +206,9 @@ export const System = (
     }
 
     system.remove = eid => {
+      if (!entityEnabledBitmask.get(eid)) return
+
       const index = localEntities.indexOf(eid)
-      // return if EID does not exist
-      if (index === -1) return
       localEntities.splice(index, 1)
       removedIndices.push(index)
       entityEnabledBitmask.set(eid, false)
@@ -219,6 +223,10 @@ export const System = (
 
     // Set in the registry
     systems[name] = system
+
+    // add it to the array
+    systemArray.push(system)
+
     return system
   }
 
@@ -364,8 +372,8 @@ export const System = (
    * const world = World()
    * world.toggle()
    * world.enabled() // false
-   * world.step() // does not execute systems
-   * world.step(true) // executes systems once
+   * world.step() // executes systems once
+   * world.step('system-name') // executes system-name once
    *
    * @example <caption>Step a specific system.</caption>
    * import World from 'bitecs'
@@ -401,11 +409,10 @@ export const System = (
     }
 
     if (force || _enabled) {
-      applyRemovalDeferrals()
-
-      for (const s in systems) {
-        systems[s].execute()
+      for (let i = 0; i < systemArray.length; i++) {
+        systemArray[i].execute()
       }
+      applyRemovalDeferrals()
     }
   }
 

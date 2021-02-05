@@ -55,6 +55,9 @@ export default (worldConfig = {}) => {
     step
   } = System(config, registry, deferredEntityRemovals, deferredComponentRemovals)
 
+  let queryCount = 0
+  const createQuery = components => registerSystem({ name: `query-${queryCount++}`, components }).localEntities
+
   return {
     TYPES: TYPES_ENUM,
     config,
@@ -70,6 +73,7 @@ export default (worldConfig = {}) => {
     getComponent,
     hasComponent,
     registerSystem,
+    createQuery,
     enabled,
     toggle,
     step
