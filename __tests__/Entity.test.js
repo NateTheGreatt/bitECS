@@ -102,6 +102,6 @@ describe('Entities', () => {
 
     world.step()
     expect(enter).toHaveBeenCalledTimes(2)
-    expect(update).toHaveBeenCalledTimes(2)
+    expect(update).toHaveBeenCalledTimes(3)
   })
 })

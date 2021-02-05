@@ -210,7 +210,7 @@ describe('Systems', () => {
     world.step()
 
     expect(exit).toHaveBeenCalledTimes(1)
-    expect(update).toHaveBeenCalledTimes(1)
+    expect(update).toHaveBeenCalledTimes(2)
   })
 
   test('should remove system when dependant components are removed immediately', () => {
@@ -296,7 +296,7 @@ describe('Systems', () => {
 
     expect(update).toHaveBeenCalledTimes(1)
 
-    world.removeEntity(eid)
+    world.removeEntity(eid, true)
     world.step()
 
     expect(exit).toHaveBeenCalledTimes(1)
