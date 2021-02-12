@@ -163,13 +163,7 @@ export const System = (
     system.execute = force => {
       if (force || system.enabled) {
         if (before) before(...componentManagers)
-        if (updateFn) {
-          const to = system.count
-          for (let i = to - 1; i >= 0; i--) {
-            const eid = localEntities[i]
-            updateFn(eid)
-          }
-        }
+        if (updateFn) localEntities.forEach(eid => updateFn(eid))
         if (after) after(...componentManagers)
       }
     }
@@ -224,8 +218,8 @@ export const System = (
     // Set in the registry
     systems[name] = system
 
-    // add it to the array
-    systemArray.push(system)
+    // add it to the array if it's not a query
+    if (!name.includes('query')) systemArray.push(system)
 
     return system
   }

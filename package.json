@@ -1,8 +1,9 @@
 {
   "name": "bitecs",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Tiny, data-driven, high performance ECS library written in Javascript",
   "main": "./dist/index.min.js",
+  "type": "module",
   "module": "./dist/index.es.js",
   "author": {
     "name": "Nathaniel Martin",
