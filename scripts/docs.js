@@ -1,7 +1,10 @@
-const { join } = require('path')
-const { writeFileSync } = require('fs')
-const glob = require('globby')
-const jsdoc2md = require('jsdoc-to-markdown')
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+import { writeFileSync } from 'fs'
+import glob from 'globby'
+import jsdoc2md from 'jsdoc-to-markdown'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 async function render (pattern, output) {
   const files = await glob([

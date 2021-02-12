@@ -11,7 +11,7 @@ export const Entity = (config, registry) => {
    * Count of entities in this world
    * @private
    */
-  let _entityCount = 0
+  let _entityCount = 1
 
   /**
    * Get the count of entities currently in the world.
@@ -26,7 +26,7 @@ export const Entity = (config, registry) => {
    *
    * @memberof module:World
    */
-  const entityCount = () => _entityCount
+  const entityCount = () => _entityCount - 1
 
   /**
    * Add a new entity to the world.
@@ -42,7 +42,7 @@ export const Entity = (config, registry) => {
    * @returns {uint32} The entity id.
    */
   const addEntity = () => {
-    if (_entityCount + 1 > config.maxEntities) {
+    if (entityCount() + 1 > config.maxEntities) {
       console.warn('❌ Could not add entity, maximum number of entities reached.')
       return
     }
@@ -83,7 +83,7 @@ export const Entity = (config, registry) => {
    * import World from 'bitecs'
    *
    * const world = World()
-   * const eid = world.addEntity() // 0
+   * const eid = world.addEntity() // 1
    * world.entityCount() // 1
    * world.removeEntity(eid)
    * world.step()
@@ -93,7 +93,7 @@ export const Entity = (config, registry) => {
    * import World from 'bitecs'
    *
    * const world = World()
-   * const eid = world.addEntity() // 0
+   * const eid = world.addEntity() // 1
    * world.entityCount() // 1
    * world.removeEntity(eid, true)
    * world.entityCount() // 0

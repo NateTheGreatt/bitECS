@@ -138,9 +138,8 @@ describe('Systems', () => {
     expect(updateFn).toHaveBeenCalledTimes(1)
     expect(updateFn).toHaveBeenCalledWith(POSITION, VELOCITY)
     expect(update).toHaveBeenCalledTimes(2)
-    // systems iterate in reverse
-    expect(update.mock.calls[0][0]).toBe(eid2)
-    expect(update.mock.calls[1][0]).toBe(eid)
+    expect(update.mock.calls[0][0]).toBe(eid)
+    expect(update.mock.calls[1][0]).toBe(eid2)
   })
 
   test('should call lifecycle methods with correct data', () => {

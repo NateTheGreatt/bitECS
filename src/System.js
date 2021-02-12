@@ -139,6 +139,7 @@ export const System = (
       name,
       enabled: true,
       components: componentDependencies,
+      entityIndexes: {},
       localEntities,
       update,
       enter,
@@ -163,7 +164,11 @@ export const System = (
     system.execute = force => {
       if (force || system.enabled) {
         if (before) before(...componentManagers)
-        if (updateFn) localEntities.forEach(eid => updateFn(eid))
+        if (updateFn) localEntities.forEach((eid, i) => {
+          // Update index of eid
+          system.entityIndexes[eid] = i
+          updateFn(eid)
+        })
         if (after) after(...componentManagers)
       }
     }
@@ -194,6 +199,8 @@ export const System = (
       if (entityEnabledBitmask.get(eid)) return
 
       localEntities.push(eid)
+      // Add index to map for faster lookup
+      system.entityIndexes[eid] = localEntities.length - 1
       entityEnabledBitmask.set(eid, true)
       system.count = localEntities.length
       if (enterFn) enterFn(eid)
@@ -202,8 +209,19 @@ export const System = (
     system.remove = eid => {
       if (!entityEnabledBitmask.get(eid)) return
 
-      const index = localEntities.indexOf(eid)
-      localEntities.splice(index, 1)
+      const index = system.entityIndexes[eid]
+      if (index === undefined) return
+
+      // Pop swap removal
+      const last = localEntities.length - 1
+      const tmp = localEntities[last]
+      localEntities[last] = localEntities[index]
+      localEntities[index] = tmp
+      system.entityIndexes[tmp] = index
+      delete system.entityIndexes[localEntities[last]]
+      localEntities.pop()
+
+      // Update metadata
       removedIndices.push(index)
       entityEnabledBitmask.set(eid, false)
       system.count = localEntities.length

@@ -311,7 +311,7 @@ world.addEntity() // 1
 import World from 'bitecs'
 
 const world = World()
-const eid = world.addEntity() // 0
+const eid = world.addEntity() // 1
 world.entityCount() // 1
 world.removeEntity(eid)
 world.step()
@@ -322,7 +322,7 @@ world.entityCount() // 0
 import World from 'bitecs'
 
 const world = World()
-const eid = world.addEntity() // 0
+const eid = world.addEntity() // 1
 world.entityCount() // 1
 world.removeEntity(eid, true)
 world.entityCount() // 0
@@ -569,8 +569,8 @@ import World from 'bitecs'
 const world = World()
 world.toggle()
 world.enabled() // false
-world.step() // does not execute systems
-world.step(true) // executes systems once
+world.step() // executes systems once
+world.step('system-name') // executes system-name once
 ```
 **Example** *(Step a specific system.)*  
 ```js
