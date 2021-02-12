@@ -1,6 +1,6 @@
 {
   "name": "bitecs",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Tiny, data-driven, high performance ECS library written in Javascript",
   "type": "module",
   "main": "./dist/index.min.js",
