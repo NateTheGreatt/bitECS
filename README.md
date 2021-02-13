@@ -6,7 +6,7 @@ Tiny, data-driven, high performance [ECS](https://en.wikipedia.org/wiki/Entity_c
 - `<3kb` gzipped
 - Zero dependencies
 - Node or Browser
-- [_Fast_](https://github.com/natethegreatt/ecs-benchmark)
+- [_Fast_](https://github.com/noctjs/ecs-benchmark)
 
 ## Install
 ```
