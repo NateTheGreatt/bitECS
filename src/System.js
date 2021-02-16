@@ -1,5 +1,3 @@
-import { Bitmask } from './utils/Bitmask.js'
-
 export const System = (
   config,
   registry,
@@ -37,11 +35,11 @@ export const System = (
    * world.registerSystem({
    *   name: 'MOVEMENT',
    *   components: ['POSITION', 'VELOCITY'],
-   *   update: entities => {
+   *   update: (position, velocity) => entities => {
    *     for (let i = 0; i < entities.length; i++) {
    *       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
    *       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
-   *     } 
+   *     }
    *   }
    * })
    *
@@ -80,7 +78,7 @@ export const System = (
    *   enter: eid => {
    *     // Called once when an entity is added to system.
    *   },
-   *   update: entities => {
+   *   update: (position, velocity) => entities => {
    *     // Called once every tick.
    *   },
    *   exit: eid => {
@@ -98,32 +96,30 @@ export const System = (
    * world.registerSystem({
    *   name: 'MOVEMENT',
    *   components: ['POSITION', 'VELOCITY'],
-   *   update: entities => {
+   *   update: (position, velocity) => entities => {
    *     for (let i = 0; i < entities.length; i++) {
    *       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
    *       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
-   *     } 
+   *     }
    *   }
    * })
    *
    * @memberof module:World
-   * @param {Object} system               - System configuration.
-   * @param {string} system.name          - The name of the system.
-   * @param {string[]} system.components  - Component names the system queries.
-   * @param {Function} system.enter       - Called when an entity is added to the system.
-   * @param {Function} system.update      - Called every tick on all entities in the system.
-   * @param {Function} system.exit        - Called when an entity is removed from the system.
+   * @param {Object} system                - System configuration.
+   * @param {string} system.name           - The name of the system.
+   * @param {string[]=} system.components  - Component names the system queries.
+   * @param {Function=} system.enter       - Called when an entity is added to the system.
+   * @param {Function=} system.update      - Called every tick on all entities in the system.
+   * @param {Function=} system.exit        - Called when an entity is removed from the system.
    */
   const registerSystem = ({
     name,
-    components: componentDependencies,
-    enter = () => null,
-    update = () => null,
-    exit = () => null,
+    components: componentDependencies = [],
+    enter,
+    update,
+    exit ,
   }) => {
     const localEntities = []
-
-    if (!componentDependencies) componentDependencies = []
 
     const system = {
       count: 0,
@@ -166,9 +162,10 @@ export const System = (
       (masks[componentManager._generationId] & componentManager._bitflag) === componentManager._bitflag
 
     // Define execute function which executes each local entity
+    const updateFn = update ? update(...componentManagers) : null
     system.execute = force => {
       if (force || system.enabled) {
-        if (update) update(localEntities)
+        if (updateFn) updateFn(localEntities)
       }
       applyRemovalDeferrals()
     }
@@ -254,11 +251,11 @@ export const System = (
    * world.registerSystem({
    *   name: 'MOVEMENT',
    *   components: ['POSITION', 'VELOCITY'],
-   *   update: entities => {
+   *   update: (position, velocity) => entities => {
    *     for (let i = 0; i < entities.length; i++) {
    *       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
    *       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
-   *     } 
+   *     }
    *   }
    * })
    *
@@ -373,11 +370,11 @@ export const System = (
    * world.registerSystem({
    *   name: 'MOVEMENT',
    *   components: ['POSITION', 'VELOCITY'],
-   *   update: entities => {
+   *   update: (position, velocity) => entities => {
    *     for (let i = 0; i < entities.length; i++) {
    *       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
    *       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
-   *     } 
+   *     }
    *   }
    * })
    *
