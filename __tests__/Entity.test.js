@@ -13,7 +13,9 @@ describe('Entities', () => {
   test('should add an recycled EID entity to world', () => {
     const world = World({ maxEntities: 10 })
     const eid = world.addEntity()
-    world.removeEntity(eid, true)
+    expect(eid).toBe(1)
+    world.removeEntity(eid)
+    world.step()
     const eid2 = world.addEntity()
     expect(eid2).toBe(1)
     expect(world.entityCount()).toBe(1)
@@ -33,7 +35,8 @@ describe('Entities', () => {
     const eid = world.addEntity()
     expect(world.entityCount()).toBe(1)
     expect(world.registry.entities[0][eid]).toBe(0)
-    world.removeEntity(eid, true)
+    world.removeEntity(eid)
+    world.step()
     expect(world.entityCount()).toBe(0)
     expect(world.registry.entities[0][eid]).toBe(0)
   })
@@ -43,8 +46,9 @@ describe('Entities', () => {
     const eid = world.addEntity()
     expect(world.entityCount()).toBe(1)
     expect(world.registry.entities[0][eid]).toBe(0)
-    world.removeEntity(eid, true)
-    world.removeEntity(eid, true)
+    world.removeEntity(eid)
+    world.removeEntity(eid)
+    world.step()
     expect(world.entityCount()).toBe(0)
     expect(world.registry.entities[0][eid]).toBe(0)
   })
@@ -70,9 +74,9 @@ describe('Entities', () => {
     world.registerSystem({
       name: 'MOVEMENT',
       components: ['POSITION'],
-      enter: () => enter,
-      update: () => update,
-      exit: () => exit
+      enter,
+      update,
+      exit
     })
 
     const eid = world.addEntity()

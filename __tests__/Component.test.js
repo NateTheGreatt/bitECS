@@ -70,20 +70,7 @@ describe('Components', () => {
     expect(world.registry.components.POSITION.y[eid]).toBe(1)
   })
 
-  test('should remove component immediately', () => {
-    const world = World({ maxEntities: 10 })
-    world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-    const eid = world.addEntity()
-    world.addComponent('POSITION', eid)
-    expect(world.registry.entities[0][eid]).toBe(1)
-    expect(world.registry.components.POSITION.x[eid]).toBe(0)
-    expect(world.registry.components.POSITION.y[eid]).toBe(0)
-
-    world.removeComponent('POSITION', eid, true)
-    expect(world.registry.entities[0][eid]).toBe(0)
-  })
-
-  test('should remove component deferred', () => {
+  test('should remove component', () => {
     const world = World({ maxEntities: 10 })
     world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
     const eid = world.addEntity()
@@ -99,22 +86,7 @@ describe('Components', () => {
     expect(world.registry.entities[0][eid]).toBe(0)
   })
 
-  test('should add remove all components immediately', () => {
-    const world = World({ maxEntities: 10 })
-    world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-    world.registerComponent('VELOCITY', { vx: 'uint8', vy: 'uint8' })
-
-    const eid = world.addEntity()
-    world.addComponent('POSITION', eid)
-    world.addComponent('VELOCITY', eid)
-
-    expect(world.registry.entities[0][eid]).toBe(3)
-
-    world.removeAllComponents(eid, true)
-    expect(world.registry.entities[0][eid]).toBe(0)
-  })
-
-  test('should add remove all components deferred', () => {
+  test('should add remove all components', () => {
     const world = World({ maxEntities: 10 })
     world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
     world.registerComponent('VELOCITY', { vx: 'uint8', vy: 'uint8' })

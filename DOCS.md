@@ -22,12 +22,12 @@ const world = World({ maxEntities: 100000, maxComponentTypes: 128 })
 * [World](#module_World) ⇒ <code>World</code>
     * [.registerComponent(name, schema)](#module_World.registerComponent) ⇒ <code>Object</code>
     * [.addComponent(name, eid, values, reset)](#module_World.addComponent)
-    * [.removeComponent(name, eid, immediate)](#module_World.removeComponent)
+    * [.removeComponent(name, eid)](#module_World.removeComponent)
     * [.removeAllComponents(eid, immediate)](#module_World.removeAllComponents)
     * [.hasComponent(name, eid)](#module_World.hasComponent) ⇒ <code>boolean</code>
     * [.entityCount()](#module_World.entityCount)
     * [.addEntity()](#module_World.addEntity) ⇒ <code>uint32</code>
-    * [.removeEntity(eid, immediate)](#module_World.removeEntity)
+    * [.removeEntity(eid)](#module_World.removeEntity)
     * [.enabled(name)](#module_World.enabled) ⇒ <code>boolean</code>
     * [.registerSystem(system)](#module_World.registerSystem)
     * [.toggle(name)](#module_World.toggle)
@@ -134,15 +134,14 @@ world.addComponent('POSITION', eid, { x: 100, y: 100 })
 <br><a name="module_World.removeComponent"></a>
 
 ### removeComponent
-#### World.removeComponent(name, eid, immediate)
+#### World.removeComponent(name, eid)
 > Remove a component type from an entity.
 
 
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| name | <code>string</code> |  | Name of the component. |
-| eid | <code>uint32</code> |  | Entity id. |
-| immediate | <code>boolean</code> | <code>false</code> | Remove immediately. If false, defer until end of tick. |
+| Param | Type | Description |
+| --- | --- | --- |
+| name | <code>string</code> | Name of the component. |
+| eid | <code>uint32</code> | Entity id. |
 
 **Example** *(Remove a component deferred.)*  
 ```js
@@ -175,7 +174,8 @@ const eid = world.addEntity()
 world.addComponent('POSITION', eid, { x: 100, y: 100 }) // Component added
 world.step()
 
-world.removeComponent('POSITION', eid, true) // Component removed
+world.removeComponent('POSITION', eid)
+world.step() // Component removed after system has finished running
 ```
 
 <br><a name="module_World.removeAllComponents"></a>
@@ -297,14 +297,13 @@ world.addEntity() // 1
 <br><a name="module_World.removeEntity"></a>
 
 ### removeEntity
-#### World.removeEntity(eid, immediate)
+#### World.removeEntity(eid)
 > Remove an entity from the world.
 
 
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| eid | <code>uint32</code> |  | The entity id to remove. |
-| immediate | <code>boolean</code> | <code>false</code> | Remove immediately. If false, defer until end of tick. |
+| Param | Type | Description |
+| --- | --- | --- |
+| eid | <code>uint32</code> | The entity id to remove. |
 
 **Example** *(Remove an entity from the world deferred.)*  
 ```js
@@ -315,16 +314,6 @@ const eid = world.addEntity() // 1
 world.entityCount() // 1
 world.removeEntity(eid)
 world.step()
-world.entityCount() // 0
-```
-**Example** *(Remove an entity from the world immediately.)*  
-```js
-import World from 'bitecs'
-
-const world = World()
-const eid = world.addEntity() // 1
-world.entityCount() // 1
-world.removeEntity(eid, true)
 world.entityCount() // 0
 ```
 
@@ -358,9 +347,11 @@ const world = World()
 world.registerSystem({
   name: 'MOVEMENT',
   components: ['POSITION', 'VELOCITY'],
-  update: (position, velocity) => eid => {
-     position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
-     position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+  update: entities => {
+    for (let i = 0; i < entities.length; i++) {
+      position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
+      position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+    } 
   }
 })
 
@@ -381,37 +372,29 @@ world.enabled('MOVEMENT') // false
 | system | <code>Object</code> | System configuration. |
 | system.name | <code>string</code> | The name of the system. |
 | system.components | <code>Array.&lt;string&gt;</code> | Component names the system queries. |
-| system.before | <code>function</code> | Called once at the beginning of the tick. |
 | system.enter | <code>function</code> | Called when an entity is added to the system. |
 | system.update | <code>function</code> | Called every tick on all entities in the system. |
 | system.exit | <code>function</code> | Called when an entity is removed from the system. |
-| system.after | <code>function</code> | Called once at the end of every tick. |
 
 **Example** *(Full system API.)*  
 ```js
 import World from 'bitecs'
 
 const world = World()
-world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
+const position = world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
+const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
 
 world.registerSystem({
   name: 'MOVEMENT',
   components: ['POSITION', 'VELOCITY'],
-  before: (position, velocity) => {
-    // Called once at the beginning of each tick.
-  },
-  enter: (position, velocity) => eid => {
+  enter: eid => {
     // Called once when an entity is added to system.
   },
-  update: (position, velocity) => eid => {
-    // Called every tick for every entity in the system.
+  update: entities => {
+    // Called once every tick.
   },
-  exit: (position, velocity) => eid => {
+  exit: eid => {
     // Called once when an entity is removed from the system.
-  },
-  after: (position, velocity) => {
-    // Called once at the end of each tick.
   }
 })
 ```
@@ -420,15 +403,17 @@ world.registerSystem({
 import World from 'bitecs'
 
 const world = World()
-world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
+const position = world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
+const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
 
 world.registerSystem({
   name: 'MOVEMENT',
   components: ['POSITION', 'VELOCITY'],
-  update: (position, velocity) => eid => {
-     position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
-     position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+  update: entities => {
+    for (let i = 0; i < entities.length; i++) {
+      position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
+      position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+    } 
   }
 })
 ```
@@ -461,22 +446,24 @@ world.step() // does not execute systems
 import World from 'bitecs'
 
 const world = World()
-world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
+const position = world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
+const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
 
 world.registerSystem({
   name: 'MOVEMENT',
   components: ['POSITION', 'VELOCITY'],
-  update: (position, velocity) => eid => {
-     position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
-     position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+  update: entities => {
+    for (let i = 0; i < entities.length; i++) {
+      position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
+      position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+    } 
   }
 })
 
 world.step('MOVEMENT') // executes system
 world.toggle('MOVEMENT') // enabled false
 world.enabled('MOVEMENT') // false
-world.step('MOVEMENT') // does not executes system
+world.step('MOVEMENT') // does not execute the system
 ```
 
 <br><a name="module_World.step"></a>
@@ -569,7 +556,7 @@ import World from 'bitecs'
 const world = World()
 world.toggle()
 world.enabled() // false
-world.step() // executes systems once
+world.step() // does not execute systems
 world.step('system-name') // executes system-name once
 ```
 **Example** *(Step a specific system.)*  
@@ -577,20 +564,22 @@ world.step('system-name') // executes system-name once
 import World from 'bitecs'
 
 const world = World()
-world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
+const position = world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
+const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
 
 world.registerSystem({
   name: 'MOVEMENT',
   components: ['POSITION', 'VELOCITY'],
-  update: (position, velocity) => eid => {
-     position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
-     position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+  update: entities => {
+    for (let i = 0; i < entities.length; i++) {
+      position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
+      position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+    } 
   }
 })
 
 world.step('MOVEMENT') // executes system
 world.toggle('MOVEMENT')
 world.enabled('MOVEMENT') // false
-world.step('MOVEMENT', true) // executes system
+world.step('MOVEMENT', true) // force execution on system
 ```

@@ -147,7 +147,7 @@ export const Component = (config, registry, DataManager) => {
     // Remove from systems that no longer match the entity bitmask
     for (const s in systems) {
       const system = systems[s]
-      if (!system.check(eid)) {
+      if (system.components.length && system.checkComponent(componentManager) && !system.check(eid)) {
         system.remove(eid)
       }
     }
@@ -185,19 +185,15 @@ export const Component = (config, registry, DataManager) => {
    * world.addComponent('POSITION', eid, { x: 100, y: 100 }) // Component added
    * world.step()
    *
-   * world.removeComponent('POSITION', eid, true) // Component removed
+   * world.removeComponent('POSITION', eid)
+   * world.step() // Component removed after system has finished running
    *
    * @memberof module:World
    * @param {string} name       - Name of the component.
    * @param {uint32} eid        - Entity id.
-   * @param {boolean} immediate - Remove immediately. If false, defer until end of tick.
    */
-  const removeComponent = (name, eid, immediate = false) => {
-    if (immediate) {
-      _removeComponent(name, eid)
-    } else {
-      deferredComponentRemovals.push(() => _removeComponent(name, eid))
-    }
+  const removeComponent = (name, eid) => {
+    deferredComponentRemovals.push(() => _removeComponent(name, eid))
   }
 
   /**

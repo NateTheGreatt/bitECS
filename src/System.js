@@ -37,9 +37,11 @@ export const System = (
    * world.registerSystem({
    *   name: 'MOVEMENT',
    *   components: ['POSITION', 'VELOCITY'],
-   *   update: (position, velocity) => eid => {
-   *      position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
-   *      position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+   *   update: entities => {
+   *     for (let i = 0; i < entities.length; i++) {
+   *       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
+   *       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+   *     } 
    *   }
    * })
    *
@@ -69,26 +71,20 @@ export const System = (
    * import World from 'bitecs'
    *
    * const world = World()
-   * world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-   * world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
+   * const position = world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
+   * const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
    *
    * world.registerSystem({
    *   name: 'MOVEMENT',
    *   components: ['POSITION', 'VELOCITY'],
-   *   before: (position, velocity) => {
-   *     // Called once at the beginning of each tick.
-   *   },
-   *   enter: (position, velocity) => eid => {
+   *   enter: eid => {
    *     // Called once when an entity is added to system.
    *   },
-   *   update: (position, velocity) => eid => {
-   *     // Called every tick for every entity in the system.
+   *   update: entities => {
+   *     // Called once every tick.
    *   },
-   *   exit: (position, velocity) => eid => {
+   *   exit: eid => {
    *     // Called once when an entity is removed from the system.
-   *   },
-   *   after: (position, velocity) => {
-   *     // Called once at the end of each tick.
    *   }
    * })
    *
@@ -96,15 +92,17 @@ export const System = (
    * import World from 'bitecs'
    *
    * const world = World()
-   * world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-   * world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
+   * const position = world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
+   * const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
    *
    * world.registerSystem({
    *   name: 'MOVEMENT',
    *   components: ['POSITION', 'VELOCITY'],
-   *   update: (position, velocity) => eid => {
-   *      position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
-   *      position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+   *   update: entities => {
+   *     for (let i = 0; i < entities.length; i++) {
+   *       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
+   *       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+   *     } 
    *   }
    * })
    *
@@ -112,25 +110,18 @@ export const System = (
    * @param {Object} system               - System configuration.
    * @param {string} system.name          - The name of the system.
    * @param {string[]} system.components  - Component names the system queries.
-   * @param {Function} system.before      - Called once at the beginning of the tick.
    * @param {Function} system.enter       - Called when an entity is added to the system.
    * @param {Function} system.update      - Called every tick on all entities in the system.
    * @param {Function} system.exit        - Called when an entity is removed from the system.
-   * @param {Function} system.after       - Called once at the end of every tick.
    */
   const registerSystem = ({
     name,
     components: componentDependencies,
-    before = () => null,
     enter = () => null,
     update = () => null,
     exit = () => null,
-    after = () => null
   }) => {
     const localEntities = []
-    const removedIndices = []
-
-    const entityEnabledBitmask = Bitmask(config.maxEntities, Uint32Array)
 
     if (!componentDependencies) componentDependencies = []
 
@@ -143,9 +134,7 @@ export const System = (
       localEntities,
       update,
       enter,
-      exit,
-      before,
-      after
+      exit
     }
 
     const componentManagers = componentDependencies.map(dep => {
@@ -154,24 +143,6 @@ export const System = (
       }
       return components[dep]
     })
-
-    // Partially apply component managers onto the provided callbacks
-    const updateFn = update(...componentManagers)
-    const enterFn = enter(...componentManagers)
-    const exitFn = exit(...componentManagers)
-
-    // Define execute function which executes each local entity
-    system.execute = force => {
-      if (force || system.enabled) {
-        if (before) before(...componentManagers)
-        if (updateFn) localEntities.forEach((eid, i) => {
-          // Update index of eid
-          system.entityIndexes[eid] = i
-          updateFn(eid)
-        })
-        if (after) after(...componentManagers)
-      }
-    }
 
     // Reduce bitflag to create mask
     // Take unique generationIds as length
@@ -194,21 +165,26 @@ export const System = (
     system.checkComponent = (componentManager) =>
       (masks[componentManager._generationId] & componentManager._bitflag) === componentManager._bitflag
 
-    // Add/remove entity to/from system and invoke enter/exit
+    // Define execute function which executes each local entity
+    system.execute = force => {
+      if (force || system.enabled) {
+        if (update) update(localEntities)
+      }
+      applyRemovalDeferrals()
+    }
+
+    // invoke enter/exit on add/remove
     system.add = eid => {
-      if (entityEnabledBitmask.get(eid)) return
+      if (system.entityIndexes[eid]) return
 
       localEntities.push(eid)
       // Add index to map for faster lookup
       system.entityIndexes[eid] = localEntities.length - 1
-      entityEnabledBitmask.set(eid, true)
       system.count = localEntities.length
-      if (enterFn) enterFn(eid)
+      if (enter) enter(eid)
     }
 
     system.remove = eid => {
-      if (!entityEnabledBitmask.get(eid)) return
-
       const index = system.entityIndexes[eid]
       if (index === undefined) return
 
@@ -222,10 +198,8 @@ export const System = (
       localEntities.pop()
 
       // Update metadata
-      removedIndices.push(index)
-      entityEnabledBitmask.set(eid, false)
       system.count = localEntities.length
-      if (exitFn) exitFn(eid)
+      if (exit) exit(eid)
     }
 
     // Populate with matching entities (if registering after entities have been added)
@@ -274,22 +248,24 @@ export const System = (
    * import World from 'bitecs'
    *
    * const world = World()
-   * world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-   * world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
+   * const position = world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
+   * const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
    *
    * world.registerSystem({
    *   name: 'MOVEMENT',
    *   components: ['POSITION', 'VELOCITY'],
-   *   update: (position, velocity) => eid => {
-   *      position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
-   *      position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+   *   update: entities => {
+   *     for (let i = 0; i < entities.length; i++) {
+   *       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
+   *       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+   *     } 
    *   }
    * })
    *
    * world.step('MOVEMENT') // executes system
    * world.toggle('MOVEMENT') // enabled false
    * world.enabled('MOVEMENT') // false
-   * world.step('MOVEMENT') // does not executes system
+   * world.step('MOVEMENT') // does not execute the system
    *
    * @memberof module:World
    * @param {string} name - Name of a system to toggle. If not defined toggle world system execution.
@@ -384,29 +360,31 @@ export const System = (
    * const world = World()
    * world.toggle()
    * world.enabled() // false
-   * world.step() // executes systems once
+   * world.step() // does not execute systems
    * world.step('system-name') // executes system-name once
    *
    * @example <caption>Step a specific system.</caption>
    * import World from 'bitecs'
    *
    * const world = World()
-   * world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-   * world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
+   * const position = world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
+   * const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
    *
    * world.registerSystem({
    *   name: 'MOVEMENT',
    *   components: ['POSITION', 'VELOCITY'],
-   *   update: (position, velocity) => eid => {
-   *      position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
-   *      position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+   *   update: entities => {
+   *     for (let i = 0; i < entities.length; i++) {
+   *       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
+   *       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
+   *     } 
    *   }
    * })
    *
    * world.step('MOVEMENT') // executes system
    * world.toggle('MOVEMENT')
    * world.enabled('MOVEMENT') // false
-   * world.step('MOVEMENT', true) // executes system
+   * world.step('MOVEMENT', true) // force execution on system
    *
    * @memberof module:World
    * @param {string} name   - Name of a system to step. If not defined step the entire world.
@@ -424,8 +402,8 @@ export const System = (
       for (let i = 0; i < systemArray.length; i++) {
         systemArray[i].execute()
       }
-      applyRemovalDeferrals()
     }
+    applyRemovalDeferrals()
   }
 
   return {

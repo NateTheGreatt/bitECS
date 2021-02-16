@@ -89,25 +89,11 @@ export const Entity = (config, registry) => {
    * world.step()
    * world.entityCount() // 0
    *
-   * @example <caption>Remove an entity from the world immediately.</caption>
-   * import World from 'bitecs'
-   *
-   * const world = World()
-   * const eid = world.addEntity() // 1
-   * world.entityCount() // 1
-   * world.removeEntity(eid, true)
-   * world.entityCount() // 0
-   *
    * @memberof module:World
    * @param {uint32} eid        - The entity id to remove.
-   * @param {boolean} immediate - Remove immediately. If false, defer until end of tick.
    */
-  const removeEntity = (eid, immediate = false) => {
-    if (immediate) {
-      _removeEntity(eid)
-    } else {
-      deferredEntityRemovals.push(() => _removeEntity(eid))
-    }
+  const removeEntity = (eid) => {
+    deferredEntityRemovals.push(() => _removeEntity(eid))
   }
 
   return { entityCount, addEntity, removeEntity, deferredEntityRemovals }
