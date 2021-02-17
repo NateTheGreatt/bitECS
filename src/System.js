@@ -2,7 +2,7 @@ export const System = (
   config,
   registry,
   commitEntityRemovals,
-  deferredComponentRemovals
+  commitComponentRemovals
 ) => {
   const { entities, components, systems } = registry
 
@@ -117,7 +117,7 @@ export const System = (
     components: componentDependencies = [],
     enter,
     update,
-    exit ,
+    exit
   }) => {
     const localEntities = []
 
@@ -135,7 +135,9 @@ export const System = (
 
     const componentManagers = componentDependencies.map(dep => {
       if (components[dep] === undefined) {
-        throw new Error(`❌ Cannot register system '${name}', '${dep}' is not a registered component.`)
+        throw new Error(
+          `❌ Cannot register system '${name}', '${dep}' is not a registered component.`
+        )
       }
       return components[dep]
     })
@@ -152,14 +154,16 @@ export const System = (
     system.masks = masks
 
     // Checks if an entity mask matches the system's
-    system.check = (eid) => Object.keys(masks).every((generationId) => {
-      const eMask = entities[generationId][eid]
-      const sMask = masks[generationId]
-      return (eMask & sMask) === sMask
-    })
+    system.check = eid =>
+      Object.keys(masks).every(generationId => {
+        const eMask = entities[generationId][eid]
+        const sMask = masks[generationId]
+        return (eMask & sMask) === sMask
+      })
 
-    system.checkComponent = (componentManager) =>
-      (masks[componentManager._generationId] & componentManager._bitflag) === componentManager._bitflag
+    system.checkComponent = componentManager =>
+      (masks[componentManager._generationId] & componentManager._bitflag) ===
+      componentManager._bitflag
 
     // Define execute function which executes each local entity
     const updateFn = update ? update(...componentManagers) : null
@@ -219,9 +223,7 @@ export const System = (
    * @private
    */
   const applyRemovalDeferrals = () => {
-    while (deferredComponentRemovals.length > 0) {
-      deferredComponentRemovals.shift()()
-    }
+    commitComponentRemovals()
     commitEntityRemovals()
   }
 

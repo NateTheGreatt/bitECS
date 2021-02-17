@@ -30,12 +30,7 @@ export default (worldConfig = {}) => {
   const config = Config(worldConfig)
   const registry = Registry(config)
 
-  const {
-    entityCount,
-    addEntity,
-    removeEntity,
-    commitEntityRemovals
-  } = Entity(config, registry)
+  const { entityCount, addEntity, removeEntity, commitEntityRemovals } = Entity(config, registry)
 
   const {
     registerComponent,
@@ -43,7 +38,7 @@ export default (worldConfig = {}) => {
     removeComponent,
     removeAllComponents,
     hasComponent,
-    deferredComponentRemovals
+    commitComponentRemovals
   } = Component(config, registry, dataManager)
 
   const {
@@ -51,10 +46,10 @@ export default (worldConfig = {}) => {
     registerSystem,
     toggle,
     step
-  } = System(config, registry, commitEntityRemovals, deferredComponentRemovals)
+  } = System(config, registry, commitEntityRemovals, commitComponentRemovals)
 
   let queryCount = 0
-  const createQuery = components => registerSystem({ name: `query-${queryCount++}`, components }).localEntities
+  const createQuery = (components) => registerSystem({ name: `query-${queryCount++}`, components }).localEntities
 
   return {
     TYPES: TYPES_ENUM,
