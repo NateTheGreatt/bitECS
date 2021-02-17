@@ -39,12 +39,12 @@ export const Entity = (config, registry) => {
    * @returns {uint32} The entity id.
    */
   const addEntity = () => {
-    if (entityCount() + 1 > config.maxEntities) {
+    if (_entityCount > config.maxEntities) {
       console.warn('❌ Could not add entity, maximum number of entities reached.')
       return
     }
 
-    const eid = removed.length ? removed.shift() : _entityCount
+    const eid = removed.length > 0 ? removed.pop() : _entityCount
     _entityCount++
     entities.forEach(typedArray => { typedArray[eid] = 0 })
     enabledEntities[eid] = 1
