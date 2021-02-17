@@ -1,8 +1,10 @@
+const NONE = -1
+
 export const System = (
   config,
   registry,
-  deferredEntityRemovals,
-  deferredComponentRemovals
+  commitEntityRemovals,
+  commitComponentRemovals
 ) => {
   const { entities, components, systems } = registry
 
@@ -117,16 +119,16 @@ export const System = (
     components: componentDependencies = [],
     enter,
     update,
-    exit ,
+    exit
   }) => {
     const localEntities = []
+    const entityIndexes = new Int32Array(config.maxEntities).fill(NONE)
 
     const system = {
       count: 0,
       name,
       enabled: true,
       components: componentDependencies,
-      entityIndexes: {},
       localEntities,
       update,
       enter,
@@ -135,31 +137,39 @@ export const System = (
 
     const componentManagers = componentDependencies.map(dep => {
       if (components[dep] === undefined) {
-        throw new Error(`❌ Cannot register system '${name}', '${dep}' is not a registered component.`)
+        throw new Error(
+          `❌ Cannot register system '${name}', '${dep}' is not a registered component.`
+        )
       }
       return components[dep]
     })
 
-    // Reduce bitflag to create mask
-    // Take unique generationIds as length
-    const masks = {}
+    // Ensure `masks` is packed
+    const masks = Array.from({ length: config.maxGenerations }, () => 0)
 
-    componentManagers.forEach(componentManager => {
+    // Reduce bitflag to create mask
+    for (const componentManager of componentManagers) {
       const { _generationId, _bitflag } = componentManager
       masks[_generationId] |= _bitflag
-    })
+    }
 
     system.masks = masks
 
     // Checks if an entity mask matches the system's
-    system.check = (eid) => Object.keys(masks).every((generationId) => {
-      const eMask = entities[generationId][eid]
-      const sMask = masks[generationId]
-      return (eMask & sMask) === sMask
-    })
+    system.check = eid => {
+      for (let generationId = 0; generationId < masks.length; generationId++) {
+        const eMask = entities[generationId][eid]
+        const sMask = masks[generationId]
+        if ((eMask & sMask) !== sMask) {
+          return false
+        }
+      }
+      return true
+    }
 
-    system.checkComponent = (componentManager) =>
-      (masks[componentManager._generationId] & componentManager._bitflag) === componentManager._bitflag
+    system.checkComponent = componentManager =>
+      (masks[componentManager._generationId] & componentManager._bitflag) ===
+      componentManager._bitflag
 
     // Define execute function which executes each local entity
     const updateFn = update ? update(...componentManagers) : null
@@ -172,27 +182,25 @@ export const System = (
 
     // invoke enter/exit on add/remove
     system.add = eid => {
-      if (system.entityIndexes[eid]) return
+      if (entityIndexes[eid] !== NONE) return
 
-      localEntities.push(eid)
       // Add index to map for faster lookup
-      system.entityIndexes[eid] = localEntities.length - 1
+      entityIndexes[eid] = localEntities.push(eid) - 1
       system.count = localEntities.length
       if (enter) enter(eid)
     }
 
     system.remove = eid => {
-      const index = system.entityIndexes[eid]
-      if (index === undefined) return
+      const index = entityIndexes[eid]
+      if (index === NONE) return
 
       // Pop swap removal
-      const last = localEntities.length - 1
-      const tmp = localEntities[last]
-      localEntities[last] = localEntities[index]
-      localEntities[index] = tmp
-      system.entityIndexes[tmp] = index
-      delete system.entityIndexes[localEntities[last]]
-      localEntities.pop()
+      const swapped = localEntities.pop()
+      if (swapped !== eid) {
+        localEntities[index] = swapped
+        entityIndexes[swapped] = index
+      }
+      entityIndexes[eid] = NONE
 
       // Update metadata
       system.count = localEntities.length
@@ -219,12 +227,8 @@ export const System = (
    * @private
    */
   const applyRemovalDeferrals = () => {
-    while (deferredComponentRemovals.length > 0) {
-      deferredComponentRemovals.shift()()
-    }
-    while (deferredEntityRemovals.length > 0) {
-      deferredEntityRemovals.shift()()
-    }
+    commitComponentRemovals()
+    commitEntityRemovals()
   }
 
   /**

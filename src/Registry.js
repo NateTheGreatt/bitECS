@@ -1,5 +1,8 @@
-export const Registry = ({ maxEntities, maxComponentTypes }) => ({
-  entities: Array(Math.ceil(maxComponentTypes / 32)).fill(null).map(() => new Uint32Array(maxEntities)),
+export const Registry = ({ maxEntities, maxGenerations }) => ({
+  entities: Array.from(
+    { length: maxGenerations },
+    () => new Uint32Array(maxEntities)
+  ),
   components: {},
   systems: {}
 })

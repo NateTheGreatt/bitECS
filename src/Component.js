@@ -50,7 +50,10 @@ export const Component = (config, registry, DataManager) => {
    */
   const registerComponent = (name, schema) => {
     if (Object.keys(components).length + 1 > config.maxComponentTypes) {
-      throw new Error(`❌ Can not register component '${name}'. Max components '${config.maxComponentTypes}' reached.`)
+      throw new Error(
+        `❌ Can not register component '${name}'. ` +
+          `Max components '${config.maxComponentTypes}' reached.`
+      )
     }
     components[name] = DataManager(config.maxEntities, schema)
     components[name].name = name
@@ -63,7 +66,7 @@ export const Component = (config, registry, DataManager) => {
    * @param {string} name
    * @private
    */
-  const getComponentManager = (name) => {
+  const getComponentManager = name => {
     if (components[name] === undefined) {
       throw new Error(`❌ Component '${name}' is not registered.`)
     }
@@ -104,10 +107,9 @@ export const Component = (config, registry, DataManager) => {
    * @param {boolean} reset - Zero out the component values.
    */
   const addComponent = (name, eid, values = {}, reset = true) => {
-    const componentManager = getComponentManager(name)
-
     if (hasComponent(name, eid)) return
 
+    const componentManager = getComponentManager(name)
     const { _generationId, _bitflag } = componentManager
 
     // Add bitflag to entity bitmask
@@ -122,7 +124,11 @@ export const Component = (config, registry, DataManager) => {
     // Add to systems that match the entity bitmask
     for (const s in systems) {
       const system = systems[s]
-      if (system.components.length && system.checkComponent(componentManager) && system.check(eid)) {
+      if (
+        system.components.length &&
+        system.checkComponent(componentManager) &&
+        system.check(eid)
+      ) {
         system.add(eid)
       }
     }
@@ -130,27 +136,37 @@ export const Component = (config, registry, DataManager) => {
 
   /**
    * Internal remove component. Actually removes the component.
-   *
-   * @param {string} name
-   * @param {uint32} eid
    * @private
    */
-  const _removeComponent = (name, eid) => {
-    const componentManager = getComponentManager(name)
-    const { _generationId, _bitflag } = componentManager
+  const commitComponentRemovals = () => {
+    if (deferredComponentRemovals.length === 0) return
 
-    if (!(entities[_generationId][eid] & _bitflag)) return
+    for (let i = 0; i < deferredComponentRemovals.length; i += 2) {
+      const name = deferredComponentRemovals[i]
+      const eid = deferredComponentRemovals[i + 1]
 
-    // Remove flag from entity bitmask
-    entities[_generationId][eid] &= ~_bitflag
+      const componentManager = getComponentManager(name)
+      const { _generationId, _bitflag } = componentManager
 
-    // Remove from systems that no longer match the entity bitmask
-    for (const s in systems) {
-      const system = systems[s]
-      if (system.components.length && system.checkComponent(componentManager) && !system.check(eid)) {
-        system.remove(eid)
+      if (!(entities[_generationId][eid] & _bitflag)) return
+
+      // Remove flag from entity bitmask
+      entities[_generationId][eid] &= ~_bitflag
+
+      // Remove from systems that no longer match the entity bitmask
+      for (const s in systems) {
+        const system = systems[s]
+        if (
+          system.components.length &&
+          system.checkComponent(componentManager) &&
+          !system.check(eid)
+        ) {
+          system.remove(eid)
+        }
       }
     }
+
+    deferredComponentRemovals.length = 0
   }
 
   /**
@@ -193,7 +209,7 @@ export const Component = (config, registry, DataManager) => {
    * @param {uint32} eid        - Entity id.
    */
   const removeComponent = (name, eid) => {
-    deferredComponentRemovals.push(() => _removeComponent(name, eid))
+    deferredComponentRemovals.push(name, eid)
   }
 
   /**
@@ -239,12 +255,11 @@ export const Component = (config, registry, DataManager) => {
    * world.removeAllComponent(eid, true) // All components Removed
    *
    * @memberof module:World
-   * @param {uint32} eid        - Entity id.
-   * @param {boolean} immediate - Remove immediately. If false, defer until end of tick.
+   * @param {uint32} eid - Entity id.
    */
-  const removeAllComponents = (eid, immediate = false) => {
+  const removeAllComponents = eid => {
     Object.keys(components).forEach(name => {
-      removeComponent(name, eid, immediate)
+      removeComponent(name, eid)
     })
   }
 
@@ -284,6 +299,6 @@ export const Component = (config, registry, DataManager) => {
     removeComponent,
     removeAllComponents,
     hasComponent,
-    deferredComponentRemovals
+    commitComponentRemovals
   }
 }

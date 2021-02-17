@@ -5,7 +5,7 @@ describe('Entities', () => {
   test('should add an entity to world', () => {
     const world = World({ maxEntities: 10 })
     const eid = world.addEntity()
-    expect(eid).toBe(1)
+    expect(eid).toBe(0)
     expect(world.entityCount()).toBe(1)
     expect(world.registry.entities[0][eid]).toBe(0)
   })
@@ -13,11 +13,11 @@ describe('Entities', () => {
   test('should add an recycled EID entity to world', () => {
     const world = World({ maxEntities: 10 })
     const eid = world.addEntity()
-    expect(eid).toBe(1)
+    expect(eid).toBe(0)
     world.removeEntity(eid)
     world.step()
     const eid2 = world.addEntity()
-    expect(eid2).toBe(1)
+    expect(eid2).toBe(0)
     expect(world.entityCount()).toBe(1)
     expect(world.registry.entities[0][eid]).toBe(0)
   })

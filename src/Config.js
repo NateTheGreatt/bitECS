@@ -6,6 +6,7 @@ export const Config = ({
 }) => ({
   maxEntities,
   maxComponentTypes,
+  maxGenerations: Math.ceil(maxComponentTypes / 32),
   tickRate,
   devtools
 })
