@@ -105,12 +105,12 @@ export const System = (
    * })
    *
    * @memberof module:World
-   * @param {Object} system                - System configuration.
-   * @param {string} system.name           - The name of the system.
-   * @param {string[]=} system.components  - Component names the system queries.
-   * @param {Function=} system.enter       - Called when an entity is added to the system.
-   * @param {Function=} system.update      - Called every tick on all entities in the system.
-   * @param {Function=} system.exit        - Called when an entity is removed from the system.
+   * @param {Object} system               - System configuration.
+   * @param {string} system.name          - The name of the system.
+   * @param {string[]} system.components  - Component names the system queries.
+   * @param {Function} system.enter       - Called when an entity is added to the system.
+   * @param {Function} system.update      - Called every tick on all entities in the system.
+   * @param {Function} system.exit        - Called when an entity is removed from the system.
    */
   const registerSystem = ({
     name,

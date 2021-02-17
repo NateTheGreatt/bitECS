@@ -347,11 +347,11 @@ const world = World()
 world.registerSystem({
   name: 'MOVEMENT',
   components: ['POSITION', 'VELOCITY'],
-  update: entities => {
+  update: (position, velocity) => entities => {
     for (let i = 0; i < entities.length; i++) {
       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
-    } 
+    }
   }
 })
 
@@ -390,7 +390,7 @@ world.registerSystem({
   enter: eid => {
     // Called once when an entity is added to system.
   },
-  update: entities => {
+  update: (position, velocity) => entities => {
     // Called once every tick.
   },
   exit: eid => {
@@ -409,11 +409,11 @@ const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', s
 world.registerSystem({
   name: 'MOVEMENT',
   components: ['POSITION', 'VELOCITY'],
-  update: entities => {
+  update: (position, velocity) => entities => {
     for (let i = 0; i < entities.length; i++) {
       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
-    } 
+    }
   }
 })
 ```
@@ -452,11 +452,11 @@ const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', s
 world.registerSystem({
   name: 'MOVEMENT',
   components: ['POSITION', 'VELOCITY'],
-  update: entities => {
+  update: (position, velocity) => entities => {
     for (let i = 0; i < entities.length; i++) {
       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
-    } 
+    }
   }
 })
 
@@ -570,11 +570,11 @@ const velocity = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', s
 world.registerSystem({
   name: 'MOVEMENT',
   components: ['POSITION', 'VELOCITY'],
-  update: entities => {
+  update: (position, velocity) => entities => {
     for (let i = 0; i < entities.length; i++) {
       position.x[eid] += velocity.vx[eid] * velocity.speed[eid]
       position.y[eid] += velocity.vy[eid] * velocity.speed[eid]
-    } 
+    }
   }
 })
 
