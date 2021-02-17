@@ -42,8 +42,6 @@ export default (worldConfig = {}) => {
     addComponent,
     removeComponent,
     removeAllComponents,
-    updateComponent,
-    getComponent,
     hasComponent,
     deferredComponentRemovals
   } = Component(config, registry, dataManager)
@@ -69,8 +67,6 @@ export default (worldConfig = {}) => {
     removeComponent,
     removeAllComponents,
     addComponent,
-    updateComponent,
-    getComponent,
     hasComponent,
     registerSystem,
     createQuery,
