@@ -40,7 +40,6 @@ export const Entity = (config, registry) => {
     }
 
     const eid = removed.length > 0 ? removed.pop() : entityCursor++
-    for (let arr of entities) arr[eid] = 0
     enabledEntities[eid] = 1
     return eid
   }
