@@ -34,7 +34,7 @@ export default (worldConfig = {}) => {
     entityCount,
     addEntity,
     removeEntity,
-    deferredEntityRemovals
+    commitEntityRemovals
   } = Entity(config, registry)
 
   const {
@@ -53,7 +53,7 @@ export default (worldConfig = {}) => {
     registerSystem,
     toggle,
     step
-  } = System(config, registry, deferredEntityRemovals, deferredComponentRemovals)
+  } = System(config, registry, commitEntityRemovals, deferredComponentRemovals)
 
   let queryCount = 0
   const createQuery = components => registerSystem({ name: `query-${queryCount++}`, components }).localEntities

@@ -1,7 +1,7 @@
 export const System = (
   config,
   registry,
-  deferredEntityRemovals,
+  commitEntityRemovals,
   deferredComponentRemovals
 ) => {
   const { entities, components, systems } = registry
@@ -222,9 +222,7 @@ export const System = (
     while (deferredComponentRemovals.length > 0) {
       deferredComponentRemovals.shift()()
     }
-    while (deferredEntityRemovals.length > 0) {
-      deferredEntityRemovals.shift()()
-    }
+    commitEntityRemovals()
   }
 
   /**
