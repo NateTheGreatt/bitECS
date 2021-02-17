@@ -65,7 +65,7 @@ describe('Systems', () => {
     const movement = world.registerSystem({
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
-      update
+      update: () => update
     })
 
     const eid = world.addEntity()
@@ -86,7 +86,7 @@ describe('Systems', () => {
     world.registerSystem({
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
-      update
+      update: () => update
     })
 
     const eid = world.addEntity()
@@ -113,7 +113,7 @@ describe('Systems', () => {
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
       enter,
-      update,
+      update: () => update,
       exit
     })
 
@@ -139,7 +139,7 @@ describe('Systems', () => {
     world.registerSystem({
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
-      update,
+      update: () => update,
       exit
     })
 
@@ -167,7 +167,7 @@ describe('Systems', () => {
     world.registerSystem({
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
-      update,
+      update: () => update,
       exit
     })
 
@@ -207,7 +207,7 @@ describe('Systems', () => {
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
       enter,
-      update,
+      update: () => update,
       exit
     })
 
@@ -240,7 +240,7 @@ describe('Systems', () => {
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
       enter,
-      update
+      update: () => update
     })
 
     const eid = world.addEntity()
@@ -275,14 +275,14 @@ describe('Systems', () => {
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
       enter,
-      update
+      update: () => update
     })
 
     const update2 = jest.fn()
     world.registerSystem({
       name: 'RUNNER',
       components: ['POSITION'],
-      update: update2
+      update: () => update2
     })
 
     const eid = world.addEntity()
@@ -314,14 +314,14 @@ describe('Systems', () => {
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
       enter,
-      update
+      update: () => update
     })
 
     const update2 = jest.fn()
     world.registerSystem({
       name: 'RUNNER',
       components: ['POSITION'],
-      update: update2
+      update: () => update2
     })
 
     const eid = world.addEntity()

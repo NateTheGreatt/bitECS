@@ -75,7 +75,7 @@ describe('Entities', () => {
       name: 'MOVEMENT',
       components: ['POSITION'],
       enter,
-      update,
+      update: () => update,
       exit
     })
 

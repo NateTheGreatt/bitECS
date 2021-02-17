@@ -22,14 +22,14 @@ import World from 'bitecs'
 const world = World()
 
 // Register some components
-const POSITION = world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-const VELOCITY = world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
+world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
+world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
 
 // Register a system
 world.registerSystem({
   name: 'MOVEMENT',
   components: ['POSITION', 'VELOCITY'],
-  update: entities => {
+  update: (POSITION, VELOCITY) => entities => {
     for (let i = 0; i < entities.length; i++) {
       const eid = entities[i]
       POSITION.x[eid] += VELOCITY.vx[eid] * VELOCITY.speed[eid]
