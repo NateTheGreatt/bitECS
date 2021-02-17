@@ -1,3 +1,5 @@
+const NONE = -1
+
 export const System = (
   config,
   registry,
@@ -120,13 +122,13 @@ export const System = (
     exit
   }) => {
     const localEntities = []
+    const entityIndexes = new Int32Array(config.maxEntities).fill(NONE)
 
     const system = {
       count: 0,
       name,
       enabled: true,
       components: componentDependencies,
-      entityIndexes: {},
       localEntities,
       update,
       enter,
@@ -176,27 +178,25 @@ export const System = (
 
     // invoke enter/exit on add/remove
     system.add = eid => {
-      if (system.entityIndexes[eid]) return
+      if (entityIndexes[eid] !== NONE) return
 
-      localEntities.push(eid)
       // Add index to map for faster lookup
-      system.entityIndexes[eid] = localEntities.length - 1
+      entityIndexes[eid] = localEntities.push(eid) - 1
       system.count = localEntities.length
       if (enter) enter(eid)
     }
 
     system.remove = eid => {
-      const index = system.entityIndexes[eid]
-      if (index === undefined) return
+      const index = entityIndexes[eid]
+      if (index === NONE) return
 
       // Pop swap removal
-      const last = localEntities.length - 1
-      const tmp = localEntities[last]
-      localEntities[last] = localEntities[index]
-      localEntities[index] = tmp
-      system.entityIndexes[tmp] = index
-      delete system.entityIndexes[localEntities[last]]
-      localEntities.pop()
+      const swapped = localEntities.pop()
+      if (swapped !== eid) {
+        localEntities[index] = swapped
+        entityIndexes[swapped] = index
+      }
+      entityIndexes[eid] = NONE
 
       // Update metadata
       system.count = localEntities.length
