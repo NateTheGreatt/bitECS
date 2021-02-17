@@ -255,12 +255,11 @@ export const Component = (config, registry, DataManager) => {
    * world.removeAllComponent(eid, true) // All components Removed
    *
    * @memberof module:World
-   * @param {uint32} eid        - Entity id.
-   * @param {boolean} immediate - Remove immediately. If false, defer until end of tick.
+   * @param {uint32} eid - Entity id.
    */
-  const removeAllComponents = (eid, immediate = false) => {
+  const removeAllComponents = eid => {
     Object.keys(components).forEach(name => {
-      removeComponent(name, eid, immediate)
+      removeComponent(name, eid)
     })
   }
 

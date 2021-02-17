@@ -144,24 +144,28 @@ export const System = (
       return components[dep]
     })
 
-    // Reduce bitflag to create mask
-    // Take unique generationIds as length
-    const masks = {}
+    // Ensure `masks` is packed
+    const masks = Array.from({ length: config.maxGenerations }, () => 0)
 
-    componentManagers.forEach(componentManager => {
+    // Reduce bitflag to create mask
+    for (const componentManager of componentManagers) {
       const { _generationId, _bitflag } = componentManager
       masks[_generationId] |= _bitflag
-    })
+    }
 
     system.masks = masks
 
     // Checks if an entity mask matches the system's
-    system.check = eid =>
-      Object.keys(masks).every(generationId => {
+    system.check = eid => {
+      for (let generationId = 0; generationId < masks.length; generationId++) {
         const eMask = entities[generationId][eid]
         const sMask = masks[generationId]
-        return (eMask & sMask) === sMask
-      })
+        if ((eMask & sMask) !== sMask) {
+          return false
+        }
+      }
+      return true
+    }
 
     system.checkComponent = componentManager =>
       (masks[componentManager._generationId] & componentManager._bitflag) ===
