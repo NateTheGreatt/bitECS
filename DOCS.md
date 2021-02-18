@@ -23,7 +23,7 @@ const world = World({ maxEntities: 100000, maxComponentTypes: 128 })
     * [.registerComponent(name, schema)](#module_World.registerComponent) ⇒ <code>Object</code>
     * [.addComponent(name, eid, values, reset)](#module_World.addComponent)
     * [.removeComponent(name, eid)](#module_World.removeComponent)
-    * [.removeAllComponents(eid, immediate)](#module_World.removeAllComponents)
+    * [.removeAllComponents(eid)](#module_World.removeAllComponents)
     * [.hasComponent(name, eid)](#module_World.hasComponent) ⇒ <code>boolean</code>
     * [.entityCount()](#module_World.entityCount)
     * [.addEntity()](#module_World.addEntity) ⇒ <code>uint32</code>
@@ -181,14 +181,13 @@ world.step() // Component removed after system has finished running
 <br><a name="module_World.removeAllComponents"></a>
 
 ### removeAllComponents
-#### World.removeAllComponents(eid, immediate)
+#### World.removeAllComponents(eid)
 > Removes all components from the given entity.
 
 
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| eid | <code>uint32</code> |  | Entity id. |
-| immediate | <code>boolean</code> | <code>false</code> | Remove immediately. If false, defer until end of tick. |
+| Param | Type | Description |
+| --- | --- | --- |
+| eid | <code>uint32</code> | Entity id. |
 
 **Example** *(Remove all components from an entity deferred.)*  
 ```js
