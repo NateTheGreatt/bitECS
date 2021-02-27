@@ -65,6 +65,12 @@ describe('DataManager', () => {
     const count = 5
     const schema = { v: { x: 'uint8', y: 'uint8' } }
     const enumSchema = { v: ['ZERO', 'ONE', 'TWO'] }
+    const arraySchema = {
+      v: {
+        x: [{ index: 'uint8', type: 'uint8', length: 2 }],
+        y: [{ index: 'uint8', type: 'uint8', length: 2 }]
+      }
+    }
     const createManager = () => DataManager()(count, schema)
 
     test('should create a nested manager', () => {
@@ -108,6 +114,11 @@ describe('DataManager', () => {
       expect(manager._get(0)).toStrictEqual(data)
     })
 
+    test('should get array data', () => {
+      const manager = DataManager()(count, arraySchema)
+      expect(manager.v.x[0].constructor.name).toStrictEqual('Uint8Array')
+    })
+
     test('should get enum data', () => {
       const manager = DataManager()(count, enumSchema)
       const data = { v: 'ONE' }
@@ -127,6 +138,89 @@ describe('DataManager', () => {
   describe('TypedArray Types', () => {
     Object.values(TYPES).forEach(type => {
       testType(type)
+    })
+  })
+
+  // Array Type
+  describe('Arrays', () => {
+    const count = 2
+    const schema = {
+      v: {
+        x: [{ index: 'uint8', type: 'uint8', length: 2 }],
+        y: [{ index: 'uint8', type: 'uint8', length: 2 }]
+      },
+      f: [{ index: 'uint8', type: 'float32', length: 2 }]
+    }
+    const createManager = () => DataManager()(count, schema)
+
+    test('should create array types', () => {
+      const manager = createManager()
+      manager.v.x[0][0] = 1
+      manager.v.y[0][0] = 1
+      manager.v.x[0][1] = 2
+      manager.v.y[0][1] = 2
+      manager.f[0][0] = 1.5
+      manager.f[0][1] = 3.5
+      expect(manager.v.x[0][0]).toBe(1)
+      expect(manager.v.y[0][0]).toBe(1)
+      expect(manager.v.x[0][1]).toBe(2)
+      expect(manager.v.y[0][1]).toBe(2)
+      expect(manager.f[0][0]).toBe(1.5)
+      expect(manager.f[0][1]).toBe(3.5)
+
+      manager.v.x[1][0] = 1
+      manager.v.y[1][0] = 1
+      manager.v.x[1][1] = 2
+      manager.v.y[1][1] = 2
+      manager.f[1][0] = 1.5
+      manager.f[1][1] = 3.5
+      expect(manager.v.x[1][0]).toBe(1)
+      expect(manager.v.y[1][0]).toBe(1)
+      expect(manager.v.x[1][1]).toBe(2)
+      expect(manager.v.y[1][1]).toBe(2)
+      expect(manager.f[1][0]).toBe(1.5)
+      expect(manager.f[1][1]).toBe(3.5)
+    })
+
+    test('should reset values', () => {
+      const manager = createManager()
+
+      manager.v.x[0][0] = 1
+      manager.v.y[0][0] = 1
+      manager.v.x[0][1] = 2
+      manager.v.y[0][1] = 2
+      manager.f[0][0] = 1.5
+      manager.f[0][1] = 3.5
+
+      expect(manager.v.x[0][0]).toBe(1)
+      expect(manager.v.y[0][0]).toBe(1)
+      expect(manager.v.x[0][1]).toBe(2)
+      expect(manager.v.y[0][1]).toBe(2)
+      expect(manager.f[0][0]).toBe(1.5)
+      expect(manager.f[0][1]).toBe(3.5)
+
+      manager.v.x[1][0] = 1
+      manager.v.y[1][0] = 1
+      manager.v.x[1][1] = 2
+      manager.v.y[1][1] = 2
+      manager.f[1][0] = 1.5
+      manager.f[1][1] = 3.5
+
+      manager._reset(0)
+
+      expect(manager.v.x[0][0]).toBe(0)
+      expect(manager.v.x[0][1]).toBe(0)
+      expect(manager.v.y[0][0]).toBe(0)
+      expect(manager.v.y[0][1]).toBe(0)
+      expect(manager.f[0][0]).toBe(0)
+      expect(manager.f[0][1]).toBe(0)
+
+      expect(manager.v.x[1][0]).toBe(1)
+      expect(manager.v.y[1][0]).toBe(1)
+      expect(manager.v.x[1][1]).toBe(2)
+      expect(manager.v.y[1][1]).toBe(2)
+      expect(manager.f[1][0]).toBe(1.5)
+      expect(manager.f[1][1]).toBe(3.5)
     })
   })
 })

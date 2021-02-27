@@ -171,8 +171,12 @@ export const System = (
       (masks[componentManager._generationId] & componentManager._bitflag) ===
       componentManager._bitflag
 
-    // Define execute function which executes each local entity
+    // Partially apply component managers onto the provided callbacks
     const updateFn = update ? update(...componentManagers) : null
+    const enterFn = enter ? enter(...componentManagers) : null
+    const exitFn = exit ? exit(...componentManagers) : null
+
+    // Define execute function which executes each local entity
     system.execute = force => {
       if (force || system.enabled) {
         if (updateFn) updateFn(localEntities)
@@ -187,7 +191,7 @@ export const System = (
       // Add index to map for faster lookup
       entityIndexes[eid] = localEntities.push(eid) - 1
       system.count = localEntities.length
-      if (enter) enter(eid)
+      if (enterFn) enterFn(eid)
     }
 
     system.remove = eid => {
@@ -204,7 +208,7 @@ export const System = (
 
       // Update metadata
       system.count = localEntities.length
-      if (exit) exit(eid)
+      if (exitFn) exitFn(eid)
     }
 
     // Populate with matching entities (if registering after entities have been added)

@@ -32,19 +32,24 @@ const UNSIGNED_MAX = {
   uint32: 4294967295
 }
 
+const roundToPower4 = x => Math.ceil(x / 4) * 4
+
 export const DataManager = () => {
   // generation ID incremented and global bitflag reset to 1 when global bitflag reaches 2^32 (when all bits are set to 1)
   let globalBitflag = 1
   let generationId = 0
 
-  // subarrays for arrays inside of components
-  const subarrays = {}
-
   const Manager = (n, schema = {}, base = true) => {
     const manager = {}
     const maps = {}
+    const subarrays = {}
 
-    Object.keys(schema).forEach(prop => {
+    const props = Object.keys(schema)
+
+    const arrays = props.filter(p => Array.isArray(schema[p]) && typeof schema[p][0] === 'object')
+    const cursors = Object.keys(TYPES).reduce((a, type) => ({ ...a, [type]: 0 }), {})
+
+    props.forEach(prop => {
       // Boolean Type
       if (schema[prop] === 'bool') {
         const Type = TYPES.uint8
@@ -64,17 +69,19 @@ export const DataManager = () => {
 
         // Array Type
       } else if (Array.isArray(schema[prop]) && typeof schema[prop][0] === 'object') {
-        let { index, type, length } = schema[prop][0]
+        const { index, type, length } = schema[prop][0]
 
-        if (!length) length = UNSIGNED_MAX[index]
-
+        if (!length) throw new Error('❌ Must define a length for component array.')
         if (!TYPES[type]) throw new Error(`❌ Invalid component array property type ${type}.`)
         if (!TYPES[index]) throw new Error(`❌ Invalid component array index type ${index}.`)
         if (!UNSIGNED_MAX[index]) throw new Error(`❌ Index type for component array must be unsigned (non-negative), instead was ${index}.`)
 
         // create buffer for type if it does not already exist
         if (!subarrays[type]) {
-          const buffer = new SharedArrayBuffer(TYPES[index].BYTES_PER_ELEMENT * n * length)
+          const relevantArrays = arrays.filter(p => schema[p][0].type === type)
+          const summedBytesPerElement = relevantArrays.reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
+          const summedLength = relevantArrays.reduce((a, p) => a + length, 0)
+          const buffer = new SharedArrayBuffer(roundToPower4(summedBytesPerElement * summedLength * n))
           const array = new TYPES[type](buffer)
           array._indexType = index
           array._indexBytes = TYPES[index].BYTES_PER_ELEMENT
@@ -83,13 +90,18 @@ export const DataManager = () => {
 
         // pre-generate subarrays for each eid
         manager[prop] = {}
+        let end = 0
         for (let eid = 0; eid < n; eid++) {
-          const from = eid * length
+          const from = cursors[type] + (eid * length)
           const to = from + length
           manager[prop][eid] = subarrays[type].subarray(from, to)
+          end = to
         }
 
+        cursors[type] = end
+
         manager[prop]._reset = eid => manager[prop][eid].fill(0)
+        manager[prop]._set = (eid, values) => manager[prop][eid].set(values, 0)
 
         // Object Type
       } else if (typeof schema[prop] === 'object') {
@@ -113,6 +125,7 @@ export const DataManager = () => {
       }
     })
 
+    // methods
     Object.defineProperty(manager, '_schema', {
       value: schema
     })
@@ -130,7 +143,11 @@ export const DataManager = () => {
       value: eid => {
         for (const prop of manager._props) {
           if (ArrayBuffer.isView(manager[prop])) {
-            manager[prop][eid] = 0
+            if (ArrayBuffer.isView(manager[prop][eid])) {
+              manager[prop][eid].fill(0)
+            } else {
+              manager[prop][eid] = 0
+            }
           } else {
             manager[prop]._reset(eid)
           }
@@ -147,6 +164,8 @@ export const DataManager = () => {
             manager.enum(prop, eid, values[prop])
           } else if (ArrayBuffer.isView(manager[prop])) {
             manager[prop][eid] = values[prop]
+          } else if (Array.isArray(values[prop]) && ArrayBuffer.isView(manager[prop][eid])) {
+            manager[prop][eid].set(values[prop], 0)
           } else if (typeof manager[prop] === 'object') {
             manager[prop]._set(eid, values[prop])
           }
@@ -164,7 +183,11 @@ export const DataManager = () => {
           } else if (ArrayBuffer.isView(manager[prop])) {
             obj[prop] = manager[prop][eid]
           } else if (typeof manager[prop] === 'object') {
-            obj[prop] = manager[prop]._get(eid)
+            if (ArrayBuffer.isView(manager[prop][eid])) {
+              obj[prop] = Array.from(manager[prop][eid])
+            } else {
+              obj[prop] = manager[prop]._get(eid)
+            }
           }
         }
         return obj
@@ -204,7 +227,7 @@ export const DataManager = () => {
       value: (prop, eid, value) => {
         const mapping = manager._mapping(prop)
         if (!mapping) {
-          console.warn('Manager is not an enum.')
+          console.warn('Property is not an enum.')
           return undefined
         }
         if (value) {

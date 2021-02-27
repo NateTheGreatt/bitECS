@@ -38,8 +38,8 @@ describe('Systems', () => {
     world.registerSystem({
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
-      enter,
-      exit
+      enter: () => enter,
+      exit: () => exit
     })
 
     const eid = world.addEntity()
@@ -112,9 +112,9 @@ describe('Systems', () => {
     const movement = world.registerSystem({
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
-      enter,
+      enter: () => enter,
       update: () => update,
-      exit
+      exit: () => exit
     })
 
     const eid = world.addEntity()
@@ -206,9 +206,9 @@ describe('Systems', () => {
     world.registerSystem({
       name: 'MOVEMENT',
       components: ['POSITION', 'VELOCITY'],
-      enter,
+      enter: () => enter,
       update: () => update,
-      exit
+      exit: () => exit
     })
 
     const eid = world.addEntity()

@@ -74,9 +74,9 @@ describe('Entities', () => {
     world.registerSystem({
       name: 'MOVEMENT',
       components: ['POSITION'],
-      enter,
+      enter: () => enter,
       update: () => update,
-      exit
+      exit: () => exit
     })
 
     const eid = world.addEntity()
