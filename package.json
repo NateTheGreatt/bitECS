@@ -1,7 +1,8 @@
 {
   "name": "bitecs",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Tiny, data-driven, high performance ECS library written in Javascript",
+  "license": "MPL-2.0",
   "type": "module",
   "main": "./dist/index.min.js",
   "module": "./dist/index.es.js",
