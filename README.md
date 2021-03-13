@@ -39,7 +39,7 @@ world.registerSystem({
 })
 
 // Create a query
-const positions = createQuery('POSITION') // array will continuously update, no need to recreate
+const positions = world.createQuery('POSITION') // array will continuously update, no need to recreate
 
 // Create an entity
 const eid = world.addEntity()
