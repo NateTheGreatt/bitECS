@@ -2,6 +2,9 @@ export const Component = (config, registry, DataManager) => {
   const { entities, components, systems } = registry
   const deferredComponentRemovals = []
 
+  let generation = 0
+  const getGeneration = () => generation
+
   /**
    * Register a new component with the world.
    *
@@ -56,7 +59,7 @@ export const Component = (config, registry, DataManager) => {
       )
     }
     components[name] = DataManager(config.maxEntities, schema)
-    components[name].name = name
+    generation = components[name]._generationId
     return components[name]
   }
 
@@ -294,6 +297,7 @@ export const Component = (config, registry, DataManager) => {
   }
 
   return {
+    getGeneration,
     registerComponent,
     addComponent,
     removeComponent,

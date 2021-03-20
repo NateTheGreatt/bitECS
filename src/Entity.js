@@ -20,6 +20,8 @@ export const Entity = (config, registry) => {
    */
   const entityCount = () => entityCursor - removed.length
 
+  const getEntityCursor = () => entityCursor
+
   /**
    * Add a new entity to the world.
    *
@@ -91,5 +93,5 @@ export const Entity = (config, registry) => {
     deferredEntityRemovals.push(eid)
   }
 
-  return { entityCount, addEntity, removeEntity, commitEntityRemovals }
+  return { entityCount, addEntity, removeEntity, commitEntityRemovals, getEntityCursor }
 }

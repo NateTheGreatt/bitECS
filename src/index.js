@@ -9,6 +9,7 @@ import { Registry } from './Registry.js'
 import { Entity } from './Entity.js'
 import { Component } from './Component.js'
 import { System } from './System.js'
+import { Snapshot } from './Snapshot.js'
 import { TYPES_ENUM, DataManager } from './utils/DataManager.js'
 
 /**
@@ -30,9 +31,16 @@ export default (worldConfig = {}) => {
   const config = Config(worldConfig)
   const registry = Registry(config)
 
-  const { entityCount, addEntity, removeEntity, commitEntityRemovals } = Entity(config, registry)
+  const {
+    entityCount, 
+    addEntity, 
+    removeEntity, 
+    commitEntityRemovals,
+    getEntityCursor
+  } = Entity(config, registry)
 
   const {
+    getGeneration,
     registerComponent,
     addComponent,
     removeComponent,
@@ -47,6 +55,11 @@ export default (worldConfig = {}) => {
     toggle,
     step
   } = System(config, registry, commitEntityRemovals, commitComponentRemovals)
+
+  const {
+    save,
+    load
+  } = Snapshot(registry, entityCount, getEntityCursor)
 
   let queryCount = 0
   const createQuery = (components) => registerSystem({ name: `query-${queryCount++}`, components }).localEntities
@@ -67,6 +80,8 @@ export default (worldConfig = {}) => {
     createQuery,
     enabled,
     toggle,
-    step
+    step,
+    save,
+    load
   }
 }
