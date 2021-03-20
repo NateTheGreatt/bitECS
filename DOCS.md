@@ -28,6 +28,8 @@ const world = World({ maxEntities: 100000, maxComponentTypes: 128 })
     * [.entityCount()](#module_World.entityCount)
     * [.addEntity()](#module_World.addEntity) ⇒ <code>uint32</code>
     * [.removeEntity(eid)](#module_World.removeEntity)
+    * [.save()](#module_World.save) ⇒ <code>ArrayBuffer</code>
+    * [.load(bin)](#module_World.load)
     * [.enabled(name)](#module_World.enabled) ⇒ <code>boolean</code>
     * [.registerSystem(system)](#module_World.registerSystem)
     * [.toggle(name)](#module_World.toggle)
@@ -315,6 +317,26 @@ world.removeEntity(eid)
 world.step()
 world.entityCount() // 0
 ```
+
+<br><a name="module_World.save"></a>
+
+### save
+#### World.save() ⇒ <code>ArrayBuffer</code>
+> Saves a snapshot of the ECS in its current state.
+
+**Returns**: <code>ArrayBuffer</code> - Snapshot of the ECS state.  
+
+<br><a name="module_World.load"></a>
+
+### load
+#### World.load(bin)
+> Loads a snapshot that was saved with the same ECS setup.
+
+
+| Param | Type |
+| --- | --- |
+| bin | <code>ArrayBuffer</code> | 
+
 
 <br><a name="module_World.enabled"></a>
 
