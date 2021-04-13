@@ -2,7 +2,7 @@ import { createWorld } from './World.js'
 import { addEntity, removeEntity } from './Entity.js'
 import { defineComponent, registerComponent, registerComponents, addComponent, removeComponent } from './Component.js'
 import { defineSystem } from './System.js'
-import { defineQuery } from './Query.js'
+import { defineQuery, enterQuery, exitQuery } from './Query.js'
 // import { snapshot } from './Snapshot.js'
 import { TYPES_ENUM } from './DataManager.js'
 
@@ -21,6 +21,8 @@ export {
   registerComponents,
   defineComponent,
   defineQuery,
+  enterQuery,
+  exitQuery,
   defineSystem,
   addComponent,
   removeComponent,

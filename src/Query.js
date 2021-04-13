@@ -5,8 +5,22 @@ import { $entityMasks, $entityEnabled, getEntityCursor } from './Entity.js'
 export const $queries = Symbol('queries')
 export const $queryMap = Symbol('queryMap')
 export const $queryComponents = Symbol('queryComponents')
+export const $enterQuery = Symbol('enterQuery')
+export const $exitQuery = Symbol('exitQuery')
+
+export const enterQuery = (world, query, fn) => {
+  if (!world[$queryMap].get(query)) registerQuery(world, query)
+  world[$queryMap].get(query).enter = fn
+}
+
+export const exitQuery = (world, query, fn) => {
+  if (!world[$queryMap].get(query)) registerQuery(world, query)
+  world[$queryMap].get(query).exit = fn
+}
 
 export const registerQuery = (world, query) => {
+  if (!world[$queryMap].get(query)) world[$queryMap].set(query, {})
+
   const components = query[$queryComponents]
   const size = components.reduce((a,c) => c[$managerSize] > a ? c[$managerSize] : a, 0)
   
@@ -22,7 +36,7 @@ export const registerQuery = (world, query) => {
       return a
     }, {})
 
-  world[$queryMap].set(query, { entities, enabled, components, masks, generations, indices })
+  Object.assign(world[$queryMap].get(query), { entities, enabled, components, masks, generations, indices })
   world[$queries].add(query)
 
   for (let eid = 0; eid < getEntityCursor(); eid++) {
@@ -73,6 +87,7 @@ export const queryAddEntity = (world, query, eid) => {
   q.enabled[eid] = true
   q.entities.push(eid)
   q.indices[eid] = q.entities.length - 1
+  q.enter(eid)
 }
 
 export const queryRemoveEntity = (world, query, eid) => {
@@ -80,4 +95,5 @@ export const queryRemoveEntity = (world, query, eid) => {
   if (!q.enabled[eid]) return
   q.enabled[eid] = false
   q.entities.splice(q.indices[eid])
+  q.exit(eid)
 }

@@ -61,6 +61,12 @@ const movementSystem = defineSystem(movementQuery, ents => {
   }
 })
 
+// called when an EID's components matches the query
+enterQuery(world, movementQuery, eid => {})
+
+// called when an EID's components no longer matches the query
+exitQuery(world, movementQuery, eid => {})
+
 // add an entity to the world
 const eid = addEntity(world)
 
