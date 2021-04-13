@@ -1,9 +1,10 @@
 # 👾 bitECS 👾
 
-Tiny, data-driven, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
+Functional, tiny, data-driven, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
 ## Features
 - `<3kb` gzipped
+- Functional
 - Zero dependencies
 - Node or Browser
 - [_Blazing fast_](https://github.com/noctjs/ecs-benchmark)
@@ -16,49 +17,70 @@ npm i bitecs
 ## Example
 
 ```js
-import World from 'bitecs'
+import { 
+  createWorld,
+  registerComponent,
+  registerComponents,
+  defineComponent,
+  defineQuery,
+  defineSystem,
+  addComponent,
+  removeComponent,
+  addEntity,
+  removeEntity,
+  pipe,
+  Types,
+} from './src/index.js'
 
-// Create a world
-const world = World()
+// max entities (optional, defaults to 100,000)
+const maxEntities = 1000000
 
-// Register some components
-world.registerComponent('POSITION', { x: 'float32', y: 'float32' })
-world.registerComponent('VELOCITY', { vx: 'int8', vy: 'int8', speed: 'uint16' })
+const { f32, bool } = Types
 
-// Register a system
-world.registerSystem({
-  name: 'MOVEMENT',
-  components: ['POSITION', 'VELOCITY'],
-  update: (POSITION, VELOCITY) => entities => {
-    for (let i = 0; i < entities.length; i++) {
-      const eid = entities[i]
-      POSITION.x[eid] += VELOCITY.vx[eid] * VELOCITY.speed[eid]
-      POSITION.y[eid] += VELOCITY.vy[eid] * VELOCITY.speed[eid]
-    }
+// create a world
+const world = createWorld(maxEntities)
+
+// define component data stores
+const Vector2 = { x: f32, y: f32 }
+const Position = defineComponent(Vector2, maxEntities)
+const Velocity = defineComponent(Vector2, maxEntities)
+const Alive = defineComponent(bool, maxEntities)
+
+// register in groups or individually
+registerComponents(world, [Position, Velocity])
+registerComponent(world, Alive)
+
+// define a query using components
+const movementQuery = defineQuery([Position, Velocity])
+// define a movement system using the query
+const movementSystem = defineSystem(movementQuery, ents => {
+  for (let i = 0; i < ents.length; i++) {
+    const eid = ents[i];
+    Position.x[eid] += Velocity.x[eid]
+    Position.y[eid] += Velocity.y[eid]
   }
 })
 
-// Create a query
-const positions = world.createQuery(['POSITION']) // array will continuously update, no need to recreate
+// add an entity to the world
+const eid = addEntity(world)
 
-// Create an entity
-const eid = world.addEntity()
+// add components to the new EID in the world
+addComponent(world, Position, eid)
+addComponent(world, Velocity, eid)
 
-// Add components to entity
-world.addComponent('POSITION', eid, { x: 100, y: 100 })
-world.addComponent('VELOCITY', eid, { vx: 1, vy: -1, speed: 100 })
+// there are no component getters or setters
+// data is accessed directly by EID
+Velocity.x[eid] = 1
+Velocity.y[eid] = 2
 
-// Create an event loop and step world
-setInterval(() => {
-  world.step()
-}, 1000 / 30) // 30 tick on server
+const pipeline = pipe(
+  movementSystem,
+  movementSystem,
+  movementSystem,
+)
 
-// For browser, use frame rate
-const loop = () => {
-  world.step()
-  requestAnimationFrame(loop)
-}
-loop()
+movementSystem(world) // executes movement system on world
+pipeline(world) // executes pipeline of systems on world
 ```
 
 Full documentation and feature rich examples can be found [here](DOCS.md).
