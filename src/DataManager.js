@@ -30,7 +30,13 @@ const UNSIGNED_MAX = {
   uint32: 4294967295
 }
 
-const roundToPower4 = x => Math.ceil(x / 4) * 4
+const grow = (ta, amount) => {
+  const newTa = new ta.constructor(new ArrayBuffer(ta.buffer.byteLength + (amount * ta.BYTES_PER_ELEMENT)))
+  newTa.set(ta.buffer)
+  return newTa
+}
+
+const roundToMultiple4 = x => Math.ceil(x / 4) * 4
 
 const managers = {}
 
@@ -41,7 +47,10 @@ export const $managerSubarrays = Symbol('subarrays')
 export const $managerCursor = Symbol('managerCursor')
 export const $managerRemoved = Symbol('managerRemoved')
 
-export const alloc = (schema, size=100000) => {
+export const $queryShadow = Symbol('queryShadow')
+export const $serializeShadow = Symbol('$serializeShadow')
+
+export const alloc = (schema, size=1000000) => {
   const $manager = Symbol('manager')
   
   managers[$manager] = {
@@ -53,7 +62,7 @@ export const alloc = (schema, size=100000) => {
     [$managerRemoved]: []
   }
 
-  const props = Object.keys(schema)
+  const props = schema ? Object.keys(schema) : []
 
   let arrays = props.filter(p => Array.isArray(schema[p]) && typeof schema[p][0] === 'object')
   const cursors = Object.keys(TYPES).reduce((a, type) => ({ ...a, [type]: 0 }), {})
@@ -85,7 +94,7 @@ export const alloc = (schema, size=100000) => {
       const relevantArrays = arrays
       const summedBytesPerElement = relevantArrays.reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
       const summedLength = relevantArrays.reduce((a, p) => a + length, 0)
-      const buffer = new ArrayBuffer(roundToPower4(summedBytesPerElement * summedLength * size))
+      const buffer = new ArrayBuffer(roundToMultiple4(summedBytesPerElement * summedLength * size))
       const array = new TYPES[type](buffer)
       array._indexType = indexType
       array._indexBytes = TYPES[indexType].BYTES_PER_ELEMENT
@@ -144,7 +153,7 @@ export const alloc = (schema, size=100000) => {
         const relevantArrays = arrays.filter(p => schema[p][0].type === type)
         const summedBytesPerElement = relevantArrays.reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
         const summedLength = relevantArrays.reduce((a, p) => a + length, 0)
-        const buffer = new ArrayBuffer(roundToPower4(summedBytesPerElement * summedLength * size))
+        const buffer = new ArrayBuffer(roundToMultiple4(summedBytesPerElement * summedLength * size))
         const array = new TYPES[type](buffer)
         array._indexType = index
         array._indexBytes = TYPES[index].BYTES_PER_ELEMENT
@@ -175,7 +184,11 @@ export const alloc = (schema, size=100000) => {
       const type = schema[prop]
       const totalBytes = size * TYPES[type].BYTES_PER_ELEMENT
       const buffer = new ArrayBuffer(totalBytes)
+      const queryShadowBuffer = new ArrayBuffer(totalBytes)
+      const serializeShadowBuffer = new ArrayBuffer(totalBytes)
       managers[$manager][prop] = new TYPES[type](buffer)
+      managers[$manager][prop][$queryShadow] = new TYPES[type](queryShadowBuffer)
+      managers[$manager][prop][$serializeShadow] = new TYPES[type](serializeShadowBuffer)
 
       // TypedArray Type
     } else if (typeof schema[prop] === 'function') {
@@ -253,6 +266,10 @@ export const alloc = (schema, size=100000) => {
     }
   })
 
+  Object.defineProperty(managers[$manager], '_props', {
+    value: props
+  })
+
   // Aggregate all typedArrays into single kvp array (memoized)
   let flattened
   Object.defineProperty(managers[$manager], '_flatten', {
@@ -290,21 +307,27 @@ export const alloc = (schema, size=100000) => {
     }
   })
 
+  Object.defineProperty(managers[$manager], '_grow', {
+    value: (amount) => {
+      managers[$manager][$managerSize] += amount 
+      for (const prop of managers[$manager]._props) {
+        if (ArrayBuffer.isView(managers[$manager][prop])) {
+          managers[$manager][prop] = grow(managers[$manager][prop], amount)
+          managers[$manager][prop][$queryShadow] = grow(managers[$manager][prop], amount)
+        } else if (typeof managers[$manager][prop] === 'object') {
+          if (ArrayBuffer.isView(managers[$manager][prop][eid])) {
+            // grow subarrays
+            // managers[$manager][prop] = Array.from(managers[$manager][prop][eid])
+          } else {
+            managers[$manager][prop]._grow()
+          }
+        }
+      }
+    }
+  })
+
   return managers[$manager]
 }
-
-// export const create = (manager) => {
-//   const removed = manager[$managerRemoved]
-//   const pointer = removed.length > 0 ? removed.pop() : manager[$managerCursor]++
-//   if (pointer > manager[$managerSize]) {
-//     throw new Error('❌ Maximum number of pointers reached.')
-//   }
-//   return pointer
-// }
-
-// export const remove = (manager, pointer) => {
-//   manager[$managerRemoved].push(pointer)
-// }
 
 export const free = (manager) => {
   delete managers[manager[$managerRef]]

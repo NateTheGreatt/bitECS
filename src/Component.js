@@ -6,11 +6,11 @@ import { $entityMasks } from './Entity.js'
 export const $componentMap = Symbol('componentMap')
 export const $deferredComponentRemovals = Symbol('de$deferredComponentRemovals')
 
-export const defineComponent = (schema, n) => alloc(schema, n)
+export const defineComponent = (schema) => schema.constructor.name === 'Map' ? schema : alloc(schema)
 
 export const incrementBitflag = (world) => {
   world[$bitflag] *= 2
-  if (world[$bitflag] >= Math.pow(2, 32)) {
+  if (world[$bitflag] >= 2**32) {
     world[$bitflag] = 1
     world[$entityMasks].push(new Uint32Array(world[$size]))
   }
@@ -19,7 +19,8 @@ export const incrementBitflag = (world) => {
 export const registerComponent = (world, component) => {
   world[$componentMap].set(component, { 
     generationId: world[$entityMasks].length - 1,
-    bitflag: world[$bitflag]
+    bitflag: world[$bitflag],
+    manager: component
   })
 
   incrementBitflag(world)

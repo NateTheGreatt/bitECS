@@ -11,20 +11,14 @@ export default {
     file: `${FILE}.min.js`,
     sourcemap: true,
     format: 'cjs',
-    exports: 'default'
   }, {
     name: NAME,
     file: `${FILE}.es.js`,
     sourcemap: true,
     format: 'es'
   }],
-  external: [
-    'react',
-    'react-dom',
-    'prop-types'
-  ],
   plugins: [
     babel({ babelHelpers: 'bundled' }),
-    terser()
+    // terser()
   ]
 }

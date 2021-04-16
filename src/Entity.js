@@ -1,3 +1,4 @@
+import { $componentMap } from './Component.js'
 import { $queries, queryRemoveEntity } from './Query.js'
 import { $size } from './World.js'
 
@@ -19,8 +20,17 @@ export const addEntity = (world) => {
   const size = world[$size]
   const enabled = world[$entityEnabled]
 
-  if (globalEntityCursor >= size) {
-    throw new Error('❌ Could not add entity, maximum number of entities reached.')
+  if (globalEntityCursor >= size - size / 5) { // if 80% full
+
+    const amount = Math.ceil((size/2) / 4) * 4 // grow by half the original size rounded up to a multiple of 4
+
+    // grow data stores
+    world[$componentMap].forEach(component => {
+      component.manager._grow(amount)
+    })
+    world[$size] += amount
+
+    // TODO: grow metadata on world mappings for world's internal queries/components
   }
 
   const eid = removed.length > 0 ? removed.pop() : globalEntityCursor
@@ -45,7 +55,7 @@ export const commitEntityRemovals = (world) => {
     // Remove entity from all queries
     // TODO: archetype graph
     queries.forEach(query => {
-      queryRemoveEntity(query, eid)
+      queryRemoveEntity(world, query, eid)
     })
 
     // Free the entity

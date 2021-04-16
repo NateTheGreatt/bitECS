@@ -1,9 +1,9 @@
 import { createWorld } from './World.js'
 import { addEntity, removeEntity } from './Entity.js'
-import { defineComponent, registerComponent, registerComponents, addComponent, removeComponent } from './Component.js'
+import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent } from './Component.js'
 import { defineSystem } from './System.js'
-import { defineQuery, enterQuery, exitQuery } from './Query.js'
-// import { snapshot } from './Snapshot.js'
+import { defineQuery, enterQuery, exitQuery, Changed, Not } from './Query.js'
+import { defineSerializer, defineDeserializer } from './Serialize.js'
 import { TYPES_ENUM } from './DataManager.js'
 
 export const pipe = fns => world => {
@@ -16,16 +16,27 @@ export const pipe = fns => world => {
 export const Types = TYPES_ENUM
 
 export {
+
   createWorld,
+  addEntity,
+  removeEntity,
+
   registerComponent,
   registerComponents,
   defineComponent,
-  defineQuery,
-  enterQuery,
-  exitQuery,
-  defineSystem,
   addComponent,
   removeComponent,
-  addEntity,
-  removeEntity,
+  hasComponent,
+  
+  defineQuery,
+  Changed,
+  Not,
+  enterQuery,
+  exitQuery,
+  
+  defineSystem,
+  
+  defineSerializer,
+  defineDeserializer,
+
 }

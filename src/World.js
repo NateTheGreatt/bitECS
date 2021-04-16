@@ -5,12 +5,12 @@ import { $entityEnabled, $entityMasks, $removedEntities, $deferredEntityRemovals
 export const $size = Symbol('size')
 export const $bitflag = Symbol('bitflag')
 
-export const createWorld = (size = 100000) => {
+export const createWorld = (size = 1000000) => {
   const world = {}
   
   world[$size] = size
 
-  world[$entityEnabled] = new Uint8Array(world[$size])
+  world[$entityEnabled] = new Uint8Array(size)
   world[$entityMasks] = [new Uint32Array(size)]
   world[$removedEntities] = []
 

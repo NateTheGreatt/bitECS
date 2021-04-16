@@ -1,12 +1,17 @@
 import { commitComponentRemovals } from './Component.js'
 import { commitEntityRemovals } from './Entity.js'
-import { $queryMap, registerQuery } from './Query.js'
 
-export const defineSystem = (query, update) => {
-  const system = {}
-  return world => {
-    update(query(world))
+export const defineSystem = (update) => {
+  const system = world => {
+    update(world)
     commitComponentRemovals(world)
     commitEntityRemovals(world)
   }
+
+  Object.defineProperty(system, 'name', {
+    value: (update.name || "AnonymousSystem") + "_internal",
+    configurable: true,
+  })
+
+  return system
 }
