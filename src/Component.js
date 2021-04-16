@@ -6,7 +6,7 @@ import { $entityMasks } from './Entity.js'
 export const $componentMap = Symbol('componentMap')
 export const $deferredComponentRemovals = Symbol('de$deferredComponentRemovals')
 
-export const defineComponent = (schema) => schema.constructor.name === 'Map' ? schema : alloc(schema)
+export const defineComponent = (schema) => alloc(schema)
 
 export const incrementBitflag = (world) => {
   world[$bitflag] *= 2
