@@ -52,6 +52,11 @@ export const $serializeShadow = Symbol('$serializeShadow')
 
 export const alloc = (schema, size=1000000) => {
   const $manager = Symbol('manager')
+
+  if (schema.constructor.name === 'Map') {
+    schema[$managerSize] = size;
+    return schema;
+  }
   
   managers[$manager] = {
     [$managerSize]: size,

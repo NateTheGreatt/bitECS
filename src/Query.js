@@ -120,7 +120,6 @@ export const defineQuery = (components) => {
 // TODO: archetype graph
 export const queryCheckEntity = (world, query, eid) => {
   const { masks, notMasks, generations } = world[$queryMap].get(query)
-  console.log(notMasks)
   for (let i = 0; i < generations.length; i++) {
     const generationId = generations[i]
     const qMask = masks[generationId]
