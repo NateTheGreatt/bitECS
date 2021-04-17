@@ -74,9 +74,7 @@ const Position = defineComponent(Vector2)
 const Velocity = defineComponent(Vector2)
 const Health = defineComponent(ui16)
 const Alive = defineComponent() // "tag" component
-const Mapping = defineComponent(new Map()) // can pass any data structure to use
-const SetOfStuff = defineComponent(new Set())
-const RegularObject = defineComponent({})
+const Mapping = defineComponent(new Map()) // can use a map to associate regular JS objects with entities
 
 // register components with worlds
 registerComponents(world, [Position, Velocity, Health]) // in groups
@@ -85,7 +83,7 @@ registerComponent(world, Alive) // or individually
 
 /** defineQuery
  * 
- * Returns a query function which returns set of entities from a world that match the given components.
+ * Returns a query function which returns array of entities from a world that match the given components.
 **/
 
 // define a query using components
@@ -172,6 +170,40 @@ const pipeline = pipe(
 
 movementSystem(world) // executes movement system on world
 pipeline(world) // executes a pipeline of systems on world
+
+
+/** createSerializer / Deserializer
+ * 
+ * Creates a function which serializes the state of a world or array of entities.
+**/
+
+// creates a serializer/deserializer which will serialize all component stores
+const serialize = createSerializer()
+const deserialize = createDeserializer()
+
+// serializes the entire world of entities
+let packet = serialize(world)
+
+// deserializes the state back onto the world
+deserialize(world, packet)
+
+// creates a serializer/deserializer which will serialize select component stores
+const serializePositions = createSerializer([Positions])
+const deserializePositions = createDeserializer([Positions])
+
+// serializes the Position data of entities which match the movementQuery
+packet = serializePositions(movementQuery(world))
+
+// deserializes the Position data back onto the world
+deserializePositions(packet)
+
+// creates a serializer which will serialize select component stores of entities
+// whose component state has changed since the last call of the function
+const serializeOnlyChangedPositions = createSerializer([Changed(Positions)])
+
+// serializes the Position data of entities which match the movementQuery
+// whose values have changed since last call of the function
+packet = serializeOnlyChangedPositions(movementQuery(world))
 
 ```
 
