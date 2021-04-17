@@ -72,11 +72,13 @@ export const registerQuery = (world, query) => {
     .map(mapComponents)
     .reduce(reduceBitmasks, {})
 
-  const notMasks = components
+  const notMasks = notComponents
     .map(mapComponents)
     .reduce((a,c) => {
-      if (!a[c.generationId] && notComponents.includes(c)) a[c.generationId] = 0
-      a[c.generationId] |= c.bitflag
+      if (!a[c.generationId]) {
+        a[c.generationId] = 0
+        a[c.generationId] |= c.bitflag
+      }
       return a
     }, {})
 
@@ -132,10 +134,10 @@ export const queryCheckEntity = (world, query, eid) => {
     const qMask = masks[generationId]
     const qNotMask = notMasks[generationId]
     const eMask = world[$entityMasks][generationId][eid]
-    // if (qNotMask && !(eMask & qNotMask)) {
-    //   return false
-    // }
-    if ((eMask & qMask) !== qMask) {
+    if (qNotMask && (eMask & qNotMask) !== 0) {
+      return false
+    }
+    if (qMask && (eMask & qMask) !== qMask) {
       return false
     }
   }
