@@ -30,6 +30,7 @@ import {
   defineComponent,
   addComponent,
   removeComponent,
+  hasComponent,
   
   defineQuery,
   Changed,
@@ -45,7 +46,8 @@ import {
 } from 'bitecs'
 
 
-/** createWorld
+/** 
+ * createWorld
  * 
  * Creates a world which represents a set of entities and what components they possess.
  * Does NOT store actual component data.
@@ -57,7 +59,8 @@ const world = createWorld()
 const world2 = createWorld()
 
 
-/** defineComponent
+/** 
+ * defineComponent
  * 
  * Returns a SoA (Structure of Arrays).
  * Store of component data.
@@ -81,7 +84,8 @@ registerComponents(world, [Position, Velocity, Health]) // in groups
 registerComponent(world, Alive) // or individually
 
 
-/** defineQuery
+/** 
+ * defineQuery
  * 
  * Returns a query function which returns array of entities from a world that match the given components.
 **/
@@ -107,7 +111,8 @@ enterQuery(world, movementQuery, eid => {})
 exitQuery(world, movementQuery, eid => {})
 
 
-/** defineSystem
+/** 
+ * defineSystem
  * 
  * Creates a function which can be processed against a given world.
  * Use queries to access relevant entities for the system.
@@ -126,7 +131,8 @@ const movementSystem = defineSystem(world => {
 })
 
 
-/** Entity
+/** 
+ * Entity
  * 
  * An entity is a single ID which components can be associated with.
  * Entities are accessed via queries, components of whom are mutated with systems.
@@ -136,14 +142,14 @@ const movementSystem = defineSystem(world => {
 const eid = addEntity(world)
 const eid2 = addEntity(world)
 
-// remove entities from the world (deferred until any system runs)
+// remove entities from the world
 removeEntity(world, eid2)
 
 // add components to the new entities in the world
 addComponent(world, Position, eid)
 addComponent(world, Velocity, eid)
 
-// remove components from entities in the world (deferred until any system runs)
+// remove components from entities in the world
 removeComponent(world, Velocity, eid)
 
 // there are no component getters or setters
@@ -152,7 +158,8 @@ Position.x[eid] = 1
 Position.y[eid] = 2
 
 
-/** Pipe
+/** 
+ * Pipe
  * 
  * Creates a sequence of systems which are executed in serial.
 **/
@@ -172,7 +179,8 @@ movementSystem(world) // executes movement system on world
 pipeline(world) // executes a pipeline of systems on world
 
 
-/** createSerializer / Deserializer
+/** 
+ * createSerializer / Deserializer
  * 
  * Creates a function which serializes the state of a world or array of entities.
 **/
