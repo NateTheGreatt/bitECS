@@ -1,3 +1,13 @@
+## Notice
+
+New alpha branch in-development: https://github.com/NateTheGreatt/bitECS/tree/v0.3.0a
+
+Features:
+ - Functional API
+ - Serialization
+ - Change detecting and inverted (Not) queries
+ - And more
+
 # 👾 bitECS 👾
 
 Tiny, data-driven, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
