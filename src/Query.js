@@ -1,5 +1,5 @@
 import { $managerSize } from './DataManager.js'
-import { $componentMap } from './Component.js'
+import { $componentMap, registerComponent } from './Component.js'
 import { $entityMasks, $entityEnabled, getEntityCursor } from './Entity.js'
 import { diff } from './Serialize.js'
 
@@ -16,21 +16,22 @@ export const $exitQuery = Symbol('exitQuery')
 const NONE = 2**32
 
 export const enterQuery = (world, query, fn) => {
-  if (!world[$queryMap].get(query)) registerQuery(world, query)
+  if (!world[$queryMap].has(query)) registerQuery(world, query)
   world[$queryMap].get(query).enter = fn
 }
 
 export const exitQuery = (world, query, fn) => {
-  if (!world[$queryMap].get(query)) registerQuery(world, query)
+  if (!world[$queryMap].has(query)) registerQuery(world, query)
   world[$queryMap].get(query).exit = fn
 }
 
 export const registerQuery = (world, query) => {
-  if (!world[$queryMap].get(query)) world[$queryMap].set(query, {})
+  if (!world[$queryMap].has(query)) world[$queryMap].set(query, {})
 
   let components = []
   let notComponents = []
   let changedComponents = []
+
   query[$queryComponents].forEach(c => {
     if (typeof c === 'function') {
       if (c.name === 'QueryNot') {
@@ -55,6 +56,10 @@ export const registerQuery = (world, query) => {
   const enabled = new Uint8Array(size)
   const generations = components
     .concat(notComponents)
+    .map (c => {
+      if (!world[$componentMap].has(c)) registerComponent(world, c)
+      return c
+    })
     .map(mapComponents)
     .map(c => c.generationId)
     .reduce((a,v) => {

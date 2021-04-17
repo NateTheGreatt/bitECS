@@ -37,6 +37,7 @@ export const hasComponent = (world, component, eid) => {
 }
 
 export const addComponent = (world, component, eid) => {
+  if (!world[$componentMap].has(component)) registerComponent(world, component)
   if (hasComponent(world, component, eid)) return
 
   // Add bitflag to entity bitmask

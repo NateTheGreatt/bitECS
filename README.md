@@ -79,11 +79,6 @@ const Health = defineComponent(ui16)
 const Alive = defineComponent() // "tag" component
 const Mapping = defineComponent(new Map()) // can use a map to associate regular JS objects with entities
 
-// register components with worlds
-registerComponents(world, [Position, Velocity, Health]) // in groups
-registerComponent(world, Alive) // or individually
-
-
 /** 
  * defineQuery
  * 
