@@ -1,11 +1,9 @@
-import { commitComponentRemovals } from './Component.js'
-import { commitEntityRemovals } from './Entity.js'
+import { commitRemovals } from './Query.js'
 
 export const defineSystem = (update) => {
   const system = world => {
     update(world)
-    commitComponentRemovals(world)
-    commitEntityRemovals(world)
+    commitRemovals(world)
   }
 
   Object.defineProperty(system, 'name', {

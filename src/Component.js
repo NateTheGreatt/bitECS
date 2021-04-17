@@ -56,29 +56,20 @@ export const addComponent = (world, component, eid) => {
   })
 }
 
-export const removeComponent = (world, component, eid) => world[$deferredComponentRemovals].push(component, eid)
+export const removeComponent = (world, component, eid) => {
+  const { generationId, bitflag } = world[$componentMap].get(component)
 
-export const commitComponentRemovals = (world) => {
-  const deferredComponentRemovals = world[$deferredComponentRemovals]
-  for (let i = 0; i < deferredComponentRemovals.length; i += 2) {
-    const component = deferredComponentRemovals[i]
-    const eid = deferredComponentRemovals[i + 1]
+  if (!(world[$entityMasks][generationId][eid] & bitflag)) return
 
-    const { generationId, bitflag } = world[$componentMap].get(component)
-
-    if (!(world[$entityMasks][generationId][eid] & bitflag)) return
-
-    // Remove flag from entity bitmask
-    world[$entityMasks][generationId][eid] &= ~bitflag
-
-    // todo: archetype graph
-    const queries = world[$queries]
-    queries.forEach(query => {
-      const components = query[$queryComponents]
-      if (!queryCheckComponents(world, query, components)) return
-      const match = queryCheckEntity(world, query, eid)
-      if (match) queryRemoveEntity(world, query, eid)
-    })
-  }
-  deferredComponentRemovals.length = 0
+  // todo: archetype graph
+  const queries = world[$queries]
+  queries.forEach(query => {
+    const components = query[$queryComponents]
+    if (!queryCheckComponents(world, query, components)) return
+    const match = queryCheckEntity(world, query, eid)
+    if (match) queryRemoveEntity(world, query, eid)
+  })
+  
+  // Remove flag from entity bitmask
+  world[$entityMasks][generationId][eid] &= ~bitflag
 }

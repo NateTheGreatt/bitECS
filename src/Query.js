@@ -8,9 +8,12 @@ export function Changed(c) { return function QueryChanged() { return c } }
 
 export const $queries = Symbol('queries')
 export const $queryMap = Symbol('queryMap')
+export const $dirtyQueries = Symbol('$dirtyQueries')
 export const $queryComponents = Symbol('queryComponents')
 export const $enterQuery = Symbol('enterQuery')
 export const $exitQuery = Symbol('exitQuery')
+
+const NONE = 2**32
 
 export const enterQuery = (world, query, fn) => {
   if (!world[$queryMap].get(query)) registerQuery(world, query)
@@ -48,7 +51,7 @@ export const registerQuery = (world, query) => {
   
   const entities = []
   const changed = []
-  const indices = new Uint32Array(size)
+  const indices = new Uint32Array(size).fill(NONE)
   const enabled = new Uint8Array(size)
   const generations = components
     .concat(notComponents)
@@ -81,6 +84,8 @@ export const registerQuery = (world, query) => {
     .map(c => c._flatten ? c._flatten() : [c])
     .reduce((a,v) => a.concat(v), [])
 
+  const toRemove = []
+
   Object.assign(
     world[$queryMap].get(query), { 
       entities,
@@ -93,7 +98,8 @@ export const registerQuery = (world, query) => {
       notMasks,
       generations,
       indices,
-      flatProps
+      flatProps,
+      toRemove,
     }
   )
   world[$queries].add(query)
@@ -109,6 +115,7 @@ export const registerQuery = (world, query) => {
 export const defineQuery = (components) => {
   const query = function (world) {
     if (!world[$queryMap].has(query)) registerQuery(world, query)
+    queryCommitRemovals(world, query)
     const q = world[$queryMap].get(query) 
     if (q.changedComponents.length) return diff(world, query)
     return q.entities
@@ -155,10 +162,34 @@ export const queryAddEntity = (world, query, eid) => {
   if (q.enter) q.enter(eid)
 }
 
+export const queryCommitRemovals = (world, query) => {
+  const q = world[$queryMap].get(query)
+  while (q.toRemove.length) {
+    const eid = q.toRemove.pop()
+    const index = q.indices[eid]
+    if (index === NONE) continue
+
+    const swapped = q.entities.pop()
+    if (swapped !== eid) {
+      q.entities[index] = swapped
+      q.indices[swapped] = index
+    }
+    q.indices[eid] = NONE
+  }
+  world[$dirtyQueries].delete(q)
+}
+
+export const commitRemovals = (world) => {
+  world[$dirtyQueries].forEach(q => {
+    queryCommitRemovals(q)
+  })
+}
+
 export const queryRemoveEntity = (world, query, eid) => {
   const q = world[$queryMap].get(query)
   if (!q.enabled[eid]) return
   q.enabled[eid] = false
-  q.entities.splice(q.indices[eid])
   if (q.exit) q.exit(eid)
+  q.toRemove.push(eid)
+  world[$dirtyQueries].add(q)
 }

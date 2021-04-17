@@ -2,7 +2,7 @@ import { createWorld } from './World.js'
 import { addEntity, removeEntity } from './Entity.js'
 import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent } from './Component.js'
 import { defineSystem } from './System.js'
-import { defineQuery, enterQuery, exitQuery, Changed, Not } from './Query.js'
+import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals } from './Query.js'
 import { defineSerializer, defineDeserializer } from './Serialize.js'
 import { TYPES_ENUM } from './DataManager.js'
 
@@ -33,7 +33,8 @@ export {
   Not,
   enterQuery,
   exitQuery,
-  
+  commitRemovals,
+
   defineSystem,
   
   defineSerializer,

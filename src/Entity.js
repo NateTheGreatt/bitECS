@@ -39,33 +39,24 @@ export const addEntity = (world) => {
   return eid
 }
 
-export const removeEntity = (world, eid) => world[$deferredEntityRemovals].push(eid)
-
-export const commitEntityRemovals = (world) => {
-  const deferred = world[$deferredEntityRemovals]
+export const removeEntity = (world, eid) => {
   const queries = world[$queries]
   const removed = world[$removedEntities]
   const enabled = world[$entityEnabled]
 
-  for (let i = 0; i < deferred.length; i++) {
-    const eid = deferred[i]
-    // Check if entity is already removed
-    if (enabled[eid] === 0) continue
+  // Check if entity is already removed
+  if (enabled[eid] === 0) return
 
-    // Remove entity from all queries
-    // TODO: archetype graph
-    queries.forEach(query => {
-      queryRemoveEntity(world, query, eid)
-    })
+  // Remove entity from all queries
+  // TODO: archetype graph
+  queries.forEach(query => {
+    queryRemoveEntity(world, query, eid)
+  })
 
-    // Free the entity
-    removed.push(eid)
-    enabled[eid] = 0
+  // Free the entity
+  removed.push(eid)
+  enabled[eid] = 0
 
-    // Clear component bitmasks
-    for (let i = 0; i < world[$entityMasks].length; i++) world[$entityMasks][i][eid] = 0
-    
-  }
-
-  deferred.length = 0
+  // Clear component bitmasks
+  for (let i = 0; i < world[$entityMasks].length; i++) world[$entityMasks][i][eid] = 0
 }
