@@ -49,7 +49,7 @@ export const registerQuery = (world, query) => {
   const mapComponents = c => world[$componentMap].get(c)
 
   const size = components.reduce((a,c) => c[$storeSize] > a ? c[$storeSize] : a, 0)
-  
+
   const entities = []
   const changed = []
   const indices = new Uint32Array(size).fill(NONE)
@@ -109,6 +109,7 @@ export const registerQuery = (world, query) => {
       toRemove,
     }
   )
+  
   world[$queries].add(query)
 
   for (let eid = 0; eid < getEntityCursor(); eid++) {

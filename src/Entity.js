@@ -1,6 +1,6 @@
 import { $componentMap } from './Component.js'
-import { $queries, queryRemoveEntity } from './Query.js'
-import { growStore } from './Storage.js'
+import { $queries, $queryMap, queryRemoveEntity } from './Query.js'
+import { resize, resizeStore } from './Storage.js'
 import { $size } from './World.js'
 
 export const $entityMasks = Symbol('entityMasks')
@@ -16,23 +16,36 @@ export const getEntityCursor = () => globalEntityCursor
 
 export const incrementEntityCursor = () => globalEntityCursor++
 
+export const resizeWorld = (world, size) => {
+  world[$size] = size
+  
+  world[$componentMap].forEach(c => {
+    resizeStore(c.store, size)
+  })
+  
+  world[$queryMap].forEach(q => {
+    q.indices = resize(q.indices, size)
+    q.enabled = resize(q.enabled, size)
+  })
+  
+  world[$entityEnabled] = resize(world[$entityEnabled], size)
+  
+  for (let i = 0; i < world[$entityMasks].length; i++) {
+    const masks = world[$entityMasks][i];
+    world[$entityMasks][i] = resize(masks, size)    
+  }
+}
+
 export const addEntity = (world) => {
   const removed = world[$removedEntities]
   const size = world[$size]
   const enabled = world[$entityEnabled]
 
-  if (globalEntityCursor >= size - size / 5) { // if 80% full
-
-    const amount = Math.ceil((size/2) / 4) * 4 // grow by half the original size rounded up to a multiple of 4
-
-    world[$size] += amount
-
-    // grow data stores
-    world[$componentMap].forEach(component => {
-      growStore(component.store)
-    })
-
-    // TODO: grow metadata on world mappings for world's internal queries/components
+  // if data stores are 80% full
+  if (globalEntityCursor >= size - size / 5) {
+    // grow by half the original size rounded up to a multiple of 4
+    const amount = Math.ceil((size/2) / 4) * 4
+    resizeWorld(world, size + amount)
   }
 
   const eid = removed.length > 0 ? removed.pop() : globalEntityCursor

@@ -64,35 +64,29 @@ export const $indexBytes = Symbol('indexBytes')
 
 const stores = {}
 
-const grow = (ta, amount) => {
-  const newTa = new ta.constructor(new ArrayBuffer(ta.buffer.byteLength + (amount * ta.BYTES_PER_ELEMENT)))
-  newTa.set(ta.buffer)
+export const resize = (ta, size) => {
+  const newBuffer = new ArrayBuffer(size * ta.BYTES_PER_ELEMENT)
+  const newTa = new ta.constructor(newBuffer)
+  newTa.set(ta, 0)
   return newTa
 }
 
-const growRecursive = (store, amount) => {
+const resizeRecursive = (store, size) => {
   Object.keys(store).forEach(key => {
     const ta = store[key]
     if (ta[$subarray]) return
     else if (ArrayBuffer.isView(ta)) {
-      // grow shadows first
-      const queryShadow = grow(store[key][$queryShadow], amount)
-      const serializeShadow = grow(store[key][$serializeShadow], amount)
-
-      // grow main store
-      store[key] = grow(ta, amount)
-
-      // reapply shadows
-      store[key][$queryShadow] = queryShadow
-      store[key][$serializeShadow] = serializeShadow
+      store[key] = resize(ta, size)
+      store[key][$queryShadow] = resize(ta[$queryShadow], size)
+      store[key][$serializeShadow] = resize(ta[$serializeShadow], size)
     } else if (typeof ta === 'object') {
-      growRecursive(store[key], amount)
+      resizeRecursive(store[key], size)
     }
   })
 }
 
-const resizeSubarrays = (store) => {
-  const size = store[$storeSize]
+const resizeSubarrays = (store, size) => {
+  const cursors = store[$subarrayCursors] = {}
   Object.keys(store[$storeSubarrays]).forEach(type => {
     const arrayCount = store[$storeArrayCount]
     const length = store[0].length
@@ -116,10 +110,10 @@ const resizeSubarrays = (store) => {
   })
 }
 
-export const growStore = (store, amount) => {
-  store[$storeSize] += amount
-  growRecursive(store, amount)
-  resizeSubarrays(store)
+export const resizeStore = (store, size) => {
+  store[$storeSize] = size
+  resizeRecursive(store, size)
+  resizeSubarrays(store, size)
 }
 
 const createTypeStore = (type, length) => {

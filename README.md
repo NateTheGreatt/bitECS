@@ -3,13 +3,22 @@
 Functional, tiny, data-oriented, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
 ## Features
-- Functional
-- `<3kb` gzipped
-- Zero dependencies
-- Serialization
-- Queries with modifiers
-- Node or browser
-- [_Killer performance_](https://github.com/noctjs/ecs-benchmark)
+🔮 Functional
+
+🤏 `<3kb` gzipped
+
+🙅‍♂️ Zero dependencies
+
+💾 Serialization
+
+✨ Queries with modifiers
+
+🌐 Node or browser
+
+🔥 Blazing fast
+
+- [ecs-benchmark](https://github.com/noctjs/ecs-benchmark)
+- [js-ecs-benchmark](https://github.com/ddmills/js-ecs-benchmark)
 
 ## Install
 ```
@@ -75,7 +84,7 @@ const Vector2 = { x: f32, y: f32 }
 // define components, which creates SoA data stores
 const Position = defineComponent(Vector2)
 const Velocity = defineComponent(Vector2)
-const Health = defineComponent(ui16)
+const Health = defineComponent({ value: ui16 })
 const Alive = defineComponent() // "tag" component
 const Mapping = defineComponent(new Map()) // can use a map to associate regular JS objects with entities
 
