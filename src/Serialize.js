@@ -47,7 +47,7 @@ const canonicalize = (target) => {
       .reduce((a,v) => a.concat(v), [])
   } else {
     target[$componentMap].forEach(c => {
-      componentProps = componentProps.concat(c._flatten())
+      componentProps = componentProps.concat(c[$storeFlattened])
     })
   }
   return [componentProps, changedProps]
@@ -65,6 +65,7 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
     if (!ents.length) return
 
     let where = 0
+
     // iterate over component props
     for (let pid = 0; pid < componentProps.length; pid++) {
       const prop = componentProps[pid]
@@ -79,7 +80,6 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
       where += 4
       
       let count = 0
-
       // write eid,val
       for (let i = 0; i < ents.length; i++) {
         const eid = ents[i]
@@ -88,7 +88,7 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
         if (diff && prop[eid] === prop[$serializeShadow][eid]) {
           continue
         }
-
+        
         count++
 
         // write eid

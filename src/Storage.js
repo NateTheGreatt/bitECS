@@ -199,6 +199,8 @@ export const resetStore = store => {
 export const createStore = (schema, size=1000000) => {
   const $store = Symbol('store')
 
+  schema = JSON.parse(JSON.stringify(schema))
+
   if (schema.constructor.name === 'Map') {
     schema[$storeSize] = size
     return schema
@@ -249,7 +251,7 @@ export const createStore = (schema, size=1000000) => {
         a[k] = createTypeStore(a[k], size)
         metadata[$storeFlattened].push(a[k])
         createShadows(a[k])
-        
+
       } else if (isArrayType(a[k])) {
         
         const { type, length } = a[k][0]
