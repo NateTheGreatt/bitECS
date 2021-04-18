@@ -113,8 +113,6 @@ exitQuery(world, movementQuery, eid => {})
  * 
  * Creates a function which can be processed against a given world.
  * Use queries to access relevant entities for the system.
- * 
- * Note: Entity and component removals are deferred until the system has finished running.
 **/
 
 // define a system
