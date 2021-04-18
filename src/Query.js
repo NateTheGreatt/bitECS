@@ -1,4 +1,4 @@
-import { $managerSize } from './DataManager.js'
+import { $storeSize } from './Storage.js'
 import { $componentMap, registerComponent } from './Component.js'
 import { $entityMasks, $entityEnabled, getEntityCursor } from './Entity.js'
 import { diff } from './Serialize.js'
@@ -48,7 +48,7 @@ export const registerQuery = (world, query) => {
 
   const mapComponents = c => world[$componentMap].get(c)
 
-  const size = components.reduce((a,c) => c[$managerSize] > a ? c[$managerSize] : a, 0)
+  const size = components.reduce((a,c) => c[$storeSize] > a ? c[$storeSize] : a, 0)
   
   const entities = []
   const changed = []

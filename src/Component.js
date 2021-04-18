@@ -1,4 +1,4 @@
-import { alloc } from './DataManager.js'
+import { createStore } from './Storage.js'
 import { $queryComponents, $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponents } from './Query.js'
 import { $bitflag, $size } from './World.js'
 import { $entityMasks } from './Entity.js'
@@ -6,7 +6,7 @@ import { $entityMasks } from './Entity.js'
 export const $componentMap = Symbol('componentMap')
 export const $deferredComponentRemovals = Symbol('de$deferredComponentRemovals')
 
-export const defineComponent = (schema) => alloc(schema)
+export const defineComponent = (schema) => createStore(schema)
 
 export const incrementBitflag = (world) => {
   world[$bitflag] *= 2
@@ -20,7 +20,7 @@ export const registerComponent = (world, component) => {
   world[$componentMap].set(component, { 
     generationId: world[$entityMasks].length - 1,
     bitflag: world[$bitflag],
-    manager: component
+    store: component
   })
 
   incrementBitflag(world)

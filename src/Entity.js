@@ -1,5 +1,6 @@
 import { $componentMap } from './Component.js'
 import { $queries, queryRemoveEntity } from './Query.js'
+import { growStore } from './Storage.js'
 import { $size } from './World.js'
 
 export const $entityMasks = Symbol('entityMasks')
@@ -24,11 +25,12 @@ export const addEntity = (world) => {
 
     const amount = Math.ceil((size/2) / 4) * 4 // grow by half the original size rounded up to a multiple of 4
 
+    world[$size] += amount
+
     // grow data stores
     world[$componentMap].forEach(component => {
-      component.manager._grow(amount)
+      growStore(component.store)
     })
-    world[$size] += amount
 
     // TODO: grow metadata on world mappings for world's internal queries/components
   }
@@ -57,6 +59,6 @@ export const removeEntity = (world, eid) => {
   removed.push(eid)
   enabled[eid] = 0
 
-  // Clear component bitmasks
+  // Clear entity bitmasks
   for (let i = 0; i < world[$entityMasks].length; i++) world[$entityMasks][i][eid] = 0
 }

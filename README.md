@@ -6,7 +6,9 @@ Functional, tiny, data-oriented, high performance [ECS](https://en.wikipedia.org
 - Functional
 - `<3kb` gzipped
 - Zero dependencies
-- Node or Browser
+- Serialization
+- Queries with modifiers
+- Node or browser
 - [_Killer performance_](https://github.com/noctjs/ecs-benchmark)
 
 ## Install
