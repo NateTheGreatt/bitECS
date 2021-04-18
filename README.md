@@ -27,8 +27,6 @@ import {
   addEntity,
   removeEntity,
 
-  registerComponent,
-  registerComponents,
   defineComponent,
   addComponent,
   removeComponent,
@@ -154,7 +152,7 @@ Position.y[eid] = 2
 
 
 /** 
- * Pipe
+ * pipe
  * 
  * Creates a sequence of systems which are executed in serial.
 **/
@@ -205,7 +203,7 @@ deserializePositions(packet)
 const serializeOnlyChangedPositions = createSerializer([Changed(Positions)])
 
 // serializes the Position data of entities which match the movementQuery
-// whose values have changed since last call of the function
+// whose component values have changed since last call of the function
 packet = serializeOnlyChangedPositions(movementQuery(world))
 
 ```
