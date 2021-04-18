@@ -98,13 +98,19 @@ const resizeSubarrays = (store, size) => {
     array.set(store[$storeSubarrays][type].buffer, 0)
 
     store[$storeSubarrays][type] = array
-    
+    store[$storeSubarrays][type][$queryShadow] = array.slice(0)
+    store[$storeSubarrays][type][$serializeShadow] = array.slice(0)
+
     let end = 0
     for (let eid = 0; eid < size; eid++) {
       const from = cursors[type] + (eid * length)
       const to = from + length
       store[eid] = store[$storeSubarrays][type].subarray(from, to)
+      store[eid][$queryShadow] = store[$storeSubarrays][type][$queryShadow].subarray(from, to)
+      store[eid][$serializeShadow] = store[$storeSubarrays][type][$serializeShadow].subarray(from, to)
       store[eid][$subarray] = true
+      store[eid][$indexType] = array[$indexType]
+      store[eid][$indexBytes] = array[$indexBytes]
       end = to
     }
   })
@@ -158,7 +164,11 @@ const createArrayStore = (store, type, length) => {
     const from = cursors[type] + (eid * length)
     const to = from + length
     store[eid] = store[$storeSubarrays][type].subarray(from, to)
+    store[eid][$queryShadow] = store[$storeSubarrays][type][$queryShadow].subarray(from, to)
+    store[eid][$serializeShadow] = store[$storeSubarrays][type][$serializeShadow].subarray(from, to)
     store[eid][$subarray] = true
+    store[eid][$indexType] = TYPES_NAMES[indexType]
+    store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
     end = to
   }
 
@@ -244,7 +254,8 @@ export const createStore = (schema, size=1000000) => {
         
         const { type, length } = a[k][0]
         a[k] = createArrayStore(metadata, type, length)
-        
+        metadata[$storeFlattened].push(a[k])
+
       } else if (a[k] instanceof Object) {
         
         a[k] = Object.keys(a[k]).reduce(recursiveTransform, a[k])

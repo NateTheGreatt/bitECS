@@ -1,5 +1,5 @@
 import { $queryMap } from "./Query.js"
-import { $queryShadow, $serializeShadow } from "./DataManager.js"
+import { $indexBytes, $indexType, $queryShadow, $serializeShadow, $storeFlattened } from "./Storage.js"
 import { $componentMap } from "./Component.js"
 
 export const diff = (world, query) => {
@@ -36,18 +36,13 @@ const canonicalize = (target) => {
   if (Array.isArray(target)) {
     componentProps = target
       .map(p => {
-        if (p._flatten) {
-          return p._flatten()
-        } else if (typeof p === 'function' && p.name === 'QueryChanged') {
-          p = p()
-          if (p._flatten) {
-            let props = p._flatten()
-            props.forEach(x => changedProps.add(x))
-            return props
-          }
-          changedProps.add(p)
-          return [p]
+        if (typeof p === 'function' && p.name === 'QueryChanged') {
+          p()[$storeFlattened].forEach(prop => {
+            changedProps.add(prop)
+          })
+          return p()[$storeFlattened]
         }
+        return p[$storeFlattened]
       })
       .reduce((a,v) => a.concat(v), [])
   } else {
@@ -58,11 +53,13 @@ const canonicalize = (target) => {
   return [componentProps, changedProps]
 }
 
-export const defineSerializer = (target, maxBytes = 5000000) => {
+export const defineSerializer = (target, maxBytes = 20_000_000) => {
+  const [componentProps, changedProps] = canonicalize(target)
+
+  // TODO: calculate max bytes based on target
+
   const buffer = new ArrayBuffer(maxBytes)
   const view = new DataView(buffer)
-
-  const [componentProps, changedProps] = canonicalize(target)
 
   return ents => {
     if (!ents.length) return
@@ -82,6 +79,7 @@ export const defineSerializer = (target, maxBytes = 5000000) => {
       where += 4
       
       let count = 0
+
       // write eid,val
       for (let i = 0; i < ents.length; i++) {
         const eid = ents[i]
@@ -90,8 +88,6 @@ export const defineSerializer = (target, maxBytes = 5000000) => {
         if (diff && prop[eid] === prop[$serializeShadow][eid]) {
           continue
         }
-
-        prop[$serializeShadow][eid] = prop[eid]
 
         count++
 
@@ -102,8 +98,8 @@ export const defineSerializer = (target, maxBytes = 5000000) => {
         // if property is an array
         if (ArrayBuffer.isView(prop[eid])) {
           const type = prop[eid].constructor.name.replace('Array', '')
-          const indexType = prop[eid]._indexType
-          const indexBytes = prop[eid]._indexBytes
+          const indexType = prop[eid][$indexType]
+          const indexBytes = prop[eid][$indexBytes]
 
           // add space for count of dirty array elements
           const countWhere2 = where
@@ -113,25 +109,33 @@ export const defineSerializer = (target, maxBytes = 5000000) => {
 
           // write array values
           for (let i = 0; i < prop[eid].length; i++) {
-            const val = prop[eid][i]
-            
+            const value = prop[eid][i]
+
+            if (diff && prop[eid][i] === prop[eid][$serializeShadow][i]) {
+              continue
+            }
+
             // write array index
             view[`set${indexType}`](where, i)
             where += indexBytes
 
             // write value at that index
-            view[`set${type}`](where, val)
+            view[`set${type}`](where, value)
             where += prop[eid].BYTES_PER_ELEMENT
             count2++
           }
 
           view[`set${indexType}`](countWhere2, count2)
+
         } else {
           // regular property values
           const type = prop.constructor.name.replace('Array', '')
           // set value next [type] bytes
           view[`set${type}`](where, prop[eid])
           where += prop.BYTES_PER_ELEMENT
+
+          // sync shadow state
+          prop[$serializeShadow][eid] = prop[eid]
         }
       }
 
@@ -147,39 +151,45 @@ export const defineDeserializer = (target) => {
     const view = new DataView(packet)
     let where = 0
 
-    // pid
-    const pid = view.getUint8(where)
-    where += 1
+    while (where < packet.byteLength) {
 
-    // entity count
-    const entityCount = view.getUint32(where)
-    where += 4
+      // pid
+      const pid = view.getUint8(where)
+      where += 1
 
-    // typed array
-    const ta = componentProps[pid]
-
-    // Get the properties and set the new state
-    for (let i = 0; i < entityCount; i++) {
-      const eid = view.getUint32(where)
+      // entity count
+      const entityCount = view.getUint32(where)
       where += 4
 
-      if (ArrayBuffer.isView(ta[eid])) {
-        const array = ta[eid]
-        const count = view[`get${array._indexType}`]
-        where += array._indexBytes
+      // typed array
+      const ta = componentProps[pid]
 
-        // iterate over count
-        for (let i = 0; i < count; i++) {
-          const value = view[`get${array.constructor.name.replace('Array', '')}`](where)
-          where += array.BYTES_PER_ELEMENT
+      // Get the properties and set the new state
+      for (let i = 0; i < entityCount; i++) {
+        const eid = view.getUint32(where)
+        where += 4
+        
+        if (ArrayBuffer.isView(ta[eid])) {
+          const array = ta[eid]
+          const count = view[`get${array[$indexType]}`](where)
+          where += array[$indexBytes]
 
-          ta[eid][i] = value
+          // iterate over count
+          for (let i = 0; i < count; i++) {
+            const index = view[`get${array[$indexType]}`](where)
+            where += array[$indexBytes]
+
+            const value = view[`get${array.constructor.name.replace('Array', '')}`](where)
+            where += array.BYTES_PER_ELEMENT
+
+            ta[eid][index] = value
+          }
+        } else {
+          let value = view[`get${ta.constructor.name.replace('Array', '')}`](where)
+          where += ta.BYTES_PER_ELEMENT
+
+          ta[eid] = value
         }
-      } else {
-        let value = view[`get${ta.constructor.name.replace('Array', '')}`](where)
-        where += ta.BYTES_PER_ELEMENT
-
-        ta[eid] = value
       }
     }
   }
