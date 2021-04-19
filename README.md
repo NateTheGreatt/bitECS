@@ -195,7 +195,7 @@ const deserialize = createDeserializer()
 let packet = serialize(world)
 
 // deserializes the state back onto the world
-deserialize(world, packet)
+deserialize(packet)
 
 // creates a serializer/deserializer which will serialize select component stores
 const serializePositions = createSerializer([Positions])
