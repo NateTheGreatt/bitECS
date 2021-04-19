@@ -17,8 +17,8 @@ Functional, tiny, data-oriented, high performance [ECS](https://en.wikipedia.org
 
 🔥 Blazing fast
 
-- [ecs-benchmark](https://github.com/noctjs/ecs-benchmark)
-- [js-ecs-benchmark](https://github.com/ddmills/js-ecs-benchmarks)
+- [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark)
+- [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks)
 
 ## Install
 ```
