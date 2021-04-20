@@ -2,7 +2,6 @@
 
 Functional, tiny, data-oriented, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
----
 
 ## Features
 
@@ -23,20 +22,16 @@ Functional, tiny, data-oriented, high performance [ECS](https://en.wikipedia.org
 - [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark)
 - [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks)
 
----
-
 ### In Development
 
 🧵 Multithreading
 
----
 
 ## Install
 ```
 npm i bitecs
 ```
 
----
 
 ## Example
 
