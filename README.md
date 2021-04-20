@@ -2,28 +2,41 @@
 
 Functional, tiny, data-oriented, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
+---
+
 ## Features
-🔮 Functional
 
-🤏 `<3kb` gzipped
+🔮 Simple & functional API
 
-🙅‍♂️ Zero dependencies
+🔍 Powerful & performant queries
 
-💾 Serialization
+💾 Swift serialization
 
-✨ Queries with modifiers
+🍃 Zero dependencies
 
 🌐 Node or browser
+
+🤏 `~3kb` gzipped
 
 🔥 Blazing fast
 
 - [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark)
 - [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks)
 
+---
+
+### In Development
+
+🧵 Multithreading
+
+---
+
 ## Install
 ```
 npm i bitecs
 ```
+
+---
 
 ## Example
 
@@ -67,6 +80,8 @@ import {
 const world = createWorld()
 const world2 = createWorld()
 
+// can store whatever on the world
+world.metadata = 123
 
 /** 
  * defineComponent
@@ -134,7 +149,7 @@ const movementSystem = defineSystem(world => {
 
 
 /** 
- * Entity
+ * addEntity
  * 
  * An entity is a single ID which components can be associated with.
  * Entities are accessed via queries, components of whom are mutated with systems.
@@ -195,7 +210,8 @@ const deserialize = createDeserializer()
 let packet = serialize(world)
 
 // deserializes the state back onto the world
-deserialize(packet)
+// note: creates entities/components if they do not exist
+deserialize(world, packet)
 
 // creates a serializer/deserializer which will serialize select component stores
 const serializePositions = createSerializer([Positions])
@@ -205,7 +221,7 @@ const deserializePositions = createDeserializer([Positions])
 packet = serializePositions(movementQuery(world))
 
 // deserializes the Position data back onto the world
-deserializePositions(packet)
+deserializePositions(world, packet)
 
 // creates a serializer which will serialize select component stores of entities
 // whose component state has changed since the last call of the function
@@ -216,5 +232,3 @@ const serializeOnlyChangedPositions = createSerializer([Changed(Positions)])
 packet = serializeOnlyChangedPositions(movementQuery(world))
 
 ```
-
-Full documentation and feature rich examples can be found [here](DOCS.md).

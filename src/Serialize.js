@@ -1,6 +1,7 @@
 import { $queryMap } from "./Query.js"
-import { $indexBytes, $indexType, $queryShadow, $serializeShadow, $storeFlattened } from "./Storage.js"
-import { $componentMap } from "./Component.js"
+import { $indexBytes, $indexType, $queryShadow, $serializeShadow, $storeBase, $storeFlattened } from "./Storage.js"
+import { $componentMap, addComponent, hasComponent } from "./Component.js"
+import { $entityEnabled, addEntity } from "./Entity.js"
 
 export const diff = (world, query) => {
   const q = world[$queryMap].get(query)
@@ -147,7 +148,7 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
 
 export const defineDeserializer = (target) => {
   const [componentProps] = canonicalize(target)
-  return (packet) => {
+  return (world, packet) => {
     const view = new DataView(packet)
     let where = 0
 
@@ -166,8 +167,19 @@ export const defineDeserializer = (target) => {
 
       // Get the properties and set the new state
       for (let i = 0; i < entityCount; i++) {
-        const eid = view.getUint32(where)
+        let eid = view.getUint32(where)
         where += 4
+
+        // if this world hasn't seen this eid yet
+        if (!world[$entityEnabled][eid]) {
+          // make a new entity for the data
+          eid = addEntity(world)
+        }
+
+        const component = ta[$storeBase]()
+        if (!hasComponent(world, component, eid)) {
+          addComponent(world, component, eid)
+        }
         
         if (ArrayBuffer.isView(ta[eid])) {
           const array = ta[eid]

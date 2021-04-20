@@ -49,6 +49,7 @@ export const $storeRef = Symbol('storeRef')
 export const $storeSize = Symbol('storeSize')
 export const $storeMaps = Symbol('storeMaps')
 export const $storeFlattened = Symbol('storeFlattened')
+export const $storeBase = Symbol('storeBase')
 
 export const $storeArrayCount = Symbol('storeArrayCount')
 export const $storeSubarrays = Symbol('storeSubarrays')
@@ -122,6 +123,15 @@ export const resizeStore = (store, size) => {
   resizeSubarrays(store, size)
 }
 
+export const resetStore = store => {
+  store[$storeFlattened].forEach(ta => {
+    ta.fill(0)
+  })
+  Object.keys(store[$storeSubarrays]).forEach(key => {
+    store[$storeSubarrays][key].fill(0)
+  })
+}
+
 const createTypeStore = (type, length) => {
   const totalBytes = length * TYPES[type].BYTES_PER_ELEMENT
   const buffer = new ArrayBuffer(totalBytes)
@@ -187,15 +197,6 @@ const isArrayType = x => Array.isArray(x)
   && x[0].hasOwnProperty('type')
   && x[0].hasOwnProperty('length')
 
-export const resetStore = store => {
-  store[$storeFlattened].forEach(ta => {
-    ta.fill(0)
-  })
-  Object.keys(store[$storeSubarrays]).forEach(key => {
-    store[$storeSubarrays][key].fill(0)
-  })
-}
-
 export const createStore = (schema, size=1000000) => {
   const $store = Symbol('store')
 
@@ -231,6 +232,7 @@ export const createStore = (schema, size=1000000) => {
   if (typeof schema === 'string') {
 
     stores[$store] = Object.assign(createTypeStore(schema, size), metadata)
+    stores[$store][$storeBase] = () => stores[$store]
     metadata[$storeFlattened].push(stores[$store])
     createShadows(stores[$store])
     return stores[$store]
@@ -239,6 +241,7 @@ export const createStore = (schema, size=1000000) => {
 
     const { type, length } = schema[0]
     stores[$store] = Object.assign(createArrayStore(metadata, type, length), metadata)
+    stores[$store][$storeBase] = () => stores[$store]
     metadata[$storeFlattened].push(stores[$store])
     return stores[$store]
 
@@ -249,6 +252,7 @@ export const createStore = (schema, size=1000000) => {
       if (typeof a[k] === 'string') {
 
         a[k] = createTypeStore(a[k], size)
+        a[k][$storeBase] = () => stores[$store]
         metadata[$storeFlattened].push(a[k])
         createShadows(a[k])
 
@@ -256,6 +260,7 @@ export const createStore = (schema, size=1000000) => {
         
         const { type, length } = a[k][0]
         a[k] = createArrayStore(metadata, type, length)
+        a[k][$storeBase] = () => stores[$store]
         metadata[$storeFlattened].push(a[k])
 
       } else if (a[k] instanceof Object) {
@@ -268,6 +273,7 @@ export const createStore = (schema, size=1000000) => {
     }
 
     stores[$store] = Object.assign(Object.keys(schema).reduce(recursiveTransform, schema), metadata)
+    stores[$store][$storeBase] = () => stores[$store]
 
     return stores[$store]
 
