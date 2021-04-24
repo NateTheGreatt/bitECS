@@ -6,6 +6,7 @@
   "type": "module",
   "main": "./dist/index.min.js",
   "module": "./dist/index.es.js",
+  "types": "./index.d.ts",
   "exports": {
     "import": "./dist/index.es.js",
     "require": "./dist/index.min.js"
