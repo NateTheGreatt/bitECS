@@ -4,3 +4,4 @@ __tests__
 scripts
 rollup.config.js
 src
+test

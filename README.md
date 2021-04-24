@@ -1,11 +1,13 @@
 # 👾 bitECS 👾
 
-Functional, tiny, data-oriented, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
+Functional, small, data-oriented, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
 
 ## Features
 
 🔮 Simple & functional API
+
+🔥 Blazing fast iteration
 
 🔍 Powerful & performant queries
 
@@ -15,12 +17,13 @@ Functional, tiny, data-oriented, high performance [ECS](https://en.wikipedia.org
 
 🌐 Node or browser
 
-🤏 `~3kb` gzipped
+🤏 `~5kb` gzipped
 
-🔥 Blazing fast
+🚀 Unparalleled performance
 
 - [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark)
 - [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks)
+
 
 ### In Development
 
@@ -71,12 +74,12 @@ import {
  * Create as many worlds as you want.
 **/
 
-// returns an empty object which can be used to store miscellaneous state about the world
+// creating worlds returns empty objects
 const world = createWorld()
 const world2 = createWorld()
 
-// can store whatever on the world
-world.metadata = 123
+// store whatever you need on the world object
+world.time = { delta: 0, elapsed: 0 }
 
 /** 
  * defineComponent
@@ -110,13 +113,13 @@ const movementQuery = defineQuery([Position, Velocity])
 // use the query on a world
 const ents = movementQuery(world)
 
+// wrapping a component with the Not modifier creates a query which
+// returns entities who explicitly do not have the component
+const positionWithoutVelocityQuery = defineQuery([ Position, Not(Velocity) ])
+
 // wrapping a component with the Change modifier creates a query which
 // returns entities whose component's state has changed since last call of the function
 const changedPositionQuery = defineQuery([ Changed(Position) ])
-
-// wrapping a component with the Not modifier creates a query which
-// returns entities who explicitly do not have the component
-const notVelocityQuery = defineQuery([ Position, Not(Velocity) ])
 
 // enter-query hook, called when an entity's components matches the query
 enterQuery(world, movementQuery, eid => {})
@@ -132,7 +135,7 @@ exitQuery(world, movementQuery, eid => {})
  * Use queries to access relevant entities for the system.
 **/
 
-// define a system
+// movement system
 const movementSystem = defineSystem(world => {
   const ents = movementQuery(world)
   for (let i = 0; i < ents.length; i++) {
@@ -140,6 +143,16 @@ const movementSystem = defineSystem(world => {
     Position.x[eid] += Velocity.x[eid]
     Position.y[eid] += Velocity.y[eid]
   }
+})
+
+// delta time system
+let then = performance.now()
+const timeSystem = defineSystem(world => {
+  const now = performance.now()
+  const delta = now - then
+  world.time.delta = delta
+  world.time.elapsed += delta
+  then = now
 })
 
 
@@ -178,8 +191,7 @@ Position.y[eid] = 2
 
 const pipeline = pipe(
   movementSystem,
-  movementSystem,
-  movementSystem,
+  timeSystem,
 )
 
 
@@ -187,8 +199,11 @@ const pipeline = pipe(
  * Update worlds with systems or pipelines of systems.
 **/
 
-movementSystem(world) // executes movement system on world
-pipeline(world) // executes a pipeline of systems on world
+// execute movement system on world
+movementSystem(world)
+
+// executes a pipeline of systems on world
+pipeline(world)
 
 
 /** 
@@ -205,12 +220,12 @@ const deserialize = createDeserializer()
 let packet = serialize(world)
 
 // deserializes the state back onto the world
-// note: creates entities/components if they do not exist
+// note: creates entities and adds components if they do not exist
 deserialize(world, packet)
 
 // creates a serializer/deserializer which will serialize select component stores
-const serializePositions = createSerializer([Positions])
-const deserializePositions = createDeserializer([Positions])
+const serializePositions = createSerializer([Position])
+const deserializePositions = createDeserializer([Position])
 
 // serializes the Position data of entities which match the movementQuery
 packet = serializePositions(movementQuery(world))
@@ -220,7 +235,7 @@ deserializePositions(world, packet)
 
 // creates a serializer which will serialize select component stores of entities
 // whose component state has changed since the last call of the function
-const serializeOnlyChangedPositions = createSerializer([Changed(Positions)])
+const serializeOnlyChangedPositions = createSerializer([Changed(Position)])
 
 // serializes the Position data of entities which match the movementQuery
 // whose component values have changed since last call of the function

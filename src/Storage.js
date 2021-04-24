@@ -200,12 +200,12 @@ const isArrayType = x => Array.isArray(x)
 export const createStore = (schema, size=1000000) => {
   const $store = Symbol('store')
 
-  schema = JSON.parse(JSON.stringify(schema))
-
   if (schema.constructor.name === 'Map') {
     schema[$storeSize] = size
     return schema
   }
+
+  schema = JSON.parse(JSON.stringify(schema))
 
   const collectArrayCount = (count, key) => {
     if (isArrayType(schema[key])) {
@@ -229,23 +229,7 @@ export const createStore = (schema, size=1000000) => {
     [$storeFlattened]: []
   }
 
-  if (typeof schema === 'string') {
-
-    stores[$store] = Object.assign(createTypeStore(schema, size), metadata)
-    stores[$store][$storeBase] = () => stores[$store]
-    metadata[$storeFlattened].push(stores[$store])
-    createShadows(stores[$store])
-    return stores[$store]
-
-  } else if (isArrayType(schema)) {
-
-    const { type, length } = schema[0]
-    stores[$store] = Object.assign(createArrayStore(metadata, type, length), metadata)
-    stores[$store][$storeBase] = () => stores[$store]
-    metadata[$storeFlattened].push(stores[$store])
-    return stores[$store]
-
-  } else if (schema instanceof Object && Object.keys(schema).length) {
+  if (schema instanceof Object && Object.keys(schema).length) {
 
     const recursiveTransform = (a, k) => {
       

@@ -108,7 +108,7 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
 
           let count2 = 0
 
-          // write array values
+          // write index,value
           for (let i = 0; i < prop[eid].length; i++) {
             const value = prop[eid][i]
 
@@ -126,6 +126,7 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
             count2++
           }
 
+          // write total element count
           view[`set${indexType}`](countWhere2, count2)
 
         } else {
