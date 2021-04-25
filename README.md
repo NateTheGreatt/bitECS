@@ -66,7 +66,7 @@ import {
 
 A world represents a set of entities and the components that they each possess. Does NOT store actual component data.
 
-Create as many worlds as you want. An empty object is returned which you can use as a context for whatever you want.
+Any number of worlds can be created. An empty object is returned which you can use as a context.
 
 ```js
 const world = createWorld()
@@ -89,7 +89,9 @@ removeEntity(world, eid2)
 
 ## Component
  
-Components are added to entities. The object returned from `defineComponent` is a SoA (Structure of Arrays). This is what actually stores the component data.
+Components are pure data and added to entities to give them state. 
+
+The object returned from `defineComponent` is a SoA (Structure of Arrays). This is what actually stores the component data.
 
 Define component stores:
 ```js
@@ -143,12 +145,12 @@ console.log(ents) // => [0]
 ```
 
 
-The enter-query hook is called when an entity's components matches the query:
+The enter-query hook is called when an entity's components match the query:
 ```js
 enterQuery(world, movementQuery, eid => {})
 ```
 
-The exit-query hook is called when an entity's components no longer matches the query:
+The exit-query hook is called when an entity's components no longer match the query:
 ```js
 exitQuery(world, movementQuery, eid => {})
 ```
@@ -156,7 +158,7 @@ exitQuery(world, movementQuery, eid => {})
 
 ## System
 
-Systems are a function which is run against a world. Used to update componenet state of entities, or anything else.
+Systems are functions and are run against a world to update componenet state of entities, or anything else.
 
 Queries are used inside of systems to obtain a relevant set of entities and perform operations on their component data.
 
@@ -205,7 +207,7 @@ pipeline(world)
 
 Performant and highly customizable serialization is built-in. 
 
-Any subset of data can be targeted and serialized/deserialized with great efficiency.
+Any subset of data can be targeted and serialized/deserialized with great efficiency and ease.
 
 Serializers and deserializers are defined much like queries.
 
