@@ -38,8 +38,7 @@ describe('World', () => {
   })
   it('should resize on-demand', () => {
     const world = createWorld()
-    const newSize = 1_500_000
-    resizeWorld(world, newSize)
+    resizeWorld(world, 1_500_000)
     strictEqual(world[$entityMasks][0].length, 1_500_000)
     strictEqual(world[$entityEnabled].length, 1_500_000)
   })
