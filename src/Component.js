@@ -1,10 +1,10 @@
-import { createStore, resetStore } from './Storage.js'
+import { $storeSize, createStore, resetStore, resizeStore } from './Storage.js'
 import { $queryComponents, $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponents } from './Query.js'
 import { $bitflag, $size } from './World.js'
 import { $entityMasks } from './Entity.js'
 
 export const $componentMap = Symbol('componentMap')
-export const $deferredComponentRemovals = Symbol('de$deferredComponentRemovals')
+export const $deferredComponentRemovals = Symbol('$deferredComponentRemovals')
 
 export const defineComponent = (schema) => createStore(schema)
 
@@ -22,6 +22,10 @@ export const registerComponent = (world, component) => {
     bitflag: world[$bitflag],
     store: component
   })
+
+  if (component[$storeSize] < world[$size]) {
+    resizeStore(component, world[$size])
+  }
 
   incrementBitflag(world)
 }
