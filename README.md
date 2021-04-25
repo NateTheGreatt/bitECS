@@ -1,6 +1,6 @@
 # 👾 bitECS 👾
 
-Functional, small, data-oriented, high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
+Functional, small, data-oriented, ultra-high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
 
 ## Features

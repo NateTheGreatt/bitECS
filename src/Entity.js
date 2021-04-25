@@ -11,8 +11,16 @@ export const $removedEntities = Symbol('removedEntities')
 // need a global EID cursor which all worlds and all components know about
 // so that world entities can posess entire rows spanning all component tables
 let globalEntityCursor = 0
+// removed eids should also be global to prevent memory leaks
+const removed = []
+
+export const resetGlobals = () => {
+  globalEntityCursor = 0
+  removed.length = 0
+}
 
 export const getEntityCursor = () => globalEntityCursor
+export const getRemovedEntities = () => removed
 
 export const incrementEntityCursor = () => globalEntityCursor++
 
@@ -37,7 +45,6 @@ export const resizeWorld = (world, size) => {
 }
 
 export const addEntity = (world) => {
-  const removed = world[$removedEntities]
   const size = world[$size]
   const enabled = world[$entityEnabled]
 
@@ -56,7 +63,6 @@ export const addEntity = (world) => {
 
 export const removeEntity = (world, eid) => {
   const queries = world[$queries]
-  const removed = world[$removedEntities]
   const enabled = world[$entityEnabled]
 
   // Check if entity is already removed

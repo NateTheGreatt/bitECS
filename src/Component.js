@@ -1,4 +1,4 @@
-import { createStore } from './Storage.js'
+import { createStore, resetStore } from './Storage.js'
 import { $queryComponents, $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponents } from './Query.js'
 import { $bitflag, $size } from './World.js'
 import { $entityMasks } from './Entity.js'
@@ -45,7 +45,7 @@ export const addComponent = (world, component, eid) => {
   world[$entityMasks][generationId][eid] |= bitflag
 
   // Zero out each property value
-  // component._reset(eid)
+  resetStore(component)
 
   // todo: archetype graph
   const queries = world[$queries]
@@ -70,7 +70,7 @@ export const removeComponent = (world, component, eid) => {
     const match = queryCheckEntity(world, query, eid)
     if (match) queryRemoveEntity(world, query, eid)
   })
-  
+
   // Remove flag from entity bitmask
   world[$entityMasks][generationId][eid] &= ~bitflag
 }

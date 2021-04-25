@@ -1,4 +1,4 @@
-import { $storeSize } from './Storage.js'
+import { $storeFlattened, $storeSize } from './Storage.js'
 import { $componentMap, registerComponent } from './Component.js'
 import { $entityMasks, $entityEnabled, getEntityCursor } from './Entity.js'
 import { diff } from './Serialize.js'
@@ -88,7 +88,7 @@ export const registerQuery = (world, query) => {
     }, {})
 
   const flatProps = components
-    .map(c => c._flatten ? c._flatten() : [c])
+    .map(c => Object.getOwnPropertySymbols(c).includes($storeFlattened) ? c[$storeFlattened] : [c])
     .reduce((a,v) => a.concat(v), [])
 
   const toRemove = []
