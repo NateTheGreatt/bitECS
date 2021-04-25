@@ -38,6 +38,8 @@ interface IComponent {
   [key: string]: TypedArray | IComponentProp
 }
 
+type QueryModifier = (c: (IComponent | IComponentProp)[]) => (world: IWorld) => IComponent | IComponentProp
+
 type Query = (world: IWorld) => number[]
 
 type System = (world: IWorld) => void
@@ -52,13 +54,13 @@ export default interface IBitECS {
   addComponent: (world: IWorld, component: IComponent, eid: number)  => void
   removeComponent: (world: IWorld, component: IComponent, eid: number) => void
   hasComponent: (world: IWorld, component: IComponent, eid: number) => boolean
-  defineQuery: (components: (IComponent | IComponentProp)[]) => Query
+  defineQuery: (components: (IComponent | QueryModifier)[]) => Query
   Changed: (c: (IComponent | IComponentProp)[]) => (world: IWorld) => IComponent | IComponentProp
   Not: (c: (IComponent | IComponentProp)[]) => (world: IWorld) => IComponent | IComponentProp
   enterQuery: (world: IWorld, query: Query, fn: (eid: number) => void) => void
   exitQuery: (world: IWorld, query: Query, fn: (eid: number) => void) => void
   commitRemovals: (world: IWorld) => void
   defineSystem: (update: (world: IWorld) => void) => System
-  defineSerializer: (target: IWorld | IComponent | IComponentProp, maxBytes?: number) => (target: IWorld | number[]) => ArrayBuffer
-  defineDeserializer: (target: IWorld | IComponent | IComponentProp) => (world: IWorld, packet: ArrayBuffer) => void
+  defineSerializer: (target: IWorld | IComponent | IComponentProp | QueryModifier, maxBytes?: number) => (target: IWorld | number[]) => ArrayBuffer
+  defineDeserializer: (target: IWorld | IComponent | IComponentProp | QueryModifier) => (world: IWorld, packet: ArrayBuffer) => void
 }

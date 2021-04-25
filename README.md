@@ -5,29 +5,24 @@ Functional, small, data-oriented, ultra-high performance [ECS](https://en.wikipe
 
 ## Features
 
-🔮 Simple & functional API
+|   |   |
+| --------------------------------- | ---------------------------------------- |
+| 🔮 Simple & functional API        | 🔥 Blazing fast iteration                |
+| 🔍 Powerful & performant queries  | 💾 Swift serialization                  |
+| 🍃 Zero dependencies              | 🌐 Node or browser                      |
+| 🤏 `~5kb` gzipped                 | 🚀 Unparalleled performance benchmarks  |
 
-🔥 Blazing fast iteration
+#### Benchmarks
 
-🔍 Powerful & performant queries
-
-💾 Swift serialization
-
-🍃 Zero dependencies
-
-🌐 Node or browser
-
-🤏 `~5kb` gzipped
-
-🚀 Unparalleled performance
-
-- [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark)
-- [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks)
+|                                                                 |                                                                           |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark) | [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks) |
 
 
-### In Development
-
-🧵 Multithreading
+#### In Development
+|                  |
+| ---------------- |
+|🧵 Multithreading |
 
 
 ## Install
@@ -35,12 +30,11 @@ Functional, small, data-oriented, ultra-high performance [ECS](https://en.wikipe
 npm i bitecs
 ```
 
+## API Overview
 
-## Example
+This is the entire API:
 
 ```js
-
-// this is the entire API
 import {
 
   createWorld,
@@ -63,79 +57,112 @@ import {
   defineSerializer,
   defineDeserializer,
 
+  pipe,
+
 } from 'bitecs'
+```
 
+## World
 
-/** 
- * createWorld
- * 
- * Creates a world which represents a set of entities and what components they possess.
- * Does NOT store actual component data.
- * Create as many worlds as you want.
-**/
+A world represents a set of entities and the components that they each possess. Does NOT store actual component data.
 
-// creating worlds returns empty objects
+Create as many worlds as you want. An empty object is returned which you can use as a context for whatever you want.
+
+```js
 const world = createWorld()
-const world2 = createWorld()
 
-// store whatever you need on the world object
-world.time = { delta: 0, elapsed: 0 }
+world.name = 'MyWorld'
+```
+## Entity
 
-/** 
- * defineComponent
- * 
- * Returns a SoA (Structure of Arrays).
- * Store of component data.
-**/
+An entity is an integer, technically a pointer, which components can be associated with. Entities are accessed via queries, components of whom are mutated with systems.
 
-// available types
-const { bool, i8, ui8, ui8c, i16, ui16, i32, ui32, f32, f64 } = Types
+Add entities to the world:
+```js
+const eid = addEntity(world)
+const eid2 = addEntity(world)
+```
+Remove entities from the world:
+```js
+removeEntity(world, eid2)
+```
 
-// schema for a component
-const Vector2 = { x: f32, y: f32 }
+## Component
+ 
+Components are added to entities. The object returned from `defineComponent` is a SoA (Structure of Arrays). This is what actually stores the component data.
 
-// define components, which creates SoA data stores
-const Position = defineComponent(Vector2)
-const Velocity = defineComponent(Vector2)
-const Health = defineComponent({ value: ui16 })
-const Alive = defineComponent() // "tag" component
-const Mapping = defineComponent(new Map()) // can use a map to associate regular JS objects with entities
+Define component stores:
+```js
+const Vector3 = { x: Types.f32, y: Types.f32, z: Types.f32 }
+const Position = defineComponent(Vector3)
+const Velocity = defineComponent(Vector3)
+```
 
-/** 
- * defineQuery
- * 
- * Returns a query function which returns array of entities from a world that match the given components.
-**/
+Add components to an entity in a world:
+```js
+addComponent(world, Position, eid)
+addComponent(world, Velocity, eid)
+```
 
-// define a query using components
+Component data accessed directly via `eid`, there are no getters or setters:
+```js
+Velocity.x[eid] = 1
+Velocity.y[eid] = 1
+```
+
+## Query
+
+A query is defined with components and used to obtain a specific set of entities from a world.
+
+Define a query:
+```js
 const movementQuery = defineQuery([Position, Velocity])
+```
 
-// use the query on a world
+Use the query on a world to obtain an array of entities with those components:
+```js
 const ents = movementQuery(world)
+```
 
-// wrapping a component with the Not modifier creates a query which
-// returns entities who explicitly do not have the component
+Wrapping a component with the `Not` modifier defines a query which returns entities who explicitly do not have the component:
+```js
 const positionWithoutVelocityQuery = defineQuery([ Position, Not(Velocity) ])
+```
 
-// wrapping a component with the Change modifier creates a query which
-// returns entities whose component's state has changed since last call of the function
+Wrapping a component with the `Change` modifier creates a query which returns entities whose component's state has changed since last call of the function
+```js
 const changedPositionQuery = defineQuery([ Changed(Position) ])
 
-// enter-query hook, called when an entity's components matches the query
+let ents = changedPositionQuery(world)
+console.log(ents) // => []
+
+Position.x[eid]++
+
+ents = changedPositionQuery(world)
+console.log(ents) // => [0]
+```
+
+
+The enter-query hook is called when an entity's components matches the query:
+```js
 enterQuery(world, movementQuery, eid => {})
+```
 
-// exit-query hook, called when an entity's components no longer matches the query
+The exit-query hook is called when an entity's components no longer matches the query:
+```js
 exitQuery(world, movementQuery, eid => {})
+```
 
 
-/** 
- * defineSystem
- * 
- * Creates a function which can be processed against a given world.
- * Use queries to access relevant entities for the system.
-**/
+## System
 
-// movement system
+Systems are a function which is run against a world. Used to update componenet state of entities, or anything else.
+
+Queries are used inside of systems to obtain a relevant set of entities and perform operations on their component data.
+
+While not required, it is greatly encouraged that you keep all component data mutations inside of systems, and all system-dependent state on the world.
+
+```js
 const movementSystem = defineSystem(world => {
   const ents = movementQuery(world)
   for (let i = 0; i < ents.length; i++) {
@@ -145,100 +172,85 @@ const movementSystem = defineSystem(world => {
   }
 })
 
-// delta time system
-let then = performance.now()
+world.time = { 
+  delta: 0, 
+  elapsed: 0,
+  then: performance.now()
+}
 const timeSystem = defineSystem(world => {
   const now = performance.now()
-  const delta = now - then
+  const delta = now - world.time.then
   world.time.delta = delta
   world.time.elapsed += delta
-  then = now
+  world.time.then = now
 })
+```
 
+Systems are used to update entities of a world:
+```js
+movementSystem(world)
+```
 
-/** 
- * addEntity
- * 
- * An entity is a single ID which components can be associated with.
- * Entities are accessed via queries, components of whom are mutated with systems.
-**/
-
-// add entities to the world
-const eid = addEntity(world)
-const eid2 = addEntity(world)
-
-// remove entities from the world
-removeEntity(world, eid2)
-
-// add components to the new entities in the world
-addComponent(world, Position, eid)
-addComponent(world, Velocity, eid)
-
-// remove components from entities in the world
-removeComponent(world, Velocity, eid)
-
-// there are no component getters or setters
-// data is accessed directly by entity ID
-Position.x[eid] = 1
-Position.y[eid] = 2
-
-
-/** 
- * pipe
- * 
- * Creates a sequence of systems which are executed in serial.
-**/
-
+Pipelines of systems should be created with the `pipe` function:
+```js
 const pipeline = pipe(
   movementSystem,
-  timeSystem,
+  timeSystem
 )
 
-
-/** 
- * Update worlds with systems or pipelines of systems.
-**/
-
-// execute movement system on world
-movementSystem(world)
-
-// executes a pipeline of systems on world
 pipeline(world)
+```
 
+## Serialization
 
-/** 
- * createSerializer / Deserializer
- * 
- * Creates a function which serializes the state of a world or array of entities.
-**/
+Performant and highly customizable serialization is built-in. 
 
-// creates a serializer/deserializer which will serialize all component stores
+Any subset of data can be targeted and serialized/deserialized with great efficiency.
+
+Serializers and deserializers are defined much like queries.
+
+Create a serializer/deserializer which will serialize all component stores of an entire world:
+```js
 const serialize = createSerializer()
 const deserialize = createDeserializer()
+```
 
-// serializes the entire world of entities
-let packet = serialize(world)
-
-// deserializes the state back onto the world
-// note: creates entities and adds components if they do not exist
+Use the serializer and deserializer to serialize and restore state on a world:
+* Note: creates entities and adds components if they do not exist
+```js
+const packet = serialize(world)
 deserialize(world, packet)
+```
 
-// creates a serializer/deserializer which will serialize select component stores
+Serialize and deserialize can be given a specific set of entities using queries:
+```js
+const ents = movementQuery(world)
+const packet = serialize(ents)
+deserialize(world, packet)
+```
+
+Create a serializer/deserializer which will serialize select component stores
+```js
 const serializePositions = createSerializer([Position])
 const deserializePositions = createDeserializer([Position])
+```
 
-// serializes the Position data of entities which match the movementQuery
-packet = serializePositions(movementQuery(world))
-
-// deserializes the Position data back onto the world
+This will serialize and deserialize the Position data of entities which match the movementQuery:
+```js
+const packet = serializePositions(movementQuery(world))
 deserializePositions(world, packet)
+```
 
-// creates a serializer which will serialize select component stores of entities
-// whose component state has changed since the last call of the function
+Create a serializer which will only serialize select component stores of entities
+whose component state has changed since the last call of the function:
+```js
 const serializeOnlyChangedPositions = createSerializer([Changed(Position)])
 
-// serializes the Position data of entities which match the movementQuery
-// whose component values have changed since last call of the function
-packet = serializeOnlyChangedPositions(movementQuery(world))
+let packet = serializeOnlyChangedPositions(movementQuery(world))
+console.log(packet.byteLength) // => 0
 
+Position.x[eid]++
+
+packet = serializeOnlyChangedPositions(movementQuery(world))
+console.log(packet.byteLength) // => 13
 ```
