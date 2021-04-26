@@ -7,7 +7,7 @@ Functional, declarative, minimal, data-oriented, ultra-high performance [ECS](ht
 
 |   |   |
 | --------------------------------- | ---------------------------------------- |
-| 🔮 Simple & functional API        | 🔥 Blazing fast iteration                |
+| 🔮 Simple, declarative API        | 🔥 Blazing fast iteration                |
 | 🔍 Powerful & performant queries  | 💾 Swift serialization                  |
 | 🍃 Zero dependencies              | 🌐 Node or browser                      |
 | 🤏 `~5kb` gzipped                 | 🚀 Unparalleled performance benchmarks  |
