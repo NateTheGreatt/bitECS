@@ -1,4 +1,4 @@
-import { $storeSize, createStore, resetStore, resizeStore } from './Storage.js'
+import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage.js'
 import { $queryComponents, $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponents } from './Query.js'
 import { $bitflag, $size } from './World.js'
 import { $entityMasks } from './Entity.js'
