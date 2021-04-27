@@ -137,7 +137,7 @@ export const resetStoreFor = (store, eid) => {
     ta[eid] = 0
   })
   Object.keys(store[$storeSubarrays]).forEach(key => {
-    store[$storeSubarrays][key][eid] = 0
+    store[$storeSubarrays][key][eid].fill(0)
   })
 }
 
