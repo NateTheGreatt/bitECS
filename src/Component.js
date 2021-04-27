@@ -49,7 +49,7 @@ export const addComponent = (world, component, eid) => {
   world[$entityMasks][generationId][eid] |= bitflag
 
   // Zero out each property value
-  resetStore(component)
+  resetStoreFor(component, eid)
 
   // todo: archetype graph
   const queries = world[$queries]

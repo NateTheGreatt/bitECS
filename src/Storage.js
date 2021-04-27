@@ -132,6 +132,15 @@ export const resetStore = store => {
   })
 }
 
+export const resetStoreFor = (store, eid) => {
+  store[$storeFlattened].forEach(ta => {
+    ta[eid] = 0
+  })
+  Object.keys(store[$storeSubarrays]).forEach(key => {
+    store[$storeSubarrays][key][eid] = 0
+  })
+}
+
 const createTypeStore = (type, length) => {
   const totalBytes = length * TYPES[type].BYTES_PER_ELEMENT
   const buffer = new ArrayBuffer(totalBytes)
