@@ -5,8 +5,12 @@ import { $size } from './World.js'
 
 export const $entityMasks = Symbol('entityMasks')
 export const $entityEnabled = Symbol('entityEnabled')
+export const $entityArray = Symbol('entityArray')
+export const $entityIndices = Symbol('entityIndices')
 export const $deferredEntityRemovals = Symbol('deferredEntityRemovals')
 export const $removedEntities = Symbol('removedEntities')
+
+const NONE = 2**32
 
 // need a global EID cursor which all worlds and all components know about
 // so that world entities can posess entire rows spanning all component tables
@@ -58,6 +62,8 @@ export const addEntity = (world) => {
   const eid = removed.length > 0 ? removed.pop() : globalEntityCursor
   enabled[eid] = 1
   globalEntityCursor++
+  world[$entityIndices][eid] = world[$entityArray].push(eid) - 1
+
   return eid
 }
 
@@ -77,6 +83,16 @@ export const removeEntity = (world, eid) => {
   // Free the entity
   removed.push(eid)
   enabled[eid] = 0
+
+  // pop swap
+  const index = world[$entityIndices][eid]
+
+  const swapped = world[$entityArray].pop()
+  if (swapped !== eid) {
+    world[$entityArray][index] = swapped
+    world[$entityIndices][swapped] = index
+  }
+  world[$entityIndices][eid] = NONE
 
   // Clear entity bitmasks
   for (let i = 0; i < world[$entityMasks].length; i++) world[$entityMasks][i][eid] = 0

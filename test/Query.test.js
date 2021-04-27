@@ -1,12 +1,11 @@
-import assert, { strictEqual } from 'assert'
+import { strictEqual } from 'assert'
 import { Types } from '../src/index.js'
 import { createWorld } from '../src/World.js'
-import { $componentMap, addComponent, defineComponent, hasComponent, registerComponent, removeComponent } from '../src/Component.js'
-import { addEntity, removeEntity, resetGlobals } from '../src/Entity.js'
+import { addComponent, defineComponent } from '../src/Component.js'
+import { addEntity, resetGlobals } from '../src/Entity.js'
 import { Changed, defineQuery, Not } from '../src/Query.js'
 
-
-describe('Component', () => {
+describe('Query', () => {
   afterEach(() => {
     resetGlobals()
   })
@@ -17,6 +16,7 @@ describe('Component', () => {
     const eid = addEntity(world)
     addComponent(world, TestComponent, eid)
     const ents = query(world)
+    
     strictEqual(ents.length, 1)
     strictEqual(ents[0], 0)
   })
@@ -28,6 +28,7 @@ describe('Component', () => {
     const eid2 = addEntity(world)
     addComponent(world, TestComponent, eid1)
     const ents = query(world)
+    
     strictEqual(ents.length, 1)
     strictEqual(ents[0], eid2)
   })

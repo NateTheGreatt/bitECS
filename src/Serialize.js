@@ -1,7 +1,7 @@
 import { $queryMap } from "./Query.js"
 import { $indexBytes, $indexType, $queryShadow, $serializeShadow, $storeBase, $storeFlattened } from "./Storage.js"
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
-import { $entityEnabled, addEntity } from "./Entity.js"
+import { $entityArray, $entityEnabled, addEntity } from "./Entity.js"
 
 export const diff = (world, query) => {
   const q = world[$queryMap].get(query)
@@ -32,7 +32,7 @@ export const diff = (world, query) => {
 }
 
 const canonicalize = (target) => {
-  let componentProps
+  let componentProps = []
   let changedProps = new Set()
   if (Array.isArray(target)) {
     componentProps = target
@@ -47,8 +47,8 @@ const canonicalize = (target) => {
       })
       .reduce((a,v) => a.concat(v), [])
   } else {
-    target[$componentMap].forEach(c => {
-      componentProps = componentProps.concat(c[$storeFlattened])
+    target[$componentMap].forEach((c, component) => {
+      componentProps = componentProps.concat(component[$storeFlattened])
     })
   }
   return [componentProps, changedProps]
@@ -63,6 +63,7 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
   const view = new DataView(buffer)
 
   return ents => {
+    if (Object.getOwnPropertySymbols(ents).includes($entityArray)) ents = ents[$entityArray]
     if (!ents.length) return
 
     let where = 0

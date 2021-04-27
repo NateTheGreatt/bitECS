@@ -1,6 +1,6 @@
 # 👾 bitECS 👾
 
-Functional, declarative, minimal, data-oriented, ultra-high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
+Functional, minimal, data-oriented, ultra-high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
 
 ## Features
@@ -30,7 +30,7 @@ Functional, declarative, minimal, data-oriented, ultra-high performance [ECS](ht
 npm i bitecs
 ```
 
-## API Overview
+## Overview
 
 This is the entire API:
 
@@ -64,7 +64,9 @@ import {
 
 ## World
 
-A world represents a set of entities and the components that they each possess. Does NOT store actual component data.
+A world represents a set of entities and the components that they each possess. 
+
+Worlds do not store actual component data, only the relationships with entities (archetypes).
 
 Any number of worlds can be created. An empty object is returned which you can use as a context.
 
@@ -107,6 +109,7 @@ addComponent(world, Velocity, eid)
 ```
 
 Component data accessed directly via `eid`, there are no getters or setters:
+* This is how high performance iteration is achieved
 ```js
 Velocity.x[eid] = 1
 Velocity.y[eid] = 1
@@ -114,7 +117,7 @@ Velocity.y[eid] = 1
 
 ## Query
 
-A query is defined with components and used to obtain a specific set of entities from a world.
+A query is defined with components and is used to obtain a specific set of entities from a world.
 
 Define a query:
 ```js
@@ -131,7 +134,7 @@ Wrapping a component with the `Not` modifier defines a query which returns entit
 const positionWithoutVelocityQuery = defineQuery([ Position, Not(Velocity) ])
 ```
 
-Wrapping a component with the `Change` modifier creates a query which returns entities whose component's state has changed since last call of the function
+Wrapping a component with the `Change` modifier creates a query which returns entities whose component's state has changed since last call of the function:
 ```js
 const changedPositionQuery = defineQuery([ Changed(Position) ])
 
@@ -164,6 +167,7 @@ Queries are used inside of systems to obtain a relevant set of entities and perf
 
 While not required, it is greatly encouraged that you keep all component data mutations inside of systems, and all system-dependent state on the world.
 
+Define a system that moves entity positions based on their velocity:
 ```js
 const movementSystem = defineSystem(world => {
   const ents = movementQuery(world)
@@ -173,7 +177,10 @@ const movementSystem = defineSystem(world => {
     Position.y[eid] += Velocity.y[eid]
   }
 })
+```
 
+Define a system which tracks time:
+```js
 world.time = { 
   delta: 0, 
   elapsed: 0,
@@ -205,51 +212,54 @@ pipeline(world)
 
 ## Serialization
 
-Performant and highly customizable serialization is built-in. 
+Performant and highly customizable serialization is built-in. Any subset of data can be targeted and serialized/deserialized with great efficiency and ease.
 
-Any subset of data can be targeted and serialized/deserialized with great efficiency and ease.
+Serializers and deserializers need the same configs in order to work properly. Any combination of components and component properties may be used as configs.
 
-Serializers and deserializers are defined much like queries.
-
-Create a serializer/deserializer which will serialize all component stores of an entire world:
+Serialization can take a whole world as a config and will serialize all component stores in that world:
 ```js
-const serialize = createSerializer()
-const deserialize = createDeserializer()
+const serialize = createSerializer(world)
+const deserialize = createDeserializer(world)
 ```
 
-Use the serializer and deserializer to serialize and restore state on a world:
-* Note: creates entities and adds components if they do not exist
+Serialize all of the world's entities and thier component data:
 ```js
 const packet = serialize(world)
+```
+
+Use the deserializer to apply state onto the same or any other world:
+* Note: serialized entities and components are automatically (re)created if they do not exist in the target world
+```js
 deserialize(world, packet)
 ```
 
-Serialize and deserialize can be given a specific set of entities using queries:
+Serialize a more specific set of entities using queries:
 ```js
 const ents = movementQuery(world)
 const packet = serialize(ents)
 deserialize(world, packet)
 ```
 
-Create a serializer/deserializer which will serialize select component stores
+Serialization for any mixture of components and component properties:
 ```js
-const serializePositions = createSerializer([Position])
-const deserializePositions = createDeserializer([Position])
+const serializePositions = createSerializer([Position, Velocity.x])
+const deserializePositions = createDeserializer([Position, Velocity.x])
 ```
 
-This will serialize and deserialize the Position data of entities which match the movementQuery:
+Serialize Position data for entities matching the movementQuery, defined with pipe:
 ```js
-const packet = serializePositions(movementQuery(world))
+const serializeMovementQueryPositions = pipe(movementQuery, serializePositions)
+const packet = serializeMovementQueryPositions(world)
 deserializePositions(world, packet)
 ```
 
-Create a serializer which will only serialize select component stores of entities
+Serialization which targets select component stores of entities
 whose component state has changed since the last call of the function:
 ```js
 const serializeOnlyChangedPositions = createSerializer([Changed(Position)])
 
-let packet = serializeOnlyChangedPositions(movementQuery(world))
-console.log(packet.byteLength) // => 0
+let packet = pipe(movementQuery, serializeOnlyChangedPositions)(world)
+console.log(packet) // => undefined
 
 Position.x[eid]++
 

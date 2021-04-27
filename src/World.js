@@ -1,6 +1,6 @@
 import { $componentMap, $deferredComponentRemovals } from './Component.js'
 import { $queryMap, $queries, $dirtyQueries } from './Query.js'
-import { $entityEnabled, $entityMasks, $deferredEntityRemovals } from './Entity.js'
+import { $entityArray, $entityIndices, $entityEnabled, $entityMasks, $deferredEntityRemovals } from './Entity.js'
 
 export const $size = Symbol('size')
 export const $bitflag = Symbol('bitflag')
@@ -23,6 +23,9 @@ export const createWorld = (size = 1000000) => {
 
   world[$deferredComponentRemovals] = []
   world[$deferredEntityRemovals] = []
+
+  world[$entityArray] = []
+  world[$entityIndices] = new Uint32Array(size)
 
   return world
 }

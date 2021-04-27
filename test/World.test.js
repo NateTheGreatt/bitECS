@@ -1,4 +1,4 @@
-import assert from 'assert'
+import assert, { strictEqual } from 'assert'
 import { $componentMap, $deferredComponentRemovals } from '../src/Component.js'
 import { $deferredEntityRemovals, $entityEnabled, $entityMasks, resetGlobals, resizeWorld, addEntity } from '../src/Entity.js'
 import { $dirtyQueries, $queries, $queryMap } from '../src/Query.js'
@@ -6,7 +6,6 @@ import { createWorld, $size, $bitflag } from '../src/World.js'
 
 const defaultSize = 1_000_000
 
-const { strictEqual } = assert
 describe('World', () => {
   afterEach(() => {
     resetGlobals()
@@ -48,6 +47,7 @@ describe('World', () => {
     for (let i = 0; i < n; i++) {
       addEntity(world)
     }
+    
     strictEqual(world[$entityMasks][0].length, 1_500_000)
     strictEqual(world[$entityEnabled].length, 1_500_000)
   })
