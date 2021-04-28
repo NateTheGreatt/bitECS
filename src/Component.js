@@ -1,10 +1,9 @@
 import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage.js'
-import { $queryComponents, $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponents } from './Query.js'
+import { $queryComponents, $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponent } from './Query.js'
 import { $bitflag, $size } from './World.js'
 import { $entityMasks } from './Entity.js'
 
 export const $componentMap = Symbol('componentMap')
-export const $deferredComponentRemovals = Symbol('$deferredComponentRemovals')
 
 export const defineComponent = (schema) => createStore(schema)
 
@@ -52,10 +51,8 @@ export const addComponent = (world, component, eid) => {
   resetStoreFor(component, eid)
 
   // todo: archetype graph
-  const queries = world[$queries]
-  queries.forEach(query => {
-    const components = query[$queryComponents]
-    if (!queryCheckComponents(world, query, components)) return
+  world[$queries].forEach(query => {
+    if (!queryCheckComponent(world, query, component)) return
     const match = queryCheckEntity(world, query, eid)
     if (match) queryAddEntity(world, query, eid)
   })
@@ -67,10 +64,8 @@ export const removeComponent = (world, component, eid) => {
   if (!(world[$entityMasks][generationId][eid] & bitflag)) return
 
   // todo: archetype graph
-  const queries = world[$queries]
-  queries.forEach(query => {
-    const components = query[$queryComponents]
-    if (!queryCheckComponents(world, query, components)) return
+  world[$queries].forEach(query => {
+    if (!queryCheckComponent(world, query, component)) return
     const match = queryCheckEntity(world, query, eid)
     if (match) queryRemoveEntity(world, query, eid)
   })

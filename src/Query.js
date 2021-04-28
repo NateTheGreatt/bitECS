@@ -26,7 +26,6 @@ export const exitQuery = (world, query, fn) => {
 }
 
 export const registerQuery = (world, query) => {
-  if (!world[$queryMap].has(query)) world[$queryMap].set(query, {})
 
   let components = []
   let notComponents = []
@@ -48,7 +47,7 @@ export const registerQuery = (world, query) => {
 
   const mapComponents = c => world[$componentMap].get(c)
 
-  const size = components.reduce((a,c) => c[$storeSize] > a ? c[$storeSize] : a, 0)
+  const size = components.concat(notComponents).reduce((a,c) => c[$storeSize] > a ? c[$storeSize] : a, 0)
 
   const entities = []
   const changed = []
@@ -67,7 +66,7 @@ export const registerQuery = (world, query) => {
       a.push(v)
       return a
     }, [])
-    
+
   const reduceBitmasks = (a,c) => {
     if (!a[c.generationId]) a[c.generationId] = 0
     a[c.generationId] |= c.bitflag
@@ -93,22 +92,20 @@ export const registerQuery = (world, query) => {
 
   const toRemove = []
 
-  Object.assign(
-    world[$queryMap].get(query), { 
-      entities,
-      changed,
-      enabled,
-      components,
-      notComponents,
-      changedComponents,
-      masks,
-      notMasks,
-      generations,
-      indices,
-      flatProps,
-      toRemove,
-    }
-  )
+  world[$queryMap].set(query, { 
+    entities,
+    changed,
+    enabled,
+    components,
+    notComponents,
+    changedComponents,
+    masks,
+    notMasks,
+    generations,
+    indices,
+    flatProps,
+    toRemove,
+  })
   
   world[$queries].add(query)
 
@@ -123,8 +120,8 @@ export const registerQuery = (world, query) => {
 export const defineQuery = (components) => {
   const query = function (world) {
     if (!world[$queryMap].has(query)) registerQuery(world, query)
-    queryCommitRemovals(world, query)
     const q = world[$queryMap].get(query) 
+    queryCommitRemovals(world, q)
     if (q.changedComponents.length) return diff(world, query)
     return q.entities
   }
@@ -150,15 +147,11 @@ export const queryCheckEntity = (world, query, eid) => {
   return true
 }
 
-const queryCheckComponent = (world, query, component) => {
+export const queryCheckComponent = (world, query, component) => {
   const { generationId, bitflag } = world[$componentMap].get(component)
   const { masks } = world[$queryMap].get(query)
   const mask = masks[generationId]
   return (mask & bitflag) === bitflag
-}
-
-export const queryCheckComponents = (world, query, components) => {
-  return components.every(c => queryCheckComponent(world, query, c))
 }
 
 export const queryAddEntity = (world, query, eid) => {
@@ -170,8 +163,7 @@ export const queryAddEntity = (world, query, eid) => {
   if (q.enter) q.enter(eid)
 }
 
-export const queryCommitRemovals = (world, query) => {
-  const q = world[$queryMap].get(query)
+const queryCommitRemovals = (world, q) => {
   while (q.toRemove.length) {
     const eid = q.toRemove.pop()
     const index = q.indices[eid]
@@ -189,7 +181,7 @@ export const queryCommitRemovals = (world, query) => {
 
 export const commitRemovals = (world) => {
   world[$dirtyQueries].forEach(q => {
-    queryCommitRemovals(q)
+    queryCommitRemovals(world, q)
   })
 }
 
