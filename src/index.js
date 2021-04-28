@@ -6,11 +6,12 @@ import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals } from
 import { defineSerializer, defineDeserializer } from './Serialize.js'
 import { TYPES_ENUM } from './Storage.js'
 
-export const pipe = (...fns) => world => {
+export const pipe = (...fns) => input => {
   fns = Array.isArray(fns[0]) ? fns[0] : fns
+  let tmp = input
   for (let i = 0; i < fns.length; i++) {
     const fn = fns[i]
-    fn(world)
+    tmp = fn(tmp)
   }
 }
 

@@ -225,7 +225,7 @@ export const createStore = (schema, size=1000000) => {
     return count
   }
 
-  const arrayCount = isArrayType(schema) ? 1 : Object.keys(schema).reduce(collectArrayCount, 0)
+  const arrayCount = Object.keys(schema).reduce(collectArrayCount, 0)
 
   const metadata = {
     [$storeSize]: size,

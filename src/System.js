@@ -4,6 +4,7 @@ export const defineSystem = (update) => {
   const system = world => {
     update(world)
     commitRemovals(world)
+    return world
   }
 
   Object.defineProperty(system, 'name', {

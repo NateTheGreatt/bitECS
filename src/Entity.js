@@ -1,13 +1,12 @@
 import { $componentMap } from './Component.js'
 import { $queries, $queryMap, queryRemoveEntity } from './Query.js'
 import { resize, resizeStore } from './Storage.js'
-import { $size } from './World.js'
+import { $size, $warningSize } from './World.js'
 
 export const $entityMasks = Symbol('entityMasks')
 export const $entityEnabled = Symbol('entityEnabled')
 export const $entityArray = Symbol('entityArray')
 export const $entityIndices = Symbol('entityIndices')
-export const $deferredEntityRemovals = Symbol('deferredEntityRemovals')
 export const $removedEntities = Symbol('removedEntities')
 
 const NONE = 2**32
@@ -41,6 +40,7 @@ export const resizeWorld = (world, size) => {
   })
   
   world[$entityEnabled] = resize(world[$entityEnabled], size)
+  world[$entityIndices] = resize(world[$entityIndices], size)
   
   for (let i = 0; i < world[$entityMasks].length; i++) {
     const masks = world[$entityMasks][i];
@@ -49,14 +49,15 @@ export const resizeWorld = (world, size) => {
 }
 
 export const addEntity = (world) => {
-  const size = world[$size]
   const enabled = world[$entityEnabled]
-
+  
   // if data stores are 80% full
-  if (globalEntityCursor >= size - size / 5) {
+  if (globalEntityCursor >= world[$warningSize]) {
     // grow by half the original size rounded up to a multiple of 4
+    const size = world[$size]
     const amount = Math.ceil((size/2) / 4) * 4
     resizeWorld(world, size + amount)
+    world[$warningSize] = world[$size] - (world[$size] / 5)
   }
 
   const eid = removed.length > 0 ? removed.pop() : globalEntityCursor
@@ -68,7 +69,6 @@ export const addEntity = (world) => {
 }
 
 export const removeEntity = (world, eid) => {
-  const queries = world[$queries]
   const enabled = world[$entityEnabled]
 
   // Check if entity is already removed
@@ -76,7 +76,7 @@ export const removeEntity = (world, eid) => {
 
   // Remove entity from all queries
   // TODO: archetype graph
-  queries.forEach(query => {
+  world[$queries].forEach(query => {
     queryRemoveEntity(world, query, eid)
   })
 
