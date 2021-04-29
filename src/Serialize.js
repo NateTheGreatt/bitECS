@@ -43,19 +43,22 @@ const canonicalize = (target) => {
           })
           return p()[$storeFlattened]
         }
-        return p[$storeFlattened]
+        if (Object.getOwnPropertySymbols(p).includes($storeFlattened)) {
+          return p[$storeFlattened]
+        }
+        if (Object.getOwnPropertySymbols(p).includes($storeBase)) {
+          return p
+        }
       })
       .reduce((a,v) => a.concat(v), [])
-  } else {
-    target[$componentMap].forEach((c, component) => {
-      componentProps = componentProps.concat(component[$storeFlattened])
-    })
   }
   return [componentProps, changedProps]
 }
 
 export const defineSerializer = (target, maxBytes = 20_000_000) => {
-  const [componentProps, changedProps] = canonicalize(target)
+  const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
+
+  let [componentProps, changedProps] = canonicalize(target)
 
   // TODO: calculate max bytes based on target
 
@@ -63,7 +66,17 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
   const view = new DataView(buffer)
 
   return ents => {
-    if (Object.getOwnPropertySymbols(ents).includes($entityArray)) ents = ents[$entityArray]
+    if (isWorld) {
+      componentProps = []
+      target[$componentMap].forEach((c, component) => {
+        componentProps.push(...component[$storeFlattened])
+      })
+    }
+    
+    if (Object.getOwnPropertySymbols(ents).includes($componentMap)) {
+      ents = ents[$entityArray]
+    }
+
     if (!ents.length) return
 
     let where = 0
@@ -149,8 +162,17 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
 }
 
 export const defineDeserializer = (target) => {
-  const [componentProps] = canonicalize(target)
+  const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
+  let [componentProps] = canonicalize(target)
   return (world, packet) => {
+    
+    if (isWorld) {
+      componentProps = []
+      target[$componentMap].forEach((c, component) => {
+        componentProps.push(...component[$storeFlattened])
+      })
+    }
+
     const view = new DataView(packet)
     let where = 0
 
