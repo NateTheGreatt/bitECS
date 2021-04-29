@@ -91,6 +91,8 @@ export const registerQuery = (world, query) => {
     .reduce((a,v) => a.concat(v), [])
 
   const toRemove = []
+  const entered = []
+  const exited = []
 
   world[$queryMap].set(query, { 
     entities,
@@ -105,6 +107,8 @@ export const registerQuery = (world, query) => {
     indices,
     flatProps,
     toRemove,
+    entered,
+    exited,
   })
   
   world[$queries].add(query)
@@ -117,10 +121,16 @@ export const registerQuery = (world, query) => {
   }
 }
 
+const queryHooks = (q) => {
+  while (q.entered.length) q.enter(q.entered.shift())
+  while (q.exited.length) q.exit(q.exited.shift())
+}
+
 export const defineQuery = (components) => {
   const query = function (world) {
     if (!world[$queryMap].has(query)) registerQuery(world, query)
     const q = world[$queryMap].get(query) 
+    queryHooks(q)
     queryCommitRemovals(world, q)
     if (q.changedComponents.length) return diff(world, query)
     return q.entities
@@ -160,7 +170,7 @@ export const queryAddEntity = (world, query, eid) => {
   q.enabled[eid] = true
   q.entities.push(eid)
   q.indices[eid] = q.entities.length - 1
-  if (q.enter) q.enter(eid)
+  if (q.enter) q.entered.push(eid)
 }
 
 const queryCommitRemovals = (world, q) => {
@@ -189,7 +199,7 @@ export const queryRemoveEntity = (world, query, eid) => {
   const q = world[$queryMap].get(query)
   if (!q.enabled[eid]) return
   q.enabled[eid] = false
-  if (q.exit) q.exit(eid)
   q.toRemove.push(eid)
   world[$dirtyQueries].add(q)
+  if (q.exit) q.exited.push(eid)
 }
