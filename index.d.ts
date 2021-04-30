@@ -64,5 +64,5 @@ declare module 'bitecs' {
   export function defineSystem (update: (world: IWorld) => void): System
   export function defineSerializer (target: IWorld | IComponent | IComponentProp | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
   export function defineDeserializer (target: IWorld | IComponent | IComponentProp | QueryModifier): (world: IWorld, packet: ArrayBuffer) => void
-  export function pipe(...fns: (() => any)[]): (input: any) => void
+  export function pipe(...fns: ((...args: any[]) => any)[]): (input: any) => void
 }
