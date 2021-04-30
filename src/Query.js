@@ -15,6 +15,8 @@ export const $exitQuery = Symbol('exitQuery')
 
 const NONE = 2**32
 
+
+// TODO: linked list of functions
 export const enterQuery = (world, query, fn) => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
   world[$queryMap].get(query).enter = fn
@@ -122,8 +124,8 @@ export const registerQuery = (world, query) => {
 }
 
 const queryHooks = (q) => {
-  while (q.entered.length) q.enter(q.entered.shift())
-  while (q.exited.length) q.exit(q.exited.shift())
+  while (q.entered.length) if (q.enter) { q.enter(q.entered.shift()) } else q.entered.shift()
+  while (q.exited.length) if (q.exit) { q.exit(q.exited.shift()) } else q.exited.shift()
 }
 
 export const defineQuery = (components) => {
@@ -170,7 +172,7 @@ export const queryAddEntity = (world, query, eid) => {
   q.enabled[eid] = true
   q.entities.push(eid)
   q.indices[eid] = q.entities.length - 1
-  if (q.enter) q.entered.push(eid)
+  q.entered.push(eid)
 }
 
 const queryCommitRemovals = (world, q) => {
@@ -201,5 +203,5 @@ export const queryRemoveEntity = (world, query, eid) => {
   q.enabled[eid] = false
   q.toRemove.push(eid)
   world[$dirtyQueries].add(q)
-  if (q.exit) q.exited.push(eid)
+  q.exited.push(eid)
 }

@@ -134,10 +134,8 @@ export const resetStore = store => {
 
 export const resetStoreFor = (store, eid) => {
   store[$storeFlattened].forEach(ta => {
-    ta[eid] = 0
-  })
-  Object.keys(store[$storeSubarrays]).forEach(key => {
-    store[$storeSubarrays][key][eid].fill(0)
+    if (ArrayBuffer.isView(ta)) ta[eid] = 0
+    else ta[eid].fill(0)
   })
 }
 
@@ -201,18 +199,12 @@ const createShadows = (store) => {
   store[$serializeShadow] = store.slice(0)
 }
 
-const isArrayType = x => Array.isArray(x) 
-  && typeof x[0] === 'object'
-  && x[0].hasOwnProperty('type')
-  && x[0].hasOwnProperty('length')
+const isArrayType = x => Array.isArray(x) && typeof x[0] === 'string' && typeof x[1] === 'number'
 
 export const createStore = (schema, size=1000000) => {
   const $store = Symbol('store')
 
-  if (schema.constructor.name === 'Map') {
-    schema[$storeSize] = size
-    return schema
-  }
+  if (!schema) return {}
 
   schema = JSON.parse(JSON.stringify(schema))
 
@@ -251,22 +243,26 @@ export const createStore = (schema, size=1000000) => {
 
       } else if (isArrayType(a[k])) {
         
-        const { type, length } = a[k][0]
+        const [type, length] = a[k]
         a[k] = createArrayStore(metadata, type, length)
         a[k][$storeBase] = () => stores[$store]
         metadata[$storeFlattened].push(a[k])
+        // Object.freeze(a[k])
 
       } else if (a[k] instanceof Object) {
         
         a[k] = Object.keys(a[k]).reduce(recursiveTransform, a[k])
+        // Object.freeze(a[k])
         
       }
-      
+
       return a
     }
 
     stores[$store] = Object.assign(Object.keys(schema).reduce(recursiveTransform, schema), metadata)
     stores[$store][$storeBase] = () => stores[$store]
+
+    // Object.freeze(stores[$store])
 
     return stores[$store]
 

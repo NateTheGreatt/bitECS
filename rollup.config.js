@@ -1,7 +1,8 @@
 import babel from '@rollup/plugin-babel'
+import copy from 'rollup-plugin-copy'
 
 const FILE = 'dist/index'
-const NAME = 'BitECS'
+const NAME = 'bitECS'
 
 export default {
   input: 'src/index.js',
@@ -17,6 +18,11 @@ export default {
     format: 'es'
   }],
   plugins: [
+    copy({
+      targets: [
+        { src: 'index.d.ts', dest: 'dist'}
+      ]
+    }),
     babel({ babelHelpers: 'bundled' })
   ]
 }
