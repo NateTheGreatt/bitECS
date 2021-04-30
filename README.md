@@ -8,11 +8,13 @@ Functional, minimal, data-oriented, ultra-high performance [ECS](https://en.wiki
 |   |   |
 | --------------------------------- | ---------------------------------------- |
 | 🔮 Simple, declarative API        | 🔥 Blazing fast iteration                |
-| 🔍 Powerful & performant queries  | 💾 Swift serialization                  |
+| 🔍 Powerful & performant queries  | 💾 Serialization included               |
 | 🍃 Zero dependencies              | 🌐 Node or browser                      |
-| 🤏 `~5kb` gzipped                 | 🚀 Unparalleled performance benchmarks  |
+| 🤏 `~5kb` gzipped                 | 🏷 TypeScript support                   |
 
 #### Benchmarks
+
+🚀 Unparalleled performance benchmarks
 
 |                                                                 |                                                                           |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------- |
@@ -66,7 +68,7 @@ import {
 
 A world represents a set of entities and the components that they each possess. 
 
-Worlds do not store actual component data, only the relationships with entities (archetypes).
+Worlds do not store actual component data, only their relationships with entities.
 
 Any number of worlds can be created. An empty object is returned which you can use as a context.
 
@@ -77,7 +79,9 @@ world.name = 'MyWorld'
 ```
 ## Entity
 
-An entity is an integer, technically a pointer, which components can be associated with. Entities are accessed via queries, components of whom are mutated with systems.
+An entity is an integer, technically a pointer, which components can be associated with.
+
+Entities are accessed via queries, components of whom are mutated with systems.
 
 Add entities to the world:
 ```js
@@ -100,6 +104,11 @@ Define component stores:
 const Vector3 = { x: Types.f32, y: Types.f32, z: Types.f32 }
 const Position = defineComponent(Vector3)
 const Velocity = defineComponent(Vector3)
+```
+
+Array types are defined as such:
+```js
+const List = defineComponent({ values: [f32, 6] }) // [type, length]
 ```
 
 Add components to an entity in a world:
@@ -165,11 +174,11 @@ Systems are functions and are run against a world to update componenet state of 
 
 Queries are used inside of systems to obtain a relevant set of entities and perform operations on their component data.
 
-While not required, it is greatly encouraged that you keep all component data mutations inside of systems, and all system-dependent state on the world.
+While not required, it is greatly encouraged that you keep all component data mutations inside of systems.
 
 Define a system that moves entity positions based on their velocity:
 ```js
-const movementSystem = defineSystem(world => {
+const movementSystem = defineSystem((world) => {
   const ents = movementQuery(world)
   for (let i = 0; i < ents.length; i++) {
     const eid = ents[i];
@@ -242,8 +251,8 @@ deserialize(world, packet)
 
 Serialization for any mixture of components and component properties:
 ```js
-const serializePositions = createSerializer([Position, Velocity.x])
-const deserializePositions = createDeserializer([Position, Velocity.x])
+const serializeMovement = createSerializer([Position, Velocity.x, Velocity.y])
+const deserializeMovement = createDeserializer([Position, Velocity.x, Velocity.y])
 ```
 
 Serialize Position data for entities matching the movementQuery, defined with pipe:
@@ -258,11 +267,12 @@ whose component state has changed since the last call of the function:
 ```js
 const serializeOnlyChangedPositions = createSerializer([Changed(Position)])
 
-let packet = pipe(movementQuery, serializeOnlyChangedPositions)(world)
+const serializeChangedMovementQuery = pipe(movementQuery, serializeOnlyChangedPositions)
+let packet = serializeChangedMovementQuery(world)
 console.log(packet) // => undefined
 
 Position.x[eid]++
 
-packet = serializeOnlyChangedPositions(movementQuery(world))
+packet = serializeChangedMovementQuery(world)
 console.log(packet.byteLength) // => 13
 ```
