@@ -108,13 +108,14 @@ const Velocity = defineComponent(Vector3)
 
 Array types are defined as such:
 ```js
-const List = defineComponent({ values: [f32, 6] }) // [type, length]
+const List = defineComponent({ values: [f32, 3] }) // [type, length]
 ```
 
 Add components to an entity in a world:
 ```js
 addComponent(world, Position, eid)
 addComponent(world, Velocity, eid)
+addComponent(world, List, eid)
 ```
 
 Component data accessed directly via `eid`, there are no getters or setters:
@@ -122,6 +123,8 @@ Component data accessed directly via `eid`, there are no getters or setters:
 ```js
 Velocity.x[eid] = 1
 Velocity.y[eid] = 1
+
+List.values[eid].set([1,2,3])
 ```
 
 ## Query
