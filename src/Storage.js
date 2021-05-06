@@ -268,7 +268,10 @@ export const createStore = (schema, size=1000000) => {
 
   }
 
-  return {}
+  stores[$store] = metadata;
+  stores[$store][$storeBase] = () => stores[$store]
+
+  return stores[$store]
 }
 
 export const free = (store) => {
