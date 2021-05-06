@@ -104,11 +104,8 @@ Define component stores:
 const Vector3 = { x: Types.f32, y: Types.f32, z: Types.f32 }
 const Position = defineComponent(Vector3)
 const Velocity = defineComponent(Vector3)
-```
-
-Array types are defined as such:
-```js
 const List = defineComponent({ values: [f32, 3] }) // [type, length]
+const Tag = defineComponent()
 ```
 
 Add components to an entity in a world:
@@ -116,9 +113,10 @@ Add components to an entity in a world:
 addComponent(world, Position, eid)
 addComponent(world, Velocity, eid)
 addComponent(world, List, eid)
+addComponent(world, Tag, eid)
 ```
 
-Component data accessed directly via `eid`, there are no getters or setters:
+Component data is accessed directly via `eid`, there are no getters or setters:
 * This is how high performance iteration is achieved
 ```js
 Velocity.x[eid] = 1
@@ -228,10 +226,10 @@ Performant and highly customizable serialization is built-in. Any subset of data
 
 Serializers and deserializers need the same configs in order to work properly. Any combination of components and component properties may be used as configs.
 
-Serialization can take a whole world as a config and will serialize all component stores in that world:
+Serialization can take a world as a config and will serialize all component stores registered in that world:
 ```js
-const serialize = createSerializer(world)
-const deserialize = createDeserializer(world)
+const serialize = defineSerializer(world)
+const deserialize = defineDeserializer(world)
 ```
 
 Serialize all of the world's entities and thier component data:
@@ -254,8 +252,8 @@ deserialize(world, packet)
 
 Serialization for any mixture of components and component properties:
 ```js
-const serializeMovement = createSerializer([Position, Velocity.x, Velocity.y])
-const deserializeMovement = createDeserializer([Position, Velocity.x, Velocity.y])
+const serializeMovement = defineSerializer([Position, Velocity.x, Velocity.y])
+const deserializeMovement = defineDeserializer([Position, Velocity.x, Velocity.y])
 ```
 
 Serialize Position data for entities matching the movementQuery, defined with pipe:
@@ -268,7 +266,7 @@ deserializePositions(world, packet)
 Serialization which targets select component stores of entities
 whose component state has changed since the last call of the function:
 ```js
-const serializeOnlyChangedPositions = createSerializer([Changed(Position)])
+const serializeOnlyChangedPositions = defineSerializer([Changed(Position)])
 
 const serializeChangedMovementQuery = pipe(movementQuery, serializeOnlyChangedPositions)
 let packet = serializeChangedMovementQuery(world)

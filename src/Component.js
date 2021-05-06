@@ -1,5 +1,5 @@
 import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage.js'
-import { $queryComponents, $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponent } from './Query.js'
+import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponent } from './Query.js'
 import { $bitflag, $size } from './World.js'
 import { $entityMasks } from './Entity.js'
 
@@ -39,7 +39,7 @@ export const hasComponent = (world, component, eid) => {
   return (mask & bitflag) === bitflag
 }
 
-export const addComponent = (world, component, eid) => {
+export const addComponent = (world, component, eid, reset=false) => {
   if (!world[$componentMap].has(component)) registerComponent(world, component)
   if (hasComponent(world, component, eid)) return
 
@@ -47,18 +47,18 @@ export const addComponent = (world, component, eid) => {
   const { generationId, bitflag } = world[$componentMap].get(component)
   world[$entityMasks][generationId][eid] |= bitflag
 
-  // Zero out each property value
-  resetStoreFor(component, eid)
-
   // todo: archetype graph
   world[$queries].forEach(query => {
     if (!queryCheckComponent(world, query, component)) return
     const match = queryCheckEntity(world, query, eid)
     if (match) queryAddEntity(world, query, eid)
   })
+  
+  // Zero out each property value
+  if (reset) resetStoreFor(component, eid)
 }
 
-export const removeComponent = (world, component, eid) => {
+export const removeComponent = (world, component, eid, reset=false) => {
   const { generationId, bitflag } = world[$componentMap].get(component)
 
   if (!(world[$entityMasks][generationId][eid] & bitflag)) return
@@ -72,4 +72,7 @@ export const removeComponent = (world, component, eid) => {
 
   // Remove flag from entity bitmask
   world[$entityMasks][generationId][eid] &= ~bitflag
+  
+  // Zero out each property value
+  if (reset) resetStoreFor(component, eid)
 }
