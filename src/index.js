@@ -13,6 +13,7 @@ export const pipe = (...fns) => input => {
     const fn = fns[i]
     tmp = fn(tmp)
   }
+  return tmp
 }
 
 export const Types = TYPES_ENUM

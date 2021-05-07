@@ -1,5 +1,4 @@
 export const TYPES_ENUM = {
-  bool: 'bool',
   i8: 'i8',
   ui8: 'ui8',
   ui8c: 'ui8c',
@@ -12,7 +11,6 @@ export const TYPES_ENUM = {
 }
 
 export const TYPES_NAMES = {
-  bool: 'Uint8',
   i8: 'Int8',
   ui8: 'Uint8',
   ui8c: 'Uint8Clamped',
@@ -25,7 +23,6 @@ export const TYPES_NAMES = {
 }
 
 export const TYPES = {
-  bool: 'bool',
   i8: Int8Array,
   ui8: Uint8Array,
   ui8c: Uint8ClampedArray,
@@ -51,7 +48,7 @@ export const $storeMaps = Symbol('storeMaps')
 export const $storeFlattened = Symbol('storeFlattened')
 export const $storeBase = Symbol('storeBase')
 
-export const $storeArrayCount = Symbol('storeArrayCount')
+export const $storeArrayCounts = Symbol('storeArrayCount')
 export const $storeSubarrays = Symbol('storeSubarrays')
 export const $storeCursor = Symbol('storeCursor')
 export const $subarrayCursors = Symbol('subarrayCursors')
@@ -89,7 +86,7 @@ const resizeRecursive = (store, size) => {
 const resizeSubarrays = (store, size) => {
   const cursors = store[$subarrayCursors] = {}
   Object.keys(store[$storeSubarrays]).forEach(type => {
-    const arrayCount = store[$storeArrayCount]
+    const arrayCount = store[$storeArrayCounts]
     const length = store[0].length
     const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
     const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
@@ -145,9 +142,11 @@ const createTypeStore = (type, length) => {
   return new TYPES[type](buffer)
 }
 
-const createArrayStore = (store, type, length) => {
-  const size = store[$storeSize]
-  const cursors = store[$subarrayCursors]
+const createArrayStore = (metadata, type, length) => {
+  const store = []
+
+  const size = metadata[$storeSize]
+  const cursors = metadata[$subarrayCursors]
   const indexType =
     length < UNSIGNED_MAX.uint8
       ? 'ui8'
@@ -159,17 +158,20 @@ const createArrayStore = (store, type, length) => {
   if (!TYPES[type]) throw new Error(`❌ Invalid component array property type ${type}.`)
 
   // create buffer for type if it does not already exist
-  if (!store[$storeSubarrays][type]) {
-    const arrayCount = store[$storeArrayCount]
-    const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
+  if (!metadata[$storeSubarrays][type]) {
+    const arrayCount = metadata[$storeArrayCounts][type]
     const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
-    const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
     
-    const buffer = new ArrayBuffer(totalBytes)
-    const array = new TYPES[type](buffer)
-    store[$storeSubarrays][type] = array
-    store[$storeSubarrays][type][$queryShadow] = array.slice(0)
-    store[$storeSubarrays][type][$serializeShadow] = array.slice(0)
+    // for threaded impl
+    // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
+    // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
+    // const buffer = new ArrayBuffer(totalBytes)
+
+    const array = new TYPES[type](summedLength * size)
+
+    metadata[$storeSubarrays][type] = array
+    metadata[$storeSubarrays][type][$queryShadow] = array.slice(0)
+    metadata[$storeSubarrays][type][$serializeShadow] = array.slice(0)
     
     array[$indexType] = TYPES_NAMES[indexType]
     array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
@@ -180,9 +182,11 @@ const createArrayStore = (store, type, length) => {
   for (let eid = 0; eid < size; eid++) {
     const from = cursors[type] + (eid * length)
     const to = from + length
-    store[eid] = store[$storeSubarrays][type].subarray(from, to)
-    store[eid][$queryShadow] = store[$storeSubarrays][type][$queryShadow].subarray(from, to)
-    store[eid][$serializeShadow] = store[$storeSubarrays][type][$serializeShadow].subarray(from, to)
+    store[eid] = metadata[$storeSubarrays][type].subarray(from, to)
+    store[eid].from = from
+    store[eid].to = to
+    store[eid][$queryShadow] = metadata[$storeSubarrays][type][$queryShadow].subarray(from, to)
+    store[eid][$serializeShadow] = metadata[$storeSubarrays][type][$serializeShadow].subarray(from, to)
     store[eid][$subarray] = true
     store[eid][$indexType] = TYPES_NAMES[indexType]
     store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
@@ -208,16 +212,19 @@ export const createStore = (schema, size=1000000) => {
 
   schema = JSON.parse(JSON.stringify(schema))
 
-  const collectArrayCount = (count, key) => {
-    if (isArrayType(schema[key])) {
-      count++
-    } else if (schema[key] instanceof Object) {
-      count += Object.keys(schema[key]).reduce(collectArrayCount, 0)
+  const arrayCounts = {}
+  const collectArrayCounts = s => {
+    const keys = Object.keys(s)
+    for (const k of keys) {
+      if (isArrayType(s[k])) {
+        if (!arrayCounts[s[k][0]]) arrayCounts[s[k][0]] = 0
+        arrayCounts[s[k][0]]++
+      } else if (s[k] instanceof Object) {
+        collectArrayCounts(s[k])
+      }
     }
-    return count
   }
-
-  const arrayCount = Object.keys(schema).reduce(collectArrayCount, 0)
+  collectArrayCounts(schema)
 
   const metadata = {
     [$storeSize]: size,
@@ -226,14 +233,14 @@ export const createStore = (schema, size=1000000) => {
     [$storeRef]: $store,
     [$storeCursor]: 0,
     [$subarrayCursors]: Object.keys(TYPES).reduce((a, type) => ({ ...a, [type]: 0 }), {}),
-    [$storeArrayCount]: arrayCount,
+    [$storeArrayCounts]: arrayCounts,
     [$storeFlattened]: []
   }
 
   if (schema instanceof Object && Object.keys(schema).length) {
 
     const recursiveTransform = (a, k) => {
-      
+
       if (typeof a[k] === 'string') {
 
         a[k] = createTypeStore(a[k], size)
@@ -268,7 +275,8 @@ export const createStore = (schema, size=1000000) => {
 
   }
 
-  stores[$store] = metadata;
+  // tag component
+  stores[$store] = metadata
   stores[$store][$storeBase] = () => stores[$store]
 
   return stores[$store]

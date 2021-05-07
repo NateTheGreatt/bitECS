@@ -1,7 +1,7 @@
 {
   "name": "bitecs",
-  "version": "0.2.28",
-  "description": "Tiny, data-driven, high performance ECS library written in Javascript",
+  "version": "0.2.29",
+  "description": "Functional, minimal, data-driven, ultra-high performance ECS library written in Javascript",
   "license": "MPL-2.0",
   "type": "module",
   "main": "./dist/index.min.js",
@@ -25,7 +25,7 @@
   ],
   "scripts": {
     "build": "rollup -c",
-    "test": "mocha ./test",
+    "test": "c8 mocha --recursive",
     "docs": "node scripts/docs.js",
     "dist": "npm run test && npm run build && npm run docs"
   },
@@ -34,6 +34,7 @@
     "@babel/preset-env": "^7.12.1",
     "@rollup/plugin-babel": "^5.3.0",
     "babel": "^6.23.0",
+    "c8": "^7.7.2",
     "dmd-readable": "SupremeTechnopriest/dmd-readable",
     "globby": "^11.0.1",
     "jsdoc-to-markdown": "^6.0.1",
