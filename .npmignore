@@ -5,3 +5,4 @@ scripts
 rollup.config.js
 src
 sandbox
+coverage
