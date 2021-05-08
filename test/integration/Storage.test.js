@@ -2,6 +2,8 @@ import assert, { strictEqual } from 'assert'
 import { Types } from '../../src/index.js'
 import { createStore, TYPES } from '../../src/Storage.js'
 
+const arraysEqual = (a,b) => !!a && !!b && !(a<b || b<a)
+
 describe('Storage Integration Tests', () => {
   it('should default to size of 1MM', () => {
     const store = createStore({ value: Types.i8 })
@@ -25,6 +27,16 @@ describe('Storage Integration Tests', () => {
       strictEqual(Object.keys(store.value).length, 10)
       assert(store.value[0] instanceof TYPES[type])
       strictEqual(store.value[0].length, 4)
+    })
+    it('should correctly set values on arrays of ' + type, () => {
+      const store = createStore({ array: [type, 4] }, 3)
+      store.array[0].set([1,2,3,4])
+      store.array[1].set([5,6,7,8])
+      store.array[2].set([9,10,11,12])
+      assert(arraysEqual(Array.from(store.array[0]), [1,2,3,4]))
+      assert(arraysEqual(Array.from(store.array[1]), [5,6,7,8]))
+      assert(arraysEqual(Array.from(store.array[2]), [9,10,11,12]))
+      strictEqual(store.array[3], undefined)
     })
   })
   it('should create flat stores', ()  => {

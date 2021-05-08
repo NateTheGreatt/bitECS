@@ -1,35 +1,6 @@
-import { $queryMap } from "./Query.js"
-import { $indexBytes, $indexType, $queryShadow, $serializeShadow, $storeBase, $storeFlattened } from "./Storage.js"
+import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened } from "./Storage.js"
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
 import { $entityArray, $entityEnabled, addEntity } from "./Entity.js"
-
-export const diff = (world, query) => {
-  const q = world[$queryMap].get(query)
-  q.changed.length = 0
-  const flat = q.flatProps
-  for (let i = 0; i < q.entities.length; i++) {
-    const eid = q.entities[i]
-    let dirty = false
-    for (let pid = 0; pid < flat.length; pid++) {
-      const prop = flat[pid]
-      if (ArrayBuffer.isView(prop[eid])) {
-        for (let i = 0; i < prop[eid].length; i++) {
-          if (prop[eid][i] !== prop[eid][$queryShadow][i]) {
-            dirty = true
-            prop[eid][$queryShadow][i] = prop[eid][i]
-          }
-        }
-      } else {
-        if (prop[eid] !== prop[$queryShadow][eid]) {
-          dirty = true
-          prop[$queryShadow][eid] = prop[eid]
-        }
-      }
-    }
-    if (dirty) q.changed.push(eid)
-  }
-  return q.changed
-}
 
 const canonicalize = (target) => {
   let componentProps = []

@@ -1,7 +1,6 @@
-import { $storeFlattened, $storeSize } from './Storage.js'
+import { $queryShadow, $storeFlattened, $storeSize } from './Storage.js'
 import { $componentMap, registerComponent } from './Component.js'
 import { $entityMasks, $entityEnabled, getEntityCursor } from './Entity.js'
-import { diff } from './Serialize.js'
 
 export function Not(c) { return function QueryNot() { return c } }
 export function Changed(c) { return function QueryChanged() { return c } }
@@ -14,7 +13,6 @@ export const $enterQuery = Symbol('enterQuery')
 export const $exitQuery = Symbol('exitQuery')
 
 const NONE = 2**32
-
 
 // TODO: linked list of functions
 export const enterQuery = (world, query, fn) => {
@@ -128,13 +126,40 @@ const queryHooks = (q) => {
   while (q.exited.length) if (q.exit) { q.exit(q.exited.shift()) } else q.exited.length = 0
 }
 
+const diff = (q) => {
+  q.changed.length = 0
+  const flat = q.flatProps
+  for (let i = 0; i < q.entities.length; i++) {
+    const eid = q.entities[i]
+    let dirty = false
+    for (let pid = 0; pid < flat.length; pid++) {
+      const prop = flat[pid]
+      if (ArrayBuffer.isView(prop[eid])) {
+        for (let i = 0; i < prop[eid].length; i++) {
+          if (prop[eid][i] !== prop[eid][$queryShadow][i]) {
+            dirty = true
+            prop[eid][$queryShadow][i] = prop[eid][i]
+          }
+        }
+      } else {
+        if (prop[eid] !== prop[$queryShadow][eid]) {
+          dirty = true
+          prop[$queryShadow][eid] = prop[eid]
+        }
+      }
+    }
+    if (dirty) q.changed.push(eid)
+  }
+  return q.changed
+}
+
 export const defineQuery = (components) => {
   const query = function (world) {
     if (!world[$queryMap].has(query)) registerQuery(world, query)
     const q = world[$queryMap].get(query) 
     queryHooks(q)
     queryCommitRemovals(world, q)
-    if (q.changedComponents.length) return diff(world, query)
+    if (q.changedComponents.length) return diff(q)
     return q.entities
   }
   query[$queryComponents] = components
