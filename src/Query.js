@@ -124,8 +124,8 @@ export const registerQuery = (world, query) => {
 }
 
 const queryHooks = (q) => {
-  while (q.entered.length) if (q.enter) { q.enter(q.entered.shift()) } else q.entered.shift()
-  while (q.exited.length) if (q.exit) { q.exit(q.exited.shift()) } else q.exited.shift()
+  while (q.entered.length) if (q.enter) { q.enter(q.entered.shift()) } else q.entered.length = 0
+  while (q.exited.length) if (q.exit) { q.exit(q.exited.shift()) } else q.exited.length = 0
 }
 
 export const defineQuery = (components) => {

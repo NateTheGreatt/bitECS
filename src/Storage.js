@@ -143,9 +143,9 @@ const createTypeStore = (type, length) => {
 }
 
 const createArrayStore = (metadata, type, length) => {
-  const store = []
-
   const size = metadata[$storeSize]
+  const store = Array(size)
+
   const cursors = metadata[$subarrayCursors]
   const indexType =
     length < UNSIGNED_MAX.uint8

@@ -1,6 +1,6 @@
 {
   "name": "bitecs",
-  "version": "0.2.29",
+  "version": "0.2.30",
   "description": "Functional, minimal, data-driven, ultra-high performance ECS library written in Javascript",
   "license": "MPL-2.0",
   "type": "module",
@@ -25,7 +25,7 @@
   ],
   "scripts": {
     "build": "rollup -c",
-    "test": "c8 mocha --recursive",
+    "test": "c8 mocha test --recursive",
     "docs": "node scripts/docs.js",
     "dist": "npm run test && npm run build && npm run docs"
   },
