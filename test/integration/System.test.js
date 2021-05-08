@@ -1,11 +1,11 @@
 import { strictEqual } from 'assert'
-import { createWorld } from '../src/World.js'
-import { addComponent, defineComponent } from '../src/Component.js'
-import { addEntity, resetGlobals } from '../src/Entity.js'
-import { defineSystem } from '../src/System.js'
-import { defineQuery, Types } from '../src/index.js'
+import { createWorld } from '../../src/World.js'
+import { addComponent, defineComponent } from '../../src/Component.js'
+import { addEntity, resetGlobals } from '../../src/Entity.js'
+import { defineSystem } from '../../src/System.js'
+import { defineQuery, Types } from '../../src/index.js'
 
-describe('System', () => {
+describe('System Integration Tests', () => {
   afterEach(() => {
     resetGlobals()
   })

@@ -1,12 +1,12 @@
 import assert, { strictEqual } from 'assert'
-import { $componentMap, $deferredComponentRemovals } from '../src/Component.js'
-import { $deferredEntityRemovals, $entityEnabled, $entityMasks, resetGlobals, resizeWorld, addEntity } from '../src/Entity.js'
-import { $dirtyQueries, $queries, $queryMap } from '../src/Query.js'
-import { createWorld, $size, $bitflag } from '../src/World.js'
+import { $componentMap } from '../../src/Component.js'
+import { $entityEnabled, $entityMasks, resetGlobals, resizeWorld, addEntity } from '../../src/Entity.js'
+import { $dirtyQueries, $queries, $queryMap } from '../../src/Query.js'
+import { createWorld, $size, $bitflag } from '../../src/World.js'
 
 const defaultSize = 1_000_000
 
-describe('World', () => {
+describe('World Integration Tests', () => {
   afterEach(() => {
     resetGlobals()
   })
@@ -31,9 +31,6 @@ describe('World', () => {
     strictEqual(world[$queryMap].constructor.name, 'Map')
     strictEqual(world[$queries].constructor.name, 'Set')
     strictEqual(world[$dirtyQueries].constructor.name, 'Set')
-
-    assert(Array.isArray(world[$deferredComponentRemovals]))
-    assert(Array.isArray(world[$deferredEntityRemovals]))
   })
   it('should resize on-demand', () => {
     const world = createWorld()
