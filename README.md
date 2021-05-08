@@ -252,8 +252,9 @@ deserialize(world, packet)
 
 Serialization for any mixture of components and component properties:
 ```js
-const serializeMovement = defineSerializer([Position, Velocity.x, Velocity.y])
-const deserializeMovement = defineDeserializer([Position, Velocity.x, Velocity.y])
+const config = [Position, Velocity.x, Velocity.y]
+const serializeMovement = defineSerializer(config)
+const deserializeMovement = defineDeserializer(config)
 ```
 
 Serialize Position data for entities matching the movementQuery, defined with pipe:
