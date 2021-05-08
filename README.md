@@ -104,7 +104,7 @@ Define component stores:
 const Vector3 = { x: Types.f32, y: Types.f32, z: Types.f32 }
 const Position = defineComponent(Vector3)
 const Velocity = defineComponent(Vector3)
-const List = defineComponent({ values: [f32, 3] }) // [type, length]
+const List = defineComponent({ values: [Types.f32, 3] }) // [type, length]
 const Tag = defineComponent()
 ```
 
