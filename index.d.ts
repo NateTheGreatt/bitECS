@@ -12,15 +12,15 @@ declare module 'bitecs' {
     'f64'
 
   export const Types: {
-    i8: string
-    ui8: string
-    ui8c: string
-    i16: string
-    ui16: string
-    i32: string
-    ui32: string
-    f32: string
-    f64: string
+    i8: "i8"
+    ui8: "ui8"
+    ui8c: "ui8c"
+    i16: "i16"
+    ui16: "ui16"
+    i32: "i32"
+    ui32: "ui32"
+    f32: "f32"
+    f64: "f64"
   };
 
   export type TypedArray =
