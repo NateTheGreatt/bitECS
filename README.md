@@ -158,13 +158,13 @@ console.log(ents) // => [0]
 ```
 
 
-The enterQuery returns a function which can be used to capture entities whose components match the query:
+`enterQuery` returns a function which can be used to capture entities whose components match the query:
 ```js
 const enteredMovementQuery = enterQuery(movementQuery)
 const enteredEnts = enteredMovementQuery(world)
 ```
 
-The exitQuery returns a function which can be used to capture entities whose components no longer match the query:
+`exitQuery` returns a function which can be used to capture entities whose components no longer match the query:
 ```js
 const exitedMovementQuery = exitQuery(movementQuery)
 const enteredEnts = exitedMovementQuery(world)
