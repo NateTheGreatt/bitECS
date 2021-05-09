@@ -1,9 +1,9 @@
 import { strictEqual } from 'assert'
-import { Types } from '../../src/index.js'
+import { exitQuery, Types } from '../../src/index.js'
 import { createWorld } from '../../src/World.js'
 import { addComponent, defineComponent } from '../../src/Component.js'
 import { addEntity, removeEntity, resetGlobals } from '../../src/Entity.js'
-import { Changed, defineQuery, Not } from '../../src/Query.js'
+import { Changed, defineQuery, enterQuery, Not } from '../../src/Query.js'
 
 describe('Query Integration Tests', () => {
   afterEach(() => {
@@ -64,5 +64,32 @@ describe('Query Integration Tests', () => {
 
     strictEqual(ents.length, 1)
     strictEqual(ents[0], eid1)
+  })
+  it('should return entities from enter/exitQuery who entered/exited the query', () => {
+    const world = createWorld()
+    const TestComponent = defineComponent({ value: Types.f32 })
+    const query = defineQuery([TestComponent])
+    const enteredQuery = enterQuery(query)
+    const exitedQuery = exitQuery(query)
+
+    const eid = addEntity(world)
+    addComponent(world, TestComponent, eid)
+    
+    const entered = enteredQuery(world)
+    strictEqual(entered.length, 1)
+    strictEqual(entered[0], 0)
+
+    let ents = query(world)
+    strictEqual(ents.length, 1)
+    strictEqual(ents[0], 0)
+
+    removeEntity(world, eid)
+
+    ents = query(world)
+    strictEqual(ents.length, 0)
+    
+    const exited = exitedQuery(world)
+    strictEqual(exited.length, 1)
+    strictEqual(exited[0], 0)
   })
 })

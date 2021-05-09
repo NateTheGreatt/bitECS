@@ -14,15 +14,16 @@ export const $exitQuery = Symbol('exitQuery')
 
 const NONE = 2**32
 
-// TODO: linked list of functions
-export const enterQuery = (world, query, fn) => {
+export const enterQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
-  world[$queryMap].get(query).enter = fn
+  const q = world[$queryMap].get(query)
+  return q.entered.splice(0)
 }
 
-export const exitQuery = (world, query, fn) => {
+export const exitQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
-  world[$queryMap].get(query).exit = fn
+  const q = world[$queryMap].get(query)
+  return q.exited.splice(0)
 }
 
 export const registerQuery = (world, query) => {
@@ -121,10 +122,10 @@ export const registerQuery = (world, query) => {
   }
 }
 
-const queryHooks = (q) => {
-  while (q.entered.length) if (q.enter) { q.enter(q.entered.shift()) } else q.entered.length = 0
-  while (q.exited.length) if (q.exit) { q.exit(q.exited.shift()) } else q.exited.length = 0
-}
+// const queryHooks = (q) => {
+//   while (q.entered.length) if (q.enter) { q.enter(q.entered.shift()) } else q.entered.length = 0
+//   while (q.exited.length) if (q.exit) { q.exit(q.exited.shift()) } else q.exited.length = 0
+// }
 
 const diff = (q) => {
   q.changed.length = 0
@@ -157,7 +158,7 @@ export const defineQuery = (components) => {
   const query = function (world) {
     if (!world[$queryMap].has(query)) registerQuery(world, query)
     const q = world[$queryMap].get(query) 
-    queryHooks(q)
+    // queryHooks(q)
     queryCommitRemovals(world, q)
     if (q.changedComponents.length) return diff(q)
     return q.entities

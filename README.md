@@ -158,14 +158,16 @@ console.log(ents) // => [0]
 ```
 
 
-The enter-query hook is called when an entity's components match the query:
+The enterQuery returns a function which can be used to capture entities whose components match the query:
 ```js
-enterQuery(world, movementQuery, eid => {})
+const enteredMovementQuery = enterQuery(movementQuery)
+const enteredEnts = enteredMovementQuery(world)
 ```
 
-The exit-query hook is called when an entity's components no longer match the query:
+The exitQuery returns a function which can be used to capture entities whose components no longer match the query:
 ```js
-exitQuery(world, movementQuery, eid => {})
+const exitedMovementQuery = exitQuery(movementQuery)
+const enteredEnts = exitedMovementQuery(world)
 ```
 
 
@@ -180,11 +182,26 @@ While not required, it is greatly encouraged that you keep all component data mu
 Define a system that moves entity positions based on their velocity:
 ```js
 const movementSystem = defineSystem((world) => {
+  // optionally apply logic to entities added to the query
+  const entered = enteredMovementQuery(world)
+  for (let i = 0; i < entered.length; i++) {
+    const eid = ents[i]
+    
+  }
+
+  // apply system logic
   const ents = movementQuery(world)
   for (let i = 0; i < ents.length; i++) {
-    const eid = ents[i];
+    const eid = ents[i]
     Position.x[eid] += Velocity.x[eid]
     Position.y[eid] += Velocity.y[eid]
+  }
+
+  // optionally apply logic to entities removed from the query
+  const exited = exitedMovementQuery(world)
+  for (let i = 0; i < exited.length; i++) {
+    const eid = ents[i]
+    
   }
 })
 ```
