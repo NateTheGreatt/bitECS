@@ -7,7 +7,7 @@ const arraysEqual = (a,b) => !!a && !!b && !(a<b || b<a)
 describe('Storage Integration Tests', () => {
   it('should default to size of 1MM', () => {
     const store = createStore({ value: Types.i8 })
-    strictEqual(store.value.length, 1_000_000)
+    strictEqual(store.value.length, 10000)
   })
   it('should allow custom size', () => {
     const store = createStore({ value: Types.i8 }, 10)
@@ -17,7 +17,7 @@ describe('Storage Integration Tests', () => {
     it('should create a store with ' + type, () => {
       const store = createStore({ value: type })
       assert(store.value instanceof TYPES[type])
-      strictEqual(store.value.length, 1_000_000)
+      strictEqual(store.value.length, 10000)
     })
   })
   Object.keys(Types).forEach(type => {

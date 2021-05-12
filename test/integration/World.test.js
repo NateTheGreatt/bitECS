@@ -4,7 +4,8 @@ import { $entityEnabled, $entityMasks, resetGlobals, resizeWorld, addEntity } fr
 import { $dirtyQueries, $queries, $queryMap } from '../../src/Query.js'
 import { createWorld, $size, $bitflag } from '../../src/World.js'
 
-const defaultSize = 1_000_000
+const defaultSize = 10000
+const growAmount = defaultSize + defaultSize / 2
 
 describe('World Integration Tests', () => {
   afterEach(() => {
@@ -12,18 +13,18 @@ describe('World Integration Tests', () => {
   })
   it('should resize on-demand', () => {
     const world = createWorld()
-    resizeWorld(world, 1_500_000)
-    strictEqual(world[$entityMasks][0].length, 1_500_000)
-    strictEqual(world[$entityEnabled].length, 1_500_000)
+    resizeWorld(world, growAmount)
+    strictEqual(world[$entityMasks][0].length, growAmount)
+    strictEqual(world[$entityEnabled].length, growAmount)
   })
   it('should resize automatically at 80% of 1MM', () => {
     const world = createWorld()
-    const n = 800_001
+    const n = defaultSize * 0.8
     for (let i = 0; i < n; i++) {
       addEntity(world)
     }
     
-    strictEqual(world[$entityMasks][0].length, 1_500_000)
-    strictEqual(world[$entityEnabled].length, 1_500_000)
+    strictEqual(world[$entityMasks][0].length, growAmount)
+    strictEqual(world[$entityEnabled].length, growAmount)
   })
 })

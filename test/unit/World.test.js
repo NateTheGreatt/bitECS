@@ -4,7 +4,7 @@ import { $entityEnabled, $entityMasks, resetGlobals, resizeWorld, addEntity } fr
 import { $dirtyQueries, $queries, $queryMap } from '../../src/Query.js'
 import { createWorld, $size, $bitflag } from '../../src/World.js'
 
-const defaultSize = 1_000_000
+const defaultSize = 10000
 
 describe('World Integration Tests', () => {
   afterEach(() => {

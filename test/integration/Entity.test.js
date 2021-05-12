@@ -47,6 +47,6 @@ describe('Entity Integration Tests', () => {
     const eid2 = addEntity(world)
     
     strictEqual(eid2, 0)
-    strictEqual(getEntityCursor(), 2)
+    strictEqual(getEntityCursor(), 1)
   })
 })

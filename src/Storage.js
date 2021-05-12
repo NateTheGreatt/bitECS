@@ -47,6 +47,7 @@ export const $storeSize = Symbol('storeSize')
 export const $storeMaps = Symbol('storeMaps')
 export const $storeFlattened = Symbol('storeFlattened')
 export const $storeBase = Symbol('storeBase')
+export const $storeType = Symbol('storeType')
 
 export const $storeArrayCounts = Symbol('storeArrayCount')
 export const $storeSubarrays = Symbol('storeSubarrays')
@@ -91,7 +92,7 @@ const resizeSubarrays = (metadata, size) => {
   metadata[$storeFlattened]
     .filter(store => !ArrayBuffer.isView(store))
     .forEach(store => {
-      const type = store.type
+      const type = store[$storeType]
       const length = store[0].length
       const arrayCount = metadata[$storeArrayCounts][type]
       const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
@@ -160,7 +161,7 @@ const createTypeStore = (type, length) => {
 const createArrayStore = (metadata, type, length) => {
   const size = metadata[$storeSize]
   const store = Array(size).fill(0)
-  store.type = type
+  store[$storeType] = type
 
   const cursors = metadata[$subarrayCursors]
   const indexType =
