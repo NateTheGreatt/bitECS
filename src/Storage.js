@@ -83,35 +83,50 @@ const resizeRecursive = (store, size) => {
   })
 }
 
-const resizeSubarrays = (store, size) => {
-  const cursors = store[$subarrayCursors] = {}
-  Object.keys(store[$storeSubarrays]).forEach(type => {
-    const arrayCount = store[$storeArrayCounts]
-    const length = store[0].length
-    const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
-    const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
-    const buffer = new ArrayBuffer(roundToMultiple4(summedBytesPerElement * summedLength * size))
-    const array = new TYPES[type](buffer)
-
-    array.set(store[$storeSubarrays][type].buffer, 0)
-
-    store[$storeSubarrays][type] = array
-    store[$storeSubarrays][type][$queryShadow] = array.slice(0)
-    store[$storeSubarrays][type][$serializeShadow] = array.slice(0)
-
-    let end = 0
-    for (let eid = 0; eid < size; eid++) {
-      const from = cursors[type] + (eid * length)
-      const to = from + length
-      store[eid] = store[$storeSubarrays][type].subarray(from, to)
-      store[eid][$queryShadow] = store[$storeSubarrays][type][$queryShadow].subarray(from, to)
-      store[eid][$serializeShadow] = store[$storeSubarrays][type][$serializeShadow].subarray(from, to)
-      store[eid][$subarray] = true
-      store[eid][$indexType] = array[$indexType]
-      store[eid][$indexBytes] = array[$indexBytes]
-      end = to
-    }
+const resizeSubarrays = (metadata, size) => {
+  Object.keys(metadata[$subarrayCursors]).forEach(k => {
+    metadata[$subarrayCursors][k] = 0
   })
+  const cursors = metadata[$subarrayCursors]
+  metadata[$storeFlattened]
+    .filter(store => !ArrayBuffer.isView(store))
+    .forEach(store => {
+      const type = store.type
+      const length = store[0].length
+      const arrayCount = metadata[$storeArrayCounts][type]
+      const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
+      
+      // for threaded impl
+      // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
+      // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
+      // const buffer = new ArrayBuffer(totalBytes)
+  
+      const array = new TYPES[type](summedLength * size)
+
+      array.set(metadata[$storeSubarrays][type])
+      
+      metadata[$storeSubarrays][type] = array
+      metadata[$storeSubarrays][type][$queryShadow] = array.slice(0)
+      metadata[$storeSubarrays][type][$serializeShadow] = array.slice(0)
+
+      let end = 0
+      for (let eid = 0; eid < size; eid++) {
+        const from = cursors[type] + (eid * length)
+        const to = from + length
+
+        store[eid] = metadata[$storeSubarrays][type].subarray(from, to)
+        
+        store[eid].from = from
+        store[eid].to = to
+        store[eid][$queryShadow] = metadata[$storeSubarrays][type][$queryShadow].subarray(from, to)
+        store[eid][$serializeShadow] = metadata[$storeSubarrays][type][$serializeShadow].subarray(from, to)
+        store[eid][$subarray] = true
+        store[eid][$indexType] = array[$indexType]
+        store[eid][$indexBytes] = array[$indexBytes]
+        
+        end = to
+      }
+    })
 }
 
 export const resizeStore = (store, size) => {
@@ -145,6 +160,7 @@ const createTypeStore = (type, length) => {
 const createArrayStore = (metadata, type, length) => {
   const size = metadata[$storeSize]
   const store = Array(size).fill(0)
+  store.type = type
 
   const cursors = metadata[$subarrayCursors]
   const indexType =
@@ -182,7 +198,9 @@ const createArrayStore = (metadata, type, length) => {
   for (let eid = 0; eid < size; eid++) {
     const from = cursors[type] + (eid * length)
     const to = from + length
+
     store[eid] = metadata[$storeSubarrays][type].subarray(from, to)
+    
     store[eid].from = from
     store[eid].to = to
     store[eid][$queryShadow] = metadata[$storeSubarrays][type][$queryShadow].subarray(from, to)
@@ -190,6 +208,7 @@ const createArrayStore = (metadata, type, length) => {
     store[eid][$subarray] = true
     store[eid][$indexType] = TYPES_NAMES[indexType]
     store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
+
     end = to
   }
 
@@ -205,7 +224,7 @@ const createShadows = (store) => {
 
 const isArrayType = x => Array.isArray(x) && typeof x[0] === 'string' && typeof x[1] === 'number'
 
-export const createStore = (schema, size=1000000) => {
+export const createStore = (schema, size=10000) => {
   const $store = Symbol('store')
 
   if (!schema) return {}

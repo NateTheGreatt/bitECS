@@ -44,13 +44,17 @@ export const resizeWorld = (world, size) => {
   
   for (let i = 0; i < world[$entityMasks].length; i++) {
     const masks = world[$entityMasks][i];
-    world[$entityMasks][i] = resize(masks, size)    
+    world[$entityMasks][i] = resize(masks, size)
   }
 }
 
 export const addEntity = (world) => {
   const enabled = world[$entityEnabled]
   
+  const eid = removed.length > 0 ? removed.shift() : globalEntityCursor++
+  enabled[eid] = 1
+  world[$entityIndices][eid] = world[$entityArray].push(eid) - 1
+
   // if data stores are 80% full
   if (globalEntityCursor >= world[$warningSize]) {
     // grow by half the original size rounded up to a multiple of 4
@@ -58,12 +62,8 @@ export const addEntity = (world) => {
     const amount = Math.ceil((size/2) / 4) * 4
     resizeWorld(world, size + amount)
     world[$warningSize] = world[$size] - (world[$size] / 5)
+    console.info(`👾 bitECS - resizing world from ${size} to ${size+amount}`)
   }
-
-  const eid = removed.length > 0 ? removed.pop() : globalEntityCursor
-  enabled[eid] = 1
-  globalEntityCursor++
-  world[$entityIndices][eid] = world[$entityArray].push(eid) - 1
 
   return eid
 }

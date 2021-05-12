@@ -6,7 +6,7 @@ export const $size = Symbol('size')
 export const $warningSize = Symbol('warningSize')
 export const $bitflag = Symbol('bitflag')
 
-export const createWorld = (size = 1000000) => {
+export const createWorld = (size = 10000) => {
   const world = {}
   
   world[$size] = size
