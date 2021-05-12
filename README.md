@@ -3,16 +3,17 @@
 Functional, minimal, data-oriented, ultra-high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
 
-## Features
+## ✨ Features
 
 |   |   |
 | --------------------------------- | ---------------------------------------- |
-| 🔮 Simple, declarative API        | 🔥 Blazing fast iteration                |
-| 🔍 Powerful & performant queries  | 💾 Serialization included               |
-| 🍃 Zero dependencies              | 🌐 Node or browser                      |
-| 🤏 `~5kb` gzipped                 | 🏷 TypeScript support                   |
+| 🔮  Simple, declarative API       | 🔥  Blazing fast iteration               |
+| 🔍  Powerful & performant queries | 💾  Serialization included              |
+| 🍃  Zero dependencies             | 🌐  Node or browser                     |
+| 🤏  `~5kb` gzipped                | 🏷  TypeScript support                  |
+| ❤  Made with love                | 🔺 [glMatrix](https://github.com/toji/gl-matrix) support |
 
-#### Benchmarks
+### 📈 Benchmarks
 
 🚀 Unparalleled performance benchmarks
 
@@ -21,18 +22,18 @@ Functional, minimal, data-oriented, ultra-high performance [ECS](https://en.wiki
 | [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark) | [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks) |
 
 
-#### In Development
+### 👩‍💻 In Development
 |                  |
 | ---------------- |
 |🧵 Multithreading |
 
 
-## Install
+## 💿 Install
 ```
 npm i bitecs
 ```
 
-## Overview
+## 🗺 Overview
 
 This is the entire API:
 
@@ -64,7 +65,7 @@ import {
 } from 'bitecs'
 ```
 
-## World
+## 🌐 World
 
 A world represents a set of entities and the components that they each possess. 
 
@@ -77,7 +78,7 @@ const world = createWorld()
 
 world.name = 'MyWorld'
 ```
-## Entity
+## 👾 Entity
 
 An entity is an integer, technically a pointer, which components can be associated with.
 
@@ -93,7 +94,7 @@ Remove entities from the world:
 removeEntity(world, eid2)
 ```
 
-## Component
+## 📦 Component
  
 Components are pure data and added to entities to give them state. 
 
@@ -125,7 +126,7 @@ Velocity.y[eid] = 1
 List.values[eid].set([1,2,3])
 ```
 
-## Query
+## 🔍 Query
 
 A query is defined with components and is used to obtain a specific set of entities from a world.
 
@@ -171,7 +172,7 @@ const enteredEnts = exitedMovementQuery(world)
 ```
 
 
-## System
+## ☄ System
 
 Systems are functions and are run against a world to update componenet state of entities, or anything else.
 
@@ -237,7 +238,7 @@ const pipeline = pipe(
 pipeline(world)
 ```
 
-## Serialization
+## 💾 Serialization
 
 Performant and highly customizable serialization is built-in. Any subset of data can be targeted and serialized/deserialized with great efficiency and ease.
 
