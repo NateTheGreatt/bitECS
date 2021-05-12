@@ -70,8 +70,8 @@ declare module 'bitecs' {
   export function defineQuery (components: (IComponent | QueryModifier)[]): Query
   export function Changed (c: (IComponent | IComponentProp)[]): (world: IWorld) => IComponent | IComponentProp
   export function Not (c: (IComponent | IComponentProp)[]): (world: IWorld) => IComponent | IComponentProp
-  export function enterQuery (world: IWorld, query: Query, fn: (eid: number) => void): void
-  export function exitQuery (world: IWorld, query: Query, fn: (eid: number) => void): void
+  export function enterQuery (query: Query): Query
+  export function exitQuery (query: Query): Query
   export function commitRemovals (world: IWorld): void
   export function defineSystem (update: (world: IWorld) => void): System
   export function defineSerializer (target: IWorld | IComponent | IComponentProp | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
