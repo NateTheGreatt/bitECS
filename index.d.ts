@@ -35,6 +35,23 @@ declare module 'bitecs' {
     Float32Array |
     Float64Array
 
+  type ArrayByType = {
+    ['bool']: boolean[];
+    [Types.i8]: Int8Array;
+    [Types.ui8]: Uint8Array;
+    [Types.ui8c]: Uint8ClampedArray;
+    [Types.i16]: Int16Array;
+    [Types.ui16]: Uint16Array;
+    [Types.i32]: Int32Array;
+    [Types.ui32]: Uint32Array;
+    [Types.f32]: Float32Array;
+    [Types.f64]: Float64Array;
+  }
+
+  type ComponentType<T extends ISchema> = {
+    [key in keyof T]: T[key] extends Type ? ArrayByType[T[key]] : T[key] extends ISchema ? ComponentType<T[key]> : unknown;
+  }
+
   interface IWorld {
     [key: string]: any
   }
@@ -57,13 +74,13 @@ declare module 'bitecs' {
 
   type System = (world: IWorld) => void
 
-  
+
   export function createWorld (size?: number): IWorld
   export function addEntity (world: IWorld): number
   export function removeEntity (world: IWorld, eid: number): void
   export function registerComponent (world: IWorld, component: IComponent): void
   export function registerComponents (world: IWorld, components: IComponent[]): void
-  export function defineComponent (schema: ISchema): IComponent
+  export function defineComponent <T extends ISchema>(schema: T): ComponentType<T>
   export function addComponent (world: IWorld, component: IComponent, eid: number): void
   export function removeComponent (world: IWorld, component: IComponent, eid: number): void
   export function hasComponent (world: IWorld, component: IComponent, eid: number): boolean
