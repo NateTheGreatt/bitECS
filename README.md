@@ -172,7 +172,7 @@ const enteredEnts = exitedMovementQuery(world)
 ```
 
 
-## ☄ System
+## 🛸 System
 
 Systems are functions and are run against a world to update componenet state of entities, or anything else.
 

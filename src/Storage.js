@@ -54,6 +54,7 @@ export const $storeSubarrays = Symbol('storeSubarrays')
 export const $storeCursor = Symbol('storeCursor')
 export const $subarrayCursors = Symbol('subarrayCursors')
 export const $subarray = Symbol('subarray')
+export const $tagStore = Symbol('tagStore')
 
 export const $queryShadow = Symbol('queryShadow')
 export const $serializeShadow = Symbol('serializeShadow')
@@ -70,70 +71,82 @@ export const resize = (ta, size) => {
   return newTa
 }
 
-const resizeRecursive = (store, size) => {
+const resizeSubarray = (metadata, store, size) => {
+  const cursors = metadata[$subarrayCursors]
+  const type = store[$storeType]
+  const length = store[0].length
+  const indexType =
+    length < UNSIGNED_MAX.uint8
+      ? 'ui8'
+      : length < UNSIGNED_MAX.uint16
+        ? 'ui16'
+        : 'ui32'
+  const arrayCount = metadata[$storeArrayCounts][type]
+  const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
+  
+  // for threaded impl
+  // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
+  // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
+  // const buffer = new ArrayBuffer(totalBytes)
+
+  const array = new TYPES[type](summedLength * size)
+
+  array.set(metadata[$storeSubarrays][type])
+  
+  metadata[$storeSubarrays][type] = array
+  metadata[$storeSubarrays][type][$queryShadow] = array.slice(0)
+  metadata[$storeSubarrays][type][$serializeShadow] = array.slice(0)
+  
+  array[$indexType] = TYPES_NAMES[indexType]
+  array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
+
+  let end = 0
+  for (let eid = 0; eid < size; eid++) {
+    const from = cursors[type] + (eid * length)
+    const to = from + length
+
+    store[eid] = metadata[$storeSubarrays][type].subarray(from, to)
+    
+    store[eid].from = from
+    store[eid].to = to
+    store[eid][$queryShadow] = metadata[$storeSubarrays][type][$queryShadow].subarray(from, to)
+    store[eid][$serializeShadow] = metadata[$storeSubarrays][type][$serializeShadow].subarray(from, to)
+    store[eid][$subarray] = true
+    store[eid][$indexType] = array[$indexType]
+    store[eid][$indexBytes] = array[$indexBytes]
+    
+    end = to
+  }
+
+  cursors[type] = end
+}
+
+const resizeRecursive = (metadata, store, size) => {
   Object.keys(store).forEach(key => {
     const ta = store[key]
-    if (ta[$subarray]) return
-    else if (ArrayBuffer.isView(ta)) {
+    if (Array.isArray(ta)) {
+      resizeSubarray(metadata, ta, size)
+      store[$storeFlattened].push(ta)
+    } else if (ArrayBuffer.isView(ta)) {
       store[key] = resize(ta, size)
+      store[$storeFlattened].push(store[key])
       store[key][$queryShadow] = resize(ta[$queryShadow], size)
       store[key][$serializeShadow] = resize(ta[$serializeShadow], size)
     } else if (typeof ta === 'object') {
-      resizeRecursive(store[key], size)
+      resizeRecursive(metadata, store[key], size)
     }
   })
 }
 
-const resizeSubarrays = (metadata, size) => {
-  Object.keys(metadata[$subarrayCursors]).forEach(k => {
-    metadata[$subarrayCursors][k] = 0
-  })
-  const cursors = metadata[$subarrayCursors]
-  metadata[$storeFlattened]
-    .filter(store => !ArrayBuffer.isView(store))
-    .forEach(store => {
-      const type = store[$storeType]
-      const length = store[0].length
-      const arrayCount = metadata[$storeArrayCounts][type]
-      const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
-      
-      // for threaded impl
-      // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
-      // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
-      // const buffer = new ArrayBuffer(totalBytes)
-  
-      const array = new TYPES[type](summedLength * size)
-
-      array.set(metadata[$storeSubarrays][type])
-      
-      metadata[$storeSubarrays][type] = array
-      metadata[$storeSubarrays][type][$queryShadow] = array.slice(0)
-      metadata[$storeSubarrays][type][$serializeShadow] = array.slice(0)
-
-      let end = 0
-      for (let eid = 0; eid < size; eid++) {
-        const from = cursors[type] + (eid * length)
-        const to = from + length
-
-        store[eid] = metadata[$storeSubarrays][type].subarray(from, to)
-        
-        store[eid].from = from
-        store[eid].to = to
-        store[eid][$queryShadow] = metadata[$storeSubarrays][type][$queryShadow].subarray(from, to)
-        store[eid][$serializeShadow] = metadata[$storeSubarrays][type][$serializeShadow].subarray(from, to)
-        store[eid][$subarray] = true
-        store[eid][$indexType] = array[$indexType]
-        store[eid][$indexBytes] = array[$indexBytes]
-        
-        end = to
-      }
-    })
-}
-
 export const resizeStore = (store, size) => {
+  if (store[$tagStore]) return
   store[$storeSize] = size
-  resizeRecursive(store, size)
-  resizeSubarrays(store, size)
+  store[$storeFlattened].length = 0
+  Object.keys(store[$subarrayCursors]).forEach(k => {
+    store[$subarrayCursors][k] = 0
+  })
+  resizeRecursive(store, store, size)
+  // resizeSubarrays(store, size)
 }
 
 export const resetStore = store => {
@@ -225,10 +238,18 @@ const createShadows = (store) => {
 
 const isArrayType = x => Array.isArray(x) && typeof x[0] === 'string' && typeof x[1] === 'number'
 
-export const createStore = (schema, size=10000) => {
+export const createStore = (schema, size) => {
   const $store = Symbol('store')
 
-  if (!schema) return {}
+  if (!schema || !Object.keys(schema).length) {
+    // tag component
+    stores[$store] = {
+      [$storeSize]: size,
+      [$tagStore]: true,
+      [$storeBase]: () => stores[$store]
+    }
+    return stores[$store]
+  }
 
   schema = JSON.parse(JSON.stringify(schema))
 
@@ -253,8 +274,8 @@ export const createStore = (schema, size=10000) => {
     [$storeRef]: $store,
     [$storeCursor]: 0,
     [$subarrayCursors]: Object.keys(TYPES).reduce((a, type) => ({ ...a, [type]: 0 }), {}),
-    [$storeArrayCounts]: arrayCounts,
-    [$storeFlattened]: []
+    [$storeFlattened]: [],
+    [$storeArrayCounts]: arrayCounts
   }
 
   if (schema instanceof Object && Object.keys(schema).length) {
@@ -264,9 +285,9 @@ export const createStore = (schema, size=10000) => {
       if (typeof a[k] === 'string') {
 
         a[k] = createTypeStore(a[k], size)
+        createShadows(a[k])
         a[k][$storeBase] = () => stores[$store]
         metadata[$storeFlattened].push(a[k])
-        createShadows(a[k])
 
       } else if (isArrayType(a[k])) {
         
@@ -294,12 +315,6 @@ export const createStore = (schema, size=10000) => {
     return stores[$store]
 
   }
-
-  // tag component
-  stores[$store] = metadata
-  stores[$store][$storeBase] = () => stores[$store]
-
-  return stores[$store]
 }
 
 export const free = (store) => {

@@ -1,6 +1,10 @@
-import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened } from "./Storage.js"
+import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened, $tagStore } from "./Storage.js"
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
 import { $entityArray, $entityEnabled, addEntity } from "./Entity.js"
+
+let resized = false
+
+export const setSerializationResized = v => { resized = v }
 
 const canonicalize = (target) => {
   let componentProps = []
@@ -26,7 +30,7 @@ const canonicalize = (target) => {
   return [componentProps, changedProps]
 }
 
-export const defineSerializer = (target, maxBytes = 20_000_000) => {
+export const defineSerializer = (target, maxBytes = 20000000) => {
   const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
 
   let [componentProps, changedProps] = canonicalize(target)
@@ -37,6 +41,12 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
   const view = new DataView(buffer)
 
   return ents => {
+
+    if (resized) {
+      [componentProps, changedProps] = canonicalize(target)
+      resized = false
+    }
+
     if (isWorld) {
       componentProps = []
       target[$componentMap].forEach((c, component) => {
@@ -80,6 +90,10 @@ export const defineSerializer = (target, maxBytes = 20_000_000) => {
         // write eid
         view.setUint32(where, eid)
         where += 4
+
+        if (prop[$tagStore]) {
+          continue
+        }
 
         // if property is an array
         if (ArrayBuffer.isView(prop[eid])) {
@@ -137,6 +151,11 @@ export const defineDeserializer = (target) => {
   let [componentProps] = canonicalize(target)
   return (world, packet) => {
     
+    if (resized) {
+      [componentProps] = canonicalize(target)
+      resized = false
+    }
+
     if (isWorld) {
       componentProps = []
       target[$componentMap].forEach((c, component) => {
@@ -175,6 +194,10 @@ export const defineDeserializer = (target) => {
         if (!hasComponent(world, component, eid)) {
           addComponent(world, component, eid)
         }
+
+        if (component[$tagStore]) {
+          continue
+        }
         
         if (ArrayBuffer.isView(ta[eid])) {
           const array = ta[eid]
@@ -192,7 +215,7 @@ export const defineDeserializer = (target) => {
             ta[eid][index] = value
           }
         } else {
-          let value = view[`get${ta.constructor.name.replace('Array', '')}`](where)
+          const value = view[`get${ta.constructor.name.replace('Array', '')}`](where)
           where += ta.BYTES_PER_ELEMENT
 
           ta[eid] = value

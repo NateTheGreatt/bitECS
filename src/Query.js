@@ -122,11 +122,6 @@ export const registerQuery = (world, query) => {
   }
 }
 
-// const queryHooks = (q) => {
-//   while (q.entered.length) if (q.enter) { q.enter(q.entered.shift()) } else q.entered.length = 0
-//   while (q.exited.length) if (q.exit) { q.exit(q.exited.shift()) } else q.exited.length = 0
-// }
-
 const diff = (q) => {
   q.changed.length = 0
   const flat = q.flatProps
@@ -198,6 +193,7 @@ export const queryAddEntity = (world, query, eid) => {
   q.enabled[eid] = true
   q.entities.push(eid)
   q.indices[eid] = q.entities.length - 1
+  // TODO: pop swap so dupes don't enter
   q.entered.push(eid)
 }
 
@@ -229,5 +225,6 @@ export const queryRemoveEntity = (world, query, eid) => {
   q.enabled[eid] = false
   q.toRemove.push(eid)
   world[$dirtyQueries].add(q)
+  // TODO: pop swap so dupes don't enter
   q.exited.push(eid)
 }

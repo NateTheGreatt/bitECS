@@ -1,13 +1,14 @@
 import assert, { strictEqual } from 'assert'
+import { defaultSize } from '../../src/Entity.js'
 import { Types } from '../../src/index.js'
 import { createStore, TYPES } from '../../src/Storage.js'
 
 const arraysEqual = (a,b) => !!a && !!b && !(a<b || b<a)
 
 describe('Storage Integration Tests', () => {
-  it('should default to size of 1MM', () => {
-    const store = createStore({ value: Types.i8 })
-    strictEqual(store.value.length, 10000)
+  it('should default to size of 100k', () => {
+    const store = createStore({ value: Types.i8 }, defaultSize)
+    strictEqual(store.value.length, defaultSize)
   })
   it('should allow custom size', () => {
     const store = createStore({ value: Types.i8 }, 10)
@@ -15,9 +16,9 @@ describe('Storage Integration Tests', () => {
   })
   Object.keys(Types).forEach(type => {
     it('should create a store with ' + type, () => {
-      const store = createStore({ value: type })
+      const store = createStore({ value: type }, defaultSize)
       assert(store.value instanceof TYPES[type])
-      strictEqual(store.value.length, 10000)
+      strictEqual(store.value.length, defaultSize)
     })
   })
   Object.keys(Types).forEach(type => {
@@ -40,7 +41,7 @@ describe('Storage Integration Tests', () => {
     })
   })
   it('should create flat stores', ()  => {
-    const store = createStore({ value1: Types.i8, value2: Types.ui16, value3: Types.f32 })
+    const store = createStore({ value1: Types.i8, value2: Types.ui16, value3: Types.f32 }, defaultSize)
     assert(store.value1 != undefined)
     assert(store.value1 instanceof Int8Array)
     assert(store.value2 != undefined)
@@ -49,9 +50,9 @@ describe('Storage Integration Tests', () => {
     assert(store.value3 instanceof Float32Array)
   })
   it('should create nested stores', ()  => {
-    const store1 = createStore({ nest: { value: Types.i8 } })
-    const store2 = createStore({ nest: { nest: { value: Types.ui32 } } })
-    const store3 = createStore({ nest: { nest: { nest: { value: Types.i16 } } } })
+    const store1 = createStore({ nest: { value: Types.i8 } }, defaultSize)
+    const store2 = createStore({ nest: { nest: { value: Types.ui32 } } }, defaultSize)
+    const store3 = createStore({ nest: { nest: { nest: { value: Types.i16 } } } }, defaultSize)
     assert(store1.nest.value instanceof Int8Array)
     assert(store2.nest.nest.value instanceof Uint32Array)
     assert(store3.nest.nest.nest.value instanceof Int16Array)

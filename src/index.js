@@ -7,11 +7,16 @@ import { defineSerializer, defineDeserializer } from './Serialize.js'
 import { TYPES_ENUM } from './Storage.js'
 
 export const pipe = (...fns) => input => {
+  if (!input || Array.isArray(input) && input.length === 0) return
   fns = Array.isArray(fns[0]) ? fns[0] : fns
   let tmp = input
   for (let i = 0; i < fns.length; i++) {
     const fn = fns[i]
-    tmp = fn(tmp)
+    if (Array.isArray(tmp)) {
+      tmp = tmp.reduce((a,v) => a.concat(fn(v)),[])
+    } else {
+      tmp = fn(tmp)
+    }
   }
   return tmp
 }

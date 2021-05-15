@@ -12,8 +12,8 @@ describe('Serialize Integration Tests', () => {
     const world = createWorld()
     const TestComponent = defineComponent({ value: Types.f32 })
     const eid = addEntity(world)
+    // console.log(TestComponent)
     addComponent(world, TestComponent, eid)
-
     const serialize = defineSerializer(world)
     const deserialize = defineDeserializer(world)
 

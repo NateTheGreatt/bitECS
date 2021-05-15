@@ -1,11 +1,21 @@
 import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage.js'
 import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponent } from './Query.js'
 import { $bitflag, $size } from './World.js'
-import { $entityMasks } from './Entity.js'
+import { $entityMasks, defaultSize } from './Entity.js'
 
 export const $componentMap = Symbol('componentMap')
 
-export const defineComponent = (schema) => createStore(schema)
+export const components = []
+
+export const resizeComponents = (size) => {
+  components.forEach(component => resizeStore(component, size))
+}
+
+export const defineComponent = (schema) => {
+  const component = createStore(schema, defaultSize)
+  if (schema && Object.keys(schema).length) components.push(component)
+  return component
+}
 
 export const incrementBitflag = (world) => {
   world[$bitflag] *= 2
@@ -44,7 +54,6 @@ export const hasComponent = (world, component, eid) => {
 export const addComponent = (world, component, eid, reset=false) => {
   if (!world[$componentMap].has(component)) registerComponent(world, component)
   if (hasComponent(world, component, eid)) return
-
   // Add bitflag to entity bitmask
   const { generationId, bitflag } = world[$componentMap].get(component)
   world[$entityMasks][generationId][eid] |= bitflag
