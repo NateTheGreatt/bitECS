@@ -34,12 +34,15 @@ export const resetGlobals = () => {
 export const getEntityCursor = () => globalEntityCursor
 export const getRemovedEntities = () => removed
 
+export const eidToWorld = new Map()
+
 export const addEntity = (world) => {
   const enabled = world[$entityEnabled]
   
-  const eid = removed.length > 0 ? removed.pop() : globalEntityCursor++
+  const eid = removed.length > 0 ? removed.shift() : globalEntityCursor++
   enabled[eid] = 1
   world[$entityIndices][eid] = world[$entityArray].push(eid) - 1
+  eidToWorld.set(eid, world)
 
   // if data stores are 80% full
   if (globalEntityCursor >= resizeThreshold()) {

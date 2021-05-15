@@ -1,6 +1,6 @@
 import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened, $tagStore } from "./Storage.js"
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
-import { $entityArray, $entityEnabled, addEntity } from "./Entity.js"
+import { $entityArray, $entityEnabled, addEntity, eidToWorld } from "./Entity.js"
 
 let resized = false
 
@@ -54,8 +54,12 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
       })
     }
     
+    let world
     if (Object.getOwnPropertySymbols(ents).includes($componentMap)) {
+      world = ents
       ents = ents[$entityArray]
+    } else {
+      world = eidToWorld.get(ents[0])
     }
 
     if (!ents.length) return
@@ -79,6 +83,11 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
       // write eid,val
       for (let i = 0; i < ents.length; i++) {
         const eid = ents[i]
+
+        // skip if entity doesn't have this component
+        if (!hasComponent(world, prop[$storeBase](), eid)) {
+          continue
+        }
 
         // skip if diffing and no change
         if (diff && prop[eid] === prop[$serializeShadow][eid]) {
@@ -166,6 +175,8 @@ export const defineDeserializer = (target) => {
     const view = new DataView(packet)
     let where = 0
 
+    const newEntities = new Map()
+
     while (where < packet.byteLength) {
 
       // pid
@@ -176,21 +187,28 @@ export const defineDeserializer = (target) => {
       const entityCount = view.getUint32(where)
       where += 4
 
-      // typed array
-      const ta = componentProps[pid]
+      // component property
+      const prop = componentProps[pid]
 
-      // Get the properties and set the new state
+      // Get the entities and set their prop values
       for (let i = 0; i < entityCount; i++) {
         let eid = view.getUint32(where)
         where += 4
 
+        let newEid = newEntities.get(eid)
+        if (newEid !== undefined) {
+          eid = newEid
+        }
+
         // if this world hasn't seen this eid yet
         if (!world[$entityEnabled][eid]) {
           // make a new entity for the data
-          eid = addEntity(world)
+          const newEid = addEntity(world)
+          newEntities.set(eid, newEid)
+          eid = newEid
         }
 
-        const component = ta[$storeBase]()
+        const component = prop[$storeBase]()
         if (!hasComponent(world, component, eid)) {
           addComponent(world, component, eid)
         }
@@ -199,8 +217,8 @@ export const defineDeserializer = (target) => {
           continue
         }
         
-        if (ArrayBuffer.isView(ta[eid])) {
-          const array = ta[eid]
+        if (ArrayBuffer.isView(prop[eid])) {
+          const array = prop[eid]
           const count = view[`get${array[$indexType]}`](where)
           where += array[$indexBytes]
 
@@ -212,13 +230,13 @@ export const defineDeserializer = (target) => {
             const value = view[`get${array.constructor.name.replace('Array', '')}`](where)
             where += array.BYTES_PER_ELEMENT
 
-            ta[eid][index] = value
+            prop[eid][index] = value
           }
         } else {
-          const value = view[`get${ta.constructor.name.replace('Array', '')}`](where)
-          where += ta.BYTES_PER_ELEMENT
+          const value = view[`get${prop.constructor.name.replace('Array', '')}`](where)
+          where += prop.BYTES_PER_ELEMENT
 
-          ta[eid] = value
+          prop[eid] = value
         }
       }
     }
