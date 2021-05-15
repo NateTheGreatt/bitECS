@@ -51,7 +51,7 @@ export const hasComponent = (world, component, eid) => {
   return (mask & bitflag) === bitflag
 }
 
-export const addComponent = (world, component, eid, reset=false) => {
+export const addComponent = (world, component, eid, reset=true) => {
   if (!world[$componentMap].has(component)) registerComponent(world, component)
   if (hasComponent(world, component, eid)) return
   // Add bitflag to entity bitmask
@@ -69,7 +69,7 @@ export const addComponent = (world, component, eid, reset=false) => {
   if (reset) resetStoreFor(component, eid)
 }
 
-export const removeComponent = (world, component, eid, reset=false) => {
+export const removeComponent = (world, component, eid, reset=true) => {
   const { generationId, bitflag } = world[$componentMap].get(component)
 
   if (!(world[$entityMasks][generationId][eid] & bitflag)) return

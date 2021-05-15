@@ -150,19 +150,23 @@ export const resizeStore = (store, size) => {
 }
 
 export const resetStore = store => {
-  store[$storeFlattened].forEach(ta => {
-    ta.fill(0)
-  })
-  Object.keys(store[$storeSubarrays]).forEach(key => {
-    store[$storeSubarrays][key].fill(0)
-  })
+  if (store[$storeFlattened]) {
+    store[$storeFlattened].forEach(ta => {
+      ta.fill(0)
+    })
+    Object.keys(store[$storeSubarrays]).forEach(key => {
+      store[$storeSubarrays][key].fill(0)
+    })
+  }
 }
 
 export const resetStoreFor = (store, eid) => {
-  store[$storeFlattened].forEach(ta => {
-    if (ArrayBuffer.isView(ta)) ta[eid] = 0
-    else ta[eid].fill(0)
-  })
+  if (store[$storeFlattened]) {
+    store[$storeFlattened].forEach(ta => {
+      if (ArrayBuffer.isView(ta)) ta[eid] = 0
+      else ta[eid].fill(0)
+    })
+  }
 }
 
 const createTypeStore = (type, length) => {

@@ -10,7 +10,7 @@ Functional, minimal, data-oriented, ultra-high performance [ECS](https://en.wiki
 | 🔮  Simple, declarative API       | 🔥  Blazing fast iteration               |
 | 🔍  Powerful & performant queries | 💾  Serialization included              |
 | 🍃  Zero dependencies             | 🌐  Node or browser                     |
-| 🤏  `~5kb` gzipped                | 🏷  TypeScript support                  |
+| 🤏  `~4kb` gzipped                | 🏷  TypeScript support                  |
 | ❤  Made with love                | 🔺 [glMatrix](https://github.com/toji/gl-matrix) support |
 
 ### 📈 Benchmarks
