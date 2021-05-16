@@ -50,7 +50,9 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
     if (isWorld) {
       componentProps = []
       target[$componentMap].forEach((c, component) => {
-        componentProps.push(...component[$storeFlattened])
+        if (component[$storeFlattened])
+          componentProps.push(...component[$storeFlattened])
+        else componentProps.push(component)
       })
     }
     
@@ -168,7 +170,9 @@ export const defineDeserializer = (target) => {
     if (isWorld) {
       componentProps = []
       target[$componentMap].forEach((c, component) => {
-        componentProps.push(...component[$storeFlattened])
+        if (component[$storeFlattened])
+          componentProps.push(...component[$storeFlattened])
+        else componentProps.push(component)
       })
     }
 
