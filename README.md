@@ -1,5 +1,10 @@
 # 👾 bitECS 👾
 
+[![npm](https://img.shields.io/npm/v/bitecs.svg)](https://www.npmjs.com/package/bitecs)
+[![Minzipped](https://badgen.net/bundlephobia/minzip/bitecs)](https://www.npmjs.com/package/bitecs)
+[![npm](https://img.shields.io/npm/dt/bitecs.svg)](https://www.npmjs.com/package/bitecs)
+[![License](https://badgen.net/npm/license/bitecs)](https://www.npmjs.com/package/bitecs)
+
 Functional, minimal, data-oriented, ultra-high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
 
 
