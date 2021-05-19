@@ -68,30 +68,29 @@ declare module 'bitecs' {
     [key: string]: TypedArray | IComponentProp
   }
 
-  type QueryModifier = (c: (IComponent | IComponentProp)[]) => (world: IWorld) => IComponent | IComponentProp
+  type QueryModifier = (c: (IComponent | IComponentProp)[]) => (world: IWorld) => IComponent | QueryModifier
 
   type Query = (world: IWorld) => number[]
 
   type System = (world: IWorld) => void
 
-
-  export function createWorld (size?: number): IWorld
-  export function addEntity (world: IWorld): number
-  export function removeEntity (world: IWorld, eid: number): void
-  export function registerComponent (world: IWorld, component: IComponent): void
-  export function registerComponents (world: IWorld, components: IComponent[]): void
-  export function defineComponent <T extends ISchema>(schema: T): ComponentType<T>
-  export function addComponent (world: IWorld, component: IComponent, eid: number): void
-  export function removeComponent (world: IWorld, component: IComponent, eid: number): void
-  export function hasComponent (world: IWorld, component: IComponent, eid: number): boolean
-  export function defineQuery (components: (IComponent | QueryModifier)[]): Query
-  export function Changed (c: (IComponent | IComponentProp)[]): (world: IWorld) => IComponent | IComponentProp
-  export function Not (c: (IComponent | IComponentProp)[]): (world: IWorld) => IComponent | IComponentProp
-  export function enterQuery (query: Query): Query
-  export function exitQuery (query: Query): Query
-  export function commitRemovals (world: IWorld): void
-  export function defineSystem (update: (world: IWorld) => void): System
-  export function defineSerializer (target: IWorld | IComponent | IComponentProp | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
-  export function defineDeserializer (target: IWorld | IComponent | IComponentProp | QueryModifier): (world: IWorld, packet: ArrayBuffer) => void
+  export function createWorld(size?: number): IWorld
+  export function addEntity(world: IWorld): number
+  export function removeEntity(world: IWorld, eid: number): void
+  export function registerComponent(world: IWorld, component: IComponent): void
+  export function registerComponents(world: IWorld, components: IComponent[]): void
+  export function defineComponent<T extends ISchema>(schema?: T): ComponentType<T>
+  export function addComponent(world: IWorld, component: IComponent, eid: number): void
+  export function removeComponent(world: IWorld, component: IComponent, eid: number): void
+  export function hasComponent(world: IWorld, component: IComponent, eid: number): boolean
+  export function defineQuery(components: (ComponentType<ISchema> | IComponent | QueryModifier)[]): Query
+  export function Changed(c: ComponentType<ISchema>): IComponent | QueryModifier
+  export function Not(c: ComponentType<ISchema>): IComponent | QueryModifier
+  export function enterQuery(query: Query): Query
+  export function exitQuery(query: Query): Query
+  export function commitRemovals(world: IWorld): void
+  export function defineSystem(update: (world: IWorld) => void): System
+  export function defineSerializer(target: IWorld | IComponent | IComponentProp | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
+  export function defineDeserializer(target: IWorld | IComponent | IComponentProp | QueryModifier): (world: IWorld, packet: ArrayBuffer) => void
   export function pipe(...fns: ((...args: any[]) => any)[]): (input: any) => any
 }
