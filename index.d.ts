@@ -35,7 +35,7 @@ declare module 'bitecs' {
     Float32Array |
     Float64Array
 
-  type ArrayByType = {
+  export type ArrayByType = {
     ['bool']: boolean[];
     [Types.i8]: Int8Array;
     [Types.ui8]: Uint8Array;
@@ -48,49 +48,51 @@ declare module 'bitecs' {
     [Types.f64]: Float64Array;
   }
 
-  type ComponentType<T extends ISchema> = {
+  export type ComponentType<T extends ISchema> = {
     [key in keyof T]: T[key] extends Type ? ArrayByType[T[key]] : T[key] extends ISchema ? ComponentType<T[key]> : unknown;
   }
 
-  interface IWorld {
+  export interface IWorld {
     [key: string]: any
   }
 
-  interface ISchema {
+  export interface ISchema {
     [key: string]: Type | ISchema
   }
 
-  interface IComponentProp {
+  export interface IComponentProp {
     [key: string]: TypedArray
   }
 
-  interface IComponent {
+  export interface IComponent {
     [key: string]: TypedArray | IComponentProp
   }
 
-  type QueryModifier = (c: (IComponent | IComponentProp)[]) => (world: IWorld) => IComponent | QueryModifier
+  export type Component = IComponent | ComponentType<ISchema>
 
-  type Query = (world: IWorld) => number[]
+  export type QueryModifier = (c: (IComponent | IComponentProp)[]) => (world: IWorld) => IComponent | QueryModifier
 
-  type System = (world: IWorld) => void
+  export type Query = (world: IWorld) => number[]
+
+  export type System = (world: IWorld) => void
 
   export function createWorld(size?: number): IWorld
   export function addEntity(world: IWorld): number
   export function removeEntity(world: IWorld, eid: number): void
-  export function registerComponent(world: IWorld, component: IComponent): void
-  export function registerComponents(world: IWorld, components: IComponent[]): void
+  export function registerComponent(world: IWorld, component: Component): void
+  export function registerComponents(world: IWorld, components: Component[]): void
   export function defineComponent<T extends ISchema>(schema?: T): ComponentType<T>
-  export function addComponent(world: IWorld, component: IComponent, eid: number): void
-  export function removeComponent(world: IWorld, component: IComponent, eid: number): void
-  export function hasComponent(world: IWorld, component: IComponent, eid: number): boolean
-  export function defineQuery(components: (ComponentType<ISchema> | IComponent | QueryModifier)[]): Query
-  export function Changed(c: ComponentType<ISchema>): IComponent | QueryModifier
-  export function Not(c: ComponentType<ISchema>): IComponent | QueryModifier
+  export function addComponent(world: IWorld, component: Component, eid: number): void
+  export function removeComponent(world: IWorld, component: Component, eid: number): void
+  export function hasComponent(world: IWorld, component: Component, eid: number): boolean
+  export function defineQuery(components: (Component | QueryModifier)[]): Query
+  export function Changed(c: Component): Component | QueryModifier
+  export function Not(c: Component): Component | QueryModifier
   export function enterQuery(query: Query): Query
   export function exitQuery(query: Query): Query
   export function commitRemovals(world: IWorld): void
   export function defineSystem(update: (world: IWorld) => void): System
-  export function defineSerializer(target: IWorld | IComponent | IComponentProp | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
-  export function defineDeserializer(target: IWorld | IComponent | IComponentProp | QueryModifier): (world: IWorld, packet: ArrayBuffer) => void
+  export function defineSerializer(target: IWorld | Component | IComponentProp | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
+  export function defineDeserializer(target: IWorld | Component | IComponentProp | QueryModifier): (world: IWorld, packet: ArrayBuffer) => void
   export function pipe(...fns: ((...args: any[]) => any)[]): (input: any) => any
 }
