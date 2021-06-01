@@ -61,6 +61,7 @@ import {
   defineDeserializer,
 
   pipe,
+  Types
 
 } from 'bitecs'
 ```
@@ -174,7 +175,7 @@ const enteredEnts = exitedMovementQuery(world)
 
 ## 🛸 System
 
-Systems are functions and are run against a world to update componenet state of entities, or anything else.
+Systems are functions and are run against a world to update component state of entities, or anything else.
 
 Queries are used inside of systems to obtain a relevant set of entities and perform operations on their component data.
 
