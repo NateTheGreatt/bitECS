@@ -4,7 +4,7 @@ import { defineComponent, registerComponent, registerComponents, hasComponent, a
 import { defineSystem } from './System.js'
 import { defineQuery, enterQuery, exitQuery, Changed, Not, resetChangedQuery, commitRemovals } from './Query.js'
 import { defineSerializer, defineDeserializer } from './Serialize.js'
-import { TYPES_ENUM, contiguousArray } from './Storage.js'
+import { TYPES_ENUM, parentArray } from './Storage.js'
 
 export const pipe = (...fns) => input => {
   if (!input || Array.isArray(input) && input.length === 0) return
@@ -52,7 +52,6 @@ export {
   defineSerializer,
   defineDeserializer,
 
-  contiguousArray,
-
+  parentArray,
 
 }

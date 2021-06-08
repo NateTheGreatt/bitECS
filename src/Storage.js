@@ -54,6 +54,7 @@ export const $storeSubarrays = Symbol('storeSubarrays')
 export const $storeCursor = Symbol('storeCursor')
 export const $subarrayCursors = Symbol('subarrayCursors')
 export const $subarray = Symbol('subarray')
+export const $parentArray = Symbol('subStore')
 export const $tagStore = Symbol('tagStore')
 
 export const $queryShadow = Symbol('queryShadow')
@@ -76,11 +77,12 @@ const resizeSubarray = (metadata, store, size) => {
   const type = store[$storeType]
   const length = store[0].length
   const indexType =
-    length < UNSIGNED_MAX.uint8
+    length <= UNSIGNED_MAX.uint8
       ? 'ui8'
-      : length < UNSIGNED_MAX.uint16
+      : length <= UNSIGNED_MAX.uint16
         ? 'ui16'
         : 'ui32'
+        
   const arrayCount = metadata[$storeArrayCounts][type]
   const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
   
@@ -100,6 +102,7 @@ const resizeSubarray = (metadata, store, size) => {
   array[$indexType] = TYPES_NAMES[indexType]
   array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
 
+  const start = cursors[type]
   let end = 0
   for (let eid = 0; eid < size; eid++) {
     const from = cursors[type] + (eid * length)
@@ -119,6 +122,8 @@ const resizeSubarray = (metadata, store, size) => {
   }
 
   cursors[type] = end
+
+  store[$parentArray] = metadata[$storeSubarrays][type].subarray(start, end)
 }
 
 const resizeRecursive = (metadata, store, size) => {
@@ -146,7 +151,6 @@ export const resizeStore = (store, size) => {
     store[$subarrayCursors][k] = 0
   })
   resizeRecursive(store, store, size)
-  // resizeSubarrays(store, size)
 }
 
 export const resetStore = store => {
@@ -174,6 +178,8 @@ const createTypeStore = (type, length) => {
   const buffer = new ArrayBuffer(totalBytes)
   return new TYPES[type](buffer)
 }
+
+export const parentArray = store => store[$parentArray]
 
 const createArrayStore = (metadata, type, length) => {
   const size = metadata[$storeSize]
@@ -212,6 +218,7 @@ const createArrayStore = (metadata, type, length) => {
   }
 
   // pre-generate subarrays for each eid
+  const start = cursors[type]
   let end = 0
   for (let eid = 0; eid < size; eid++) {
     const from = cursors[type] + (eid * length)
@@ -226,11 +233,13 @@ const createArrayStore = (metadata, type, length) => {
     store[eid][$subarray] = true
     store[eid][$indexType] = TYPES_NAMES[indexType]
     store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
-
+    
     end = to
   }
 
   cursors[type] = end
+
+  store[$parentArray] = metadata[$storeSubarrays][type].subarray(start, end)
 
   return store
 }
@@ -299,12 +308,12 @@ export const createStore = (schema, size) => {
         a[k] = createArrayStore(metadata, type, length)
         a[k][$storeBase] = () => stores[$store]
         metadata[$storeFlattened].push(a[k])
-        // Object.freeze(a[k])
+        // Object.seal(a[k])
 
       } else if (a[k] instanceof Object) {
         
         a[k] = Object.keys(a[k]).reduce(recursiveTransform, a[k])
-        // Object.freeze(a[k])
+        // Object.seal(a[k])
         
       }
 
@@ -314,7 +323,7 @@ export const createStore = (schema, size) => {
     stores[$store] = Object.assign(Object.keys(schema).reduce(recursiveTransform, schema), metadata)
     stores[$store][$storeBase] = () => stores[$store]
 
-    // Object.freeze(stores[$store])
+    // Object.seal(stores[$store])
 
     return stores[$store]
 
