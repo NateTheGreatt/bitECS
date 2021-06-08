@@ -40,7 +40,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
   const buffer = new ArrayBuffer(maxBytes)
   const view = new DataView(buffer)
 
-  return ents => {
+  return (ents) => {
 
     if (resized) {
       [componentProps, changedProps] = canonicalize(target)
@@ -157,10 +157,14 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
   }
 }
 
+const newEntities = new Map()
+
 export const defineDeserializer = (target) => {
   const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
   let [componentProps] = canonicalize(target)
-  return (world, packet) => {
+  return (world, packet, overwrite=true) => {
+
+    newEntities.clear()
     
     if (resized) {
       [componentProps] = canonicalize(target)
@@ -178,8 +182,6 @@ export const defineDeserializer = (target) => {
 
     const view = new DataView(packet)
     let where = 0
-
-    const newEntities = new Map()
 
     while (where < packet.byteLength) {
 
@@ -204,8 +206,8 @@ export const defineDeserializer = (target) => {
           eid = newEid
         }
 
-        // if this world hasn't seen this eid yet
-        if (!world[$entityEnabled][eid]) {
+        // if this world hasn't seen this eid yet, or if not overwriting
+        if (!world[$entityEnabled][eid] || !overwrite) {
           // make a new entity for the data
           const newEid = addEntity(world)
           newEntities.set(eid, newEid)
