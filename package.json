@@ -1,9 +1,8 @@
 {
   "name": "bitecs",
-  "version": "0.3.9",
+  "version": "0.3.8-a1",
   "description": "Functional, minimal, data-driven, ultra-high performance ECS library written in Javascript",
   "license": "MPL-2.0",
-  "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.es.js",
   "types": "./dist/index.d.ts",
@@ -27,7 +26,8 @@
     "build": "rollup -c",
     "test": "c8 mocha test --recursive",
     "docs": "node scripts/docs.js",
-    "dist": "npm run test && npm run build && npm run docs"
+    "dist": "npm run test && npm run build && npm run docs",
+    "publish": "node ./scripts/remove-type-module.js && npm publish && node ./scripts/add-type-module.js "
   },
   "devDependencies": {
     "@babel/core": "^7.13.16",
