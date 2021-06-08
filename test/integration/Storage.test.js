@@ -1,12 +1,14 @@
 import assert, { strictEqual } from 'assert'
-import { defaultSize } from '../../src/Entity.js'
+import { getDefaultSize } from '../../src/Entity.js'
 import { Types } from '../../src/index.js'
-import { createStore, TYPES } from '../../src/Storage.js'
+import { createStore, resizeStore, TYPES } from '../../src/Storage.js'
+
+let defaultSize = getDefaultSize()
 
 const arraysEqual = (a,b) => !!a && !!b && !(a<b || b<a)
 
 describe('Storage Integration Tests', () => {
-  it('should default to size of 100k', () => {
+  it('should default to size of ' + defaultSize, () => {
     const store = createStore({ value: Types.i8 }, defaultSize)
     strictEqual(store.value.length, defaultSize)
   })
@@ -38,6 +40,28 @@ describe('Storage Integration Tests', () => {
       assert(arraysEqual(Array.from(store.array[1]), [5,6,7,8]))
       assert(arraysEqual(Array.from(store.array[2]), [9,10,11,12]))
       strictEqual(store.array[3], undefined)
+    })
+    it('should resize arrays of ' + type, () => {
+      const store = createStore({ array: [type, 4] }, 3)
+      store.array[0].set([1,2,3,4])
+      store.array[1].set([5,6,7,8])
+      store.array[2].set([9,10,11,12])
+
+      strictEqual(store.array[3], undefined)
+
+      resizeStore(store, 6)
+
+      assert(store.array[5] !== undefined)
+      strictEqual(store.array[6], undefined)
+
+      assert(arraysEqual(Array.from(store.array[0]), [1,2,3,4]))
+      assert(arraysEqual(Array.from(store.array[1]), [5,6,7,8]))
+      assert(arraysEqual(Array.from(store.array[2]), [9,10,11,12]))
+      
+      assert(arraysEqual(Array.from(store.array[3]), [0,0,0,0]))
+      assert(arraysEqual(Array.from(store.array[4]), [0,0,0,0]))
+      assert(arraysEqual(Array.from(store.array[5]), [0,0,0,0]))
+
     })
   })
   it('should create flat stores', ()  => {

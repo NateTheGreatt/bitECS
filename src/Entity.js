@@ -10,9 +10,9 @@ export const $entityArray = Symbol('entityArray')
 export const $entityIndices = Symbol('entityIndices')
 export const $removedEntities = Symbol('removedEntities')
 
-const NONE = 2**32
+const NONE = 2**32 - 1
 
-export const defaultSize = 100000
+let defaultSize = 100000
 
 // need a global EID cursor which all worlds and all components know about
 // so that world entities can posess entire rows spanning all component tables
@@ -29,6 +29,12 @@ export const resetGlobals = () => {
   globalSize = defaultSize
   globalEntityCursor = 0
   removed.length = 0
+}
+
+export const getDefaultSize = () => defaultSize
+export const setDefaultSize = x => { 
+  defaultSize = x
+  resetGlobals()
 }
 
 export const getEntityCursor = () => globalEntityCursor

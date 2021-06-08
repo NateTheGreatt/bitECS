@@ -1,8 +1,10 @@
 import assert, { strictEqual } from 'assert'
 import { $componentMap } from '../../src/Component.js'
-import { $entityEnabled, $entityMasks, resetGlobals, addEntity, defaultSize } from '../../src/Entity.js'
+import { $entityEnabled, $entityMasks, resetGlobals, addEntity, getDefaultSize } from '../../src/Entity.js'
 import { $dirtyQueries, $queries, $queryMap } from '../../src/Query.js'
 import { createWorld, $size, $bitflag } from '../../src/World.js'
+
+const defaultSize = getDefaultSize()
 
 describe('World Integration Tests', () => {
   afterEach(() => {
