@@ -1,8 +1,9 @@
-import { $queryShadow, $storeFlattened, $storeSize } from './Storage.js'
+import { $queryShadow, $storeFlattened, $storeSize, $tagStore } from './Storage.js'
 import { $componentMap, registerComponent } from './Component.js'
-import { $entityMasks, $entityEnabled, getEntityCursor } from './Entity.js'
+import { $entityMasks, $entityEnabled, getEntityCursor, $entityArray } from './Entity.js'
 
 export function Not(c) { return function QueryNot() { return c } }
+export function Or(c) { return function QueryOr() { return c } }
 export function Changed(c) { return function QueryChanged() { return c } }
 
 export const $queries = Symbol('queries')
@@ -12,7 +13,7 @@ export const $queryComponents = Symbol('queryComponents')
 export const $enterQuery = Symbol('enterQuery')
 export const $exitQuery = Symbol('exitQuery')
 
-const NONE = 2**32
+const NONE = 2**32 - 1
 
 export const enterQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
@@ -87,7 +88,12 @@ export const registerQuery = (world, query) => {
       return a
     }, {})
 
+  // const orMasks = notComponents
+  //   .map(mapComponents)
+  //   .reduce(reduceBitmasks, {})
+
   const flatProps = components
+    .filter(c => !c[$tagStore])
     .map(c => Object.getOwnPropertySymbols(c).includes($storeFlattened) ? c[$storeFlattened] : [c])
     .reduce((a,v) => a.concat(v), [])
 
@@ -95,7 +101,7 @@ export const registerQuery = (world, query) => {
   const entered = []
   const exited = []
 
-  world[$queryMap].set(query, { 
+  world[$queryMap].set(query, {
     entities,
     changed,
     enabled,
@@ -104,6 +110,7 @@ export const registerQuery = (world, query) => {
     changedComponents,
     masks,
     notMasks,
+    // orMasks,
     generations,
     indices,
     flatProps,
@@ -122,8 +129,8 @@ export const registerQuery = (world, query) => {
   }
 }
 
-const diff = (q) => {
-  q.changed.length = 0
+const diff = (q, clearDiff) => {
+  if (clearDiff) q.changed.length = 0
   const flat = q.flatProps
   for (let i = 0; i < q.entities.length; i++) {
     const eid = q.entities[i]
@@ -150,12 +157,19 @@ const diff = (q) => {
 }
 
 export const defineQuery = (components) => {
-  const query = function (world) {
+  if (components === undefined || components[$componentMap] !== undefined) {
+    return world => world ? world[$entityArray] : components[$entityArray]
+  }
+
+  const query = function (world, clearDiff=true) {
     if (!world[$queryMap].has(query)) registerQuery(world, query)
-    const q = world[$queryMap].get(query) 
-    // queryHooks(q)
+
+    const q = world[$queryMap].get(query)
+
     queryCommitRemovals(world, q)
-    if (q.changedComponents.length) return diff(q)
+
+    if (q.changedComponents.length) return diff(q, clearDiff)
+
     return q.entities
   }
   query[$queryComponents] = components
@@ -165,14 +179,20 @@ export const defineQuery = (components) => {
 // TODO: archetype graph
 export const queryCheckEntity = (world, query, eid) => {
   const { masks, notMasks, generations } = world[$queryMap].get(query)
+  // let or = true
   for (let i = 0; i < generations.length; i++) {
     const generationId = generations[i]
     const qMask = masks[generationId]
     const qNotMask = notMasks[generationId]
+    // const qOrMask = orMasks[generationId]
+
     const eMask = world[$entityMasks][generationId][eid]
     if (qNotMask && (eMask & qNotMask) !== 0) {
       return false
     }
+    // if (qOrMask && (eMask & qOrMask) !== qOrMask) {
+    //   continue
+    // }
     if (qMask && (eMask & qMask) !== qMask) {
       return false
     }
@@ -193,7 +213,6 @@ export const queryAddEntity = (world, query, eid) => {
   q.enabled[eid] = true
   q.entities.push(eid)
   q.indices[eid] = q.entities.length - 1
-  // TODO: pop swap so dupes don't enter
   q.entered.push(eid)
 }
 
@@ -225,6 +244,14 @@ export const queryRemoveEntity = (world, query, eid) => {
   q.enabled[eid] = false
   q.toRemove.push(eid)
   world[$dirtyQueries].add(q)
-  // TODO: pop swap so dupes don't enter
   q.exited.push(eid)
+}
+
+export const resetChangedQuery = (world, query) => {
+  const q = world[$queryMap].get(query)
+  q.changed.length = 0
+}
+
+export const removeQuery = (world, query) => {
+  world[$queryMap].delete(query)
 }
