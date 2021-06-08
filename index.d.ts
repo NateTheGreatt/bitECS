@@ -1,6 +1,5 @@
 declare module 'bitecs' {
   export type Type =
-    'bool' |
     'i8' |
     'ui8' |
     'ui8c' |
@@ -36,7 +35,6 @@ declare module 'bitecs' {
     Float64Array
 
   export type ArrayByType = {
-    ['bool']: boolean[];
     [Types.i8]: Int8Array;
     [Types.ui8]: Uint8Array;
     [Types.ui8c]: Uint8ClampedArray;
@@ -72,9 +70,9 @@ declare module 'bitecs' {
 
   export type QueryModifier = (c: (IComponent | IComponentProp)[]) => (world: IWorld) => IComponent | QueryModifier
 
-  export type Query = (world: IWorld) => number[]
+  export type Query = (world: IWorld, clearDiff: Boolean = true) => number[]
 
-  export type System = (world: IWorld) => void
+  export type System = (world: IWorld) => IWorld
 
   export function createWorld(size?: number): IWorld
   export function addEntity(world: IWorld): number
@@ -91,7 +89,7 @@ declare module 'bitecs' {
   export function enterQuery(query: Query): Query
   export function exitQuery(query: Query): Query
   export function commitRemovals(world: IWorld): void
-  export function defineSystem(update: (world: IWorld) => void): System
+  export function defineSystem(update: (world: IWorld, ...args: any[]) => IWorld): System
   export function defineSerializer(target: IWorld | Component | IComponentProp | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
   export function defineDeserializer(target: IWorld | Component | IComponentProp | QueryModifier): (world: IWorld, packet: ArrayBuffer) => void
   export function pipe(...fns: ((...args: any[]) => any)[]): (input: any) => any
