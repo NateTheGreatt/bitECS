@@ -1,7 +1,7 @@
 import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage.js'
 import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponent } from './Query.js'
 import { $bitflag, $size } from './World.js'
-import { $entityMasks, defaultSize } from './Entity.js'
+import { $entityMasks, getDefaultSize, eidToWorld } from './Entity.js'
 
 export const $componentMap = Symbol('componentMap')
 
@@ -12,7 +12,7 @@ export const resizeComponents = (size) => {
 }
 
 export const defineComponent = (schema) => {
-  const component = createStore(schema, defaultSize)
+  const component = createStore(schema, getDefaultSize())
   if (schema && Object.keys(schema).length) components.push(component)
   return component
 }
@@ -52,6 +52,11 @@ export const hasComponent = (world, component, eid) => {
 }
 
 export const addComponent = (world, component, eid, reset=false) => {
+  if (!Number.isInteger(eid)) {
+    component = world
+    world = eidToWorld.get(eid)
+    reset = eid || reset
+  }
   if (!world[$componentMap].has(component)) registerComponent(world, component)
   if (hasComponent(world, component, eid)) return
   // Add bitflag to entity bitmask
@@ -70,6 +75,11 @@ export const addComponent = (world, component, eid, reset=false) => {
 }
 
 export const removeComponent = (world, component, eid, reset=true) => {
+  if (!Number.isInteger(eid)) {
+    component = world
+    world = eidToWorld.get(eid)
+    reset = eid || reset
+  }
   const { generationId, bitflag } = world[$componentMap].get(component)
 
   if (!(world[$entityMasks][generationId][eid] & bitflag)) return
