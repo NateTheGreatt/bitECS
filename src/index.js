@@ -6,8 +6,9 @@ import { defineQuery, enterQuery, exitQuery, Changed, Not, resetChangedQuery, co
 import { defineSerializer, defineDeserializer } from './Serialize.js'
 import { TYPES_ENUM, parentArray } from './Storage.js'
 
-export const pipe = (...fns) => input => {
-  if (!input || Array.isArray(input) && input.length === 0) return
+export const pipe = (...fns) => (...args) => {
+  const input = Array.isArray(args[0]) ? args[0] : args
+  if (!input || input.length === 0) return
   fns = Array.isArray(fns[0]) ? fns[0] : fns
   let tmp = input
   for (let i = 0; i < fns.length; i++) {

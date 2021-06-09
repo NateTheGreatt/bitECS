@@ -90,7 +90,7 @@ declare module 'bitecs' {
   export function exitQuery(query: Query): Query
   export function commitRemovals(world: IWorld): void
   export function defineSystem(update: (world: IWorld, ...args: any[]) => IWorld): System
-  export function defineSerializer(target: IWorld | Component | IComponentProp | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
-  export function defineDeserializer(target: IWorld | Component | IComponentProp | QueryModifier): (world: IWorld, packet: ArrayBuffer) => void
-  export function pipe(...fns: ((...args: any[]) => any)[]): (input: any) => any
+  export function defineSerializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
+  export function defineDeserializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier): (world: IWorld, packet: ArrayBuffer) => void
+  export function pipe(...fns: ((...args: any[]) => any)[]): (...input: any[]) => any
 }
