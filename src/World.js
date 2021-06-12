@@ -1,6 +1,6 @@
 import { $componentMap } from './Component.js'
 import { $queryMap, $queries, $dirtyQueries } from './Query.js'
-import { $entityArray, $entityIndices, $entityEnabled, $entityMasks, getGlobalSize } from './Entity.js'
+import { $entityArray, $entityIndices, $entityEnabled, $entityMasks, getGlobalSize, removeEntity } from './Entity.js'
 import { resize } from './Storage.js'
 
 export const $size = Symbol('size')
@@ -13,10 +13,10 @@ export const resizeWorlds = (size) => {
   worlds.forEach(world => {
     world[$size] = size
     
-    world[$queryMap].forEach(q => {
-      q.indices = resize(q.indices, size)
-      q.enabled = resize(q.enabled, size)
-    })
+    // world[$queryMap].forEach(q => {
+      // q.indices = resize(q.indices, size)
+      // q.enabled = resize(q.enabled, size)
+    // })
     
     world[$entityEnabled] = resize(world[$entityEnabled], size)
     world[$entityIndices] = resize(world[$entityIndices], size)
@@ -44,6 +44,7 @@ export const resetWorld = (world) => {
   world[$entityEnabled] = new Uint8Array(size)
   world[$entityMasks] = [new Uint32Array(size)]
 
+  if (world[$entityArray]) world[$entityArray].forEach(eid => removeEntity(world, eid))
   world[$entityArray] = []
   world[$entityIndices] = new Uint32Array(size)
 

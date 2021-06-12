@@ -64,10 +64,10 @@ export const addComponent = (world, component, eid, reset=false) => {
   world[$entityMasks][generationId][eid] |= bitflag
 
   // todo: archetype graph
-  world[$queries].forEach(query => {
-    if (!queryCheckComponent(world, query, component)) return
-    const match = queryCheckEntity(world, query, eid)
-    if (match) queryAddEntity(world, query, eid)
+  world[$queries].forEach(q => {
+    if (!queryCheckComponent(world, q, component)) return
+    const match = queryCheckEntity(world, q, eid)
+    if (match) queryAddEntity(world, q, eid)
   })
   
   // Zero out each property value
@@ -85,10 +85,10 @@ export const removeComponent = (world, component, eid, reset=true) => {
   if (!(world[$entityMasks][generationId][eid] & bitflag)) return
 
   // todo: archetype graph
-  world[$queries].forEach(query => {
-    if (!queryCheckComponent(world, query, component)) return
-    const match = queryCheckEntity(world, query, eid)
-    if (match) queryRemoveEntity(world, query, eid)
+  world[$queries].forEach(q => {
+    if (!queryCheckComponent(world, q, component)) return
+    const match = queryCheckEntity(world, q, eid)
+    if (match) queryRemoveEntity(world, q, eid)
   })
 
   // Remove flag from entity bitmask

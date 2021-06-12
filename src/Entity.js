@@ -86,8 +86,8 @@ export const removeEntity = (world, eid) => {
 
   // Remove entity from all queries
   // TODO: archetype graph
-  world[$queries].forEach(query => {
-    queryRemoveEntity(world, query, eid)
+  world[$queries].forEach(q => {
+    queryRemoveEntity(world, q, eid)
   })
 
   // Free the entity
