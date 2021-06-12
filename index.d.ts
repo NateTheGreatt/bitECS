@@ -75,22 +75,31 @@ declare module 'bitecs' {
   export type System = (world: IWorld) => IWorld
 
   export function createWorld(size?: number): IWorld
+  export function resetWorld(world: IWorld): IWorld
+  export function deleteWorld(world: IWorld): void
   export function addEntity(world: IWorld): number
   export function removeEntity(world: IWorld, eid: number): void
+
   export function registerComponent(world: IWorld, component: Component): void
   export function registerComponents(world: IWorld, components: Component[]): void
   export function defineComponent<T extends ISchema>(schema?: T): ComponentType<T>
   export function addComponent(world: IWorld, component: Component, eid: number): void
   export function removeComponent(world: IWorld, component: Component, eid: number): void
   export function hasComponent(world: IWorld, component: Component, eid: number): boolean
+
   export function defineQuery(components: (Component | QueryModifier)[]): Query
   export function Changed(c: Component): Component | QueryModifier
   export function Not(c: Component): Component | QueryModifier
   export function enterQuery(query: Query): Query
   export function exitQuery(query: Query): Query
+  export function resetChangedQuery(world: IWorld, query: Query): Query
+  export function removeQuery(world: IWorld, query: Query): Query
   export function commitRemovals(world: IWorld): void
+
   export function defineSystem(update: (world: IWorld, ...args: any[]) => IWorld): System
+
   export function defineSerializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
   export function defineDeserializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier): (world: IWorld, packet: ArrayBuffer) => void
+  
   export function pipe(...fns: ((...args: any[]) => any)[]): (...input: any[]) => any
 }

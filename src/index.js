@@ -1,8 +1,8 @@
-import { createWorld } from './World.js'
+import { createWorld, resetWorld, deleteWorld } from './World.js'
 import { addEntity, removeEntity, setDefaultSize } from './Entity.js'
 import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent } from './Component.js'
 import { defineSystem } from './System.js'
-import { defineQuery, enterQuery, exitQuery, Changed, Not, resetChangedQuery, commitRemovals } from './Query.js'
+import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals, resetChangedQuery, removeQuery } from './Query.js'
 import { defineSerializer, defineDeserializer } from './Serialize.js'
 import { TYPES_ENUM, parentArray } from './Storage.js'
 
@@ -29,6 +29,8 @@ export {
 
   setDefaultSize,
   createWorld,
+  resetWorld,
+  deleteWorld,
   addEntity,
   removeEntity,
 
@@ -45,8 +47,9 @@ export {
   // Or,
   enterQuery,
   exitQuery,
-  resetChangedQuery,
   commitRemovals,
+  resetChangedQuery,
+  removeQuery,
 
   defineSystem,
   

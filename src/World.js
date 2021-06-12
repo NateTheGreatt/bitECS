@@ -7,7 +7,6 @@ export const $size = Symbol('size')
 export const $resizeThreshold = Symbol('resizeThreshold')
 export const $bitflag = Symbol('bitflag')
 
-
 export const worlds = []
 
 export const resizeWorlds = (size) => {
@@ -33,8 +32,13 @@ export const resizeWorlds = (size) => {
 
 export const createWorld = () => {
   const world = {}
-  const size = getGlobalSize()
+  resetWorld(world)
+  worlds.push(world)
+  return world
+}
 
+export const resetWorld = (world) => {
+  const size = getGlobalSize()
   world[$size] = size
 
   world[$entityEnabled] = new Uint8Array(size)
@@ -51,7 +55,22 @@ export const createWorld = () => {
   world[$queries] = new Set()
   world[$dirtyQueries] = new Set()
 
-  worlds.push(world)
-
   return world
+}
+
+export const deleteWorld = (world) => {
+  delete world[$size]
+  delete world[$entityEnabled]
+  delete world[$entityMasks]
+  delete world[$entityArray]
+  delete world[$entityIndices]
+  delete world[$bitflag]
+  delete world[$componentMap]
+  delete world[$queryMap]
+  delete world[$queries]
+  delete world[$dirtyQueries]
+  Object.keys(world).forEach(key => {
+    delete world[key]
+  })
+  worlds.splice(worlds.indexOf(world), 1)
 }

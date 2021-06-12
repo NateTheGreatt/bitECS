@@ -25,6 +25,7 @@ Functional, minimal, data-oriented, ultra-high performance [ECS](https://en.wiki
 ### 👩‍💻 In Development
 |                  |
 | ---------------- |
+| 🧬Archetypes |
 |🧵 Multithreading |
 
 
@@ -35,7 +36,7 @@ npm i bitecs
 
 ## 🗺 Overview
 
-This is the entire API:
+Essentials of the API:
 
 ```js
 import {
