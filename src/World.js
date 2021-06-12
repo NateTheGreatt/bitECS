@@ -14,14 +14,6 @@ export const resizeWorlds = (size) => {
   worlds.forEach(world => {
     world[$size] = size
     
-    // world[$queryMap].forEach(q => {
-      // q.indices = resize(q.indices, size)
-      // q.enabled = resize(q.enabled, size)
-    // })
-    
-    // world[$entityEnabled] = resize(world[$entityEnabled], size)
-    // world[$entityIndices] = resize(world[$entityIndices], size)
-    
     for (let i = 0; i < world[$entityMasks].length; i++) {
       const masks = world[$entityMasks][i];
       world[$entityMasks][i] = resize(masks, size)
