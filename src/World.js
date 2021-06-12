@@ -1,7 +1,8 @@
 import { $componentMap } from './Component.js'
 import { $queryMap, $queries, $dirtyQueries } from './Query.js'
-import { $entityArray, $entityIndices, $entityEnabled, $entityMasks, getGlobalSize, removeEntity } from './Entity.js'
+import { $entityArray, $entityIndices, $entityEnabled, $entityMasks, $entitySparseSet, getGlobalSize, removeEntity } from './Entity.js'
 import { resize } from './Storage.js'
+import { SparseSet } from './Util.js'
 
 export const $size = Symbol('size')
 export const $resizeThreshold = Symbol('resizeThreshold')
@@ -18,8 +19,8 @@ export const resizeWorlds = (size) => {
       // q.enabled = resize(q.enabled, size)
     // })
     
-    world[$entityEnabled] = resize(world[$entityEnabled], size)
-    world[$entityIndices] = resize(world[$entityIndices], size)
+    // world[$entityEnabled] = resize(world[$entityEnabled], size)
+    // world[$entityIndices] = resize(world[$entityIndices], size)
     
     for (let i = 0; i < world[$entityMasks].length; i++) {
       const masks = world[$entityMasks][i];
@@ -41,12 +42,11 @@ export const resetWorld = (world) => {
   const size = getGlobalSize()
   world[$size] = size
 
-  world[$entityEnabled] = new Uint8Array(size)
   world[$entityMasks] = [new Uint32Array(size)]
 
   if (world[$entityArray]) world[$entityArray].forEach(eid => removeEntity(world, eid))
-  world[$entityArray] = []
-  world[$entityIndices] = new Uint32Array(size)
+  world[$entitySparseSet] = SparseSet()
+  world[$entityArray] = world[$entitySparseSet].dense
 
   world[$bitflag] = 1
 

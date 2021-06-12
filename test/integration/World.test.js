@@ -20,6 +20,5 @@ describe('World Integration Tests', () => {
     }
     
     strictEqual(world[$entityMasks][0].length, growAmount)
-    strictEqual(world[$entityEnabled].length, growAmount)
   })
 })

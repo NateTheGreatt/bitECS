@@ -6,11 +6,10 @@ import { setSerializationResized } from './Serialize.js'
 
 export const $entityMasks = Symbol('entityMasks')
 export const $entityEnabled = Symbol('entityEnabled')
+export const $entitySparseSet = Symbol('entitySparseSet')
 export const $entityArray = Symbol('entityArray')
 export const $entityIndices = Symbol('entityIndices')
 export const $removedEntities = Symbol('removedEntities')
-
-const NONE = 2**32 - 1
 
 let defaultSize = 100000
 
@@ -18,7 +17,8 @@ let defaultSize = 100000
 // so that world entities can posess entire rows spanning all component tables
 let globalEntityCursor = 0
 let globalSize = defaultSize
-let resizeThreshold = () => globalSize - (globalSize / 5)
+const threshold = globalSize - (globalSize / 5)
+let resizeThreshold = () => threshold
 
 export const getGlobalSize = () => globalSize
 
@@ -43,11 +43,9 @@ export const getRemovedEntities = () => removed
 export const eidToWorld = new Map()
 
 export const addEntity = (world) => {
-  const enabled = world[$entityEnabled]
   
   const eid = removed.length > 0 ? removed.shift() : globalEntityCursor++
-  enabled[eid] = 1
-  world[$entityIndices][eid] = world[$entityArray].push(eid) - 1
+  world[$entitySparseSet].add(eid)
   eidToWorld.set(eid, world)
 
   // if data stores are 80% full
@@ -66,23 +64,9 @@ export const addEntity = (world) => {
   return eid
 }
 
-const popSwap = (world, eid) => {
-  // pop swap
-  const index = world[$entityIndices][eid]
-
-  const swapped = world[$entityArray].pop()
-  if (swapped !== eid) {
-    world[$entityArray][index] = swapped
-    world[$entityIndices][swapped] = index
-  }
-  world[$entityIndices][eid] = NONE
-}
-
 export const removeEntity = (world, eid) => {
-  const enabled = world[$entityEnabled]
-
   // Check if entity is already removed
-  if (enabled[eid] === 0) return
+  if (!world[$entitySparseSet].has(eid)) return
 
   // Remove entity from all queries
   // TODO: archetype graph
@@ -92,10 +76,9 @@ export const removeEntity = (world, eid) => {
 
   // Free the entity
   removed.push(eid)
-  enabled[eid] = 0
 
   // pop swap
-  popSwap(world, eid)
+  world[$entitySparseSet].remove(eid)
 
   // Clear entity bitmasks
   for (let i = 0; i < world[$entityMasks].length; i++) world[$entityMasks][i][eid] = 0

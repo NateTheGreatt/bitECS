@@ -1,7 +1,7 @@
 import { SparseSet, Uint32SparseSet } from './Util.js'
 import { $queryShadow, $storeFlattened, $storeSize, $tagStore } from './Storage.js'
 import { $componentMap, registerComponent } from './Component.js'
-import { $entityMasks, $entityEnabled, $entityArray, getEntityCursor, getDefaultSize } from './Entity.js'
+import { $entityMasks, $entityEnabled, $entityArray, getEntityCursor, getDefaultSize, $entitySparseSet } from './Entity.js'
 
 export function Not(c) { return function QueryNot() { return c } }
 export function Or(c) { return function QueryOr() { return c } }
@@ -116,7 +116,7 @@ export const registerQuery = (world, query) => {
   world[$queries].add(q)
 
   for (let eid = 0; eid < getEntityCursor(); eid++) {
-    if (!world[$entityEnabled][eid]) continue
+    if (!world[$entitySparseSet].has(eid)) continue
     if (queryCheckEntity(world, q, eid)) {
       queryAddEntity(world, q, eid)
     }

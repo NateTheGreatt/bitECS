@@ -1,6 +1,6 @@
 import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened, $tagStore } from "./Storage.js"
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
-import { $entityArray, $entityEnabled, addEntity, eidToWorld } from "./Entity.js"
+import { $entityArray, $entityEnabled, $entitySparseSet, addEntity, eidToWorld } from "./Entity.js"
 
 let resized = false
 
@@ -207,7 +207,7 @@ export const defineDeserializer = (target) => {
         }
 
         // if this world hasn't seen this eid yet, or if not overwriting
-        if (!world[$entityEnabled][eid] || !overwrite) {
+        if (!world[$entitySparseSet].has(eid) || !overwrite) {
           // make a new entity for the data
           const newEid = addEntity(world)
           newEntities.set(eid, newEid)

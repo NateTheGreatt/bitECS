@@ -17,9 +17,6 @@ describe('World Integration Tests', () => {
 
     strictEqual(world[$size], defaultSize)
 
-    strictEqual(world[$entityEnabled].constructor.name, 'Uint8Array')
-    strictEqual(world[$entityEnabled].length, defaultSize)
-
     assert(Array.isArray(world[$entityMasks]))
 
     strictEqual(world[$entityMasks][0].constructor.name, 'Uint32Array')

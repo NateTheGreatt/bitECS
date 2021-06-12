@@ -18,9 +18,6 @@ describe('Entity Integration Tests', () => {
     const eid3 = addEntity(world)
     strictEqual(getEntityCursor(), 3)
 
-    strictEqual(world[$entityEnabled][eid1], 1)
-    strictEqual(world[$entityEnabled][eid2], 1)
-    strictEqual(world[$entityEnabled][eid3], 1)
     strictEqual(eid1, 0)
     strictEqual(eid2, 1)
     strictEqual(eid3, 2)
