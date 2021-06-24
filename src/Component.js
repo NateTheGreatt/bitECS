@@ -26,6 +26,8 @@ export const incrementBitflag = (world) => {
 }
 
 export const registerComponent = (world, component) => {
+  if (!component) throw new Error(`👾 bitECS - cannot register component as it is null or undefined.`)
+
   world[$componentMap].set(component, { 
     generationId: world[$entityMasks].length - 1,
     bitflag: world[$bitflag],
@@ -67,7 +69,7 @@ export const addComponent = (world, component, eid, reset=false) => {
   world[$queries].forEach(q => {
     if (!queryCheckComponent(world, q, component)) return
     const match = queryCheckEntity(world, q, eid)
-    if (match) queryAddEntity(world, q, eid)
+    if (match) queryAddEntity(q, eid)
   })
   
   // Zero out each property value

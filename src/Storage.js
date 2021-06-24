@@ -54,6 +54,8 @@ export const $storeSubarrays = Symbol('storeSubarrays')
 export const $storeCursor = Symbol('storeCursor')
 export const $subarrayCursors = Symbol('subarrayCursors')
 export const $subarray = Symbol('subarray')
+export const $subarrayFrom = Symbol('subarrayFrom')
+export const $subarrayTo = Symbol('subarrayTo')
 export const $parentArray = Symbol('subStore')
 export const $tagStore = Symbol('tagStore')
 
@@ -70,6 +72,19 @@ export const resize = (ta, size) => {
   const newTa = new ta.constructor(newBuffer)
   newTa.set(ta, 0)
   return newTa
+}
+
+export const createShadow = (store, key) => {
+  if (!ArrayBuffer.isView(store)) {
+    const shadow = store[$parentArray].slice(0)
+    for (const k in store[key]) {
+      const from = store[key][k][$subarrayFrom]
+      const to = store[key][k][$subarrayTo]
+      store[key][k] = shadow.subarray(from, to)
+    }
+  } else {
+    store[key] = store.slice(0)
+  }
 }
 
 const resizeSubarray = (metadata, store, size) => {
@@ -96,8 +111,8 @@ const resizeSubarray = (metadata, store, size) => {
   array.set(metadata[$storeSubarrays][type])
   
   metadata[$storeSubarrays][type] = array
-  metadata[$storeSubarrays][type][$queryShadow] = array.slice(0)
-  metadata[$storeSubarrays][type][$serializeShadow] = array.slice(0)
+  createShadow(metadata[$storeSubarrays][type], $queryShadow)
+  createShadow(metadata[$storeSubarrays][type], $serializeShadow)
   
   array[$indexType] = TYPES_NAMES[indexType]
   array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
@@ -110,8 +125,8 @@ const resizeSubarray = (metadata, store, size) => {
 
     store[eid] = metadata[$storeSubarrays][type].subarray(from, to)
     
-    store[eid].from = from
-    store[eid].to = to
+    store[eid][$subarrayFrom] = from
+    store[eid][$subarrayTo] = to
     store[eid][$queryShadow] = metadata[$storeSubarrays][type][$queryShadow].subarray(from, to)
     store[eid][$serializeShadow] = metadata[$storeSubarrays][type][$serializeShadow].subarray(from, to)
     store[eid][$subarray] = true
@@ -210,8 +225,8 @@ const createArrayStore = (metadata, type, length) => {
     const array = new TYPES[type](summedLength * size)
 
     metadata[$storeSubarrays][type] = array
-    metadata[$storeSubarrays][type][$queryShadow] = array.slice(0)
-    metadata[$storeSubarrays][type][$serializeShadow] = array.slice(0)
+    createShadow(metadata[$storeSubarrays][type], $queryShadow)
+    createShadow(metadata[$storeSubarrays][type], $serializeShadow)
     
     array[$indexType] = TYPES_NAMES[indexType]
     array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
@@ -226,8 +241,8 @@ const createArrayStore = (metadata, type, length) => {
 
     store[eid] = metadata[$storeSubarrays][type].subarray(from, to)
     
-    store[eid].from = from
-    store[eid].to = to
+    store[eid][$subarrayFrom] = from
+    store[eid][$subarrayTo] = to
     store[eid][$queryShadow] = metadata[$storeSubarrays][type][$queryShadow].subarray(from, to)
     store[eid][$serializeShadow] = metadata[$storeSubarrays][type][$serializeShadow].subarray(from, to)
     store[eid][$subarray] = true
@@ -242,11 +257,6 @@ const createArrayStore = (metadata, type, length) => {
   store[$parentArray] = metadata[$storeSubarrays][type].subarray(start, end)
 
   return store
-}
-
-const createShadows = (store) => {
-  store[$queryShadow] = store.slice(0)
-  store[$serializeShadow] = store.slice(0)
 }
 
 const isArrayType = x => Array.isArray(x) && typeof x[0] === 'string' && typeof x[1] === 'number'
@@ -298,7 +308,8 @@ export const createStore = (schema, size) => {
       if (typeof a[k] === 'string') {
 
         a[k] = createTypeStore(a[k], size)
-        createShadows(a[k])
+        createShadow(a[k], $queryShadow)
+        createShadow(a[k], $serializeShadow)
         a[k][$storeBase] = () => stores[$store]
         metadata[$storeFlattened].push(a[k])
 

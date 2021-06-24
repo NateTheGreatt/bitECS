@@ -8,7 +8,8 @@ declare module 'bitecs' {
     'i32' |
     'ui32' |
     'f32' |
-    'f64'
+    'f64' |
+    any[]
 
   export const Types: {
     i8: "i8"
@@ -70,7 +71,7 @@ declare module 'bitecs' {
 
   export type QueryModifier = (c: (IComponent | IComponentProp)[]) => (world: IWorld) => IComponent | QueryModifier
 
-  export type Query = (world: IWorld, clearDiff: Boolean = true) => number[]
+  export type Query = (world: IWorld, clearDiff?: Boolean) => number[]
 
   export type System = (world: IWorld) => IWorld
 

@@ -1,4 +1,4 @@
-import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened, $tagStore } from "./Storage.js"
+import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened, $tagStore, createShadow } from "./Storage.js"
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
 import { $entityArray, $entityEnabled, $entitySparseSet, addEntity, eidToWorld } from "./Entity.js"
 
@@ -8,13 +8,16 @@ export const setSerializationResized = v => { resized = v }
 
 const canonicalize = (target) => {
   let componentProps = []
-  let changedProps = new Set()
+  let changedProps = new Map()
   if (Array.isArray(target)) {
     componentProps = target
       .map(p => {
+        if (!p) throw new Error('👾 bitECS - undefined component passed into serializer.')
         if (typeof p === 'function' && p.name === 'QueryChanged') {
           p()[$storeFlattened].forEach(prop => {
-            changedProps.add(prop)
+            const $ = Symbol()
+            createShadow(prop, $)
+            changedProps.set(prop, $)
           })
           return p()[$storeFlattened]
         }
@@ -71,7 +74,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
     // iterate over component props
     for (let pid = 0; pid < componentProps.length; pid++) {
       const prop = componentProps[pid]
-      const diff = changedProps.has(prop)
+      const diff = changedProps.get(prop)
       
       // write pid
       view.setUint8(where, pid)
@@ -92,10 +95,11 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         }
 
         // skip if diffing and no change
-        if (diff && prop[eid] === prop[$serializeShadow][eid]) {
+        // TODO: check array diff
+        if (diff && prop[eid] === prop[diff][eid]) {
           continue
         }
-        
+
         count++
 
         // write eid
