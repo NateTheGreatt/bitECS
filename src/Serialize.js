@@ -38,7 +38,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 
   let [componentProps, changedProps] = canonicalize(target)
 
-  // TODO: calculate max bytes based on target
+  // TODO: calculate max bytes based on target & recalc upon resize
 
   const buffer = new ArrayBuffer(maxBytes)
   const view = new DataView(buffer)
@@ -95,9 +95,18 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         }
 
         // skip if diffing and no change
-        // TODO: check array diff
-        if (diff && prop[eid] === prop[diff][eid]) {
-          continue
+        // TODO: optimize array diff
+        if (diff) {
+          if (ArrayBuffer.isView(prop[eid])) {
+            let dirty = false
+            for (let i = 0; i < prop[eid].length; i++) {
+              if(prop[eid][i] !== prop[eid][$serializeShadow][i]) {
+                dirty = true
+                break
+              }
+            }
+            if (dirty) continue
+          } else if (prop[eid] === prop[diff][eid]) continue
         }
 
         count++

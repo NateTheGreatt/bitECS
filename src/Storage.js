@@ -76,14 +76,14 @@ export const resize = (ta, size) => {
 
 export const createShadow = (store, key) => {
   if (!ArrayBuffer.isView(store)) {
-    const shadow = store[$parentArray].slice(0)
+    const shadow = store[$parentArray].slice(0).fill(0)
     for (const k in store[key]) {
       const from = store[key][k][$subarrayFrom]
       const to = store[key][k][$subarrayTo]
       store[key][k] = shadow.subarray(from, to)
     }
   } else {
-    store[key] = store.slice(0)
+    store[key] = store.slice(0).fill(0)
   }
 }
 
