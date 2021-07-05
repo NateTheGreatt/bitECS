@@ -38,10 +38,11 @@ export const resetWorld = (world) => {
   const size = getGlobalSize()
   world[$size] = size
 
+  if (world[$entityArray]) world[$entityArray].forEach(eid => removeEntity(world, eid))
+
   world[$entityMasks] = [new Uint32Array(size)]
   world[$archetypes] = []
 
-  if (world[$entityArray]) world[$entityArray].forEach(eid => removeEntity(world, eid))
   world[$entitySparseSet] = SparseSet()
   // world[$entitySparseSet] = Uint32SparseSet(size)
   world[$entityArray] = world[$entitySparseSet].dense

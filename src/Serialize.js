@@ -2,6 +2,12 @@ import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened,
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
 import { $entityArray, $entityEnabled, $entitySparseSet, addEntity, eidToWorld } from "./Entity.js"
 
+export const DESERIALIZE_MODE = {
+  REPLACE: 0,
+  APPEND: 1,
+  MAP: 2
+}
+
 let resized = false
 
 export const setSerializationResized = v => { resized = v }
@@ -171,11 +177,14 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 }
 
 const newEntities = new Map()
+const localEntities = new Map()
 
 export const defineDeserializer = (target) => {
   const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
   let [componentProps] = canonicalize(target)
-  return (world, packet, overwrite=true) => {
+
+
+  return (world, packet, mode=0) => {
 
     newEntities.clear()
     
@@ -219,9 +228,22 @@ export const defineDeserializer = (target) => {
           eid = newEid
         }
 
-        // if this world hasn't seen this eid yet, or if not overwriting
-        if (!world[$entitySparseSet].has(eid) || !overwrite) {
-          // make a new entity for the data
+        if (mode === DESERIALIZE_MODE.MAP) {
+          if (localEntities.has(eid)) {
+            eid = localEntities.get(eid)
+          } else if (newEntities.has(eid)) {
+              eid = newEntities.get(eid)
+          } else {
+            const newEid = addEntity(world)
+            localEntities.set(eid, newEid)
+            newEntities.set(eid, newEid)
+            eid = newEid
+          }
+        }
+
+        if (mode === DESERIALIZE_MODE.APPEND ||  
+          mode === DESERIALIZE_MODE.REPLACE && !world[$entitySparseSet].has(eid)
+        ) {
           const newEid = addEntity(world)
           newEntities.set(eid, newEid)
           eid = newEid
