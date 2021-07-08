@@ -8,8 +8,7 @@ declare module 'bitecs' {
     'i32' |
     'ui32' |
     'f32' |
-    'f64' |
-    any[]
+    'f64'
 
   export const Types: {
     i8: "i8"
@@ -47,6 +46,12 @@ declare module 'bitecs' {
     [Types.f64]: Float64Array;
   }
 
+  export enum DESERIALIZE_MODE {
+    REPLACE,
+    APPEND,
+    MAP
+  }
+
   export type ComponentType<T extends ISchema> = {
     [key in keyof T]: T[key] extends Type ? ArrayByType[T[key]] : T[key] extends ISchema ? ComponentType<T[key]> : unknown;
   }
@@ -56,7 +61,7 @@ declare module 'bitecs' {
   }
 
   export interface ISchema {
-    [key: string]: Type | ISchema
+    [key: string]: Type | [Type, number], ISchema
   }
 
   export interface IComponentProp {
