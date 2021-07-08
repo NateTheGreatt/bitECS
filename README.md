@@ -298,3 +298,19 @@ Position.x[eid]++
 packet = serializeChangedMovementQuery(world)
 console.log(packet.byteLength) // => 13
 ```
+
+### Deserialize Modes
+
+There are 3 modes of deserilization, all of which are additive in nature. 
+
+Deserialization will never remove entities, and will only add them.
+
+ - `REPLACE` - (default) overwrites entity data, or creates new entities if the serialized EIDs don't exist in the target world.
+ - `APPEND` - only creates new entities, does not overwrite any existing entity data.
+ - `MAP` - acts like `REPLACE` but every serialized EID is assigned a local EID which is memorized for all subsequent deserializations onto the target world.
+    - useful when deserializing server ECS state on a client-side ECS to avoid EID collisions
+
+```js
+const mode = DESERIALIZE_MODE.MAP
+deserialize(world, packet, mode)
+```
