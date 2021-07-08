@@ -80,6 +80,7 @@ declare module 'bitecs' {
 
   export type System = (world: IWorld) => IWorld
 
+  export function setDefaultSize(size: number): void
   export function createWorld(size?: number): IWorld
   export function resetWorld(world: IWorld): IWorld
   export function deleteWorld(world: IWorld): void
@@ -108,4 +109,39 @@ declare module 'bitecs' {
   export function defineDeserializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier): (world: IWorld, packet: ArrayBuffer, mode: DESERIALIZE_MODE) => void
   
   export function pipe(...fns: ((...args: any[]) => any)[]): (...input: any[]) => any
+
+  export const parentArray: Symbol
+  
+  export interface IAppliedAPI {
+    setDefaultSize(size: number): void
+    resetWorld(): IWorld
+    deleteWorld(): void
+    addEntity(): number
+    removeEntity(eid: number): void
+
+    registerComponent(component: Component): void
+    registerComponents(components: Component[]): void
+    defineComponent<T extends ISchema>(schema?: T): ComponentType<T>
+    addComponent(component: Component, eid: number): void
+    removeComponent(component: Component, eid: number): void
+    hasComponent(component: Component, eid: number): boolean
+
+    defineQuery(components: (Component | QueryModifier)[]): Query
+    Changed(c: Component): Component | QueryModifier
+    Not(c: Component): Component | QueryModifier
+    enterQuery(query: Query): Query
+    exitQuery(query: Query): Query
+    resetChangedQuery(query: Query): Query
+    removeQuery(query: Query): Query
+    commitRemovals(): void
+
+    defineSystem(update: (world: IWorld, ...args: any[]) => void): System
+    defineSerializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
+    defineDeserializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier): (world: IWorld, packet: ArrayBuffer, mode: DESERIALIZE_MODE) => void
+    pipe(...fns: ((...args: any[]) => any)[]): (...input: any[]) => any
+
+    parentArray: Symbol
+  }
+
+  export function apply(world: IWorld): IAppliedAPI
 }

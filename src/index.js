@@ -25,6 +25,51 @@ export const pipe = (...fns) => (...args) => {
 
 export const Types = TYPES_ENUM
 
+export function apply (world) {
+
+  const appliedDefineSystem = (update) => {
+    return defineSystem((world, ...args) => {
+      update(world, ...args)
+      return world
+    })
+  }
+
+  const appliedPipe = (...systems) => {
+    const pipeline = pipe(...systems)
+    return () => pipeline(world, ...args)
+  }
+
+  return {
+    setDefaultSize,
+    resetWorld: () => resetWorld(world),
+    deleteWorld: () => deleteWorld(world),
+    addEntity: () => addEntity(world),
+    removeEntity: (eid) => removeEntity(world, eid),
+
+    registerComponent: (component) => registerComponent(world, component),
+    registerComponents: (components) => registerComponents(world, components),
+    defineComponent,
+    addComponent: (component, eid) => addComponent(world, component, eid),
+    removeComponent: (component, eid) => removeComponent(world, component, eid),
+    hasComponent: (component, eid) => hasComponent(world, component, eid),
+
+    defineQuery,
+    Changed,
+    Not,
+    enterQuery,
+    exitQuery,
+    resetChangedQuery: (query) => resetChangedQuery(world, query),
+    removeQuery: (query) => removeQuery(world, query),
+    commitRemovals: () => commitRemovals(world),
+
+    defineSystem: appliedDefineSystem,
+    defineSerializer,
+    defineDeserializer,
+    pipe: appliedPipe,
+    parentArray
+  }
+}
+
 export {
 
   setDefaultSize,
