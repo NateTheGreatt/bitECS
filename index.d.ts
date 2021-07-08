@@ -61,7 +61,7 @@ declare module 'bitecs' {
   }
 
   export interface ISchema {
-    [key: string]: Type | [Type, number], ISchema
+    [key: string]: Type | [Type, number] | ISchema
   }
 
   export interface IComponentProp {
@@ -105,7 +105,7 @@ declare module 'bitecs' {
   export function defineSystem(update: (world: IWorld, ...args: any[]) => IWorld): System
 
   export function defineSerializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
-  export function defineDeserializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier): (world: IWorld, packet: ArrayBuffer) => void
+  export function defineDeserializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier): (world: IWorld, packet: ArrayBuffer, mode: DESERIALIZE_MODE) => void
   
   export function pipe(...fns: ((...args: any[]) => any)[]): (...input: any[]) => any
 }
