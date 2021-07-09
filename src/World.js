@@ -8,6 +8,7 @@ export const $size = Symbol('size')
 export const $resizeThreshold = Symbol('resizeThreshold')
 export const $bitflag = Symbol('bitflag')
 export const $archetypes = Symbol('archetypes')
+export const $localEntities = Symbol('localEntities')
 
 export const worlds = []
 
@@ -54,6 +55,8 @@ export const resetWorld = (world) => {
   world[$queryMap] = new Map()
   world[$queries] = new Set()
   world[$dirtyQueries] = new Set()
+
+  world[$localEntities] = new Map()
 
   return world
 }

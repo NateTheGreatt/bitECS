@@ -1,6 +1,7 @@
 import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened, $tagStore, createShadow } from "./Storage.js"
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
 import { $entityArray, $entityEnabled, $entitySparseSet, addEntity, eidToWorld } from "./Entity.js"
+import { $localEntities } from "./World.js"
 
 export const DESERIALIZE_MODE = {
   REPLACE: 0,
@@ -177,7 +178,6 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 }
 
 const newEntities = new Map()
-const localEntities = new Map()
 
 export const defineDeserializer = (target) => {
   const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
@@ -201,6 +201,8 @@ export const defineDeserializer = (target) => {
         else componentProps.push(component)
       })
     }
+
+    const localEntities = world[$localEntities]
 
     const view = new DataView(packet)
     let where = 0
@@ -227,6 +229,7 @@ export const defineDeserializer = (target) => {
         if (newEid !== undefined) {
           eid = newEid
         }
+
 
         if (mode === DESERIALIZE_MODE.MAP) {
           if (localEntities.has(eid)) {
