@@ -34,7 +34,6 @@
     "@rollup/plugin-babel": "^5.3.0",
     "babel": "^6.23.0",
     "c8": "^7.7.2",
-    "dmd-readable": "SupremeTechnopriest/dmd-readable",
     "globby": "^11.0.1",
     "jsdoc-to-markdown": "^7.0.1",
     "mocha": "^8.3.2",
