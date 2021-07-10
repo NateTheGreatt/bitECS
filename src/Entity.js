@@ -1,5 +1,5 @@
 import { $componentMap, resizeComponents } from './Component.js'
-import { $queries, $queryMap, queryRemoveEntity } from './Query.js'
+import { $notQueries, $queries, $queryMap, queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query.js'
 import { resize, resizeStore } from './Storage.js'
 import { $size, $resizeThreshold, worlds, resizeWorlds } from './World.js'
 import { setSerializationResized } from './Serialize.js'
@@ -60,6 +60,11 @@ export const addEntity = (world) => {
     setSerializationResized(true)
     console.info(`👾 bitECS - resizing all worlds from ${size} to ${size+amount}`)
   }
+
+  world[$notQueries].forEach(q => {
+    const match = queryCheckEntity(world, q, eid)
+    if (match) queryAddEntity(q, eid)
+  })
 
   return eid
 }

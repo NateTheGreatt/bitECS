@@ -28,10 +28,23 @@ export const incrementBitflag = (world) => {
 export const registerComponent = (world, component) => {
   if (!component) throw new Error(`👾 bitECS - cannot register component as it is null or undefined.`)
 
+  const queries = new Set()
+  const notQueries = new Set()
+
+  world[$queries].forEach(q => {
+    if (q.components.includes(component)) {
+      queries.add(q)
+    } else if (q.notComponents.includes(component)) {
+      notQueries.add(q)
+    }
+  })
+
   world[$componentMap].set(component, { 
     generationId: world[$entityMasks].length - 1,
     bitflag: world[$bitflag],
-    store: component
+    store: component,
+    queries,
+    notQueries,
   })
 
   if (component[$storeSize] < world[$size]) {
@@ -61,17 +74,23 @@ export const addComponent = (world, component, eid, reset=false) => {
   }
   if (!world[$componentMap].has(component)) registerComponent(world, component)
   if (hasComponent(world, component, eid)) return
+
+  const c = world[$componentMap].get(component)
+  const { generationId, bitflag, queries, notQueries } = c
+  
+  notQueries.forEach(q => {
+    const match = queryCheckEntity(world, q, eid)
+    if (match) queryRemoveEntity(world, q, eid)
+  })
+  
   // Add bitflag to entity bitmask
-  const { generationId, bitflag } = world[$componentMap].get(component)
   world[$entityMasks][generationId][eid] |= bitflag
 
   // todo: archetype graph
-  world[$queries].forEach(q => {
-    if (!queryCheckComponent(world, q, component)) return
+  queries.forEach(q => {
     const match = queryCheckEntity(world, q, eid)
     if (match) queryAddEntity(q, eid)
   })
-  
   // Zero out each property value
   if (reset) resetStoreFor(component, eid)
 }
@@ -82,19 +101,24 @@ export const removeComponent = (world, component, eid, reset=true) => {
     world = eidToWorld.get(eid)
     reset = eid || reset
   }
-  const { generationId, bitflag } = world[$componentMap].get(component)
+  const c = world[$componentMap].get(component)
+  const { generationId, bitflag, queries, notQueries } = c
 
   if (!(world[$entityMasks][generationId][eid] & bitflag)) return
 
   // todo: archetype graph
-  world[$queries].forEach(q => {
-    if (!queryCheckComponent(world, q, component)) return
+  queries.forEach(q => {
     const match = queryCheckEntity(world, q, eid)
     if (match) queryRemoveEntity(world, q, eid)
   })
 
   // Remove flag from entity bitmask
   world[$entityMasks][generationId][eid] &= ~bitflag
+  
+  notQueries.forEach(q => {
+    const match = queryCheckEntity(world, q, eid)
+    if (match) queryAddEntity(q, eid)
+  })
   
   // Zero out each property value
   if (reset) resetStoreFor(component, eid)

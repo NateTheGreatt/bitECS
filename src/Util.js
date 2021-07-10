@@ -40,7 +40,7 @@ export const SparseSet = () => {
   const dense = []
   const sparse = []
 
-  dense.count = () => dense.length
+  // dense.count = () => dense.length
 
   const has = val => dense[sparse[val]] === val
 

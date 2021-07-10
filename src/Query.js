@@ -9,6 +9,7 @@ export function Or(c) { return function QueryOr() { return c } }
 export function Changed(c) { return function QueryChanged() { return c } }
 
 export const $queries = Symbol('queries')
+export const $notQueries = Symbol('notQueries')
 export const $queryMap = Symbol('queryMap')
 export const $dirtyQueries = Symbol('$dirtyQueries')
 export const $queryComponents = Symbol('queryComponents')
@@ -50,7 +51,10 @@ export const registerQuery = (world, query) => {
     }
   })
 
+
   const mapComponents = c => world[$componentMap].get(c)
+
+  const allComponents = components.concat(notComponents).map(mapComponents)
 
   // const sparseSet = Uint32SparseSet(getGlobalSize())
   const sparseSet = SparseSet()
@@ -61,9 +65,7 @@ export const registerQuery = (world, query) => {
   const entered = []
   const exited = []
 
-  const generations = components
-    .concat(notComponents)
-    .map(mapComponents)
+  const generations = allComponents
     .map(c => c.generationId)
     .reduce((a,v) => {
       if (a.includes(v)) return a
@@ -85,14 +87,17 @@ export const registerQuery = (world, query) => {
     .reduce((a,c) => {
       if (!a[c.generationId]) {
         a[c.generationId] = 0
-        a[c.generationId] |= c.bitflag
       }
+      a[c.generationId] |= c.bitflag
       return a
     }, {})
 
   // const orMasks = orComponents
   //   .map(mapComponents)
   //   .reduce(reduceBitmasks, {})
+
+  const hasMasks = allComponents
+    .reduce(reduceBitflags, {})
 
   const flatProps = components
     .filter(c => !c[$tagStore])
@@ -114,6 +119,7 @@ export const registerQuery = (world, query) => {
     masks,
     notMasks,
     // orMasks,
+    hasMasks,
     generations,
     flatProps,
     toRemove,
@@ -122,9 +128,18 @@ export const registerQuery = (world, query) => {
     shadows,
   })
 
-  world[$queryMap].set(query, q)
   
+  world[$queryMap].set(query, q)
   world[$queries].add(q)
+  
+  components.map(mapComponents).forEach(c => {
+    c.queries.add(q)
+  })
+  notComponents.map(mapComponents).forEach(c => {
+    c.notQueries.add(q)
+  })
+
+  if (notComponents.length) world[$notQueries].add(q)
 
   for (let eid = 0; eid < getEntityCursor(); eid++) {
     if (!world[$entitySparseSet].has(eid)) continue
@@ -137,7 +152,7 @@ export const registerQuery = (world, query) => {
 const diff = (q, clearDiff) => {
   if (clearDiff) q.changed.length = 0
   const { flatProps, shadows } = q
-  for (let i = 0; i < q.dense.count(); i++) {
+  for (let i = 0; i < q.dense.length; i++) {
     const eid = q.dense[i]
     let dirty = false
     for (let pid = 0; pid < flatProps.length; pid++) {
@@ -193,12 +208,12 @@ export const queryCheckEntity = (world, q, eid) => {
     // const qOrMask = orMasks[generationId]
     const eMask = world[$entityMasks][generationId][eid]
     
-    if (qNotMask && (eMask & qNotMask) !== 0) {
-      return false
-    }
     // if (qOrMask && (eMask & qOrMask) !== qOrMask) {
     //   continue
     // }
+    if (qNotMask && (eMask & qNotMask) !== 0) {
+      return false
+    }
     if (qMask && (eMask & qMask) !== qMask) {
       return false
     }
@@ -206,10 +221,10 @@ export const queryCheckEntity = (world, q, eid) => {
   return true
 }
 
-export const queryCheckComponent = (world, q, component) => {
-  const { generationId, bitflag } = world[$componentMap].get(component)
-  const { masks } = q
-  const mask = masks[generationId]
+export const queryCheckComponent = (q, c) => {
+  const { generationId, bitflag } = c
+  const { hasMasks } = q
+  const mask = hasMasks[generationId]
   return (mask & bitflag) === bitflag
 }
 

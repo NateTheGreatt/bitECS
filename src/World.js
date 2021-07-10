@@ -1,5 +1,5 @@
 import { $componentMap } from './Component.js'
-import { $queryMap, $queries, $dirtyQueries } from './Query.js'
+import { $queryMap, $queries, $dirtyQueries, $notQueries } from './Query.js'
 import { $entityArray, $entityIndices, $entityEnabled, $entityMasks, $entitySparseSet, getGlobalSize, removeEntity } from './Entity.js'
 import { resize } from './Storage.js'
 import { SparseSet, Uint32SparseSet } from './Util.js'
@@ -54,6 +54,7 @@ export const resetWorld = (world) => {
 
   world[$queryMap] = new Map()
   world[$queries] = new Set()
+  world[$notQueries] = new Set()
   world[$dirtyQueries] = new Set()
 
   world[$localEntities] = new Map()
@@ -62,18 +63,7 @@ export const resetWorld = (world) => {
 }
 
 export const deleteWorld = (world) => {
-  delete world[$size]
-  delete world[$archetypes]
-  delete world[$entityMasks]
-  delete world[$entityArray]
-  delete world[$entityIndices]
-  delete world[$bitflag]
-  delete world[$componentMap]
-  delete world[$queryMap]
-  delete world[$queries]
-  delete world[$dirtyQueries]
-  Object.keys(world).forEach(key => {
-    delete world[key]
-  })
+  Object.getOwnPropertySymbols(world).forEach($ => { delete world[$] })
+  Object.keys(world).forEach(key => { delete world[key] })
   worlds.splice(worlds.indexOf(world), 1)
 }

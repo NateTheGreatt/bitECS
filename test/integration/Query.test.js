@@ -1,7 +1,7 @@
 import { strictEqual } from 'assert'
 import { exitQuery, Types } from '../../src/index.js'
 import { createWorld } from '../../src/World.js'
-import { addComponent, defineComponent } from '../../src/Component.js'
+import { addComponent, removeComponent, defineComponent } from '../../src/Component.js'
 import { addEntity, removeEntity, resetGlobals } from '../../src/Entity.js'
 import { Changed, defineQuery, enterQuery, Not } from '../../src/Query.js'
 
@@ -28,23 +28,135 @@ describe('Query Integration Tests', () => {
   })
   it('should define a query with Not and return matching eids', () => {
     const world = createWorld()
-    const TestComponent = defineComponent({ value: Types.f32 })
-    const query = defineQuery([Not(TestComponent)])
+    const Foo = defineComponent({ value: Types.f32 })
+    const notFooQuery = defineQuery([Not(Foo)])
     
     const eid1 = addEntity(world)
-    addComponent(world, TestComponent, eid1)
+
+    let ents = notFooQuery(world)
+    strictEqual(ents.length, 1)
+    strictEqual(ents[0], eid1)
+
+    addComponent(world, Foo, eid1)
+
+    ents = notFooQuery(world)
+    strictEqual(ents.length, 0)
 
     const eid2 = addEntity(world)
     
-    let ents = query(world)
-    
+    ents = notFooQuery(world)
     strictEqual(ents.length, 1)
     strictEqual(ents[0], eid2)
 
     removeEntity(world, eid2)
 
-    ents = query(world)
+    ents = notFooQuery(world)
     strictEqual(ents.length, 0)
+  })
+  it('should correctly populate Not queries when adding/removing components', () => {
+    const world = createWorld()
+
+    const Foo = defineComponent()
+    const Bar = defineComponent()
+
+    const notFooQuery = defineQuery([Not(Foo)])
+    const fooQuery = defineQuery([Foo])
+
+    const fooBarQuery = defineQuery([Foo, Bar])
+    const notFooBarQuery = defineQuery([Not(Foo), Not(Bar)])
+
+    const eid0 = addEntity(world)
+    const eid1 = addEntity(world)
+    const eid2 = addEntity(world)
+
+    /* initial state */
+
+    // foo query should have nothing
+    let ents = fooQuery(world)
+    strictEqual(ents.length, 0)
+
+    // notFoo query should have eid 0
+    ents = notFooQuery(world)
+    strictEqual(ents.length, 3)
+    strictEqual(ents[0], 0)
+    strictEqual(ents[1], 1)
+    strictEqual(ents[2], 2)
+
+
+    /* add components */
+
+    addComponent(world, Foo, eid0)
+
+    addComponent(world, Bar, eid1)
+
+    addComponent(world, Foo, eid2)
+    addComponent(world, Bar, eid2)
+    
+    // now foo query should have eid 0 & 2
+    ents = fooQuery(world)
+    strictEqual(ents.length, 2)
+    strictEqual(ents[0], 0)
+    strictEqual(ents[1], 2)
+
+    // fooBar query should only have eid 2
+    ents = fooBarQuery(world)
+    strictEqual(ents.length, 1)
+    strictEqual(ents[0], 2)
+
+    // notFooBar query should have nothing
+    ents = notFooBarQuery(world)
+    strictEqual(ents.length, 0)
+    
+    // and notFoo query should have eid 1
+    ents = notFooQuery(world)
+    strictEqual(ents.length, 1)
+    strictEqual(ents[0], 1)
+
+
+    /* remove components */
+
+    removeComponent(world, Foo, eid0)
+
+    // now foo query should only have eid 2
+    ents = fooQuery(world)
+    strictEqual(ents.length, 1)
+    strictEqual(ents[0], 2)
+
+    // notFoo query should have eid 0 & 1
+    ents = notFooQuery(world)
+    strictEqual(ents.length, 2)
+    strictEqual(ents[0], 1)
+    strictEqual(ents[1], 0)
+
+    // fooBar query should still only have eid 2
+    ents = fooBarQuery(world)
+    console.log(ents)
+    strictEqual(ents.length, 1)
+    strictEqual(ents[0], 2)
+
+    // notFooBar query should only have eid 0
+    ents = notFooBarQuery(world)
+    strictEqual(ents.length, 1)
+    strictEqual(ents[0], 0)
+
+
+    /* remove more components */
+
+    removeComponent(world, Foo, eid2)
+    removeComponent(world, Bar, eid2)
+
+    // notFooBar query should have eid 0 & 2
+    ents = notFooBarQuery(world)
+    strictEqual(ents.length, 2)
+    strictEqual(ents[0], 0)
+    strictEqual(ents[1], 2)
+    
+    // and notFoo query should have eid 1, 0, & 2
+    ents = notFooQuery(world)
+    strictEqual(ents.length, 3)
+    strictEqual(ents[0], 1)
+    strictEqual(ents[1], 0)
+    strictEqual(ents[2], 2)
   })
   it('should define a query with Changed and return matching eids whose component state has changed', () => {
     const world = createWorld()
