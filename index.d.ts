@@ -80,6 +80,10 @@ declare module 'bitecs' {
 
   export type System = (world: IWorld) => IWorld
 
+  export type Serializer = (target: IWorld | number[]) => ArrayBuffer
+  export type Deserializer = (world: IWorld, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => void
+
+  export function setDefaultSize(size: number): void
   export function createWorld(size?: number): IWorld
   export function resetWorld(world: IWorld): IWorld
   export function deleteWorld(world: IWorld): void
@@ -104,8 +108,10 @@ declare module 'bitecs' {
 
   export function defineSystem(update: (world: IWorld, ...args: any[]) => IWorld): System
 
-  export function defineSerializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier, maxBytes?: number): (target: IWorld | number[]) => ArrayBuffer
-  export function defineDeserializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier): (world: IWorld, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => void
+  export function defineSerializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier, maxBytes?: number): Serializer
+  export function defineDeserializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier): Deserializer
   
   export function pipe(...fns: ((...args: any[]) => any)[]): (...input: any[]) => any
+  
+  export const parentArray: Symbol
 }
