@@ -10,6 +10,8 @@ declare module 'bitecs' {
     'f32' |
     'f64'
 
+  export type ListType = readonly [Type, number];
+  
   export const Types: {
     i8: "i8"
     ui8: "ui8"
@@ -53,15 +55,23 @@ declare module 'bitecs' {
   }
 
   export type ComponentType<T extends ISchema> = {
-    [key in keyof T]: T[key] extends Type ? ArrayByType[T[key]] : T[key] extends ISchema ? ComponentType<T[key]> : unknown;
-  }
+    [key in keyof T]: T[key] extends Type
+      ? ArrayByType[T[key]]
+      : T[key] extends [infer RT, number]
+      ? RT extends Type
+        ? Array<ArrayByType[RT]>
+        : unknown
+      : T[key] extends ISchema
+      ? ComponentType<T[key]>
+      : unknown;
+  };
 
   export interface IWorld {
     [key: string]: any
   }
 
   export interface ISchema {
-    [key: string]: Type | [Type, number] | ISchema
+    [key: string]: Type | ListType | ISchema
   }
 
   export interface IComponentProp {
