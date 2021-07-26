@@ -5,6 +5,7 @@ import { defineSystem } from './System.js'
 import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals, resetChangedQuery, removeQuery } from './Query.js'
 import { defineSerializer, defineDeserializer, DESERIALIZE_MODE } from './Serialize.js'
 import { TYPES_ENUM, parentArray } from './Storage.js'
+// import { defineProxy } from './Proxy.js'
 
 export const pipe = (...fns) => (...args) => {
   const input = Array.isArray(args[0]) ? args[0] : args
@@ -41,6 +42,8 @@ export {
   removeComponent,
   hasComponent,
   
+  // defineProxy,
+
   defineQuery,
   Changed,
   Not,

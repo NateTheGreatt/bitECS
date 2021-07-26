@@ -1,6 +1,6 @@
 {
   "name": "bitecs",
-  "version": "0.3.15",
+  "version": "0.3.15-1",
   "description": "Functional, minimal, data-driven, ultra-high performance ECS library written in Javascript",
   "license": "MPL-2.0",
   "main": "./dist/index.js",
@@ -34,6 +34,7 @@
     "@rollup/plugin-babel": "^5.3.0",
     "babel": "^6.23.0",
     "c8": "^7.7.2",
+    "dmd-readable": "^1.2.4",
     "globby": "^11.0.1",
     "jsdoc-to-markdown": "^7.0.1",
     "mocha": "^8.3.2",

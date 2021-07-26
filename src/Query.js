@@ -1,8 +1,7 @@
-import { SparseSet, Uint32SparseSet } from './Util.js'
-import { $queryShadow, $storeFlattened, $storeSize, $tagStore, createShadow, parentArray } from './Storage.js'
+import { SparseSet } from './Util.js'
+import { $queryShadow, $storeFlattened, $tagStore, createShadow } from './Storage.js'
 import { $componentMap, registerComponent } from './Component.js'
-import { $entityMasks, $entityEnabled, $entityArray, getEntityCursor, getDefaultSize, $entitySparseSet, getGlobalSize } from './Entity.js'
-import { $size } from './World.js'
+import { $entityMasks, $entityArray, getEntityCursor, $entitySparseSet } from './Entity.js'
 
 export function Not(c) { return function QueryNot() { return c } }
 export function Or(c) { return function QueryOr() { return c } }
@@ -16,12 +15,24 @@ export const $queryComponents = Symbol('queryComponents')
 export const $enterQuery = Symbol('enterQuery')
 export const $exitQuery = Symbol('exitQuery')
 
+/**
+ * Given an existing query, returns a new function which returns entities who have been added to the given query since the last call of the function.
+ *
+ * @param {function} query
+ * @returns {function} enteredQuery
+ */
 export const enterQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
   const q = world[$queryMap].get(query)
   return q.entered.splice(0)
 }
 
+/**
+ * Given an existing query, returns a new function which returns entities who have been removed from the given query since the last call of the function.
+ *
+ * @param {function} query
+ * @returns {function} enteredQuery
+ */
 export const exitQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
   const q = world[$queryMap].get(query)
@@ -177,6 +188,14 @@ const diff = (q, clearDiff) => {
   return q.changed
 }
 
+
+/**
+ * Defines a query function which returns a matching set of entities when called on a world.
+ *
+ * @param {array} components
+ * @returns {function} query
+ */
+
 export const defineQuery = (components) => {
   if (components === undefined || components[$componentMap] !== undefined) {
     return world => world ? world[$entityArray] : components[$entityArray]
@@ -252,11 +271,24 @@ export const queryRemoveEntity = (world, q, eid) => {
   q.exited.push(eid)
 }
 
+
+/**
+ * Resets a Changed-based query, clearing the underlying list of changed entities.
+ *
+ * @param {World} world
+ * @param {function} query
+ */
 export const resetChangedQuery = (world, query) => {
   const q = world[$queryMap].get(query)
   q.changed.length = 0
 }
 
+/**
+ * Removes a query from a world.
+ *
+ * @param {World} world
+ * @param {function} query
+ */
 export const removeQuery = (world, query) => {
   const q = world[$queryMap].get(query)
   world[$queries].delete(q)

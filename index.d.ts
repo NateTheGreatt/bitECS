@@ -65,7 +65,7 @@ declare module 'bitecs' {
   }
 
   export interface IComponentProp {
-    [key: string]: TypedArray
+    [key: string]: TypedArray | Array<TypedArray>
   }
 
   export interface IComponent {
@@ -78,7 +78,7 @@ declare module 'bitecs' {
 
   export type Query = (world: IWorld, clearDiff?: Boolean) => number[]
 
-  export type System = (world: IWorld) => IWorld
+  export type System = (world: IWorld, ...args: any[]) => IWorld
 
   export type Serializer = (target: IWorld | number[]) => ArrayBuffer
   export type Deserializer = (world: IWorld, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => void

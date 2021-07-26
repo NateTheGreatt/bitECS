@@ -1,7 +1,7 @@
 import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage.js'
-import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, queryCheckComponent } from './Query.js'
+import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity } from './Query.js'
 import { $bitflag, $size } from './World.js'
-import { $entityMasks, getDefaultSize, eidToWorld } from './Entity.js'
+import { $entityMasks, getDefaultSize, eidToWorld, $entityComponents } from './Entity.js'
 
 export const $componentMap = Symbol('componentMap')
 
@@ -11,6 +11,13 @@ export const resizeComponents = (size) => {
   components.forEach(component => resizeStore(component, size))
 }
 
+
+/**
+ * Defines a new component store.
+ *
+ * @param {object} schema
+ * @returns {object}
+ */
 export const defineComponent = (schema) => {
   const component = createStore(schema, getDefaultSize())
   if (schema && Object.keys(schema).length) components.push(component)
@@ -25,6 +32,13 @@ export const incrementBitflag = (world) => {
   }
 }
 
+
+/**
+ * Registers a component with a world.
+ *
+ * @param {World} world
+ * @param {Component} component
+ */
 export const registerComponent = (world, component) => {
   if (!component) throw new Error(`👾 bitECS - cannot register component as it is null or undefined.`)
 
@@ -54,10 +68,24 @@ export const registerComponent = (world, component) => {
   incrementBitflag(world)
 }
 
+/**
+ * Registers multiple components with a world.
+ *
+ * @param {World} world
+ * @param {Component} components
+ */
 export const registerComponents = (world, components) => {
   components.forEach(c => registerComponent(world, c))
 }
 
+/**
+ * Checks if an entity has a component.
+ *
+ * @param {World} world
+ * @param {Component} component
+ * @param {number} eid
+ * @returns {boolean}
+ */
 export const hasComponent = (world, component, eid) => {
   const registeredComponent = world[$componentMap].get(component)
   if (!registeredComponent) return
@@ -66,6 +94,14 @@ export const hasComponent = (world, component, eid) => {
   return (mask & bitflag) === bitflag
 }
 
+/**
+ * Adds a component to an entity
+ *
+ * @param {World} world
+ * @param {Component} component
+ * @param {number} eid
+ * @param {boolean} [reset=false]
+ */
 export const addComponent = (world, component, eid, reset=false) => {
   if (!Number.isInteger(eid)) {
     component = world
@@ -91,10 +127,21 @@ export const addComponent = (world, component, eid, reset=false) => {
     const match = queryCheckEntity(world, q, eid)
     if (match) queryAddEntity(q, eid)
   })
+
+  world[$entityComponents].get(eid).add(component)
+
   // Zero out each property value
   if (reset) resetStoreFor(component, eid)
 }
 
+/**
+ * Removes a component from an entity and resets component state unless otherwise specified.
+ *
+ * @param {World} world
+ * @param {Component} component
+ * @param {number} eid
+ * @param {boolean} [reset=true]
+ */
 export const removeComponent = (world, component, eid, reset=true) => {
   if (!Number.isInteger(eid)) {
     component = world
@@ -120,6 +167,8 @@ export const removeComponent = (world, component, eid, reset=true) => {
     if (match) queryAddEntity(q, eid)
   })
   
+  world[$entityComponents].get(eid).delete(component)
+
   // Zero out each property value
   if (reset) resetStoreFor(component, eid)
 }

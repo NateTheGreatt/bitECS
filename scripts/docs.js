@@ -4,6 +4,8 @@ import { writeFileSync } from 'fs'
 import glob from 'globby'
 import jsdoc2md from 'jsdoc-to-markdown'
 
+const FILENAME = 'API.md'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 async function render (pattern, output) {
@@ -21,7 +23,7 @@ async function render (pattern, output) {
 }
 
 async function build () {
-  await render('src/**/*.js', join(__dirname, '..', 'DOCS.md'))
+  await render('src/**/*.js', join(__dirname, '../docs', FILENAME))
 }
 
 build().catch(console.error)

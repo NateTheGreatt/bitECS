@@ -1,11 +1,10 @@
-import { $componentMap, resizeComponents } from './Component.js'
-import { $notQueries, $queries, $queryMap, queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query.js'
-import { resize, resizeStore } from './Storage.js'
-import { $size, $resizeThreshold, worlds, resizeWorlds } from './World.js'
+import { resizeComponents } from './Component.js'
+import { $notQueries, $queries, queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query.js'
+import { resizeWorlds } from './World.js'
 import { setSerializationResized } from './Serialize.js'
 
 export const $entityMasks = Symbol('entityMasks')
-export const $entityEnabled = Symbol('entityEnabled')
+export const $entityComponents = Symbol('entityMasks')
 export const $entitySparseSet = Symbol('entitySparseSet')
 export const $entityArray = Symbol('entityArray')
 export const $entityIndices = Symbol('entityIndices')
@@ -17,8 +16,7 @@ let defaultSize = 100000
 // so that world entities can posess entire rows spanning all component tables
 let globalEntityCursor = 0
 let globalSize = defaultSize
-const threshold = globalSize - (globalSize / 5)
-let resizeThreshold = () => threshold
+let resizeThreshold = () => globalSize - (globalSize / 5)
 
 export const getGlobalSize = () => globalSize
 
@@ -32,8 +30,14 @@ export const resetGlobals = () => {
 }
 
 export const getDefaultSize = () => defaultSize
-export const setDefaultSize = x => { 
-  defaultSize = x
+
+/**
+ * Sets the default maximum number of entities for worlds and component stores.
+ *
+ * @param {number} size
+ */
+export const setDefaultSize = size => { 
+  defaultSize = size
   resetGlobals()
 }
 
@@ -42,6 +46,12 @@ export const getRemovedEntities = () => removed
 
 export const eidToWorld = new Map()
 
+/**
+ * Adds a new entity to the specified world.
+ *
+ * @param {World} world
+ * @returns {number} eid
+ */
 export const addEntity = (world) => {
   
   const eid = removed.length > 0 ? removed.shift() : globalEntityCursor++
@@ -66,9 +76,17 @@ export const addEntity = (world) => {
     if (match) queryAddEntity(q, eid)
   })
 
+  world[$entityComponents].set(eid, new Set())
+
   return eid
 }
 
+/**
+ * Removes an existing entity from the specified world.
+ *
+ * @param {World} world
+ * @param {number} eid
+ */
 export const removeEntity = (world, eid) => {
   // Check if entity is already removed
   if (!world[$entitySparseSet].has(eid)) return
@@ -82,9 +100,18 @@ export const removeEntity = (world, eid) => {
   // Free the entity
   removed.push(eid)
 
-  // pop swap
+  // remove all eid state from world
   world[$entitySparseSet].remove(eid)
+  world[$entityComponents].delete(eid)
 
   // Clear entity bitmasks
   for (let i = 0; i < world[$entityMasks].length; i++) world[$entityMasks][i][eid] = 0
 }
+
+/**
+ *  Returns an array of components that an entity possesses.
+ *
+ * @param {*} world
+ * @param {*} eid
+ */
+export const getEntityComponents = (world, eid) => Array.from(world[$entityComponents].get(eid))

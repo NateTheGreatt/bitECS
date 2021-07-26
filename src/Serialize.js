@@ -1,6 +1,6 @@
 import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened, $tagStore, createShadow } from "./Storage.js"
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
-import { $entityArray, $entityEnabled, $entitySparseSet, addEntity, eidToWorld } from "./Entity.js"
+import { $entityArray, $entitySparseSet, addEntity, eidToWorld } from "./Entity.js"
 import { $localEntities } from "./World.js"
 
 export const DESERIALIZE_MODE = {
@@ -40,6 +40,13 @@ const canonicalize = (target) => {
   return [componentProps, changedProps]
 }
 
+/**
+ * Defines a new serializer which targets the given components to serialize the data of when called on a world or array of EIDs.
+ *
+ * @param {object|array} target
+ * @param {number} [maxBytes=20000000]
+ * @returns {ArrayBuffer}
+ */
 export const defineSerializer = (target, maxBytes = 20000000) => {
   const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
 
@@ -179,6 +186,11 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 
 const newEntities = new Map()
 
+/**
+ * Defines a new deserializer which targets the given components to deserialize onto a given world.
+ *
+ * @param {object|array} target
+ */
 export const defineDeserializer = (target) => {
   const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
   let [componentProps] = canonicalize(target)
