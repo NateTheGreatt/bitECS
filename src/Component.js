@@ -40,15 +40,18 @@ export const incrementBitflag = (world) => {
  * @param {Component} component
  */
 export const registerComponent = (world, component) => {
-  if (!component) throw new Error(`👾 bitECS - cannot register component as it is null or undefined.`)
+  if (!component) throw new Error(`bitECS - Cannot register null or undefined component`)
 
   const queries = new Set()
   const notQueries = new Set()
+  const changedQueries = new Set()
 
   world[$queries].forEach(q => {
-    if (q.components.includes(component)) {
+    if (q.notComponents.includes(component)) {
       queries.add(q)
-    } else if (q.notComponents.includes(component)) {
+    } else if (q.changedComponents.includes(component)) {
+      changedQueries.add(q)
+    } else if (q.components.includes(component)) {
       notQueries.add(q)
     }
   })
@@ -59,6 +62,7 @@ export const registerComponent = (world, component) => {
     store: component,
     queries,
     notQueries,
+    changedQueries,
   })
 
   if (component[$storeSize] < world[$size]) {
