@@ -10,12 +10,12 @@ import {
   addEntity,
   removeEntity,
 
+  Types,
+
   defineComponent,
   addComponent,
   removeComponent,
   hasComponent,
-
-  defineProxy,
   
   defineQuery,
   Changed,
@@ -29,7 +29,6 @@ import {
   defineDeserializer,
 
   pipe,
-  Types
 
 } from 'bitecs'
 ```
@@ -47,6 +46,8 @@ const world = createWorld()
 
 world.name = 'MyWorld'
 ```
+
+
 ## 👾 Entity
 
 An entity is an integer, technically a pointer, which components can be associated with.
@@ -62,6 +63,7 @@ Remove entities from the world:
 ```js
 removeEntity(world, eid2)
 ```
+
 
 ## 📦 Component
  
@@ -86,13 +88,63 @@ addComponent(world, List, eid)
 addComponent(world, Tag, eid)
 ```
 
-Component data is accessed directly via `eid`, there are no getters or setters:
-* This is how high performance iteration is achieved
+Component data is accessed directly via `eid` which is how high performance iteration is achieved:
 ```js
-Velocity.x[eid] = 1
-Velocity.y[eid] = 1
+Position.x[eid] = 1
+Position.y[eid] = 1
+```
 
+Array types are regular fixed-size TypedArrays:
+```js
 List.values[eid].set([1,2,3])
+console.log(List.values[eid]) // => Float32Array(3) [ 1, 2, 3 ]
+```
+
+## 👥 Component Proxy
+
+Component proxies are a way to interact with component data using regular objects while maintaining high performance iteration. Not to be confused with ES6 `Proxy`, but the behavior is basically identical with faster iteration speeds.
+
+This enables cleaner syntax, component references, and enhanced interoperability with other libraries.
+
+Comes at the cost of some boilerplate and a very slight performance hit (still faster than regular objects tho).
+
+⚠ Proxy instances must be reused to maintain high performance iteration.
+
+```js
+class Vector3Proxy {
+  constructor(store, eid) { 
+    this.eid = eid
+    this.store = store
+  }
+  get x ()    { return this.store.x[this.eid] }
+  set x (val) { this.store.x[this.eid] = val }
+  get y ()    { return this.store.y[this.eid] }
+  set y (val) { this.store.y[this.eid] = val }
+  get z ()    { return this.store.z[this.eid] }
+  set z (val) { this.store.z[this.eid] = val }
+}
+
+class PositionProxy extends Vector2Proxy {
+  constructor(eid) { super(Position, eid) }
+}
+
+class VelocityProxy extends Vector2Proxy {
+  constructor(eid) { super(Velocity, eid) }
+}
+
+const position = new PositionProxy(eid)
+const velocity = new VelocityProxy(eid)
+
+position.x = 123
+
+console.log(Position.x[eid]) // => 123
+
+// reuse proxies simply by resetting the eid
+position.eid = eid2
+
+position.x = 456
+
+console.log(Position.x[eid2]) // => 456
 ```
 
 ## 🔍 Query
@@ -114,7 +166,7 @@ Wrapping a component with the `Not` modifier defines a query which returns entit
 const positionWithoutVelocityQuery = defineQuery([ Position, Not(Velocity) ])
 ```
 
-Wrapping a component with the `Change` modifier creates a query which returns entities whose component's state has changed since last call of the function:
+Wrapping a component with the `Change` modifier creates a query which returns entities who are marked as changed since last call of the function:
 ```js
 const changedPositionQuery = defineQuery([ Changed(Position) ])
 
@@ -122,6 +174,9 @@ let ents = changedPositionQuery(world)
 console.log(ents) // => []
 
 Position.x[eid]++
+
+// mark component as changed for this entity
+entityChanged(world, Position, eid)
 
 ents = changedPositionQuery(world)
 console.log(ents) // => [0]
@@ -163,14 +218,15 @@ const movementSystem = defineSystem((world) => {
   const ents = movementQuery(world)
   for (let i = 0; i < ents.length; i++) {
     const eid = ents[i]
+
+    // operate directly on SoA data
     Position.x[eid] += Velocity.x[eid]
     Position.y[eid] += Velocity.y[eid]
-
-    // or with proxies:
-    const positionProxy = PositionProxies[eid]
-    const velocityProxy = VelocityProxies[eid]
-    positionProxy.x += velocityProxy.x
-    positionProxy.y += velocityProxy.y
+    
+    // or reuse component proxies by resetting the eid for each proxy
+    position.eid = velocity.eid = eid
+    position.x += velocity.x
+    position.y += velocity.y
   }
 
   // optionally apply logic to entities removed from the query
@@ -183,8 +239,9 @@ const movementSystem = defineSystem((world) => {
 ```
 
 Define a system which tracks time:
+
 ```js
-world.time = { 
+world.time = {
   delta: 0, 
   elapsed: 0,
   then: performance.now()
@@ -203,11 +260,11 @@ Systems are used to update entities of a world:
 movementSystem(world)
 ```
 
-Pipelines of systems should be created with the `pipe` function:
+Pipelines of systems can be composed with the `pipe` function:
 ```js
 const pipeline = pipe(
   movementSystem,
-  timeSystem
+  timeSystem,
 )
 
 pipeline(world)
@@ -279,9 +336,9 @@ There are 3 modes of deserilization, all of which are additive in nature.
 Deserialization will never remove entities, and will only add them.
 
  - `REPLACE` - (default) overwrites entity data, or creates new entities if the serialized EIDs don't exist in the target world.
- - `APPEND` - only creates new entities, does not overwrite any existing entity data.
+ - `APPEND` - only creates new entities, never overwrites existing entity data.
  - `MAP` - acts like `REPLACE` but every serialized EID is assigned a local EID which is memorized for all subsequent deserializations onto the target world.
-    - useful when deserializing server ECS state on a client-side ECS to avoid EID collisions
+    - useful when deserializing server ECS state onto a client ECS world to avoid EID collisions but still maintain the server-side EID relationship
 
 ```js
 const mode = DESERIALIZE_MODE.MAP

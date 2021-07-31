@@ -28,6 +28,9 @@
 <dt><a href="#removeEntity">removeEntity</a></dt>
 <dd><p>Removes an existing entity from the specified world.</p>
 </dd>
+<dt><a href="#getEntityComponents">getEntityComponents</a></dt>
+<dd><p>Returns an array of components that an entity possesses.</p>
+</dd>
 <dt><a href="#enterQuery">enterQuery</a> ⇒ <code>function</code></dt>
 <dd><p>Given an existing query, returns a new function which returns entities who have been added to the given query since the last call of the function.</p>
 </dd>
@@ -43,10 +46,10 @@
 <dt><a href="#removeQuery">removeQuery</a></dt>
 <dd><p>Removes a query from a world.</p>
 </dd>
-<dt><a href="#defineSerializer">defineSerializer</a> ⇒ <code>ArrayBuffer</code></dt>
+<dt><a href="#defineSerializer">defineSerializer</a> ⇒ <code>function</code></dt>
 <dd><p>Defines a new serializer which targets the given components to serialize the data of when called on a world or array of EIDs.</p>
 </dd>
-<dt><a href="#defineDeserializer">defineDeserializer</a></dt>
+<dt><a href="#defineDeserializer">defineDeserializer</a> ⇒ <code>function</code></dt>
 <dd><p>Defines a new deserializer which targets the given components to deserialize onto a given world.</p>
 </dd>
 <dt><a href="#defineSystem">defineSystem</a> ⇒ <code>function</code></dt>
@@ -175,6 +178,18 @@
 | eid | <code>number</code> | 
 
 
+<br><a name="getEntityComponents"></a>
+
+## getEntityComponents
+> Returns an array of components that an entity possesses.
+
+
+| Param | Type |
+| --- | --- |
+| world | <code>\*</code> | 
+| eid | <code>\*</code> | 
+
+
 <br><a name="enterQuery"></a>
 
 ## enterQuery ⇒ <code>function</code>
@@ -237,9 +252,10 @@
 
 <br><a name="defineSerializer"></a>
 
-## defineSerializer ⇒ <code>ArrayBuffer</code>
+## defineSerializer ⇒ <code>function</code>
 > Defines a new serializer which targets the given components to serialize the data of when called on a world or array of EIDs.
 
+**Returns**: <code>function</code> - serializer  
 
 | Param | Type | Default |
 | --- | --- | --- |
@@ -249,9 +265,10 @@
 
 <br><a name="defineDeserializer"></a>
 
-## defineDeserializer
+## defineDeserializer ⇒ <code>function</code>
 > Defines a new deserializer which targets the given components to deserialize onto a given world.
 
+**Returns**: <code>function</code> - deserializer  
 
 | Param | Type |
 | --- | --- |

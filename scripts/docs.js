@@ -12,8 +12,8 @@ async function render (pattern, output) {
   const files = await glob([
     pattern,
     '!**/**/node_modules',
-    '!**/**/__tests__',
-    '!**/**/examples'
+    '!**/**/test',
+    '!**/**/examples',
   ])
   const md = await jsdoc2md.render({
     files,

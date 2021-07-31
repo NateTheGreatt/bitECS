@@ -21,20 +21,67 @@ Functional, minimal, data-oriented, ultra-high performance [ECS](https://en.wiki
 | --------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark) | [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks) |
 
-
-### 👩‍💻 In Development
-|                  |
-| ---------------- |
-| 🧬Archetypes |
-|🧵 Multithreading |
-
 ## 💿 Install
 ```
 npm i bitecs
 ```
 
-## ℹ  Resources
+## 📘  Documentation
 |                  |
 | ---------------- |
 | 🏁  [Getting Started](https://github.com/NateTheGreatt/bitECS/blob/master/docs/INTRO.md) |
-| 📘  [API Documentation](https://github.com/NateTheGreatt/bitECS/blob/master/docs/API.md) |
+| 📑  [API](https://github.com/NateTheGreatt/bitECS/blob/master/docs/API.md) |
+| ❔  [FAQ](https://github.com/NateTheGreatt/bitECS/blob/master/docs/FAQ.md) |
+
+## 🕹 Example
+
+```js
+import {
+  createWorld,
+  Types,
+  defineComponent,
+  defineQuery,
+  addEntity,
+  addComponent,
+  defineSystem,
+  pipe,
+} from 'bitecs'
+
+const Vector3 = { x: Types.f32, y: Types.f32, z: Types.f32 }
+const Position = defineComponent(Vector3)
+const Velocity = defineComponent(Vector3)
+
+const movementQuery = defineQuery([Position, Velocity])
+
+const movementSystem = defineSystem((world) => {
+  const ents = movementQuery(world)
+  for (let i = 0; i < ents.length; i++) {
+    const eid = ents[i]
+    Position.x[eid] += Velocity.x[eid]
+    Position.y[eid] += Velocity.y[eid]
+    Position.z[eid] += Velocity.z[eid]
+  }
+})
+
+const timeSystem = defineSystem(world => {
+  const { time } = world
+  const now = performance.now()
+  const delta = now - time.then
+  time.delta = delta
+  time.elapsed += delta
+  time.then = now
+})
+
+const pipeline = pipe(movementSystem, timeSystem)
+
+const world = createWorld()
+world.time = { delta: 0, elapsed: 0, then: performance.now() }
+
+const eid = addEntity(world)
+addComponent(world, Position, eid)
+addComponent(world, Velocity, eid)
+
+setInterval(() => {
+  pipeline(world)
+}, 16)
+```
