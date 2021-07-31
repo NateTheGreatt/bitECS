@@ -19,7 +19,7 @@ const canonicalize = (target) => {
   if (Array.isArray(target)) {
     componentProps = target
       .map(p => {
-        if (!p) throw new Error('bitECS - Cannot serializer undefined component')
+        if (!p) throw new Error('bitECS - Cannot serialize undefined component')
         if (typeof p === 'function' && p.name === 'QueryChanged') {
           p()[$storeFlattened].forEach(prop => {
             const $ = Symbol()
@@ -88,7 +88,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
     // iterate over component props
     for (let pid = 0; pid < componentProps.length; pid++) {
       const prop = componentProps[pid]
-      const diff = changedProps.get(prop)
+      const $diff = changedProps.get(prop)
       
       // write pid
       view.setUint8(where, pid)
@@ -110,17 +110,17 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 
         // skip if diffing and no change
         // TODO: optimize array diff
-        if (diff) {
+        if ($diff) {
           if (ArrayBuffer.isView(prop[eid])) {
             let dirty = false
             for (let i = 0; i < prop[eid].length; i++) {
-              if(prop[eid][i] !== prop[eid][$serializeShadow][i]) {
+              if(prop[eid][i] !== prop[eid][$diff][i]) {
                 dirty = true
                 break
               }
             }
             if (dirty) continue
-          } else if (prop[eid] === prop[diff][eid]) continue
+          } else if (prop[eid] === prop[$diff][eid]) continue
         }
 
         count++
@@ -149,7 +149,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           for (let i = 0; i < prop[eid].length; i++) {
             const value = prop[eid][i]
 
-            if (diff && prop[eid][i] === prop[eid][$serializeShadow][i]) {
+            if ($diff && prop[eid][i] === prop[eid][$diff][i]) {
               continue
             }
 
@@ -174,7 +174,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           where += prop.BYTES_PER_ELEMENT
 
           // sync shadow state
-          prop[$serializeShadow][eid] = prop[eid]
+          if (prop[$diff]) prop[$diff][eid] = prop[eid]
         }
       }
 
