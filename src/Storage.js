@@ -111,8 +111,6 @@ const resizeSubarray = (metadata, store, size) => {
   array.set(metadata[$storeSubarrays][type])
   
   metadata[$storeSubarrays][type] = array
-  createShadow(metadata[$storeSubarrays][type], $queryShadow)
-  createShadow(metadata[$storeSubarrays][type], $serializeShadow)
   
   array[$indexType] = TYPES_NAMES[indexType]
   array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
@@ -127,8 +125,6 @@ const resizeSubarray = (metadata, store, size) => {
     
     store[eid][$subarrayFrom] = from
     store[eid][$subarrayTo] = to
-    store[eid][$queryShadow] = metadata[$storeSubarrays][type][$queryShadow].subarray(from, to)
-    store[eid][$serializeShadow] = metadata[$storeSubarrays][type][$serializeShadow].subarray(from, to)
     store[eid][$subarray] = true
     store[eid][$indexType] = array[$indexType]
     store[eid][$indexBytes] = array[$indexBytes]
@@ -150,8 +146,6 @@ const resizeRecursive = (metadata, store, size) => {
     } else if (ArrayBuffer.isView(ta)) {
       store[key] = resize(ta, size)
       store[$storeFlattened].push(store[key])
-      store[key][$queryShadow] = resize(ta[$queryShadow], size)
-      store[key][$serializeShadow] = resize(ta[$serializeShadow], size)
     } else if (typeof ta === 'object') {
       resizeRecursive(metadata, store[key], size)
     }
@@ -209,8 +203,8 @@ const createArrayStore = (metadata, type, length) => {
         ? 'ui16'
         : 'ui32'
 
-  if (!length) throw new Error('❌ Must define a length for component array.')
-  if (!TYPES[type]) throw new Error(`❌ Invalid component array property type ${type}.`)
+  if (!length) throw new Error('bitECS - Must define component array length')
+  if (!TYPES[type]) throw new Error(`bitECS - Invalid component array property type ${type}`)
 
   // create buffer for type if it does not already exist
   if (!metadata[$storeSubarrays][type]) {
@@ -225,8 +219,6 @@ const createArrayStore = (metadata, type, length) => {
     const array = new TYPES[type](summedLength * size)
 
     metadata[$storeSubarrays][type] = array
-    createShadow(metadata[$storeSubarrays][type], $queryShadow)
-    createShadow(metadata[$storeSubarrays][type], $serializeShadow)
     
     array[$indexType] = TYPES_NAMES[indexType]
     array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
@@ -243,8 +235,6 @@ const createArrayStore = (metadata, type, length) => {
     
     store[eid][$subarrayFrom] = from
     store[eid][$subarrayTo] = to
-    store[eid][$queryShadow] = metadata[$storeSubarrays][type][$queryShadow].subarray(from, to)
-    store[eid][$serializeShadow] = metadata[$storeSubarrays][type][$serializeShadow].subarray(from, to)
     store[eid][$subarray] = true
     store[eid][$indexType] = TYPES_NAMES[indexType]
     store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
@@ -308,8 +298,6 @@ export const createStore = (schema, size) => {
       if (typeof a[k] === 'string') {
 
         a[k] = createTypeStore(a[k], size)
-        createShadow(a[k], $queryShadow)
-        createShadow(a[k], $serializeShadow)
         a[k][$storeBase] = () => stores[$store]
         metadata[$storeFlattened].push(a[k])
 
