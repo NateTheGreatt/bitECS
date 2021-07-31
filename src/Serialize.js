@@ -19,7 +19,7 @@ const canonicalize = (target) => {
   if (Array.isArray(target)) {
     componentProps = target
       .map(p => {
-        if (!p) throw new Error('👾 bitECS - undefined component passed into serializer.')
+        if (!p) throw new Error('bitECS - Cannot serializer undefined component')
         if (typeof p === 'function' && p.name === 'QueryChanged') {
           p()[$storeFlattened].forEach(prop => {
             const $ = Symbol()
@@ -45,7 +45,7 @@ const canonicalize = (target) => {
  *
  * @param {object|array} target
  * @param {number} [maxBytes=20000000]
- * @returns {ArrayBuffer}
+ * @returns {function} serializer
  */
 export const defineSerializer = (target, maxBytes = 20000000) => {
   const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
@@ -190,6 +190,7 @@ const newEntities = new Map()
  * Defines a new deserializer which targets the given components to deserialize onto a given world.
  *
  * @param {object|array} target
+ * @returns {function} deserializer
  */
 export const defineDeserializer = (target) => {
   const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
@@ -237,17 +238,12 @@ export const defineDeserializer = (target) => {
         let eid = view.getUint32(where)
         where += 4
 
-        let newEid = newEntities.get(eid)
-        if (newEid !== undefined) {
-          eid = newEid
-        }
-
-
         if (mode === DESERIALIZE_MODE.MAP) {
+
           if (localEntities.has(eid)) {
             eid = localEntities.get(eid)
           } else if (newEntities.has(eid)) {
-              eid = newEntities.get(eid)
+            eid = newEntities.get(eid)
           } else {
             const newEid = addEntity(world)
             localEntities.set(eid, newEid)
@@ -259,7 +255,7 @@ export const defineDeserializer = (target) => {
         if (mode === DESERIALIZE_MODE.APPEND ||  
           mode === DESERIALIZE_MODE.REPLACE && !world[$entitySparseSet].has(eid)
         ) {
-          const newEid = addEntity(world)
+          const newEid = newEntities.get(eid) || addEntity(world)
           newEntities.set(eid, newEid)
           eid = newEid
         }

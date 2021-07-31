@@ -68,7 +68,7 @@ export const addEntity = (world) => {
     resizeWorlds(newSize)
     resizeComponents(newSize)
     setSerializationResized(true)
-    console.info(`👾 bitECS - resizing all worlds from ${size} to ${size+amount}`)
+    console.info(`👾 bitECS - resizing all data stores from ${size} to ${size+amount}`)
   }
 
   world[$notQueries].forEach(q => {
