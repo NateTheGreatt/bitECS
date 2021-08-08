@@ -40,7 +40,15 @@ export const SparseSet = () => {
   const dense = []
   const sparse = []
 
-  // dense.count = () => dense.length
+  dense.sort = function (comparator) {
+    const result = Array.prototype.sort.call(this, comparator)
+
+    for(let i = 0; i < dense.length; i++) {
+      sparse[dense[i]] = i
+    }
+    
+    return result
+  }
 
   const has = val => dense[sparse[val]] === val
 

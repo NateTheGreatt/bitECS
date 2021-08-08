@@ -71,6 +71,7 @@ export const registerQuery = (world, query) => {
   const sparseSet = SparseSet()
 
   const archetypes = []
+  // const changed = SparseSet()
   const changed = []
   const toRemove = []
   const entered = []
@@ -138,7 +139,6 @@ export const registerQuery = (world, query) => {
     exited,
     shadows,
   })
-
   
   world[$queryMap].set(query, q)
   world[$queries].add(q)
@@ -148,6 +148,9 @@ export const registerQuery = (world, query) => {
   })
   notComponents.map(mapComponents).forEach(c => {
     c.notQueries.add(q)
+  })
+  changedComponents.map(mapComponents).forEach(c => {
+    c.changedQueries.add(q)
   })
 
   if (notComponents.length) world[$notQueries].add(q)
@@ -161,7 +164,7 @@ export const registerQuery = (world, query) => {
 }
 
 const diff = (q, clearDiff) => {
-  if (clearDiff) q.changed.length = 0
+  if (clearDiff) q.changed = []
   const { flatProps, shadows } = q
   for (let i = 0; i < q.dense.length; i++) {
     const eid = q.dense[i]
@@ -171,9 +174,9 @@ const diff = (q, clearDiff) => {
       const shadow = shadows[pid]
       if (ArrayBuffer.isView(prop[eid])) {
         for (let i = 0; i < prop[eid].length; i++) {
-          if (prop[eid][i] !== prop[eid][$queryShadow][i]) {
+          if (prop[eid][i] !== shadow[eid][i]) {
             dirty = true
-            prop[eid][$queryShadow][i] = prop[eid][i]
+            shadow[eid][i] = prop[eid][i]
           }
         }
       } else {
@@ -187,6 +190,19 @@ const diff = (q, clearDiff) => {
   }
   return q.changed
 }
+
+// const queryEntityChanged = (q, eid) => {
+//   if (q.changed.has(eid)) return
+//   q.changed.add(eid)
+// }
+
+// export const entityChanged = (world, component, eid) => {
+//   const { changedQueries } = world[$componentMap].get(component)
+//   changedQueries.forEach(q => {
+//     const match = queryCheckEntity(world, q, eid)
+//     if (match) queryEntityChanged(q, eid)
+//   })
+// }
 
 
 /**
@@ -209,6 +225,7 @@ export const defineQuery = (components) => {
     queryCommitRemovals(q)
 
     if (q.changedComponents.length) return diff(q, clearDiff)
+    // if (q.changedComponents.length) return q.changed.dense
 
     return q.dense
   }
@@ -280,7 +297,7 @@ export const queryRemoveEntity = (world, q, eid) => {
  */
 export const resetChangedQuery = (world, query) => {
   const q = world[$queryMap].get(query)
-  q.changed.length = 0
+  q.changed = []
 }
 
 /**

@@ -130,7 +130,6 @@ describe('Query Integration Tests', () => {
 
     // fooBar query should still only have eid 2
     ents = fooBarQuery(world)
-    console.log(ents)
     strictEqual(ents.length, 1)
     strictEqual(ents[0], 2)
 

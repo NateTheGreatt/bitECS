@@ -58,18 +58,21 @@ export const addEntity = (world) => {
   world[$entitySparseSet].add(eid)
   eidToWorld.set(eid, world)
 
-  // if data stores are 80% full
-  if (globalEntityCursor >= resizeThreshold()) {
-    // grow by half the original size rounded up to a multiple of 4
-    const size = globalSize
-    const amount = Math.ceil((size/2) / 4) * 4
-    const newSize = size + amount
-    globalSize = newSize
-    resizeWorlds(newSize)
-    resizeComponents(newSize)
-    setSerializationResized(true)
-    console.info(`👾 bitECS - resizing all data stores from ${size} to ${size+amount}`)
+  if (globalEntityCursor >= defaultSize) {
+    console.error(`bitECS - max entities of ${defaultSize} reached, increase with setDefaultSize function.`)
   }
+  // if data stores are 80% full
+  // if (globalEntityCursor >= resizeThreshold()) {
+  //   // grow by half the original size rounded up to a multiple of 4
+  //   const size = globalSize
+  //   const amount = Math.ceil((size/2) / 4) * 4
+  //   const newSize = size + amount
+  //   globalSize = newSize
+  //   resizeWorlds(newSize)
+  //   resizeComponents(newSize)
+  //   setSerializationResized(true)
+  //   console.info(`👾 bitECS - resizing all data stores from ${size} to ${size+amount}`)
+  // }
 
   world[$notQueries].forEach(q => {
     const match = queryCheckEntity(world, q, eid)

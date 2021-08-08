@@ -42,6 +42,7 @@ export {
   removeComponent,
   hasComponent,
   getEntityComponents,
+  // entityChanged,
 
   // defineProxy,
 

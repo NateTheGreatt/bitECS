@@ -51,7 +51,6 @@ export const $storeType = Symbol('storeType')
 
 export const $storeArrayCounts = Symbol('storeArrayCount')
 export const $storeSubarrays = Symbol('storeSubarrays')
-export const $storeCursor = Symbol('storeCursor')
 export const $subarrayCursors = Symbol('subarrayCursors')
 export const $subarray = Symbol('subarray')
 export const $subarrayFrom = Symbol('subarrayFrom')
@@ -76,12 +75,12 @@ export const resize = (ta, size) => {
 
 export const createShadow = (store, key) => {
   if (!ArrayBuffer.isView(store)) {
-    const shadow = store[$parentArray].slice(0).fill(0)
-    for (const k in store[key]) {
-      const from = store[key][k][$subarrayFrom]
-      const to = store[key][k][$subarrayTo]
-      store[key][k] = shadow.subarray(from, to)
-    }
+    const shadowStore = store[$parentArray].slice(0).fill(0)
+    store[key] = store.map((_,eid) => {
+      const from = store[eid][$subarrayFrom]
+      const to = store[eid][$subarrayTo]
+      return shadowStore.subarray(from, to)
+    })
   } else {
     store[key] = store.slice(0).fill(0)
   }
@@ -97,16 +96,18 @@ const resizeSubarray = (metadata, store, size) => {
       : length <= UNSIGNED_MAX.uint16
         ? 'ui16'
         : 'ui32'
-        
+
   const arrayCount = metadata[$storeArrayCounts][type]
   const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
   
-  // for threaded impl
-  // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
-  // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
-  // const buffer = new ArrayBuffer(totalBytes)
+  // // for threaded impl
+  // // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
+  // // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
+  // // const buffer = new SharedArrayBuffer(totalBytes)
 
-  const array = new TYPES[type](summedLength * size)
+  const array = new TYPES[type](roundToMultiple4(summedLength * size))
+
+  console.log(array.length, metadata[$storeSubarrays][type].length, type)
 
   array.set(metadata[$storeSubarrays][type])
   
@@ -114,6 +115,26 @@ const resizeSubarray = (metadata, store, size) => {
   
   array[$indexType] = TYPES_NAMES[indexType]
   array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
+
+  // create buffer for type if it does not already exist
+  // if (!metadata[$storeSubarrays][type]) {
+  //   const arrayCount = metadata[$storeArrayCounts][type]
+  //   const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
+
+  //   // for threaded impl
+  //   // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
+  //   // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
+  //   // const buffer = new SharedArrayBuffer(totalBytes)
+
+  //   const array = new TYPES[type](roundToMultiple4(summedLength * size))
+
+  //   // console.log(`array of type ${type} has size of ${array.length}`)
+
+  //   metadata[$storeSubarrays][type] = array
+
+  //   array[$indexType] = TYPES_NAMES[indexType]
+  //   array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
+  // }
 
   const start = cursors[type]
   let end = 0
@@ -126,8 +147,8 @@ const resizeSubarray = (metadata, store, size) => {
     store[eid][$subarrayFrom] = from
     store[eid][$subarrayTo] = to
     store[eid][$subarray] = true
-    store[eid][$indexType] = array[$indexType]
-    store[eid][$indexBytes] = array[$indexBytes]
+    store[eid][$indexType] = TYPES_NAMES[indexType]
+    store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
     
     end = to
   }
@@ -141,6 +162,8 @@ const resizeRecursive = (metadata, store, size) => {
   Object.keys(store).forEach(key => {
     const ta = store[key]
     if (Array.isArray(ta)) {
+      // store[$storeSubarrays] = {}
+      // store[$subarrayCursors] = Object.keys(TYPES).reduce((a, type) => ({ ...a, [type]: 0 }), {})
       resizeSubarray(metadata, ta, size)
       store[$storeFlattened].push(ta)
     } else if (ArrayBuffer.isView(ta)) {
@@ -214,9 +237,11 @@ const createArrayStore = (metadata, type, length) => {
     // for threaded impl
     // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
     // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
-    // const buffer = new ArrayBuffer(totalBytes)
+    // const buffer = new SharedArrayBuffer(totalBytes)
 
-    const array = new TYPES[type](summedLength * size)
+    const array = new TYPES[type](roundToMultiple4(summedLength * size))
+
+    // console.log(`array of type ${type} has size of ${array.length}`)
 
     metadata[$storeSubarrays][type] = array
     
@@ -285,7 +310,6 @@ export const createStore = (schema, size) => {
     [$storeMaps]: {},
     [$storeSubarrays]: {},
     [$storeRef]: $store,
-    [$storeCursor]: 0,
     [$subarrayCursors]: Object.keys(TYPES).reduce((a, type) => ({ ...a, [type]: 0 }), {}),
     [$storeFlattened]: [],
     [$storeArrayCounts]: arrayCounts
