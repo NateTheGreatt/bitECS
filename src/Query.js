@@ -222,7 +222,7 @@ export const defineQuery = (components) => {
 
     const q = world[$queryMap].get(query)
 
-    queryCommitRemovals(q)
+    commitRemovals(world)
 
     if (q.changedComponents.length) return diff(q, clearDiff)
     // if (q.changedComponents.length) return q.changed.dense
