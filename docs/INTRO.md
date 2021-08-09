@@ -175,9 +175,6 @@ console.log(ents) // => []
 
 Position.x[eid]++
 
-// mark component as changed for this entity
-entityChanged(world, Position, eid)
-
 ents = changedPositionQuery(world)
 console.log(ents) // => [0]
 ```
