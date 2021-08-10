@@ -1,6 +1,6 @@
 import assert, { strictEqual } from 'assert'
-import { $entityMasks, resetGlobals, addEntity, getDefaultSize } from '../../src/Entity.js'
-import { createWorld } from '../../src/World.js'
+import { $entityMasks, resetGlobals, addEntity, getDefaultSize } from '../../src/Entity'
+import { createWorld } from '../../src/World'
 
 const defaultSize = getDefaultSize()
 

@@ -1,9 +1,9 @@
 import { strictEqual } from 'assert'
-import { createWorld } from '../../src/World.js'
-import { addComponent, defineComponent } from '../../src/Component.js'
-import { addEntity, resetGlobals } from '../../src/Entity.js'
-import { defineQuery, defineSerializer, defineDeserializer, Types } from '../../src/index.js'
-import { DESERIALIZE_MODE } from '../../src/Serialize.js'
+import { createWorld } from '../../src/World'
+import { addComponent, defineComponent } from '../../src/Component'
+import { addEntity, resetGlobals } from '../../src/Entity'
+import { defineQuery, defineSerializer, defineDeserializer, Types } from '../../src/index'
+import { DESERIALIZE_MODE } from '../../src/Serialize'
 
 describe('Serialize Integration Tests', () => {
   afterEach(() => {

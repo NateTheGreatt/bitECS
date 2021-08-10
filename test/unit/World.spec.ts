@@ -1,8 +1,8 @@
 import assert, { strictEqual } from 'assert'
-import { $componentMap } from '../../src/Component.js'
-import { $entityMasks, resetGlobals, getDefaultSize } from '../../src/Entity.js'
-import { $dirtyQueries, $queries, $queryMap } from '../../src/Query.js'
-import { createWorld, $size, $bitflag } from '../../src/World.js'
+import { $componentMap } from '../../src/Component'
+import { $entityMasks, resetGlobals, getDefaultSize } from '../../src/Entity'
+import { $dirtyQueries, $queries, $queryMap } from '../../src/Query'
+import { createWorld, $size, $bitflag } from '../../src/World'
 
 const defaultSize = getDefaultSize()
 

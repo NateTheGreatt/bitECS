@@ -1,7 +1,7 @@
 import assert, { strictEqual } from 'assert'
-import { getDefaultSize } from '../../src/Entity.js'
-import { Types } from '../../src/index.js'
-import { createStore, resizeStore, TYPES } from '../../src/Storage.js'
+import { getDefaultSize } from '../../src/Entity'
+import { Types } from '../../src/index'
+import { createStore, resizeStore, TYPES } from '../../src/Storage'
 
 let defaultSize = getDefaultSize()
 

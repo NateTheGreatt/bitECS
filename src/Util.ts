@@ -3,7 +3,7 @@ export const Uint32SparseSet = (length) => {
   const sparse = new Uint32Array(length)
 
   let cursor = 0
-  dense.count = () => cursor + 1
+  // ;(dense as any).count = () => cursor + 1
 
   const has = val => dense[sparse[val]] === val
 

@@ -1,9 +1,9 @@
 import { strictEqual } from 'assert'
-import { createWorld } from '../../src/World.js'
-import { addComponent, defineComponent } from '../../src/Component.js'
-import { addEntity, resetGlobals } from '../../src/Entity.js'
-import { defineSystem } from '../../src/System.js'
-import { defineQuery, Types } from '../../src/index.js'
+import { createWorld } from '../../src/World'
+import { addComponent, defineComponent } from '../../src/Component'
+import { addEntity, resetGlobals } from '../../src/Entity'
+import { defineSystem } from '../../src/System'
+import { defineQuery, Types } from '../../src/index'
 
 describe('System Integration Tests', () => {
   afterEach(() => {

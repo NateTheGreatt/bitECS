@@ -73,7 +73,7 @@ export const resize = (ta, size) => {
   return newTa
 }
 
-export const createShadow = (store, key) => {
+export const createShadow = (store: any[], key) => {
   if (!ArrayBuffer.isView(store)) {
     const shadowStore = store[$parentArray].slice(0).fill(0)
     store[key] = store.map((_,eid) => {

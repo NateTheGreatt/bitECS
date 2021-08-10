@@ -1,7 +1,7 @@
-import { SparseSet } from './Util.js'
-import { $queryShadow, $storeFlattened, $tagStore, createShadow } from './Storage.js'
-import { $componentMap, registerComponent } from './Component.js'
-import { $entityMasks, $entityArray, getEntityCursor, $entitySparseSet } from './Entity.js'
+import { SparseSet } from './Util'
+import { $queryShadow, $storeFlattened, $tagStore, createShadow } from './Storage'
+import { $componentMap, registerComponent } from './Component'
+import { $entityMasks, $entityArray, getEntityCursor, $entitySparseSet } from './Entity'
 
 export function Not(c) { return function QueryNot() { return c } }
 export function Or(c) { return function QueryOr() { return c } }

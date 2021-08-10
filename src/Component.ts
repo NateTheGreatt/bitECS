@@ -1,7 +1,7 @@
-import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage.js'
-import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity } from './Query.js'
-import { $bitflag, $size } from './World.js'
-import { $entityMasks, getDefaultSize, eidToWorld, $entityComponents } from './Entity.js'
+import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage'
+import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity } from './Query'
+import { $bitflag, $size } from './World'
+import { $entityMasks, getDefaultSize, eidToWorld, $entityComponents } from './Entity'
 
 export const $componentMap = Symbol('componentMap')
 
@@ -18,7 +18,7 @@ export const resizeComponents = (size) => {
  * @param {object} schema
  * @returns {object}
  */
-export const defineComponent = (schema) => {
+export const defineComponent = (schema?) => {
   const component = createStore(schema, getDefaultSize())
   if (schema && Object.keys(schema).length) components.push(component)
   return component

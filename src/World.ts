@@ -1,8 +1,8 @@
-import { $componentMap } from './Component.js'
-import { $queryMap, $queries, $dirtyQueries, $notQueries } from './Query.js'
-import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet, getGlobalSize, removeEntity } from './Entity.js'
-import { resize } from './Storage.js'
-import { SparseSet } from './Util.js'
+import { $componentMap } from './Component'
+import { $queryMap, $queries, $dirtyQueries, $notQueries } from './Query'
+import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet, getGlobalSize, removeEntity } from './Entity'
+import { resize } from './Storage'
+import { SparseSet } from './Util'
 
 export const $size = Symbol('size')
 export const $resizeThreshold = Symbol('resizeThreshold')

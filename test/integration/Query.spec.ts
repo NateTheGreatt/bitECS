@@ -1,9 +1,9 @@
 import { strictEqual } from 'assert'
-import { exitQuery, Types } from '../../src/index.js'
-import { createWorld } from '../../src/World.js'
-import { addComponent, removeComponent, defineComponent } from '../../src/Component.js'
-import { addEntity, removeEntity, resetGlobals } from '../../src/Entity.js'
-import { Changed, defineQuery, enterQuery, Not } from '../../src/Query.js'
+import { exitQuery, Types } from '../../src/index'
+import { createWorld } from '../../src/World'
+import { addComponent, removeComponent, defineComponent } from '../../src/Component'
+import { addEntity, removeEntity, resetGlobals } from '../../src/Entity'
+import { Changed, defineQuery, enterQuery, Not } from '../../src/Query'
 
 describe('Query Integration Tests', () => {
   afterEach(() => {

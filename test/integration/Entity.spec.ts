@@ -1,6 +1,6 @@
 import { strictEqual } from 'assert'
-import { getEntityCursor, getRemovedEntities, resetGlobals } from '../../src/Entity.js'
-import { createWorld, addEntity, removeEntity } from '../../src/index.js'
+import { getEntityCursor, getRemovedEntities, resetGlobals } from '../../src/Entity'
+import { createWorld, addEntity, removeEntity } from '../../src/index'
 
 describe('Entity Integration Tests', () => {
   afterEach(() => {

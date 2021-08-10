@@ -1,8 +1,8 @@
 import assert from 'assert'
-import { Types } from '../../src/index.js'
-import { createWorld } from '../../src/World.js'
-import { $componentMap, addComponent, defineComponent, hasComponent, registerComponent, removeComponent } from '../../src/Component.js'
-import { addEntity, resetGlobals } from '../../src/Entity.js'
+import { Types } from '../../src/index'
+import { createWorld } from '../../src/World'
+import { $componentMap, addComponent, defineComponent, hasComponent, registerComponent, removeComponent } from '../../src/Component'
+import { addEntity, resetGlobals } from '../../src/Entity'
 
 describe('Component Integration Tests', () => {
   afterEach(() => {

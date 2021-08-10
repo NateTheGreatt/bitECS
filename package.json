@@ -24,7 +24,7 @@
   ],
   "scripts": {
     "build": "rollup -c",
-    "test": "c8 mocha test --recursive",
+    "test": "c8 ts-mocha test/ test/**/*.spec.ts",
     "docs": "node scripts/docs.js",
     "dist": "npm run test && npm run build && npm run docs"
   },
@@ -32,6 +32,7 @@
     "@babel/core": "^7.13.16",
     "@babel/preset-env": "^7.12.1",
     "@rollup/plugin-babel": "^5.3.0",
+    "@types/mocha": "^9.0.0",
     "babel": "^6.23.0",
     "c8": "^7.7.2",
     "dmd-readable": "^1.2.4",
@@ -39,7 +40,10 @@
     "jsdoc-to-markdown": "^7.0.1",
     "mocha": "^8.3.2",
     "rollup": "^2.32.1",
-    "rollup-plugin-copy": "^3.4.0"
+    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-ts": "^1.4.0",
+    "ts-mocha": "^8.0.0",
+    "typescript": "^4.3.5"
   },
   "babel": {
     "presets": [
@@ -52,6 +56,5 @@
         }
       ]
     ]
-  },
-  "type": "module"
+  }
 }

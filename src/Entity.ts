@@ -1,7 +1,7 @@
-import { resizeComponents } from './Component.js'
-import { $notQueries, $queries, queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query.js'
-import { resizeWorlds } from './World.js'
-import { setSerializationResized } from './Serialize.js'
+import { resizeComponents } from './Component'
+import { $notQueries, $queries, queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query'
+import { resizeWorlds } from './World'
+import { setSerializationResized } from './Serialize'
 
 export const $entityMasks = Symbol('entityMasks')
 export const $entityComponents = Symbol('entityMasks')

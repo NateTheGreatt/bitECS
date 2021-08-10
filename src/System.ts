@@ -1,4 +1,4 @@
-import { commitRemovals } from './Query.js'
+import { commitRemovals } from './Query'
 
 /**
  * Defines a new system function.
@@ -6,7 +6,7 @@ import { commitRemovals } from './Query.js'
  * @param {function} update
  * @returns {function}
  */
-export const defineSystem = (fn1, fn2) => {
+export const defineSystem = (fn1, fn2?) => {
   const update = fn2 !== undefined ? fn2 : fn1
   const create = fn2 !== undefined ? fn1 : undefined
   const init = new Set()

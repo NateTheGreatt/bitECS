@@ -1,11 +1,11 @@
-import { createWorld, resetWorld, deleteWorld } from './World.js'
-import { addEntity, removeEntity, setDefaultSize, getEntityComponents} from './Entity.js'
-import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent } from './Component.js'
-import { defineSystem } from './System.js'
-import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals, resetChangedQuery, removeQuery } from './Query.js'
-import { defineSerializer, defineDeserializer, DESERIALIZE_MODE } from './Serialize.js'
-import { TYPES_ENUM, parentArray } from './Storage.js'
-// import { defineProxy } from './Proxy.js'
+import { createWorld, resetWorld, deleteWorld } from './World'
+import { addEntity, removeEntity, setDefaultSize, getEntityComponents} from './Entity'
+import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent } from './Component'
+import { defineSystem } from './System'
+import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals, resetChangedQuery, removeQuery } from './Query'
+import { defineSerializer, defineDeserializer, DESERIALIZE_MODE } from './Serialize'
+import { TYPES_ENUM, parentArray } from './Storage'
+// import { defineProxy } from './Proxy'
 
 export const pipe = (...fns) => (...args) => {
   const input = Array.isArray(args[0]) ? args[0] : args

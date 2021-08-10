@@ -1,7 +1,7 @@
-import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened, $tagStore, createShadow } from "./Storage.js"
-import { $componentMap, addComponent, hasComponent } from "./Component.js"
-import { $entityArray, $entitySparseSet, addEntity, eidToWorld } from "./Entity.js"
-import { $localEntities } from "./World.js"
+import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened, $tagStore, createShadow } from "./Storage"
+import { $componentMap, addComponent, hasComponent } from "./Component"
+import { $entityArray, $entitySparseSet, addEntity, eidToWorld } from "./Entity"
+import { $localEntities } from "./World"
 
 export const DESERIALIZE_MODE = {
   REPLACE: 0,
@@ -13,7 +13,7 @@ let resized = false
 
 export const setSerializationResized = v => { resized = v }
 
-const canonicalize = (target) => {
+const canonicalize = (target): [any[], Map<any, any>] => {
   let componentProps = []
   let changedProps = new Map()
   if (Array.isArray(target)) {
