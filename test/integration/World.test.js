@@ -10,13 +10,13 @@ describe('World Integration Tests', () => {
   afterEach(() => {
     resetGlobals()
   })
-  it('should resize automatically at 80% of ' + defaultSize, () => {
-    const world = createWorld()
-    const n = defaultSize * 0.8
-    for (let i = 0; i < n; i++) {
-      addEntity(world)
-    }
+  // it('should resize automatically at 80% of ' + defaultSize, () => {
+  //   const world = createWorld()
+  //   const n = defaultSize * 0.8
+  //   for (let i = 0; i < n; i++) {
+  //     addEntity(world)
+  //   }
     
-    strictEqual(world[$entityMasks][0].length, growAmount)
-  })
+  //   strictEqual(world[$entityMasks][0].length, growAmount)
+  // })
 })

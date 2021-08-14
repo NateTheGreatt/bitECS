@@ -64,4 +64,16 @@ describe('Component Integration Tests', () => {
     removeComponent(world, TestComponent, eid)
     assert(hasComponent(world, TestComponent, eid) === false)
   })
+  it('should correctly register more than 32 components', () => {
+    const world = createWorld()
+        
+    const eid = addEntity(world)
+    
+    Array(1024).fill(null)
+      .map(_ => defineComponent())
+      .forEach((c) => {
+        addComponent(world, c, eid)
+        assert(hasComponent(world, c, eid))
+      })
+  })
 })

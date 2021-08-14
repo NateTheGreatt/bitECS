@@ -75,7 +75,7 @@ describe('Query Integration Tests', () => {
     let ents = fooQuery(world)
     strictEqual(ents.length, 0)
 
-    // notFoo query should have eid 0
+    // notFoo query should have eid 0, 1, and 2
     ents = notFooQuery(world)
     strictEqual(ents.length, 3)
     strictEqual(ents[0], 0)
@@ -91,23 +91,25 @@ describe('Query Integration Tests', () => {
 
     addComponent(world, Foo, eid2)
     addComponent(world, Bar, eid2)
-    
-    // now foo query should have eid 0 & 2
+
+    // now fooQuery should have eid 0 & 2
     ents = fooQuery(world)
     strictEqual(ents.length, 2)
     strictEqual(ents[0], 0)
     strictEqual(ents[1], 2)
 
-    // fooBar query should only have eid 2
+    // fooBarQuery should only have eid 2
     ents = fooBarQuery(world)
     strictEqual(ents.length, 1)
     strictEqual(ents[0], 2)
 
-    // notFooBar query should have nothing
+    // notFooBarQuery should have eid 0 and 1 (inverse of fooBarQuery)
     ents = notFooBarQuery(world)
-    strictEqual(ents.length, 0)
+    strictEqual(ents.length, 2)
+    strictEqual(ents[0], 0)
+    strictEqual(ents[1], 1)
     
-    // and notFoo query should have eid 1
+    // and notFooQuery should have eid 1
     ents = notFooQuery(world)
     strictEqual(ents.length, 1)
     strictEqual(ents[0], 1)
@@ -117,26 +119,27 @@ describe('Query Integration Tests', () => {
 
     removeComponent(world, Foo, eid0)
 
-    // now foo query should only have eid 2
+    // now fooQuery should only have eid 2
     ents = fooQuery(world)
     strictEqual(ents.length, 1)
     strictEqual(ents[0], 2)
 
-    // notFoo query should have eid 0 & 1
+    // notFooQuery should have eid 0 & 1
     ents = notFooQuery(world)
     strictEqual(ents.length, 2)
     strictEqual(ents[0], 1)
     strictEqual(ents[1], 0)
 
-    // fooBar query should still only have eid 2
+    // fooBarQuery should still only have eid 2
     ents = fooBarQuery(world)
     strictEqual(ents.length, 1)
     strictEqual(ents[0], 2)
 
-    // notFooBar query should only have eid 0
+    // notFooBarQuery should have eid 0 and 1
     ents = notFooBarQuery(world)
-    strictEqual(ents.length, 1)
+    strictEqual(ents.length, 2)
     strictEqual(ents[0], 0)
+    strictEqual(ents[1], 1)
 
 
     /* remove more components */
@@ -144,13 +147,14 @@ describe('Query Integration Tests', () => {
     removeComponent(world, Foo, eid2)
     removeComponent(world, Bar, eid2)
 
-    // notFooBar query should have eid 0 & 2
+    // notFooBarQuery should have eid 0 & 2
     ents = notFooBarQuery(world)
-    strictEqual(ents.length, 2)
+    strictEqual(ents.length, 3)
     strictEqual(ents[0], 0)
-    strictEqual(ents[1], 2)
+    strictEqual(ents[1], 1)
+    strictEqual(ents[2], 2)
     
-    // and notFoo query should have eid 1, 0, & 2
+    // and notFooQuery should have eid 1, 0, & 2
     ents = notFooQuery(world)
     strictEqual(ents.length, 3)
     strictEqual(ents[0], 1)

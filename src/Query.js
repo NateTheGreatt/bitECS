@@ -7,8 +7,17 @@ export function Not(c) { return function QueryNot() { return c } }
 export function Or(c) { return function QueryOr() { return c } }
 export function Changed(c) { return function QueryChanged() { return c } }
 
+export function Any(...comps) { return function QueryAny() { return comps }}
+export function All(...comps) { return function QueryAll() { return comps }}
+export function None(...comps) { return function QueryNone() { return comps }}
+
 export const $queries = Symbol('queries')
 export const $notQueries = Symbol('notQueries')
+
+export const $queryAny = Symbol('queryAny')
+export const $queryAll = Symbol('queryAll')
+export const $queryNone = Symbol('queryNone')
+
 export const $queryMap = Symbol('queryMap')
 export const $dirtyQueries = Symbol('$dirtyQueries')
 export const $queryComponents = Symbol('queryComponents')
@@ -96,13 +105,7 @@ export const registerQuery = (world, query) => {
 
   const notMasks = notComponents
     .map(mapComponents)
-    .reduce((a,c) => {
-      if (!a[c.generationId]) {
-        a[c.generationId] = 0
-      }
-      a[c.generationId] |= c.bitflag
-      return a
-    }, {})
+    .reduce(reduceBitflags, {})
 
   // const orMasks = orComponents
   //   .map(mapComponents)
@@ -143,14 +146,8 @@ export const registerQuery = (world, query) => {
   world[$queryMap].set(query, q)
   world[$queries].add(q)
   
-  components.map(mapComponents).forEach(c => {
+  allComponents.forEach(c => {
     c.queries.add(q)
-  })
-  notComponents.map(mapComponents).forEach(c => {
-    c.notQueries.add(q)
-  })
-  changedComponents.map(mapComponents).forEach(c => {
-    c.changedQueries.add(q)
   })
 
   if (notComponents.length) world[$notQueries].add(q)
@@ -172,11 +169,13 @@ const diff = (q, clearDiff) => {
     for (let pid = 0; pid < flatProps.length; pid++) {
       const prop = flatProps[pid]
       const shadow = shadows[pid]
+      // console.log('hi', shadow)
       if (ArrayBuffer.isView(prop[eid])) {
         for (let i = 0; i < prop[eid].length; i++) {
           if (prop[eid][i] !== shadow[eid][i]) {
             dirty = true
             shadow[eid][i] = prop[eid][i]
+            break
           }
         }
       } else {
@@ -204,6 +203,13 @@ const diff = (q, clearDiff) => {
 //   })
 // }
 
+const flatten = (a,v) => a.concat(v)
+
+const aggregateComponentsFor = mod => x => x.filter(f => f.name === mod().constructor.name).reduce(flatten)
+
+const getAnyComponents = aggregateComponentsFor(Any)
+const getAllComponents = aggregateComponentsFor(All)
+const getNoneComponents = aggregateComponentsFor(None)
 
 /**
  * Defines a query function which returns a matching set of entities when called on a world.
@@ -212,7 +218,18 @@ const diff = (q, clearDiff) => {
  * @returns {function} query
  */
 
-export const defineQuery = (components) => {
+export const defineQuery = (...args) => {
+  let components
+  let any, all, none
+  if (Array.isArray(args[0])) {
+    components = args[0]
+  } else {
+    any = getAnyComponents(args)
+    all = getAllComponents(args)
+    none = getNoneComponents(args)
+  }
+  
+
   if (components === undefined || components[$componentMap] !== undefined) {
     return world => world ? world[$entityArray] : components[$entityArray]
   }
@@ -229,14 +246,19 @@ export const defineQuery = (components) => {
 
     return q.dense
   }
+
   query[$queryComponents] = components
+  query[$queryAny] = any
+  query[$queryAll] = all
+  query[$queryNone] = none
+
   return query
 }
 
 // TODO: archetype graph
 export const queryCheckEntity = (world, q, eid) => {
   const { masks, notMasks, generations } = q
-  // let or = true
+  let or = 0
   for (let i = 0; i < generations.length; i++) {
     const generationId = generations[i]
     const qMask = masks[generationId]
@@ -244,12 +266,15 @@ export const queryCheckEntity = (world, q, eid) => {
     // const qOrMask = orMasks[generationId]
     const eMask = world[$entityMasks][generationId][eid]
     
+    // any
     // if (qOrMask && (eMask & qOrMask) !== qOrMask) {
     //   continue
     // }
-    if (qNotMask && (eMask & qNotMask) !== 0) {
+    // none
+    if (qNotMask && (eMask & qNotMask) === qNotMask) {
       return false
     }
+    // all
     if (qMask && (eMask & qMask) !== qMask) {
       return false
     }
