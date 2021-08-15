@@ -78,6 +78,7 @@ const Position = defineComponent(Vector3)
 const Velocity = defineComponent(Vector3)
 const List = defineComponent({ values: [Types.f32, 3] }) // [type, length]
 const Tag = defineComponent()
+const Reference = defineComponent({ entity: Types.eid }) // Types.eid is used as a reference type
 ```
 
 Add components to an entity in a world:
@@ -86,12 +87,18 @@ addComponent(world, Position, eid)
 addComponent(world, Velocity, eid)
 addComponent(world, List, eid)
 addComponent(world, Tag, eid)
+addComponent(world, Reference, eid)
 ```
 
 Component data is accessed directly via `eid` which is how high performance iteration is achieved:
 ```js
 Position.x[eid] = 1
 Position.y[eid] = 1
+```
+
+References to other entities can be stored as such:
+```js
+Reference.entity[eid] = eid2
 ```
 
 Array types are regular fixed-size TypedArrays:
@@ -336,6 +343,7 @@ Deserialization will never remove entities, and will only add them.
  - `APPEND` - only creates new entities, never overwrites existing entity data.
  - `MAP` - acts like `REPLACE` but every serialized EID is assigned a local EID which is memorized for all subsequent deserializations onto the target world.
     - useful when deserializing server ECS state onto a client ECS world to avoid EID collisions but still maintain the server-side EID relationship
+    - this maintains reference relationships made with `Types.eid`
 
 ```js
 const mode = DESERIALIZE_MODE.MAP
