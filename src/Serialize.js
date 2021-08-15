@@ -1,4 +1,4 @@
-import { $indexBytes, $indexType, $serializeShadow, $storeBase, $storeFlattened, $tagStore, createShadow } from "./Storage.js"
+import { $indexBytes, $indexType, $isEidType, $serializeShadow, $storeBase, $storeFlattened, $tagStore, createShadow } from "./Storage.js"
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
 import { $entityArray, $entitySparseSet, addEntity, eidToWorld } from "./Entity.js"
 import { $localEntities } from "./World.js"
@@ -281,14 +281,17 @@ export const defineDeserializer = (target) => {
 
             const value = view[`get${array.constructor.name.replace('Array', '')}`](where)
             where += array.BYTES_PER_ELEMENT
-
-            prop[eid][index] = value
+            if (prop[$isEidType]) {
+              prop[eid][index] = localEntities.get(value)
+            } else prop[eid][index] = value
           }
         } else {
           const value = view[`get${prop.constructor.name.replace('Array', '')}`](where)
           where += prop.BYTES_PER_ELEMENT
 
-          prop[eid] = value
+          if (prop[$isEidType]) {
+            prop[eid] = localEntities.get(value)
+          } else prop[eid] = value
         }
       }
     }

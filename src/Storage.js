@@ -7,7 +7,8 @@ export const TYPES_ENUM = {
   i32: 'i32',
   ui32: 'ui32',
   f32: 'f32',
-  f64: 'f64'
+  f64: 'f64',
+  eid: 'eid',
 }
 
 export const TYPES_NAMES = {
@@ -18,6 +19,7 @@ export const TYPES_NAMES = {
   ui16: 'Uint16',
   i32: 'Int32',
   ui32: 'Uint32',
+  eid: 'Uint32',
   f32: 'Float32',
   f64: 'Float64'
 }
@@ -31,7 +33,8 @@ export const TYPES = {
   i32: Int32Array,
   ui32: Uint32Array,
   f32: Float32Array,
-  f64: Float64Array
+  f64: Float64Array,
+  eid: Uint32Array,
 }
 
 const UNSIGNED_MAX = {
@@ -64,6 +67,8 @@ export const $serializeShadow = Symbol('serializeShadow')
 export const $indexType = Symbol('indexType')
 export const $indexBytes = Symbol('indexBytes')
 
+export const $isEidType = Symbol('isEidType')
+
 const stores = {}
 
 export const resize = (ta, size) => {
@@ -88,7 +93,7 @@ export const createShadow = (store, key) => {
 
 const resizeSubarray = (metadata, store, size) => {
   const cursors = metadata[$subarrayCursors]
-  const type = store[$storeType]
+  let type = store[$storeType]
   const length = store[0].length
   const indexType =
     length <= UNSIGNED_MAX.uint8
@@ -107,7 +112,7 @@ const resizeSubarray = (metadata, store, size) => {
 
   const array = new TYPES[type](roundToMultiple4(summedLength * size))
 
-  console.log(array.length, metadata[$storeSubarrays][type].length, type)
+  // console.log(array.length, metadata[$storeSubarrays][type].length, type)
 
   array.set(metadata[$storeSubarrays][type])
   
@@ -208,7 +213,9 @@ export const resetStoreFor = (store, eid) => {
 const createTypeStore = (type, length) => {
   const totalBytes = length * TYPES[type].BYTES_PER_ELEMENT
   const buffer = new ArrayBuffer(totalBytes)
-  return new TYPES[type](buffer)
+  const store = new TYPES[type](buffer)
+  store[$isEidType] = type === TYPES_ENUM.eid
+  return store
 }
 
 export const parentArray = store => store[$parentArray]
@@ -217,6 +224,7 @@ const createArrayStore = (metadata, type, length) => {
   const size = metadata[$storeSize]
   const store = Array(size).fill(0)
   store[$storeType] = type
+  store[$isEidType] = type === TYPES_ENUM.eid
 
   const cursors = metadata[$subarrayCursors]
   const indexType =
