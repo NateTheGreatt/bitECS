@@ -20,13 +20,16 @@ const canonicalize = (target) => {
     componentProps = target
       .map(p => {
         if (!p) throw new Error('bitECS - Cannot serialize undefined component')
-        if (typeof p === 'function' && p.name === 'QueryChanged') {
-          p()[$storeFlattened].forEach(prop => {
-            const $ = Symbol()
-            createShadow(prop, $)
-            changedProps.set(prop, $)
-          })
-          return p()[$storeFlattened]
+        if (typeof p === 'function') {
+          const [c, mod] = p()
+          if (mod === 'changed') {
+            c[$storeFlattened].forEach(prop => {
+              const $ = Symbol()
+              createShadow(prop, $)
+              changedProps.set(prop, $)
+            })
+            return p()[$storeFlattened]
+          }
         }
         if (Object.getOwnPropertySymbols(p).includes($storeFlattened)) {
           return p[$storeFlattened]
@@ -239,7 +242,6 @@ export const defineDeserializer = (target) => {
         where += 4
 
         if (mode === DESERIALIZE_MODE.MAP) {
-
           if (localEntities.has(eid)) {
             eid = localEntities.get(eid)
           } else if (newEntities.has(eid)) {
@@ -282,7 +284,9 @@ export const defineDeserializer = (target) => {
             const value = view[`get${array.constructor.name.replace('Array', '')}`](where)
             where += array.BYTES_PER_ELEMENT
             if (prop[$isEidType]) {
-              prop[eid][index] = localEntities.get(value)
+              let localEid = localEntities.get(value)
+              if (!world[$entitySparseSet].has(localEid)) localEid = addEntity(world)
+              prop[eid][index] = localEid
             } else prop[eid][index] = value
           }
         } else {
@@ -290,7 +294,9 @@ export const defineDeserializer = (target) => {
           where += prop.BYTES_PER_ELEMENT
 
           if (prop[$isEidType]) {
-            prop[eid] = localEntities.get(value)
+            let localEid = localEntities.get(value)
+            if (!world[$entitySparseSet].has(localEid)) localEid = addEntity(world)
+            prop[eid] = localEid
           } else prop[eid] = value
         }
       }

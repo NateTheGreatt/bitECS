@@ -131,11 +131,11 @@ class Vector3Proxy {
   set z (val) { this.store.z[this.eid] = val }
 }
 
-class PositionProxy extends Vector2Proxy {
+class PositionProxy extends Vector3Proxy {
   constructor(eid) { super(Position, eid) }
 }
 
-class VelocityProxy extends Vector2Proxy {
+class VelocityProxy extends Vector3Proxy {
   constructor(eid) { super(Velocity, eid) }
 }
 

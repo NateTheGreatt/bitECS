@@ -3,13 +3,15 @@ import { $queryShadow, $storeFlattened, $tagStore, createShadow } from './Storag
 import { $componentMap, registerComponent } from './Component.js'
 import { $entityMasks, $entityArray, getEntityCursor, $entitySparseSet } from './Entity.js'
 
-export function Not(c) { return function QueryNot() { return c } }
-export function Or(c) { return function QueryOr() { return c } }
-export function Changed(c) { return function QueryChanged() { return c } }
 
-export function Any(...comps) { return function QueryAny() { return comps }}
-export function All(...comps) { return function QueryAll() { return comps }}
-export function None(...comps) { return function QueryNone() { return comps }}
+
+export function Not(c) { return () => [c, 'not'] }
+export function Or(c) { return () => [c, 'or'] }
+export function Changed(c) { return () => [c, 'changed'] }
+
+export function Any(...comps) { return function QueryAny() { return comps } }
+export function All(...comps) { return function QueryAll() { return comps } }
+export function None(...comps) { return function QueryNone() { return comps } }
 
 export const $queries = Symbol('queries')
 export const $notQueries = Symbol('notQueries')
@@ -56,12 +58,12 @@ export const registerQuery = (world, query) => {
 
   query[$queryComponents].forEach(c => {
     if (typeof c === 'function') {
-      const comp = c()
+      const [comp, mod] = c()
       if (!world[$componentMap].has(comp)) registerComponent(world, comp)
-      if (c.name === 'QueryNot') {
+      if (mod === 'not') {
         notComponents.push(comp)
       }
-      if (c.name === 'QueryChanged') {
+      if (mod === 'changed') {
         changedComponents.push(comp)
         components.push(comp)
       }
