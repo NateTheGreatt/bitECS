@@ -7,9 +7,10 @@
     "type": "git",
     "url": "https://github.com/NateTheGreatt/bitECS"
   },
-  "types": "./dist/index.d.ts",
+  "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -30,10 +31,10 @@
   ],
   "scripts": {
     "test": "c8 mocha test --recursive",
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/build.js",
     "watch": "npm run build -- -w",
     "twatch": "npm run build -- -w -t",
-    "docs": "node scripts/docs.mjs",
+    "docs": "node scripts/docs.js",
     "dist": "npm run test && npm run build -- -t && npm run docs"
   },
   "devDependencies": {

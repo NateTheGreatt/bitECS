@@ -11,7 +11,7 @@ import sloc from 'sloc'
 import gzipSize from 'gzip-size'
 import brotliSize from 'brotli-size'
 import { sizeFormatter } from 'human-readable'
-import { logLogo } from './logLogo.mjs'
+import { logLogo } from './logLogo.js'
 
 const argv = minimist(process.argv.slice(2))
 const types = argv.t || argv.types
