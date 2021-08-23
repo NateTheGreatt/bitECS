@@ -7,12 +7,15 @@
     "type": "git",
     "url": "https://github.com/NateTheGreatt/bitECS"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.es.js",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
-    "import": "./dist/index.es.js",
-    "require": "./dist/index.js"
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
   },
   "author": {
     "name": "Nathaniel Martin",
@@ -27,35 +30,30 @@
     }
   ],
   "scripts": {
-    "build": "rollup -c",
     "test": "c8 mocha test --recursive",
+    "build": "node scripts/build.js",
+    "watch": "npm run build -- -w",
+    "twatch": "npm run build -- -w -t",
     "docs": "node scripts/docs.js",
-    "dist": "npm run test && npm run build && npm run docs"
+    "dist": "npm run test && npm run build -- -t && npm run docs"
   },
   "devDependencies": {
-    "@babel/core": "^7.13.16",
-    "@babel/preset-env": "^7.12.1",
-    "@rollup/plugin-babel": "^5.3.0",
-    "babel": "^6.23.0",
+    "boxen": "^5.0.1",
+    "brotli-size": "^4.0.0",
     "c8": "^7.7.2",
+    "chalk": "^2.4.2",
     "dmd-readable": "^1.2.4",
+    "esbuild": "^0.12.20",
+    "fs-extra": "^8.1.0",
     "globby": "^11.0.1",
+    "gradient-string": "^1.2.0",
+    "gzip-size": "^6.0.0",
+    "human-readable": "^0.2.1",
     "jsdoc-to-markdown": "^7.0.1",
+    "minimist": "^1.2.5",
     "mocha": "^8.3.2",
-    "rollup": "^2.32.1",
-    "rollup-plugin-copy": "^3.4.0"
-  },
-  "babel": {
-    "presets": [
-      [
-        "@babel/preset-env",
-        {
-          "targets": {
-            "node": "current"
-          }
-        }
-      ]
-    ]
-  },
-  "type": "module"
+    "ora": "^5.4.1",
+    "sloc": "^0.2.1",
+    "typescript": "^4.3.5"
+  }
 }
