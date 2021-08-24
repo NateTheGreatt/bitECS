@@ -1,7 +1,8 @@
 import assert, { strictEqual } from 'assert'
 import { getDefaultSize } from '../../src/Entity.js'
 import { Types } from '../../src/index.js'
-import { createStore, resizeStore, TYPES } from '../../src/Storage.js'
+import { createStore, resizeStore } from '../../src/Storage.js'
+import { TYPES } from '../../src/Constants.js'
 
 let defaultSize = getDefaultSize()
 
@@ -54,6 +55,7 @@ describe('Storage Integration Tests', () => {
       assert(store.array[5] !== undefined)
       strictEqual(store.array[6], undefined)
 
+      // console.log(store.array[0])
       assert(arraysEqual(Array.from(store.array[0]), [1,2,3,4]))
       assert(arraysEqual(Array.from(store.array[1]), [5,6,7,8]))
       assert(arraysEqual(Array.from(store.array[2]), [9,10,11,12]))

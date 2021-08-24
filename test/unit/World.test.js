@@ -6,7 +6,7 @@ import { createWorld, $size, $bitflag } from '../../src/World.js'
 
 const defaultSize = getDefaultSize()
 
-describe('World Integration Tests', () => {
+describe('World Unit Tests', () => {
   afterEach(() => {
     resetGlobals()
   })
