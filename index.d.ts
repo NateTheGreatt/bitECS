@@ -11,7 +11,7 @@ declare module 'bitecs' {
     'f64'
 
   export type ListType = readonly [Type, number];
-  
+
   export const Types: {
     i8: "i8"
     ui8: "ui8"
@@ -54,17 +54,37 @@ declare module 'bitecs' {
     MAP
   }
 
+  type BuildPowersOf2LengthArrays<N extends number, R extends never[][]> = R[0][N] extends never ? R : BuildPowersOf2LengthArrays<N, [[...R[0], ...R[0]], ...R]>;
+  type ConcatLargestUntilDone<N extends number, R extends never[][], B extends never[]> = B["length"] extends N ? B : [...R[0], ...B][N] extends never
+    ? ConcatLargestUntilDone<N, R extends [R[0], ...infer U] ? U extends never[][] ? U : never : never, B>
+    : ConcatLargestUntilDone<N, R extends [R[0], ...infer U] ? U extends never[][] ? U : never : never, [...R[0], ...B]>;
+  type Replace<R extends any[], T> = { [K in keyof R]: T }
+  type TupleOf<T, N extends number> = number extends N ? T[] : {
+    [K in N]:
+    BuildPowersOf2LengthArrays<K, [[never]]> extends infer U ? U extends never[][]
+    ? Replace<ConcatLargestUntilDone<K, U, []>, T> : never : never;
+  }[N]
+  type TuplePop<T> = T extends [any, ...infer L] ? L : never
+
+  export type ArrayType<T, L extends number> = Omit<T, number> & {length: L} & {[K in NonNullable<Partial<TuplePop<TupleOf<any, L>>>["length"]>]: number}
+
   export type ComponentType<T extends ISchema> = {
-    [key in keyof T]: T[key] extends Type
-      ? ArrayByType[T[key]]
-      : T[key] extends [infer RT, number]
-      ? RT extends Type
-        ? Array<ArrayByType[RT]>
+    [K in keyof T]: T[K] extends Type
+    ? ArrayByType[T[K]]
+    : T[K] extends readonly [infer RT, number]
+    ? RT extends Type
+      ? T[K] extends readonly [RT, infer L]
+        ? L extends number
+          ? number extends L
+            ? ArrayByType[RT][]
+            : ArrayType<ArrayByType[RT], L>[]
+          : unknown
         : unknown
-      : T[key] extends ISchema
-      ? ComponentType<T[key]>
-      : unknown;
-  };
+      : unknown
+    : T[K] extends ISchema
+    ? ComponentType<T[K]>
+    : unknown
+  } & {}
 
   export interface IWorld {
     [key: string]: any
@@ -121,8 +141,8 @@ declare module 'bitecs' {
 
   export function defineSerializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier, maxBytes?: number): Serializer
   export function defineDeserializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier): Deserializer
-  
+
   export function pipe(...fns: ((...args: any[]) => any)[]): (...input: any[]) => any
-  
+
   export const parentArray: Symbol
 }
