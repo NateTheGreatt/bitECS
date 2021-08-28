@@ -102,7 +102,7 @@ export const hasComponent = (world, component, eid) => {
  * @param {number} eid
  * @param {boolean} [reset=false]
  */
-export const addComponent = (world, component, eid, reset=false) => {
+export const addComponent = (world, component, eid, reset=true) => {
   if (!world[$componentMap].has(component)) registerComponent(world, component)
   if (hasComponent(world, component, eid)) return
 
@@ -133,7 +133,7 @@ export const addComponent = (world, component, eid, reset=false) => {
  * @param {number} eid
  * @param {boolean} [reset=true]
  */
-export const removeComponent = (world, component, eid, reset=true) => {
+export const removeComponent = (world, component, eid, reset=false) => {
   const c = world[$componentMap].get(component)
   const { generationId, bitflag, queries, notQueries } = c
 

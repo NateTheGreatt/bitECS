@@ -35,7 +35,7 @@
     "watch": "npm run build -- -w",
     "twatch": "npm run build -- -w -t",
     "docs": "node scripts/docs.js",
-    "dist": "npm run test && npm run build -- -t && npm run docs"
+    "dist": "npm run test && npm run build && npm run docs"
   },
   "devDependencies": {
     "boxen": "^5.0.1",

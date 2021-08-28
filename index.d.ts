@@ -103,8 +103,8 @@ declare module 'bitecs' {
   export function registerComponent(world: IWorld, component: Component): void
   export function registerComponents(world: IWorld, components: Component[]): void
   export function defineComponent<T extends ISchema>(schema?: T): ComponentType<T>
-  export function addComponent(world: IWorld, component: Component, eid: number): void
-  export function removeComponent(world: IWorld, component: Component, eid: number): void
+  export function addComponent(world: IWorld, component: Component, eid: number, reset?: boolean): void
+  export function removeComponent(world: IWorld, component: Component, eid: number, reset?: boolean): void
   export function hasComponent(world: IWorld, component: Component, eid: number): boolean
   export function getEntityComponents(world: IWorld, eid: number): Component[]
 

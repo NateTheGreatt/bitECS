@@ -67,6 +67,15 @@ export const registerQuery = (world, query) => {
         changedComponents.push(comp)
         components.push(comp)
       }
+      // if (mod === 'all') {
+      //   allComponents.push(comp)
+      // }
+      // if (mod === 'any') {
+      //   anyComponents.push(comp)
+      // }
+      // if (mod === 'none') {
+      //   noneComponents.push(comp)
+      // }
     } else {
       if (!world[$componentMap].has(c)) registerComponent(world, c)
       components.push(c)
@@ -257,6 +266,19 @@ export const defineQuery = (...args) => {
   return query
 }
 
+
+// function bin (value) {
+//   if (!Number.isSafeInteger(value)) {
+//     throw new TypeError('value must be a safe integer');
+//   }
+
+//   const negative = value < 0;
+//   const twosComplement = negative ? Number.MAX_SAFE_INTEGER + value + 1 : value;
+//   const signExtend = negative ? '1' : '0';
+
+//   return twosComplement.toString(2).padStart(53, '0').padStart(64, signExtend);
+// }
+
 // TODO: archetype graph
 export const queryCheckEntity = (world, q, eid) => {
   const { masks, notMasks, generations } = q
@@ -272,8 +294,11 @@ export const queryCheckEntity = (world, q, eid) => {
     // if (qOrMask && (eMask & qOrMask) !== qOrMask) {
     //   continue
     // }
-    // none
-    if (qNotMask && (eMask & qNotMask) === qNotMask) {
+    // not all 
+    // if (qNotMask && (eMask & qNotMask) === qNotMask) {
+    // }
+    // not any (none)
+    if (qNotMask && (eMask & qNotMask) > 0) {
       return false
     }
     // all

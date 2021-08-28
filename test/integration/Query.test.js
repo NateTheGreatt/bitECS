@@ -105,9 +105,7 @@ describe('Query Integration Tests', () => {
 
     // notFooBarQuery should have eid 0 and 1 (inverse of fooBarQuery)
     ents = notFooBarQuery(world)
-    strictEqual(ents.length, 2)
-    strictEqual(ents[0], 0)
-    strictEqual(ents[1], 1)
+    strictEqual(ents.length, 0)
     
     // and notFooQuery should have eid 1
     ents = notFooQuery(world)
@@ -135,11 +133,10 @@ describe('Query Integration Tests', () => {
     strictEqual(ents.length, 1)
     strictEqual(ents[0], 2)
 
-    // notFooBarQuery should have eid 0 and 1
+    // notFooBarQuery should only have eid 0
     ents = notFooBarQuery(world)
-    strictEqual(ents.length, 2)
+    strictEqual(ents.length, 1)
     strictEqual(ents[0], 0)
-    strictEqual(ents[1], 1)
 
 
     /* remove more components */
@@ -149,10 +146,9 @@ describe('Query Integration Tests', () => {
 
     // notFooBarQuery should have eid 0 & 2
     ents = notFooBarQuery(world)
-    strictEqual(ents.length, 3)
+    strictEqual(ents.length, 2)
     strictEqual(ents[0], 0)
-    strictEqual(ents[1], 1)
-    strictEqual(ents[2], 2)
+    strictEqual(ents[1], 2)
     
     // and notFooQuery should have eid 1, 0, & 2
     ents = notFooQuery(world)
