@@ -93,7 +93,7 @@ export const registerQuery = (world, query) => {
   const archetypes = []
   // const changed = SparseSet()
   const changed = []
-  const toRemove = []
+  const toRemove = SparseSet()
   const entered = []
   const exited = []
 
@@ -323,8 +323,10 @@ export const queryAddEntity = (q, eid) => {
 }
 
 const queryCommitRemovals = (q) => {
-  while (q.toRemove.length) {
-    q.remove(q.toRemove.pop())
+  for (let i = 0; i < q.toRemove.dense.length; i++) {
+    const eid = q.toRemove.dense[i]
+    q.toRemove.remove(eid)
+    q.remove(eid)
   }
 }
 
@@ -334,8 +336,8 @@ export const commitRemovals = (world) => {
 }
 
 export const queryRemoveEntity = (world, q, eid) => {
-  if (!q.has(eid)) return
-  q.toRemove.push(eid)
+  if (!q.has(eid) || q.toRemove.has(eid)) return
+  q.toRemove.add(eid)
   world[$dirtyQueries].add(q)
   q.exited.push(eid)
 }
