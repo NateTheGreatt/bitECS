@@ -1,9 +1,11 @@
-import { strictEqual } from 'assert'
+import assert, { strictEqual } from 'assert'
 import { createWorld } from '../../src/World.js'
 import { addComponent, defineComponent } from '../../src/Component.js'
 import { addEntity, resetGlobals } from '../../src/Entity.js'
 import { defineQuery, defineSerializer, defineDeserializer, Types } from '../../src/index.js'
 import { DESERIALIZE_MODE } from '../../src/Serialize.js'
+
+const arraysEqual = (a,b) => !!a && !!b && !(a<b || b<a)
 
 describe('Serialize Integration Tests', () => {
   afterEach(() => {
@@ -70,6 +72,39 @@ describe('Serialize Integration Tests', () => {
 
     strictEqual(TestComponent.value[eid], 0)
   })
+  it('should serialize/deserialize array types on components', () => {
+    const world1 = createWorld()
+    const world2 = createWorld()
+
+    const ArrayComponent = defineComponent({ array: [Types.f32, 4] })
+    const TestComponent = defineComponent({ value: Types.f32 })
+    const query = defineQuery([ArrayComponent, TestComponent])
+
+    const serialize = defineSerializer([ArrayComponent, TestComponent])
+    const deserialize = defineDeserializer([ArrayComponent, TestComponent])
+
+    const eid = addEntity(world1)
+    addComponent(world1, TestComponent, eid)
+    addComponent(world1, ArrayComponent, eid)
+
+    TestComponent.value[eid] = 1
+    ArrayComponent.array[eid].set([1,2,3,4])
+    
+    strictEqual(TestComponent.value[eid], 1)
+    assert(arraysEqual(Array.from(ArrayComponent.array[eid]), [1,2,3,4]))
+
+    const packet = serialize(query(world1))
+    strictEqual(packet.byteLength, 43)
+
+    TestComponent.value[eid] = 0
+    ArrayComponent.array[eid].set([0,0,0,0])
+    
+    deserialize(world1, packet)
+    
+    strictEqual(TestComponent.value[eid], 1)
+    assert(arraysEqual(Array.from(ArrayComponent.array[eid]), [1,2,3,4]))
+
+  })
   it('should deserialize properly with APPEND behavior', () => {
     const world = createWorld()
     const TestComponent = defineComponent({ value: Types.f32 })
@@ -119,5 +154,8 @@ describe('Serialize Integration Tests', () => {
     
     deserialize(world, packet, DESERIALIZE_MODE.MAP)
     strictEqual(TestComponent.value[eid+1], 1)
+  })
+  it('should maintain references when deserializing', () => {
+    
   })
 })

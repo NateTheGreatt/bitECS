@@ -28,7 +28,7 @@ const canonicalize = (target) => {
               createShadow(prop, $)
               changedProps.set(prop, $)
             })
-            return p()[$storeFlattened]
+            return c[$storeFlattened]
           }
         }
         if (Object.getOwnPropertySymbols(p).includes($storeFlattened)) {
@@ -117,7 +117,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           if (ArrayBuffer.isView(prop[eid])) {
             let dirty = false
             for (let i = 0; i < prop[eid].length; i++) {
-              if(prop[eid][i] !== prop[eid][$diff][i]) {
+              if(prop[eid][i] !== prop[$diff][eid][i]) {
                 dirty = true
                 break
               }
@@ -152,7 +152,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           for (let i = 0; i < prop[eid].length; i++) {
             const value = prop[eid][i]
 
-            if ($diff && prop[eid][i] === prop[eid][$diff][i]) {
+            if ($diff && prop[eid][i] === prop[$diff][eid][i]) {
               continue
             }
 
