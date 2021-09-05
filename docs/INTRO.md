@@ -202,20 +202,20 @@ const enteredEnts = exitedMovementQuery(world)
 
 ## 🛸 System
 
-Systems are functions and are run against a world to update component state of entities, or anything else.
+Systems are regular functions which are run against a world to update component state of entities, or anything else.
 
-Queries are used inside of systems to obtain a relevant set of entities and perform operations on their component data.
+Queries should be used inside of system functions to obtain a relevant set of entities and perform operations on their component data.
 
 While not required, it is greatly encouraged that you keep all component data mutations inside of systems.
 
 Define a system that moves entity positions based on their velocity:
 ```js
-const movementSystem = defineSystem((world) => {
+const movementSystem = (world) => {
   // optionally apply logic to entities added to the query
   const entered = enteredMovementQuery(world)
   for (let i = 0; i < entered.length; i++) {
     const eid = ents[i]
-    
+    // ...
   }
 
   // apply system logic
@@ -237,9 +237,11 @@ const movementSystem = defineSystem((world) => {
   const exited = exitedMovementQuery(world)
   for (let i = 0; i < exited.length; i++) {
     const eid = ents[i]
-    
+    // ...
   }
-})
+
+  return world
+}
 ```
 
 Define a system which tracks time:
@@ -250,13 +252,15 @@ world.time = {
   elapsed: 0,
   then: performance.now()
 }
-const timeSystem = defineSystem(world => {
+const timeSystem = world => {
+  const { time } = world
   const now = performance.now()
-  const delta = now - world.time.then
-  world.time.delta = delta
-  world.time.elapsed += delta
-  world.time.then = now
-})
+  const delta = now - time.then
+  time.delta = delta
+  time.elapsed += delta
+  time.then = now
+  return world
+}
 ```
 
 Systems are used to update entities of a world:
@@ -264,7 +268,7 @@ Systems are used to update entities of a world:
 movementSystem(world)
 ```
 
-Pipelines of systems can be composed with the `pipe` function:
+Pipelines of functions can be composed with the `pipe` function:
 ```js
 const pipeline = pipe(
   movementSystem,

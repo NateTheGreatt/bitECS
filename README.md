@@ -45,7 +45,6 @@ import {
   defineQuery,
   addEntity,
   addComponent,
-  defineSystem,
   pipe,
 } from 'bitecs'
 
@@ -55,7 +54,7 @@ const Velocity = defineComponent(Vector3)
 
 const movementQuery = defineQuery([Position, Velocity])
 
-const movementSystem = defineSystem((world) => {
+const movementSystem = (world) => {
   const ents = movementQuery(world)
   for (let i = 0; i < ents.length; i++) {
     const eid = ents[i]
@@ -63,16 +62,16 @@ const movementSystem = defineSystem((world) => {
     Position.y[eid] += Velocity.y[eid]
     Position.z[eid] += Velocity.z[eid]
   }
-})
+}
 
-const timeSystem = defineSystem(world => {
+const timeSystem = world => {
   const { time } = world
   const now = performance.now()
   const delta = now - time.then
   time.delta = delta
   time.elapsed += delta
   time.then = now
-})
+}
 
 const pipeline = pipe(movementSystem, timeSystem)
 
