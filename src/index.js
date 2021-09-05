@@ -8,19 +8,11 @@ import { parentArray } from './Storage.js'
 import { TYPES_ENUM } from './Constants.js'
 // import { defineProxy } from './Proxy.js'
 
-export const pipe = (...fns) => (...args) => {
-  const input = Array.isArray(args[0]) ? args[0] : args
-  if (!input || input.length === 0) return
-  fns = Array.isArray(fns[0]) ? fns[0] : fns
+export const pipe = (...fns) => (input) => {
   let tmp = input
   for (let i = 0; i < fns.length; i++) {
     const fn = fns[i]
-    if (Array.isArray(tmp)) {
-      // tmp = tmp.reduce((a,v) => a.concat(fn(v)),[])
-      tmp = fn(...tmp)
-    } else {
-      tmp = fn(tmp)
-    }
+    tmp = fn(tmp)
   }
   return tmp
 }
