@@ -113,7 +113,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 
         // skip if diffing and no change
         // TODO: optimize array diff
-        if ($diff) {
+        if ($diff && !prop[$tagStore]) {
           if (ArrayBuffer.isView(prop[eid])) {
             let dirty = false
             for (let i = 0; i < prop[eid].length; i++) {
@@ -144,7 +144,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 
           // add space for count of dirty array elements
           const countWhere2 = where
-          where += 1
+          where += indexBytes
 
           let count2 = 0
 
