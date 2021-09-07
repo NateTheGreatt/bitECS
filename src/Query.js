@@ -142,6 +142,7 @@ export const registerQuery = (world, query) => {
     components,
     notComponents,
     changedComponents,
+    allComponents,
     masks,
     notMasks,
     // orMasks,
@@ -165,9 +166,8 @@ export const registerQuery = (world, query) => {
 
   for (let eid = 0; eid < getEntityCursor(); eid++) {
     if (!world[$entitySparseSet].has(eid)) continue
-    if (queryCheckEntity(world, q, eid)) {
-      queryAddEntity(q, eid)
-    }
+    const match = queryCheckEntity(world, q, eid)
+    if (match) queryAddEntity(q, eid)
   }
 }
 
@@ -266,18 +266,17 @@ export const defineQuery = (...args) => {
   return query
 }
 
+const bin = value => {
+  if (!Number.isSafeInteger(value)) {
+    throw new TypeError('value must be a safe integer');
+  }
 
-// function bin (value) {
-//   if (!Number.isSafeInteger(value)) {
-//     throw new TypeError('value must be a safe integer');
-//   }
+  const negative = value < 0;
+  const twosComplement = negative ? Number.MAX_SAFE_INTEGER + value + 1 : value;
+  const signExtend = negative ? '1' : '0';
 
-//   const negative = value < 0;
-//   const twosComplement = negative ? Number.MAX_SAFE_INTEGER + value + 1 : value;
-//   const signExtend = negative ? '1' : '0';
-
-//   return twosComplement.toString(2).padStart(53, '0').padStart(64, signExtend);
-// }
+  return twosComplement.toString(2).padStart(4, '0').padStart(0, signExtend);
+}
 
 // TODO: archetype graph
 export const queryCheckEntity = (world, q, eid) => {
@@ -297,8 +296,8 @@ export const queryCheckEntity = (world, q, eid) => {
     // not all 
     // if (qNotMask && (eMask & qNotMask) === qNotMask) {
     // }
-    // not any (none)
-    if (qNotMask && (eMask & qNotMask) > 0) {
+    // not any
+    if (qNotMask && (eMask & qNotMask) !== 0) {
       return false
     }
     // all
@@ -323,7 +322,7 @@ export const queryAddEntity = (q, eid) => {
 }
 
 const queryCommitRemovals = (q) => {
-  for (let i = 0; i < q.toRemove.dense.length; i++) {
+  for (let i = q.toRemove.dense.length-1; i >= 0; i--) {
     const eid = q.toRemove.dense[i]
     q.toRemove.remove(eid)
     q.remove(eid)

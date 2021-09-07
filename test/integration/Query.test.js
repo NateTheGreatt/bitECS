@@ -31,24 +31,24 @@ describe('Query Integration Tests', () => {
     const Foo = defineComponent({ value: Types.f32 })
     const notFooQuery = defineQuery([Not(Foo)])
     
-    const eid1 = addEntity(world)
+    const eid0 = addEntity(world)
 
     let ents = notFooQuery(world)
     strictEqual(ents.length, 1)
-    strictEqual(ents[0], eid1)
+    strictEqual(ents[0], eid0)
 
-    addComponent(world, Foo, eid1)
+    addComponent(world, Foo, eid0)
 
     ents = notFooQuery(world)
     strictEqual(ents.length, 0)
 
-    const eid2 = addEntity(world)
+    const eid1 = addEntity(world)
     
     ents = notFooQuery(world)
     strictEqual(ents.length, 1)
-    strictEqual(ents[0], eid2)
+    strictEqual(ents[0], eid1)
 
-    removeEntity(world, eid2)
+    removeEntity(world, eid1)
 
     ents = notFooQuery(world)
     strictEqual(ents.length, 0)
@@ -59,8 +59,8 @@ describe('Query Integration Tests', () => {
     const Foo = defineComponent()
     const Bar = defineComponent()
 
-    const notFooQuery = defineQuery([Not(Foo)])
     const fooQuery = defineQuery([Foo])
+    const notFooQuery = defineQuery([Not(Foo)])
 
     const fooBarQuery = defineQuery([Foo, Bar])
     const notFooBarQuery = defineQuery([Not(Foo), Not(Bar)])
@@ -82,28 +82,27 @@ describe('Query Integration Tests', () => {
     strictEqual(ents[1], 1)
     strictEqual(ents[2], 2)
 
-
     /* add components */
-
+    
     addComponent(world, Foo, eid0)
-
+    
     addComponent(world, Bar, eid1)
-
+    
     addComponent(world, Foo, eid2)
     addComponent(world, Bar, eid2)
-
+    
     // now fooQuery should have eid 0 & 2
     ents = fooQuery(world)
     strictEqual(ents.length, 2)
     strictEqual(ents[0], 0)
     strictEqual(ents[1], 2)
-
+    
     // fooBarQuery should only have eid 2
     ents = fooBarQuery(world)
     strictEqual(ents.length, 1)
     strictEqual(ents[0], 2)
 
-    // notFooBarQuery should have eid 0 and 1 (inverse of fooBarQuery)
+    // notFooBarQuery should have nothing
     ents = notFooBarQuery(world)
     strictEqual(ents.length, 0)
     
