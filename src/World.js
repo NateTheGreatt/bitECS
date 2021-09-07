@@ -9,6 +9,7 @@ export const $resizeThreshold = Symbol('resizeThreshold')
 export const $bitflag = Symbol('bitflag')
 export const $archetypes = Symbol('archetypes')
 export const $localEntities = Symbol('localEntities')
+export const $localEntityLookup = Symbol('localEntityLookp')
 
 export const worlds = []
 
@@ -66,6 +67,7 @@ export const resetWorld = (world) => {
   world[$dirtyQueries] = new Set()
 
   world[$localEntities] = new Map()
+  world[$localEntityLookup] = new Map()
 
   return world
 }
