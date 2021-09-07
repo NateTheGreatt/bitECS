@@ -62,6 +62,7 @@ const movementSystem = (world) => {
     Position.y[eid] += Velocity.y[eid]
     Position.z[eid] += Velocity.z[eid]
   }
+  return world
 }
 
 const timeSystem = world => {
@@ -71,6 +72,7 @@ const timeSystem = world => {
   time.delta = delta
   time.elapsed += delta
   time.then = now
+  return world
 }
 
 const pipeline = pipe(movementSystem, timeSystem)
