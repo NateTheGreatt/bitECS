@@ -1,6 +1,6 @@
 import { resizeComponents } from './Component.js'
 import { $notQueries, $queries, queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query.js'
-import { resizeWorlds } from './World.js'
+import { $localEntities, $localEntityLookup, resizeWorlds } from './World.js'
 import { setSerializationResized } from './Serialize.js'
 
 export const $entityMasks = Symbol('entityMasks')
@@ -106,6 +106,10 @@ export const removeEntity = (world, eid) => {
   // remove all eid state from world
   world[$entitySparseSet].remove(eid)
   world[$entityComponents].delete(eid)
+
+  // remove from deserializer mapping
+  world[$localEntities].delete(world[$localEntityLookup].get(eid))
+  world[$localEntityLookup].delete(eid)
 
   // Clear entity bitmasks
   for (let i = 0; i < world[$entityMasks].length; i++) world[$entityMasks][i][eid] = 0
