@@ -330,6 +330,7 @@ const queryCommitRemovals = (q) => {
 }
 
 export const commitRemovals = (world) => {
+  if (!world[$dirtyQueries].size) return
   world[$dirtyQueries].forEach(queryCommitRemovals)
   world[$dirtyQueries].clear()
 }
