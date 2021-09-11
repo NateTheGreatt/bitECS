@@ -323,7 +323,7 @@ deserializePositions(world, packet)
 
 Serialization which targets select component stores of entities
 whose component state has changed since the last call of the function:
-ℹ Unlike queries, using `Changed` with serializers actually *improves* performance less iterations).
+ℹ Unlike queries, using `Changed` with serializers actually *improves* performance (less iterations).
 ```js
 const serializeOnlyChangedPositions = defineSerializer([Changed(Position)])
 
