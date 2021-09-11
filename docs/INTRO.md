@@ -172,6 +172,7 @@ const positionWithoutVelocityQuery = defineQuery([ Position, Not(Velocity) ])
 ```
 
 Wrapping a component with the `Change` modifier creates a query which returns entities who are marked as changed since last call of the function:
+⚠ This performs an expensive diff. Use manual dirty flags for more performant mutation detection.
 ```js
 const changedPositionQuery = defineQuery([ Changed(Position) ])
 
@@ -322,6 +323,7 @@ deserializePositions(world, packet)
 
 Serialization which targets select component stores of entities
 whose component state has changed since the last call of the function:
+ℹ Unlike queries, using `Changed` with serializers actually *improves* performance less iterations).
 ```js
 const serializeOnlyChangedPositions = defineSerializer([Changed(Position)])
 
