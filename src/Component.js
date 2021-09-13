@@ -1,5 +1,5 @@
 import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage.js'
-import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity } from './Query.js'
+import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, commitRemovals } from './Query.js'
 import { $bitflag, $size } from './World.js'
 import { $entityMasks, getDefaultSize, eidToWorld, $entityComponents } from './Entity.js'
 
@@ -114,6 +114,8 @@ export const addComponent = (world, component, eid, reset=true) => {
 
   // todo: archetype graph
   queries.forEach(q => {
+    // remove this entity from toRemove if it exists in this query
+    if (q.toRemove.has(eid)) q.toRemove.remove(eid)
     const match = queryCheckEntity(world, q, eid)
     if (match) queryAddEntity(q, eid)
     if (!match) queryRemoveEntity(world, q, eid)
@@ -144,6 +146,8 @@ export const removeComponent = (world, component, eid, reset=false) => {
   
   // todo: archetype graph
   queries.forEach(q => {
+    // remove this entity from toRemove if it exists in this query
+    if (q.toRemove.has(eid)) q.toRemove.remove(eid)
     const match = queryCheckEntity(world, q, eid)
     if (match) queryAddEntity(q, eid)
     if (!match) queryRemoveEntity(world, q, eid)
