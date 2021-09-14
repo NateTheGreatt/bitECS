@@ -54,13 +54,11 @@ export const eidToWorld = new Map()
  */
 export const addEntity = (world) => {
   
-  const eid = removed.length > 0 ? removed.shift() : globalEntityCursor++
-  world[$entitySparseSet].add(eid)
-  eidToWorld.set(eid, world)
-
-  if (globalEntityCursor >= defaultSize) {
+  if (globalEntityCursor + 1 >= defaultSize) {
     console.error(`bitECS - max entities of ${defaultSize} reached, increase with setDefaultSize function.`)
+    return
   }
+
   // if data stores are 80% full
   // if (globalEntityCursor >= resizeThreshold()) {
   //   // grow by half the original size rounded up to a multiple of 4
@@ -73,6 +71,11 @@ export const addEntity = (world) => {
   //   setSerializationResized(true)
   //   console.info(`👾 bitECS - resizing all data stores from ${size} to ${size+amount}`)
   // }
+
+  const eid = removed.length > 0 ? removed.shift() : globalEntityCursor++
+  
+  world[$entitySparseSet].add(eid)
+  eidToWorld.set(eid, world)
 
   world[$notQueries].forEach(q => {
     const match = queryCheckEntity(world, q, eid)

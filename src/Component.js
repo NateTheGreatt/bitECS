@@ -1,7 +1,7 @@
 import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage.js'
 import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, commitRemovals } from './Query.js'
 import { $bitflag, $size } from './World.js'
-import { $entityMasks, getDefaultSize, eidToWorld, $entityComponents } from './Entity.js'
+import { $entityMasks, getDefaultSize, eidToWorld, $entityComponents, getGlobalSize, $entitySparseSet } from './Entity.js'
 
 export const $componentMap = Symbol('componentMap')
 
@@ -19,7 +19,7 @@ export const resizeComponents = (size) => {
  * @returns {object}
  */
 export const defineComponent = (schema) => {
-  const component = createStore(schema, getDefaultSize())
+  const component = createStore(schema, getGlobalSize())
   if (schema && Object.keys(schema).length) components.push(component)
   return component
 }
@@ -103,6 +103,8 @@ export const hasComponent = (world, component, eid) => {
  * @param {boolean} [reset=false]
  */
 export const addComponent = (world, component, eid, reset=true) => {
+  if (eid === undefined) throw new Error('bitECS - entity is undefined.')
+  if (!world[$entitySparseSet].has(eid)) throw new Error('bitECS - entity does not exist in the world.')
   if (!world[$componentMap].has(component)) registerComponent(world, component)
   if (hasComponent(world, component, eid)) return
 
