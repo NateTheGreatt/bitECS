@@ -182,8 +182,13 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
       }
 
       if (count > 0) {
+        // write how many eid/value pairs were written
         view.setUint32(countWhere, count)
-      } else where = 0
+      } else {
+        // if nothing was written (diffed with no changes) 
+        // then move cursor back by 5 bytes to overwrite pid & count
+        where -= 5
+      }
     }
     return buffer.slice(0, where)
   }
