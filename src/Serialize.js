@@ -100,7 +100,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
       // save space for entity count
       const countWhere = where
       where += 4
-      
+
       let count = 0
       // write eid,val
       for (let i = 0; i < ents.length; i++) {
@@ -181,7 +181,9 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         }
       }
 
-      view.setUint32(countWhere, count)
+      if (count > 0) {
+        view.setUint32(countWhere, count)
+      } else where = 0
     }
     return buffer.slice(0, where)
   }

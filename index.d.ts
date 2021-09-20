@@ -94,7 +94,7 @@ declare module 'bitecs' {
   export type Deserializer = (world: IWorld, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => void
 
   export function setDefaultSize(size: number): void
-  export function createWorld(): IWorld
+  export function createWorld(obj?: T={}): T & IWorld
   export function resetWorld(world: IWorld): IWorld
   export function deleteWorld(world: IWorld): void
   export function addEntity(world: IWorld): number

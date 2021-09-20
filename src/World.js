@@ -31,8 +31,8 @@ export const resizeWorlds = (size) => {
  *
  * @returns {object}
  */
-export const createWorld = () => {
-  const world = {}
+export const createWorld = (obj={}) => {
+  const world = obj
   resetWorld(world)
   worlds.push(world)
   return world
