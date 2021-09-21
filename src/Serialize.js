@@ -114,16 +114,20 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         // skip if diffing and no change
         // TODO: optimize array diff
         if ($diff && !prop[$tagStore]) {
+          let dirty = false
+
           if (ArrayBuffer.isView(prop[eid])) {
-            let dirty = false
             for (let i = 0; i < prop[eid].length; i++) {
               if(prop[eid][i] !== prop[$diff][eid][i]) {
                 dirty = true
                 break
               }
             }
-            if (dirty) continue
-          } else if (prop[eid] === prop[$diff][eid]) continue
+          } else if (prop[eid] !== prop[$diff][eid]) {
+            dirty = true
+          }
+
+          if (!dirty) continue
         }
 
         count++
