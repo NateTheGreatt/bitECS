@@ -111,27 +111,6 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           continue
         }
 
-        // skip if diffing and no change
-        // TODO: optimize array diff
-        if ($diff && !prop[$tagStore]) {
-          let dirty = false
-
-          if (ArrayBuffer.isView(prop[eid])) {
-            for (let i = 0; i < prop[eid].length; i++) {
-              if(prop[eid][i] !== prop[$diff][eid][i]) {
-                dirty = true
-                break
-              }
-            }
-          } else if (prop[eid] !== prop[$diff][eid]) {
-            dirty = true
-          }
-
-          if (!dirty) continue
-        }
-
-        count++
-
         // write eid
         view.setUint32(where, eid)
         where += 4
@@ -170,11 +149,18 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
             count2++
           }
 
-          // write total element count
-          view[`set${indexType}`](countWhere2, count2)
-
+          if (count2 > 0) {
+            // write total element count
+            view[`set${indexType}`](countWhere2, count2)
+            count++
+          }
         } else {
-          // regular property values
+
+          // if there are no changes then skip writing this property
+          if ($diff && prop[$diff][eid] !== prop[eid]) {
+            continue
+          }
+
           const type = prop.constructor.name.replace('Array', '')
           // set value next [type] bytes
           view[`set${type}`](where, prop[eid])
@@ -182,6 +168,8 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 
           // sync shadow state
           if (prop[$diff]) prop[$diff][eid] = prop[eid]
+
+          count++
         }
       }
 
