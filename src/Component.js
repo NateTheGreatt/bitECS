@@ -88,7 +88,7 @@ export const registerComponents = (world, components) => {
  */
 export const hasComponent = (world, component, eid) => {
   const registeredComponent = world[$componentMap].get(component)
-  if (!registeredComponent) return
+  if (!registeredComponent) return false
   const { generationId, bitflag } = registeredComponent
   const mask = world[$entityMasks][generationId][eid]
   return (mask & bitflag) === bitflag
