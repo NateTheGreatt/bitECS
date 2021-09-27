@@ -83,6 +83,8 @@ world.time = { delta: 0, elapsed: 0, then: performance.now() }
 const eid = addEntity(world)
 addComponent(world, Position, eid)
 addComponent(world, Velocity, eid)
+Velocity.x[eid] = 1.23
+Velocity.y[eid] = 1.23
 
 setInterval(() => {
   pipeline(world)
