@@ -58,49 +58,30 @@ const resizeSubarray = (metadata, store, size) => {
   const length = store[0].length
   const indexType =
     length <= UNSIGNED_MAX.uint8
-      ? 'ui8'
+      ? TYPES_ENUM.ui8
       : length <= UNSIGNED_MAX.uint16
-        ? 'ui16'
-        : 'ui32'
+        ? TYPES_ENUM.ui16
+        : TYPES_ENUM.ui32
 
-  const arrayCount = metadata[$storeArrayCounts][type]
-  const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
-  
-  // // for threaded impl
-  // // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
-  // // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
-  // // const buffer = new SharedArrayBuffer(totalBytes)
+  if (cursors[type] === 0) {
 
-  const array = new TYPES[type](roundToMultiple4(summedLength * size))
+    const arrayCount = metadata[$storeArrayCounts][type]
+    const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
+    
+    // // for threaded impl
+    // // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
+    // // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
+    // // const buffer = new SharedArrayBuffer(totalBytes)
 
-  // console.log(array.length, metadata[$storeSubarrays][type].length, type)
+    const array = new TYPES[type](roundToMultiple4(summedLength * size))
 
-  array.set(metadata[$storeSubarrays][type])
-  
-  metadata[$storeSubarrays][type] = array
-  
-  array[$indexType] = TYPES_NAMES[indexType]
-  array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
-
-  // create buffer for type if it does not already exist
-  // if (!metadata[$storeSubarrays][type]) {
-  //   const arrayCount = metadata[$storeArrayCounts][type]
-  //   const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
-
-  //   // for threaded impl
-  //   // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
-  //   // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
-  //   // const buffer = new SharedArrayBuffer(totalBytes)
-
-  //   const array = new TYPES[type](roundToMultiple4(summedLength * size))
-
-  //   // console.log(`array of type ${type} has size of ${array.length}`)
-
-  //   metadata[$storeSubarrays][type] = array
-
-  //   array[$indexType] = TYPES_NAMES[indexType]
-  //   array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
-  // }
+    array.set(metadata[$storeSubarrays][type])
+    
+    metadata[$storeSubarrays][type] = array
+    
+    array[$indexType] = TYPES_NAMES[indexType]
+    array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
+  }
 
   const start = cursors[type]
   let end = 0
@@ -128,8 +109,6 @@ const resizeRecursive = (metadata, store, size) => {
   Object.keys(store).forEach(key => {
     const ta = store[key]
     if (Array.isArray(ta)) {
-      // store[$storeSubarrays] = {}
-      // store[$subarrayCursors] = Object.keys(TYPES).reduce((a, type) => ({ ...a, [type]: 0 }), {})
       resizeSubarray(metadata, ta, size)
       store[$storeFlattened].push(ta)
     } else if (ArrayBuffer.isView(ta)) {
@@ -194,11 +173,11 @@ const createArrayStore = (metadata, type, length) => {
 
   const cursors = metadata[$subarrayCursors]
   const indexType =
-    length < UNSIGNED_MAX.uint8
-      ? 'ui8'
-      : length < UNSIGNED_MAX.uint16
-        ? 'ui16'
-        : 'ui32'
+    length <= UNSIGNED_MAX.uint8
+      ? TYPES_ENUM.ui8
+      : length <= UNSIGNED_MAX.uint16
+        ? TYPES_ENUM.ui16
+        : TYPES_ENUM.ui32
 
   if (!length) throw new Error('bitECS - Must define component array length')
   if (!TYPES[type]) throw new Error(`bitECS - Invalid component array property type ${type}`)
@@ -214,8 +193,6 @@ const createArrayStore = (metadata, type, length) => {
     // const buffer = new SharedArrayBuffer(totalBytes)
 
     const array = new TYPES[type](roundToMultiple4(summedLength * size))
-
-    // console.log(`array of type ${type} has size of ${array.length}`)
 
     metadata[$storeSubarrays][type] = array
     

@@ -53,24 +53,19 @@ export const eidToWorld = new Map()
  * @returns {number} eid
  */
 export const addEntity = (world) => {
-  
-  if (globalEntityCursor + 1 >= defaultSize) {
-    console.error(`bitECS - max entities of ${defaultSize} reached, increase with setDefaultSize function.`)
-    return
-  }
 
   // if data stores are 80% full
-  // if (globalEntityCursor >= resizeThreshold()) {
-  //   // grow by half the original size rounded up to a multiple of 4
-  //   const size = globalSize
-  //   const amount = Math.ceil((size/2) / 4) * 4
-  //   const newSize = size + amount
-  //   globalSize = newSize
-  //   resizeWorlds(newSize)
-  //   resizeComponents(newSize)
-  //   setSerializationResized(true)
-  //   console.info(`👾 bitECS - resizing all data stores from ${size} to ${size+amount}`)
-  // }
+  if (globalEntityCursor >= resizeThreshold()) {
+    // grow by half the original size rounded up to a multiple of 4
+    const size = globalSize
+    const amount = Math.ceil((size/2) / 4) * 4
+    const newSize = size + amount
+    globalSize = newSize
+    resizeWorlds(newSize)
+    resizeComponents(newSize)
+    setSerializationResized(true)
+    console.info(`👾 bitECS - resizing all data stores from ${size} to ${size+amount}`)
+  }
 
   const eid = removed.length > 0 ? removed.shift() : globalEntityCursor++
   
