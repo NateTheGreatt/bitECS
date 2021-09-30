@@ -96,3 +96,5 @@ setInterval(() => {
 <a href="https://github.com/phaserjs/phaser"><img src="https://github.com/phaserjs/phaser/raw/main/logo.png" width="420"/></a>
 
 <a href="https://github.com/XRFoundation/XREngine"><img src="https://github.com/XRFoundation/XREngine/raw/master/xrengine%20black.png" width="420"/></a>
+
+<a href="https://github.com/thirdroom/thirdroom"><img src="https://github.com/thirdroom/thirdroom/raw/main/docs/assets/logo.png" width="420"/></a>
