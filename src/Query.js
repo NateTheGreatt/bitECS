@@ -235,9 +235,9 @@ export const defineQuery = (...args) => {
   if (Array.isArray(args[0])) {
     components = args[0]
   } else {
-    any = getAnyComponents(args)
-    all = getAllComponents(args)
-    none = getNoneComponents(args)
+    // any = getAnyComponents(args)
+    // all = getAllComponents(args)
+    // none = getNoneComponents(args)
   }
   
 

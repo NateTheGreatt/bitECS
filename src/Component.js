@@ -138,10 +138,12 @@ export const addComponent = (world, component, eid, reset=true) => {
  * @param {boolean} [reset=true]
  */
 export const removeComponent = (world, component, eid, reset=false) => {
-  const c = world[$componentMap].get(component)
-  const { generationId, bitflag, queries, notQueries } = c
+  if (eid === undefined) throw new Error('bitECS - entity is undefined.')
+  if (!world[$entitySparseSet].has(eid)) throw new Error('bitECS - entity does not exist in the world.')
+  if (!hasComponent(world, component, eid)) return
 
-  if (!(world[$entityMasks][generationId][eid] & bitflag)) return
+  const c = world[$componentMap].get(component)
+  const { generationId, bitflag, queries } = c
 
   // Remove flag from entity bitmask
   world[$entityMasks][generationId][eid] &= ~bitflag

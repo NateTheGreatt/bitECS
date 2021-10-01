@@ -101,6 +101,8 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
       const countWhere = where
       where += 4
 
+      const rewindWhere = where
+
       let count = 0
       // write eid,val
       for (let i = 0; i < ents.length; i++) {
@@ -116,6 +118,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         where += 4
 
         if (prop[$tagStore]) {
+          count++
           continue
         }
 
@@ -153,11 +156,14 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
             // write total element count
             view[`set${indexType}`](countWhere2, count2)
             count++
+          } else {
+            where = rewindWhere
           }
         } else {
 
           // if there are no changes then skip writing this property
           if ($diff && prop[$diff][eid] !== prop[eid]) {
+            where = rewindWhere
             continue
           }
 
@@ -173,12 +179,13 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         }
       }
 
+
       if (count > 0) {
         // write how many eid/value pairs were written
         view.setUint32(countWhere, count)
       } else {
         // if nothing was written (diffed with no changes) 
-        // then move cursor back by 5 bytes to overwrite pid & count
+        // then move cursor back 5 bytes (remove PID and countWhere space)
         where -= 5
       }
     }
