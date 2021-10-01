@@ -139,6 +139,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
             const value = prop[eid][i]
 
             if ($diff && prop[eid][i] === prop[$diff][eid][i]) {
+              prop[$diff][eid][i] = prop[eid][i]
               continue
             }
 
@@ -164,6 +165,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           // if there are no changes then skip writing this property
           if ($diff && prop[$diff][eid] !== prop[eid]) {
             where = rewindWhere
+            prop[$diff][eid] = prop[eid]
             continue
           }
 
@@ -173,7 +175,6 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           where += prop.BYTES_PER_ELEMENT
 
           // sync shadow state
-          if (prop[$diff]) prop[$diff][eid] = prop[eid]
 
           count++
         }
