@@ -138,10 +138,14 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           for (let i = 0; i < prop[eid].length; i++) {
             const value = prop[eid][i]
 
+            // if there are no changes then skip writing this value
             if ($diff && prop[eid][i] === prop[$diff][eid][i]) {
+              // sync shadow state
               prop[$diff][eid][i] = prop[eid][i]
               continue
             }
+            // sync shadow state
+            if ($diff) prop[$diff][eid][i] = prop[eid][i]
 
             // write array index
             view[`set${indexType}`](where, i)
@@ -162,19 +166,21 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           }
         } else {
 
-          // if there are no changes then skip writing this property
+          // if there are no changes then skip writing this value
           if ($diff && prop[$diff][eid] !== prop[eid]) {
             where = rewindWhere
+            // sync shadow state
             prop[$diff][eid] = prop[eid]
             continue
           }
+          // sync shadow state
+          if ($diff) prop[$diff][eid] = prop[eid]
 
           const type = prop.constructor.name.replace('Array', '')
           // set value next [type] bytes
           view[`set${type}`](where, prop[eid])
           where += prop.BYTES_PER_ELEMENT
 
-          // sync shadow state
 
           count++
         }
