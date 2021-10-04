@@ -1,14 +1,15 @@
 declare module 'bitecs' {
   export type Type =
-    'i8' |
-    'ui8' |
-    'ui8c' |
-    'i16' |
-    'ui16' |
-    'i32' |
-    'ui32' |
-    'f32' |
-    'f64'
+    | 'i8'
+    | 'ui8'
+    | 'ui8c'
+    | 'i16'
+    | 'ui16'
+    | 'i32'
+    | 'ui32'
+    | 'f32'
+    | 'f64'
+    | 'eid'
 
   export type ListType = readonly [Type, number];
   
@@ -22,19 +23,20 @@ declare module 'bitecs' {
     ui32: "ui32"
     f32: "f32"
     f64: "f64"
+    eid: "eid"
   };
 
   export type TypedArray =
-    Uint8Array |
-    Int8Array |
-    Uint8Array |
-    Uint8ClampedArray |
-    Int16Array |
-    Uint16Array |
-    Int32Array |
-    Uint32Array |
-    Float32Array |
-    Float64Array
+    | Uint8Array
+    | Int8Array
+    | Uint8Array
+    | Uint8ClampedArray
+    | Int16Array
+    | Uint16Array
+    | Int32Array
+    | Uint32Array
+    | Float32Array
+    | Float64Array
 
   export type ArrayByType = {
     [Types.i8]: Int8Array;
@@ -46,6 +48,7 @@ declare module 'bitecs' {
     [Types.ui32]: Uint32Array;
     [Types.f32]: Float32Array;
     [Types.f64]: Float64Array;
+    [Types.eid]: Uint32Array;
   }
 
   export enum DESERIALIZE_MODE {
@@ -55,15 +58,16 @@ declare module 'bitecs' {
   }
 
   export type ComponentType<T extends ISchema> = {
-    [key in keyof T]: T[key] extends Type
+    [key in keyof T]:
+      T[key] extends Type
       ? ArrayByType[T[key]]
       : T[key] extends [infer RT, number]
-      ? RT extends Type
-        ? Array<ArrayByType[RT]>
-        : unknown
-      : T[key] extends ISchema
-      ? ComponentType<T[key]>
-      : unknown;
+        ? RT extends Type
+          ? Array<ArrayByType[RT]>
+          : unknown
+        : T[key] extends ISchema
+          ? ComponentType<T[key]>
+          : unknown;
   };
 
   export interface IWorld {
