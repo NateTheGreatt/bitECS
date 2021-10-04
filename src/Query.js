@@ -180,15 +180,14 @@ const diff = (q, clearDiff) => {
     for (let pid = 0; pid < flatProps.length; pid++) {
       const prop = flatProps[pid]
       const shadow = shadows[pid]
-      // console.log('hi', shadow)
       if (ArrayBuffer.isView(prop[eid])) {
         for (let i = 0; i < prop[eid].length; i++) {
           if (prop[eid][i] !== shadow[eid][i]) {
             dirty = true
-            shadow[eid][i] = prop[eid][i]
             break
           }
         }
+        shadow[eid].set(prop[eid])
       } else {
         if (prop[eid] !== shadow[eid]) {
           dirty = true
