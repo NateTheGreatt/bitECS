@@ -101,9 +101,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
       const countWhere = where
       where += 4
 
-      const rewindWhere = where
-
-      let count = 0
+      let writeCount = 0
       // write eid,val
       for (let i = 0; i < ents.length; i++) {
         const eid = ents[i]
@@ -113,12 +111,14 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           continue
         }
 
+        const rewindWhere = where
+
         // write eid
         view.setUint32(where, eid)
         where += 4
 
         if (prop[$tagStore]) {
-          count++
+          writeCount++
           continue
         }
 
@@ -128,11 +128,11 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           const indexType = prop[eid][$indexType]
           const indexBytes = prop[eid][$indexBytes]
 
-          // add space for count of dirty array elements
+          // save space for count of dirty array elements
           const countWhere2 = where
           where += indexBytes
 
-          let count2 = 0
+          let arrayWriteCount = 0
 
           // write index,value
           for (let i = 0; i < prop[eid].length; i++) {
@@ -154,13 +154,13 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
             // write value at that index
             view[`set${type}`](where, value)
             where += prop[eid].BYTES_PER_ELEMENT
-            count2++
+            arrayWriteCount++
           }
 
-          if (count2 > 0) {
+          if (arrayWriteCount > 0) {
             // write total element count
-            view[`set${indexType}`](countWhere2, count2)
-            count++
+            view[`set${indexType}`](countWhere2, arrayWriteCount)
+            writeCount++
           } else {
             where = rewindWhere
           }
@@ -181,15 +181,13 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           view[`set${type}`](where, prop[eid])
           where += prop.BYTES_PER_ELEMENT
 
-
-          count++
+          writeCount++
         }
       }
 
-
-      if (count > 0) {
+      if (writeCount > 0) {
         // write how many eid/value pairs were written
-        view.setUint32(countWhere, count)
+        view.setUint32(countWhere, writeCount)
       } else {
         // if nothing was written (diffed with no changes) 
         // then move cursor back 5 bytes (remove PID and countWhere space)
