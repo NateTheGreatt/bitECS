@@ -53,7 +53,8 @@ const canonicalize = (target) => {
 export const defineSerializer = (target, maxBytes = 20000000) => {
   const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
 
-  let [componentProps, changedProps] = canonicalize(target)
+  let componentProps, changedProps
+  let lazyInit = false
 
   // TODO: calculate max bytes based on target & recalc upon resize
 
@@ -61,6 +62,11 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
   const view = new DataView(buffer)
 
   return (ents) => {
+
+    if (!lazyInit) {
+      [componentProps, changedProps] = canonicalize(target)
+      lazyInit = true
+    }
 
     if (resized) {
       [componentProps, changedProps] = canonicalize(target)
@@ -84,9 +90,9 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
       world = eidToWorld.get(ents[0])
     }
 
-    if (!ents.length) return
-
     let where = 0
+
+    if (!ents.length) return buffer.slice(0, where)
 
     // iterate over component props
     for (let pid = 0; pid < componentProps.length; pid++) {
