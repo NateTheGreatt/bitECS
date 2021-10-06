@@ -35,7 +35,9 @@ export const $exitQuery = Symbol('exitQuery')
 export const enterQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
   const q = world[$queryMap].get(query)
-  return q.entered.splice(0)
+  const entered = q.entered.dense.slice()
+  q.entered = SparseSet()
+  return entered
 }
 
 /**
@@ -47,7 +49,9 @@ export const enterQuery = query => world => {
 export const exitQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
   const q = world[$queryMap].get(query)
-  return q.exited.splice(0)
+  const exited = q.exited.dense.slice()
+  q.exited = SparseSet()
+  return exited
 }
 
 export const registerQuery = (world, query) => {
@@ -94,8 +98,8 @@ export const registerQuery = (world, query) => {
   // const changed = SparseSet()
   const changed = []
   const toRemove = SparseSet()
-  const entered = []
-  const exited = []
+  const entered = SparseSet()
+  const exited = SparseSet()
 
   const generations = allComponents
     .map(c => c.generationId)
@@ -317,7 +321,7 @@ export const queryCheckComponent = (q, c) => {
 export const queryAddEntity = (q, eid) => {
   if (q.has(eid)) return
   q.add(eid)
-  q.entered.push(eid)
+  q.entered.add(eid)
 }
 
 const queryCommitRemovals = (q) => {
@@ -338,7 +342,7 @@ export const queryRemoveEntity = (world, q, eid) => {
   if (!q.has(eid) || q.toRemove.has(eid)) return
   q.toRemove.add(eid)
   world[$dirtyQueries].add(q)
-  q.exited.push(eid)
+  q.exited.add(eid)
 }
 
 
