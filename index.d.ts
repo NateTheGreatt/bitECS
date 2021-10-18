@@ -1,3 +1,5 @@
+import { defineComponent } from "bitecs";
+
 declare module 'bitecs' {
   export type Type =
     'i8' |
@@ -54,19 +56,7 @@ declare module 'bitecs' {
     MAP
   }
 
-  type BuildPowersOf2LengthArrays<N extends number, R extends never[][]> = R[0][N] extends never ? R : BuildPowersOf2LengthArrays<N, [[...R[0], ...R[0]], ...R]>;
-  type ConcatLargestUntilDone<N extends number, R extends never[][], B extends never[]> = B["length"] extends N ? B : [...R[0], ...B][N] extends never
-    ? ConcatLargestUntilDone<N, R extends [R[0], ...infer U] ? U extends never[][] ? U : never : never, B>
-    : ConcatLargestUntilDone<N, R extends [R[0], ...infer U] ? U extends never[][] ? U : never : never, [...R[0], ...B]>;
-  type Replace<R extends any[], T> = { [K in keyof R]: T }
-  type TupleOf<T, N extends number> = number extends N ? T[] : {
-    [K in N]:
-    BuildPowersOf2LengthArrays<K, [[never]]> extends infer U ? U extends never[][]
-    ? Replace<ConcatLargestUntilDone<K, U, []>, T> : never : never;
-  }[N]
-  type TuplePop<T> = T extends [any, ...infer L] ? L : never
-
-  export type ArrayType<T, L extends number> = Omit<T, number> & {length: L} & {[K in NonNullable<Partial<TuplePop<TupleOf<any, L>>>["length"]>]: number}
+  export type ArrayType<T, L extends number> = T & {length: L}
 
   export type ComponentType<T extends ISchema> = {
     [K in keyof T]: T[K] extends Type
@@ -77,7 +67,7 @@ declare module 'bitecs' {
         ? L extends number
           ? number extends L
             ? ArrayByType[RT][]
-            : ArrayType<ArrayByType[RT], L>[]
+            : readonly ArrayType<ArrayByType[RT], L>[]
           : unknown
         : unknown
       : unknown
