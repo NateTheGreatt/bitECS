@@ -55,7 +55,7 @@ export const canonicalize = target => {
     .filter(isChangedModifier).map(fromModifierToComponent)
     .filter(isProperty)
   
-  const componentProps = [...fullComponentProps, ...props]
+  const componentProps = [...fullComponentProps, ...props, ...changedComponentProps, ...changedProps]
   const allChangedProps = [...changedComponentProps, ...changedProps].reduce((map,prop) => {
     const $ = Symbol()
     createShadow(prop, $)
@@ -115,6 +115,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
     for (let pid = 0; pid < componentProps.length; pid++) {
       const prop = componentProps[pid]
       const $diff = changedProps.get(prop)
+      const shadow = $diff ? prop[$diff] : null
       
       // write pid
       view.setUint8(where, pid)
@@ -163,13 +164,13 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
             const value = prop[eid][i]
 
             // if there are no changes then skip writing this value
-            if ($diff && prop[eid][i] === prop[$diff][eid][i]) {
+            if (shadow && prop[eid][i] === shadow[eid][i]) {
               // sync shadow state
-              prop[$diff][eid][i] = prop[eid][i]
+              shadow[eid][i] = prop[eid][i]
               continue
             }
             // sync shadow state
-            if ($diff) prop[$diff][eid][i] = prop[eid][i]
+            if (shadow) shadow[eid][i] = prop[eid][i]
 
             // write array index
             view[`set${indexType}`](where, i)
@@ -191,14 +192,14 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         } else {
 
           // if there are no changes then skip writing this value
-          if ($diff && prop[$diff][eid] === prop[eid]) {
+          if (shadow && shadow[eid] === prop[eid]) {
             where = rewindWhere
             // sync shadow state
-            prop[$diff][eid] = prop[eid]
+            shadow[eid] = prop[eid]
             continue
           }
           // sync shadow state
-          if ($diff) prop[$diff][eid] = prop[eid]
+          if (shadow) shadow[eid] = prop[eid]
 
           const type = prop.constructor.name.replace('Array', '')
           // set value next [type] bytes

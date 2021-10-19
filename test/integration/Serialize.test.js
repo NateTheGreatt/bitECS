@@ -203,4 +203,41 @@ describe('Serialize Integration Tests', () => {
     strictEqual(TestComponent.value[eid], 1)
     
   })
+  it('should only serialize changes for Changed array properties', () => {
+    const world = createWorld()
+    const ArrayComponent = defineComponent({ values: [Types.f32, 3] })
+
+    const eid = addEntity(world)
+    addComponent(world, ArrayComponent, eid)
+    
+    const serialize = defineSerializer([Changed(ArrayComponent.values)])
+    const deserialize = defineDeserializer([ArrayComponent.values])
+    
+    ArrayComponent.values[eid][0]++
+
+    let packet = serialize([eid])
+
+    // strictEqual(ArrayComponent.values[eid][0], 0)
+
+    // ArrayComponent should not be serialized yet
+    // strictEqual(packet.byteLength, 0)
+    assert(packet.byteLength > 0)
+
+    packet = serialize([eid])
+    
+    deserialize(world, packet)
+    
+    // strictEqual(ArrayComponent.values[eid][0], 0)
+
+    // ArrayComponent.values[eid][0]++
+    
+    strictEqual(ArrayComponent.values[eid][0], 1)
+    
+    packet = serialize([eid])
+    
+    deserialize(world, packet)
+    
+    strictEqual(ArrayComponent.values[eid][0], 1)
+    
+  })
 })

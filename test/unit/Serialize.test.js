@@ -19,4 +19,11 @@ describe('Serialize Unit Tests', () => {
     const [componentProps, changedProps] = canonicalize(target)
     strictEqual(changedProps.has(C.value), true)
   })
+  it('should canonicalize Changed modifier on array properties', () => {
+    const ArrayComponent = defineComponent({ values: [Types.f32, 3] })
+    const target = [Changed(ArrayComponent.values)]
+
+    const [componentProps, changedProps] = canonicalize(target)
+    strictEqual(changedProps.has(ArrayComponent.values), true)
+  })
 })
