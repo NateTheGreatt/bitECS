@@ -70,6 +70,8 @@ declare module 'bitecs' {
           : unknown;
   };
 
+  export type ComponentProp = TypedArray | Array<TypedArray>
+
   export interface IWorld {
     [key: string]: any
   }
@@ -79,7 +81,7 @@ declare module 'bitecs' {
   }
 
   export interface IComponentProp {
-    [key: string]: TypedArray | Array<TypedArray>
+    [key: string]: ComponentProp
   }
 
   export interface IComponent {
@@ -113,8 +115,8 @@ declare module 'bitecs' {
   export function getEntityComponents(world: IWorld, eid: number): Component[]
 
   export function defineQuery(components: (Component | QueryModifier)[]): Query
-  export function Changed(c: Component): Component | QueryModifier
-  export function Not(c: Component): Component | QueryModifier
+  export function Changed(c: Component | ISchema): Component | QueryModifier
+  export function Not(c: Component | ISchema): Component | QueryModifier
   export function enterQuery(query: Query): Query
   export function exitQuery(query: Query): Query
   export function resetChangedQuery(world: IWorld, query: Query): Query
