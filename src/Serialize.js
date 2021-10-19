@@ -13,34 +13,57 @@ let resized = false
 
 export const setSerializationResized = v => { resized = v }
 
-const canonicalize = (target) => {
-  let componentProps = []
-  let changedProps = new Map()
-  if (Array.isArray(target)) {
-    componentProps = target
-      .map(p => {
-        if (!p) throw new Error('bitECS - Cannot serialize undefined component')
-        if (typeof p === 'function') {
-          const [c, mod] = p()
-          if (mod === 'changed') {
-            c[$storeFlattened].forEach(prop => {
-              const $ = Symbol()
-              createShadow(prop, $)
-              changedProps.set(prop, $)
-            })
-            return c[$storeFlattened]
-          }
-        }
-        if (Object.getOwnPropertySymbols(p).includes($storeFlattened)) {
-          return p[$storeFlattened]
-        }
-        if (Object.getOwnPropertySymbols(p).includes($storeBase)) {
-          return p
-        }
-      })
-      .reduce((a,v) => a.concat(v), [])
-  }
-  return [componentProps, changedProps]
+const concat = (a,v) => a.concat(v)
+const not = fn => v => !fn(v)
+
+const storeFlattened = c => c[$storeFlattened]
+const isFullComponent = storeFlattened
+const isProperty = not(isFullComponent)
+
+const isModifier = c => typeof c === 'function'
+const isNotModifier = not(isModifier)
+
+const isChangedModifier = c => isModifier(c) && c()[1] === 'changed'
+
+const isWorld = w => Object.getOwnPropertySymbols(w).includes($componentMap)
+
+const fromModifierToComponent = c => c()[0]
+
+export const canonicalize = target => {
+
+  if (isWorld(target)) return [[],new Map()]
+
+  // aggregate full components
+  const fullComponentProps = target
+    .filter(isNotModifier)
+    .filter(isFullComponent)
+    .map(storeFlattened).reduce(concat, [])
+  
+  // aggregate changed full components
+  const changedComponentProps = target
+    .filter(isChangedModifier).map(fromModifierToComponent)
+    .filter(isFullComponent)
+    .map(storeFlattened).reduce(concat, [])
+
+  // aggregate props
+  const props = target
+    .filter(isNotModifier)
+    .filter(isProperty)
+
+  // aggregate changed props
+  const changedProps = target
+    .filter(isChangedModifier).map(fromModifierToComponent)
+    .filter(isProperty)
+  
+  const componentProps = [...fullComponentProps, ...props]
+  const allChangedProps = [...changedComponentProps, ...changedProps].reduce((map,prop) => {
+    const $ = Symbol()
+    createShadow(prop, $)
+    map.set(prop, $)
+    return map
+  }, new Map())
+
+  return [componentProps, allChangedProps]
 }
 
 /**
@@ -51,10 +74,9 @@ const canonicalize = (target) => {
  * @returns {function} serializer
  */
 export const defineSerializer = (target, maxBytes = 20000000) => {
-  const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
+  const worldSerializer = isWorld(target)
 
-  let componentProps, changedProps
-  let lazyInit = false
+  let [componentProps, changedProps] = canonicalize(target)
 
   // TODO: calculate max bytes based on target & recalc upon resize
 
@@ -63,17 +85,12 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 
   return (ents) => {
 
-    if (!lazyInit) {
-      [componentProps, changedProps] = canonicalize(target)
-      lazyInit = true
-    }
-
     if (resized) {
       [componentProps, changedProps] = canonicalize(target)
       resized = false
     }
 
-    if (isWorld) {
+    if (worldSerializer) {
       componentProps = []
       target[$componentMap].forEach((c, component) => {
         if (component[$storeFlattened])
@@ -113,6 +130,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         const eid = ents[i]
 
         // skip if entity doesn't have this component
+        if (!prop.hasOwnProperty($storeBase)) console.log(prop)
         if (!hasComponent(world, prop[$storeBase](), eid)) {
           continue
         }
@@ -173,7 +191,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         } else {
 
           // if there are no changes then skip writing this value
-          if ($diff && prop[$diff][eid] !== prop[eid]) {
+          if ($diff && prop[$diff][eid] === prop[eid]) {
             where = rewindWhere
             // sync shadow state
             prop[$diff][eid] = prop[eid]
@@ -218,6 +236,8 @@ export const defineDeserializer = (target) => {
 
 
   return (world, packet, mode=0) => {
+
+    const deserializedEntities = []
 
     newEntities.clear()
     
@@ -286,6 +306,9 @@ export const defineDeserializer = (target) => {
           addComponent(world, component, eid)
         }
 
+        // add eid to deserialized ents after it has been transformed by MAP mode
+        deserializedEntities.push(eid)
+
         if (component[$tagStore]) {
           continue
         }
@@ -320,5 +343,7 @@ export const defineDeserializer = (target) => {
         }
       }
     }
+
+    return deserializedEntities
   }
 }

@@ -295,17 +295,17 @@ Serialize all of the world's entities and thier component data:
 const packet = serialize(world)
 ```
 
-Use the deserializer to apply state onto the same or any other world:
+Use the deserializer to apply state onto the same or any other world (returns deserialized entity IDs):
 * Note: serialized entities and components are automatically (re)created if they do not exist in the target world
 ```js
-deserialize(world, packet)
+const deserializedEnts = deserialize(world, packet)
 ```
 
 Serialize a more specific set of entities using queries:
 ```js
 const ents = movementQuery(world)
 const packet = serialize(ents)
-deserialize(world, packet)
+const deserializedEnts = deserialize(world, packet)
 ```
 
 Serialization for any mixture of components and component properties:
@@ -319,7 +319,7 @@ Serialize Position data for entities matching the movementQuery, defined with pi
 ```js
 const serializeMovementQueryPositions = pipe(movementQuery, serializePositions)
 const packet = serializeMovementQueryPositions(world)
-deserializePositions(world, packet)
+const deserializedEnts = deserializePositions(world, packet)
 ```
 
 Serialization which targets select component stores of entities
@@ -350,8 +350,9 @@ Deserialization will never remove entities, and will only add them.
  - `MAP` - acts like `REPLACE` but every serialized EID is assigned a local EID which is memorized for all subsequent deserializations onto the target world.
     - useful when deserializing server ECS state onto a client ECS world to avoid EID collisions but still maintain the server-side EID relationship
     - this maintains reference relationships made with `Types.eid`
+    - returned entities are the locally mapped EIDs
 
 ```js
 const mode = DESERIALIZE_MODE.MAP
-deserialize(world, packet, mode)
+const deserializedLocalEntities = deserialize(world, packet, mode)
 ```

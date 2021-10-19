@@ -2,8 +2,12 @@ import assert, { strictEqual } from 'assert'
 import { createWorld } from '../../src/World.js'
 import { addComponent, defineComponent } from '../../src/Component.js'
 import { addEntity, resetGlobals } from '../../src/Entity.js'
-import { defineQuery, defineSerializer, defineDeserializer, Types } from '../../src/index.js'
-import { DESERIALIZE_MODE } from '../../src/Serialize.js'
+// import { defineQuery, defineSerializer, defineDeserializer, Types } from '../../src/index.js'
+import { defineDeserializer, defineSerializer, DESERIALIZE_MODE } from '../../src/Serialize.js'
+import { Changed, defineQuery } from '../../src/Query.js'
+import { TYPES_ENUM } from '../../src/Constants.js'
+
+const Types = TYPES_ENUM
 
 const arraysEqual = (a,b) => !!a && !!b && !(a<b || b<a)
 
@@ -15,7 +19,7 @@ describe('Serialize Integration Tests', () => {
     const world = createWorld()
     const TestComponent = defineComponent({ value: Types.f32 })
     const eid = addEntity(world)
-    // console.log(TestComponent)
+
     addComponent(world, TestComponent, eid)
     const serialize = defineSerializer(world)
     const deserialize = defineDeserializer(world)
@@ -122,10 +126,12 @@ describe('Serialize Integration Tests', () => {
     strictEqual(TestComponent.value[eid], 0)
     
     TestComponent.value[eid]++
-    deserialize(world, packet, DESERIALIZE_MODE.APPEND)
+    let ents = deserialize(world, packet, DESERIALIZE_MODE.APPEND)
+    const appendedEid = eid + 1
 
     strictEqual(TestComponent.value[eid], 1)
-    strictEqual(TestComponent.value[eid+1], 0)
+    strictEqual(TestComponent.value[appendedEid], 0)
+    strictEqual(ents[0], appendedEid)
   })
   it('should deserialize properly with MAP behavior', () => {
     const world = createWorld()
@@ -144,18 +150,57 @@ describe('Serialize Integration Tests', () => {
     strictEqual(TestComponent.value[eid], 0)
     
     TestComponent.value[eid]++
-    deserialize(world, packet, DESERIALIZE_MODE.MAP)
+    let ents = deserialize(world, packet, DESERIALIZE_MODE.MAP)
+    const mappedEid = eid + 1
 
     strictEqual(TestComponent.value[eid], 1)
-    strictEqual(TestComponent.value[eid+1], 0)
+    strictEqual(TestComponent.value[mappedEid], 0)
 
-    TestComponent.value[eid+1] = 1
+    TestComponent.value[mappedEid] = 1
     packet = serialize(query(world))
     
-    deserialize(world, packet, DESERIALIZE_MODE.MAP)
-    strictEqual(TestComponent.value[eid+1], 1)
+    ents = deserialize(world, packet, DESERIALIZE_MODE.MAP)
+    strictEqual(TestComponent.value[mappedEid], 1)
+    strictEqual(ents[0], mappedEid)
   })
-  it('should maintain references when deserializing', () => {
+  // todo
+  // it('should maintain references when deserializing', () => {
+    
+  // })
+  it('should only serialize changes for Changed components and component properties', () => {
+    const world = createWorld()
+    const TestComponent = defineComponent({ value: Types.f32 })
+    const ArrayComponent = defineComponent({ values: [Types.f32, 3] })
+
+    const eid = addEntity(world)
+    addComponent(world, TestComponent, eid)
+    addComponent(world, ArrayComponent, eid)
+    
+    const serialize = defineSerializer([Changed(TestComponent.value), ArrayComponent])
+    const deserialize = defineDeserializer([TestComponent.value, ArrayComponent])
+
+    let packet = serialize([eid])
+
+    strictEqual(TestComponent.value[eid], 0)
+
+    // ArrayComponent should be serialized
+    strictEqual(packet.byteLength, 25)
+
+    packet = serialize([eid])
+    
+    deserialize(world, packet)
+    
+    strictEqual(TestComponent.value[eid], 0)
+
+    TestComponent.value[eid]++
+    
+    strictEqual(TestComponent.value[eid], 1)
+    
+    packet = serialize([eid])
+    
+    deserialize(world, packet)
+    
+    strictEqual(TestComponent.value[eid], 1)
     
   })
 })
