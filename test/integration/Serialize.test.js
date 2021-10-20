@@ -6,6 +6,7 @@ import { addEntity, resetGlobals } from '../../src/Entity.js'
 import { defineDeserializer, defineSerializer, DESERIALIZE_MODE } from '../../src/Serialize.js'
 import { Changed, defineQuery } from '../../src/Query.js'
 import { TYPES_ENUM } from '../../src/Constants.js'
+import { pipe } from '../../src/index.js'
 
 const Types = TYPES_ENUM
 
@@ -238,6 +239,133 @@ describe('Serialize Integration Tests', () => {
     deserialize(world, packet)
     
     strictEqual(ArrayComponent.values[eid][0], 1)
+    
+  })
+  it('shouldn\'t serialize anything using Changed on a component with no changes', () => {
+    const world = createWorld()
+    const TestComponent = defineComponent({ value: Types.f32 })
+    const eid = addEntity(world)
+
+    addComponent(world, TestComponent, eid)
+    TestComponent.value[eid] = 1
+
+    const serialize = defineSerializer([Changed(TestComponent)])
+
+    serialize([eid]) // run once to pick up current state
+    const packet = serialize([eid])
+
+    strictEqual(packet.byteLength, 0)
+  })
+  it('shouldn\'t serialize anything using Changed on an array component with no changes', () => {
+    const world = createWorld()
+    const ArrayComponent = defineComponent({ value: [Types.f32, 3] })
+    const eid = addEntity(world)
+
+    addComponent(world, ArrayComponent, eid)
+    ArrayComponent.value[eid][1] = 1
+
+    const serialize = defineSerializer([Changed(ArrayComponent)])
+
+    serialize([eid]) // run once to pick up current state
+    const packet = serialize([eid])
+
+    strictEqual(packet.byteLength, 0)
+  })
+  it('should serialize and deserialize entities with a mix of single value, array value and tag components', () => {
+    const world = createWorld()
+    const TestComponent = defineComponent({ value: Types.f32 })
+    const ArrayComponent = defineComponent({ value: [Types.f32, 3] })
+    const TagComponent = defineComponent()
+
+    const serialize = defineSerializer([TestComponent, ArrayComponent, TagComponent])
+    const deserialize = defineDeserializer([TestComponent, ArrayComponent, TagComponent])
+
+    const eid = addEntity(world)
+    addComponent(world, TestComponent, eid)
+    addComponent(world, ArrayComponent, eid)
+    addComponent(world, TagComponent, eid)
+
+    let packet = serialize([eid])
+    assert(packet.byteLength > 0)
+    // if this errors we know something is wrong with the packet
+    deserialize(world, packet)
+
+    const eids = [eid]
+
+    const eid2 = addEntity(world)
+    addComponent(world, TestComponent, eid2)
+    TestComponent.value[eid2] = 8
+    eids.push(eid2)
+
+    const eid3 = addEntity(world)
+    addComponent(world, TagComponent, eid3)
+    eids.push(eid3)
+
+    const eid4 = addEntity(world)
+    addComponent(world, ArrayComponent, eid4)
+    ArrayComponent.value[eid4][1] = 5
+    eids.push(eid4)
+
+    const eid5 = addEntity(world)
+    addComponent(world, TagComponent, eid5)
+    addComponent(world, ArrayComponent, eid5)
+    ArrayComponent.value[eid5][0] = 3
+    eids.push(eid5)
+
+    const eid6 = addEntity(world)
+    addComponent(world, TagComponent, eid6)
+    addComponent(world, TestComponent, eid6)
+    TestComponent.value[eid6] = 3
+    eids.push(eid6)
+
+    packet = serialize(eids)
+    assert(packet.byteLength > 0)
+    // if this errors we know something is wrong with the packet
+    deserialize(world, packet)
+
+    // run a couple more times for good measure
+    serialize(eids)
+    packet = serialize(eids)
+    assert(packet.byteLength > 0)
+    // if this errors we know something is wrong with the packet
+    deserialize(world, packet)
+
+    // verify some values
+    strictEqual(TestComponent.value[eid2], 8)
+    strictEqual(ArrayComponent.value[eid4][1], 5)
+    strictEqual(ArrayComponent.value[eid5][0], 3)
+    strictEqual(TestComponent.value[eid6], 3)
+  })
+  it('should serialize from a query using pipe', () => {
+    const world = createWorld()
+    const TestComponent = defineComponent({ value: Types.f32 })
+    const eid = addEntity(world)
+    addComponent(world, TestComponent, eid)
+
+    const query = defineQuery([TestComponent])
+    const serialize = defineSerializer([TestComponent])
+    const serializeQuery = pipe(query, serialize)
+    const deserialize = defineDeserializer([TestComponent])
+
+    const packet = serializeQuery(world)
+    assert(packet.byteLength > 0)
+    deserialize(world, packet)
+    strictEqual(query(world).length, 1)
+  })
+  it('should only register changes on the first serializer run', () => {
+    const world = createWorld()
+    const TestComponent = defineComponent({ value: Types.f32 })
+    const eid = addEntity(world)
+    addComponent(world, TestComponent, eid)
+
+    const serialize = defineSerializer([Changed(TestComponent)])
+
+    serialize([eid])
+    TestComponent.value[eid] = 2
+    let packet = serialize([eid])
+    assert(packet.byteLength > 0)
+    packet = serialize([eid])
+    strictEqual(packet.byteLength, 0)
     
   })
 })
