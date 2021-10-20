@@ -175,6 +175,25 @@ describe('Query Integration Tests', () => {
     strictEqual(ents.length, 1)
     strictEqual(ents[0], eid1)
   })
+  it('should define a query for an array component with Changed and return matching eids whose component state has changed', () => {
+    const world = createWorld()
+    const ArrayComponent = defineComponent({ value: [Types.f32, 3] })
+    const query = defineQuery([Changed(ArrayComponent)])
+    const eid1 = addEntity(world)
+    const eid2 = addEntity(world)
+    addComponent(world, ArrayComponent, eid1)
+    addComponent(world, ArrayComponent, eid2)
+    
+    let ents = query(world)
+    strictEqual(ents.length, 0)
+
+    ArrayComponent.value[eid1][1]++
+    
+    ents = query(world)
+
+    strictEqual(ents.length, 1)
+    strictEqual(ents[0], eid1)
+  })
   it('should return entities from enter/exitQuery who entered/exited the query', () => {
     const world = createWorld()
     const TestComponent = defineComponent({ value: Types.f32 })
