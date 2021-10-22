@@ -319,7 +319,7 @@ export const queryCheckComponent = (q, c) => {
 }
 
 export const queryAddEntity = (q, eid) => {
-  if (q.has(eid)) return
+  q.toRemove.remove(eid)
   q.add(eid)
   q.entered.add(eid)
 }
