@@ -83,6 +83,8 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
   const buffer = new ArrayBuffer(maxBytes)
   const view = new DataView(buffer)
 
+  const entityComponentCache = new Map()
+
   return (ents) => {
 
     if (resized) {
@@ -111,12 +113,17 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 
     if (!ents.length) return buffer.slice(0, where)
 
+    const cache = new Map()
+
     // iterate over component props
     for (let pid = 0; pid < componentProps.length; pid++) {
       const prop = componentProps[pid]
+      const component = prop[$storeBase]()
       const $diff = changedProps.get(prop)
       const shadow = $diff ? prop[$diff] : null
-      
+
+      if (!cache.has(component)) cache.set(component, new Map())
+
       // write pid
       view.setUint8(where, pid)
       where += 1
@@ -130,18 +137,38 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
       for (let i = 0; i < ents.length; i++) {
         const eid = ents[i]
 
-        // skip if entity doesn't have this component
-        if (!prop.hasOwnProperty($storeBase)) console.log(prop)
-        if (!hasComponent(world, prop[$storeBase](), eid)) {
-          continue
-        }
+        let componentCache = entityComponentCache.get(eid)
+        if (!componentCache) componentCache = entityComponentCache.set(eid, new Set()).get(eid)
+        
+        componentCache.add(eid)
+        
+        const newlyAddedComponent = 
+          // if we have already iterated over this component for this entity
+          // retrieve cached value    
+          cache.get(component).get(eid)
+          // or if entity did not have component last call
+          || !componentCache.has(component)
+          // and entity has component this call
+          && hasComponent(world, component, eid)
 
+        cache.get(component).set(eid, newlyAddedComponent)
+
+        if (newlyAddedComponent) {
+          componentCache.add(component)
+        } else if (!hasComponent(world, component, eid)) {
+          // skip if entity doesn't have this component
+          componentCache.delete(component)
+          continue
+        } 
+
+        
         const rewindWhere = where
 
         // write eid
         view.setUint32(where, eid)
         where += 4
 
+        // if it's a tag store we can stop here
         if (prop[$tagStore]) {
           writeCount++
           continue
@@ -163,14 +190,20 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           for (let i = 0; i < prop[eid].length; i++) {
             const value = prop[eid][i]
 
-            // if there are no changes then skip writing this value
-            if (shadow && prop[eid][i] === shadow[eid][i]) {
-              // sync shadow state
-              shadow[eid][i] = prop[eid][i]
+            // if we are detecting changes there are no changes since last call 
+            const changed = shadow && prop[eid][i] === shadow[eid][i]
+
+            // sync shadow
+            if (shadow) shadow[eid] = prop[eid]
+
+            // if not a newly added component and state has changed since the last call
+            // todo: if newly added then entire component will serialize (instead of only changed values)
+            if (!newlyAddedComponent && changed) {
+              // rewind the serializer
+              where = rewindWhere
+              // skip writing this value
               continue
             }
-            // sync shadow state
-            if (shadow) shadow[eid][i] = prop[eid][i]
 
             // write array index
             view[`set${indexType}`](where, i)
@@ -191,15 +224,21 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           }
         } else {
 
-          // if there are no changes then skip writing this value
-          if (shadow && shadow[eid] === prop[eid]) {
+          // console.log(shadow[eid], prop[eid])
+          const changed = shadow && shadow[eid] !== prop[eid]
+
+          // sync shadow
+          if (shadow) shadow[eid] = prop[eid]
+
+          // do not write value if diffing and no change
+          // and if not a newly added component
+          if (!changed && !newlyAddedComponent) {
+            // console.log('BRUHHHHH', changed, newlyAddedComponent)
+            // rewind the serializer
             where = rewindWhere
-            // sync shadow state
-            shadow[eid] = prop[eid]
+            // skip writing this value
             continue
           }
-          // sync shadow state
-          if (shadow) shadow[eid] = prop[eid]
 
           const type = prop.constructor.name.replace('Array', '')
           // set value next [type] bytes
@@ -277,7 +316,7 @@ export const defineDeserializer = (target) => {
 
       // Get the entities and set their prop values
       for (let i = 0; i < entityCount; i++) {
-        let eid = view.getUint32(where)
+        let eid = view.getUint32(where) // throws with [changed, c, changed]
         where += 4
 
         if (mode === DESERIALIZE_MODE.MAP) {

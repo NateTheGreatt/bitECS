@@ -161,8 +161,9 @@ describe('Serialize Integration Tests', () => {
     packet = serialize(query(world))
     
     ents = deserialize(world, packet, DESERIALIZE_MODE.MAP)
-    strictEqual(TestComponent.value[mappedEid], 1)
-    strictEqual(ents[0], mappedEid)
+    const mappedEid2 = mappedEid + 1
+    strictEqual(TestComponent.value[mappedEid2], 1)
+    strictEqual(ents[0], mappedEid2)
   })
   // todo
   // it('should maintain references when deserializing', () => {
@@ -184,8 +185,8 @@ describe('Serialize Integration Tests', () => {
 
     strictEqual(TestComponent.value[eid], 0)
 
-    // ArrayComponent should be serialized
-    strictEqual(packet.byteLength, 25)
+    // entire ArrayComponent should be serialized upon first add
+    strictEqual(packet.byteLength, 38)
 
     packet = serialize([eid])
     
