@@ -143,9 +143,11 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         componentCache.add(eid)
         
         const newlyAddedComponent = 
-          // if we have already iterated over this component for this entity
+          // if we are diffing
+          shadow 
+          // and we have already iterated over this component for this entity
           // retrieve cached value    
-          cache.get(component).get(eid)
+          && cache.get(component).get(eid)
           // or if entity did not have component last call
           || !componentCache.has(component)
           // and entity has component this call
@@ -190,19 +192,21 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           for (let i = 0; i < prop[eid].length; i++) {
             const value = prop[eid][i]
 
-            // if we are detecting changes there are no changes since last call 
-            const changed = shadow && prop[eid][i] === shadow[eid][i]
-
-            // sync shadow
-            if (shadow) shadow[eid] = prop[eid]
-
-            // if not a newly added component and state has changed since the last call
-            // todo: if newly added then entire component will serialize (instead of only changed values)
-            if (!newlyAddedComponent && changed) {
-              // rewind the serializer
-              where = rewindWhere
-              // skip writing this value
-              continue
+            if (shadow) {
+              // if we are detecting changes there are no changes since last call 
+              const changed = prop[eid][i] === shadow[eid][i]
+              
+              // sync shadow
+              shadow[eid] = prop[eid]
+              
+              // if not a newly added component and state has changed since the last call
+              // todo: if newly added then entire component will serialize (instead of only changed values)
+              if (!newlyAddedComponent && changed) {
+                // rewind the serializer
+                where = rewindWhere
+                // skip writing this value
+                continue
+              }
             }
 
             // write array index
@@ -224,20 +228,24 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           }
         } else {
 
-          // console.log(shadow[eid], prop[eid])
-          const changed = shadow && shadow[eid] !== prop[eid]
+          if (shadow) {
 
-          // sync shadow
-          if (shadow) shadow[eid] = prop[eid]
+            // console.log(shadow[eid], prop[eid])
+            const changed = shadow[eid] !== prop[eid]
+            
+            // sync shadow
+            shadow[eid] = prop[eid]
+            
+            // do not write value if diffing and no change
+            // and if not a newly added component
+            if (!changed && !newlyAddedComponent) {
+              // console.log('BRUHHHHH', changed, newlyAddedComponent)
+              // rewind the serializer
+              where = rewindWhere
+              // skip writing this value
+              continue
+            }
 
-          // do not write value if diffing and no change
-          // and if not a newly added component
-          if (!changed && !newlyAddedComponent) {
-            // console.log('BRUHHHHH', changed, newlyAddedComponent)
-            // rewind the serializer
-            where = rewindWhere
-            // skip writing this value
-            continue
           }
 
           const type = prop.constructor.name.replace('Array', '')

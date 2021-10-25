@@ -161,9 +161,8 @@ describe('Serialize Integration Tests', () => {
     packet = serialize(query(world))
     
     ents = deserialize(world, packet, DESERIALIZE_MODE.MAP)
-    const mappedEid2 = mappedEid + 1
-    strictEqual(TestComponent.value[mappedEid2], 1)
-    strictEqual(ents[0], mappedEid2)
+    strictEqual(TestComponent.value[mappedEid], 1)
+    strictEqual(ents[0], mappedEid)
   })
   // todo
   // it('should maintain references when deserializing', () => {
