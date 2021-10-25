@@ -190,30 +190,28 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 
           // write index,value
           for (let i = 0; i < prop[eid].length; i++) {
-            const value = prop[eid][i]
 
             if (shadow) {
-              // if we are detecting changes there are no changes since last call 
-              const changed = prop[eid][i] === shadow[eid][i]
+
+              const changed = shadow[eid][i] !== prop[eid][i]
               
               // sync shadow
-              shadow[eid] = prop[eid]
-              
-              // if not a newly added component and state has changed since the last call
+              shadow[eid][i] = prop[eid][i]              
+
+              // if state has not changed since the last call
               // todo: if newly added then entire component will serialize (instead of only changed values)
-              if (!newlyAddedComponent && changed) {
-                // rewind the serializer
-                where = rewindWhere
+              if (!changed && !newlyAddedComponent) {
                 // skip writing this value
                 continue
               }
             }
-
+            
             // write array index
             view[`set${indexType}`](where, i)
             where += indexBytes
-
+            
             // write value at that index
+            const value = prop[eid][i]
             view[`set${type}`](where, value)
             where += prop[eid].BYTES_PER_ELEMENT
             arrayWriteCount++
@@ -225,28 +223,26 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
             writeCount++
           } else {
             where = rewindWhere
+            continue
           }
         } else {
 
           if (shadow) {
 
-            // console.log(shadow[eid], prop[eid])
             const changed = shadow[eid] !== prop[eid]
-            
-            // sync shadow
+
             shadow[eid] = prop[eid]
-            
+
             // do not write value if diffing and no change
-            // and if not a newly added component
             if (!changed && !newlyAddedComponent) {
-              // console.log('BRUHHHHH', changed, newlyAddedComponent)
               // rewind the serializer
               where = rewindWhere
               // skip writing this value
               continue
             }
 
-          }
+          }  
+
 
           const type = prop.constructor.name.replace('Array', '')
           // set value next [type] bytes

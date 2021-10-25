@@ -182,26 +182,30 @@ describe('Serialize Integration Tests', () => {
 
     let packet = serialize([eid])
 
-    strictEqual(TestComponent.value[eid], 0)
-
-    // entire ArrayComponent should be serialized upon first add
+    // entire ArrayComponent should be serialized
     strictEqual(packet.byteLength, 38)
 
+    TestComponent.value[eid]++
+
     packet = serialize([eid])
+
+    strictEqual(packet.byteLength, 38)
+
+    TestComponent.value[eid] = 0
     
     deserialize(world, packet)
     
-    strictEqual(TestComponent.value[eid], 0)
+    strictEqual(TestComponent.value[eid], 1)
 
     TestComponent.value[eid]++
     
-    strictEqual(TestComponent.value[eid], 1)
-    
     packet = serialize([eid])
+    
+    strictEqual(packet.byteLength, 38)
     
     deserialize(world, packet)
     
-    strictEqual(TestComponent.value[eid], 1)
+    strictEqual(TestComponent.value[eid], 2)
     
   })
   it('should only serialize changes for Changed array properties', () => {
@@ -211,31 +215,36 @@ describe('Serialize Integration Tests', () => {
     const eid = addEntity(world)
     addComponent(world, ArrayComponent, eid)
     
-    const serialize = defineSerializer([Changed(ArrayComponent.values)])
-    const deserialize = defineDeserializer([ArrayComponent.values])
+    const serialize = defineSerializer([Changed(ArrayComponent)])
+    const deserialize = defineDeserializer([ArrayComponent])
     
-    ArrayComponent.values[eid][0]++
-
     let packet = serialize([eid])
 
-    // strictEqual(ArrayComponent.values[eid][0], 0)
-
-    // ArrayComponent should not be serialized yet
-    // strictEqual(packet.byteLength, 0)
-    assert(packet.byteLength > 0)
+    // add component counts as a change, so first serialization will add components
+    strictEqual(packet.byteLength, 25)
 
     packet = serialize([eid])
     
-    deserialize(world, packet)
-    
-    // strictEqual(ArrayComponent.values[eid][0], 0)
+    // no changes, byteLength 0
+    strictEqual(packet.byteLength, 0)
 
-    // ArrayComponent.values[eid][0]++
+    packet = serialize([eid])
     
-    strictEqual(ArrayComponent.values[eid][0], 1)
+    // no changes, byteLength 0
+    strictEqual(packet.byteLength, 0)
+
+    // value still 0
+    strictEqual(ArrayComponent.values[eid][0], 0)
+
+    ArrayComponent.values[eid][0]++
     
     packet = serialize([eid])
     
+    // packet should have changes
+    strictEqual(packet.byteLength, 15)
+    
+    ArrayComponent.values[eid][0] = 0
+
     deserialize(world, packet)
     
     strictEqual(ArrayComponent.values[eid][0], 1)
