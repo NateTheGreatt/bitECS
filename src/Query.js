@@ -320,8 +320,8 @@ export const queryCheckComponent = (q, c) => {
 
 export const queryAddEntity = (q, eid) => {
   q.toRemove.remove(eid)
+  if (!q.has(eid)) q.entered.add(eid)
   q.add(eid)
-  q.entered.add(eid)
 }
 
 const queryCommitRemovals = (q) => {
