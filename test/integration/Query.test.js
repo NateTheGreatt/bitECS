@@ -221,4 +221,21 @@ describe('Query Integration Tests', () => {
     strictEqual(exited.length, 1)
     strictEqual(exited[0], 0)
   })
+  it('shouldn\'t pick up entities in enterQuery after adding a component a second time', () => {
+    const world = createWorld()
+    const TestComponent = defineComponent({ value: Types.f32 })
+    const query = defineQuery([TestComponent])
+    const enteredQuery = enterQuery(query)
+
+    const eid = addEntity(world)
+    addComponent(world, TestComponent, eid)
+    
+    const entered = enteredQuery(world)
+    strictEqual(entered.length, 1)
+
+    addComponent(world, TestComponent, eid)
+
+    const entered2 = enteredQuery(world)
+    strictEqual(entered2.length, 0)
+  })
 })
