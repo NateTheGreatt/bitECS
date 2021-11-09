@@ -11,7 +11,7 @@ export const $storeFlattened = Symbol('storeFlattened')
 export const $storeBase = Symbol('storeBase')
 export const $storeType = Symbol('storeType')
 
-export const $storeArrayCounts = Symbol('storeArrayCount')
+export const $storeArrayElementCounts = Symbol('storeArrayElementCounts')
 export const $storeSubarrays = Symbol('storeSubarrays')
 export const $subarrayCursors = Symbol('subarrayCursors')
 export const $subarray = Symbol('subarray')
@@ -65,15 +65,14 @@ const resizeSubarray = (metadata, store, size) => {
 
   if (cursors[type] === 0) {
 
-    const arrayCount = metadata[$storeArrayCounts][type]
-    const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
+    const arrayElementCount = metadata[$storeArrayElementCounts][type]
     
     // // for threaded impl
     // // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
     // // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
     // // const buffer = new SharedArrayBuffer(totalBytes)
 
-    const array = new TYPES[type](roundToMultiple4(summedLength * size))
+    const array = new TYPES[type](roundToMultiple4(arrayElementCount * size))
 
     array.set(metadata[$storeSubarrays][type])
     
@@ -184,15 +183,14 @@ const createArrayStore = (metadata, type, length) => {
 
   // create buffer for type if it does not already exist
   if (!metadata[$storeSubarrays][type]) {
-    const arrayCount = metadata[$storeArrayCounts][type]
-    const summedLength = Array(arrayCount).fill(0).reduce((a, p) => a + length, 0)
-    
+    const arrayElementCount = metadata[$storeArrayElementCounts][type]
+
     // for threaded impl
     // const summedBytesPerElement = Array(arrayCount).fill(0).reduce((a, p) => a + TYPES[type].BYTES_PER_ELEMENT, 0)
     // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
     // const buffer = new SharedArrayBuffer(totalBytes)
 
-    const array = new TYPES[type](roundToMultiple4(summedLength * size))
+    const array = new TYPES[type](roundToMultiple4(arrayElementCount * size))
 
     metadata[$storeSubarrays][type] = array
     
@@ -242,19 +240,19 @@ export const createStore = (schema, size) => {
 
   schema = JSON.parse(JSON.stringify(schema))
 
-  const arrayCounts = {}
-  const collectArrayCounts = s => {
+  const arrayElementCounts = {}
+  const collectArrayElementCounts = s => {
     const keys = Object.keys(s)
     for (const k of keys) {
       if (isArrayType(s[k])) {
-        if (!arrayCounts[s[k][0]]) arrayCounts[s[k][0]] = 0
-        arrayCounts[s[k][0]]++
+        if (!arrayElementCounts[s[k][0]]) arrayElementCounts[s[k][0]] = 0
+        arrayElementCounts[s[k][0]] += s[k][1]
       } else if (s[k] instanceof Object) {
-        collectArrayCounts(s[k])
+        collectArrayElementCounts(s[k])
       }
     }
   }
-  collectArrayCounts(schema)
+  collectArrayElementCounts(schema)
 
   const metadata = {
     [$storeSize]: size,
@@ -263,7 +261,7 @@ export const createStore = (schema, size) => {
     [$storeRef]: $store,
     [$subarrayCursors]: Object.keys(TYPES).reduce((a, type) => ({ ...a, [type]: 0 }), {}),
     [$storeFlattened]: [],
-    [$storeArrayCounts]: arrayCounts
+    [$storeArrayElementCounts]: arrayElementCounts
   }
 
   if (schema instanceof Object && Object.keys(schema).length) {
