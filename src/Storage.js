@@ -17,7 +17,7 @@ export const $subarrayCursors = Symbol('subarrayCursors')
 export const $subarray = Symbol('subarray')
 export const $subarrayFrom = Symbol('subarrayFrom')
 export const $subarrayTo = Symbol('subarrayTo')
-export const $parentArray = Symbol('subStore')
+export const $parentArray = Symbol('parentArray')
 export const $tagStore = Symbol('tagStore')
 
 export const $queryShadow = Symbol('queryShadow')
@@ -43,16 +43,17 @@ export const createShadow = (store, key) => {
   if (!ArrayBuffer.isView(store)) {
     const shadowStore = store[$parentArray].slice(0)
     store[key] = store.map((_,eid) => {
-      const from = store[eid][$subarrayFrom]
-      const to = store[eid][$subarrayTo]
-      return shadowStore.subarray(from, to)
+      const { length } = store[eid]
+      const start = length * eid
+      const end = start + length
+      return shadowStore.subarray(start, end)
     })
   } else {
     store[key] = store.slice(0)
   }
 }
 
-const resizeSubarray = (metadata, store, size) => {
+const resizeSubarray = (metadata, store, storeSize) => {
   const cursors = metadata[$subarrayCursors]
   let type = store[$storeType]
   const length = store[0].length
@@ -72,7 +73,7 @@ const resizeSubarray = (metadata, store, size) => {
     // // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
     // // const buffer = new SharedArrayBuffer(totalBytes)
 
-    const array = new TYPES[type](roundToMultiple4(arrayElementCount * size))
+    const array = new TYPES[type](roundToMultiple4(arrayElementCount * storeSize))
 
     array.set(metadata[$storeSubarrays][type])
     
@@ -83,25 +84,21 @@ const resizeSubarray = (metadata, store, size) => {
   }
 
   const start = cursors[type]
-  let end = 0
-  for (let eid = 0; eid < size; eid++) {
-    const from = cursors[type] + (eid * length)
-    const to = from + length
-
-    store[eid] = metadata[$storeSubarrays][type].subarray(from, to)
-    
-    store[eid][$subarrayFrom] = from
-    store[eid][$subarrayTo] = to
-    store[eid][$subarray] = true
-    store[eid][$indexType] = TYPES_NAMES[indexType]
-    store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
-    
-    end = to
-  }
-
+  const end = start + (storeSize * length)
   cursors[type] = end
 
   store[$parentArray] = metadata[$storeSubarrays][type].subarray(start, end)
+
+  // pre-generate subarrays for each eid
+  for (let eid = 0; eid < storeSize; eid++) {
+    const start = length * eid
+    const end = start + length
+    store[eid] = store[$parentArray].subarray(start, end)
+    store[eid][$indexType] = TYPES_NAMES[indexType]
+    store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
+    store[eid][$subarray] = true
+  }
+
 }
 
 const resizeRecursive = (metadata, store, size) => {
@@ -149,11 +146,6 @@ export const resetStoreFor = (store, eid) => {
   }
 }
 
-// const createTypeStore = (type, length) => {
-//   const store = alloc(type, length)
-//   store[$isEidType] = type === TYPES_ENUM.eid
-//   return store
-// }
 const createTypeStore = (type, length) => {
   const totalBytes = length * TYPES[type].BYTES_PER_ELEMENT
   const buffer = new ArrayBuffer(totalBytes)
@@ -165,8 +157,8 @@ const createTypeStore = (type, length) => {
 export const parentArray = store => store[$parentArray]
 
 const createArrayStore = (metadata, type, length) => {
-  const size = metadata[$storeSize]
-  const store = Array(size).fill(0)
+  const storeSize = metadata[$storeSize]
+  const store = Array(storeSize).fill(0)
   store[$storeType] = type
   store[$isEidType] = type === TYPES_ENUM.eid
 
@@ -190,35 +182,29 @@ const createArrayStore = (metadata, type, length) => {
     // const totalBytes = roundToMultiple4(summedBytesPerElement * summedLength * size)
     // const buffer = new SharedArrayBuffer(totalBytes)
 
-    const array = new TYPES[type](roundToMultiple4(arrayElementCount * size))
+    const array = new TYPES[type](roundToMultiple4(arrayElementCount * storeSize))
+    array[$indexType] = TYPES_NAMES[indexType]
+    array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
 
     metadata[$storeSubarrays][type] = array
     
-    array[$indexType] = TYPES_NAMES[indexType]
-    array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
   }
 
-  // pre-generate subarrays for each eid
   const start = cursors[type]
-  let end = 0
-  for (let eid = 0; eid < size; eid++) {
-    const from = cursors[type] + (eid * length)
-    const to = from + length
-
-    store[eid] = metadata[$storeSubarrays][type].subarray(from, to)
-    
-    store[eid][$subarrayFrom] = from
-    store[eid][$subarrayTo] = to
-    store[eid][$subarray] = true
-    store[eid][$indexType] = TYPES_NAMES[indexType]
-    store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
-    
-    end = to
-  }
-
+  const end = start + (storeSize * length)
   cursors[type] = end
 
   store[$parentArray] = metadata[$storeSubarrays][type].subarray(start, end)
+
+  // pre-generate subarrays for each eid
+  for (let eid = 0; eid < storeSize; eid++) {
+    const start = length * eid
+    const end = start + length
+    store[eid] = store[$parentArray].subarray(start, end)
+    store[eid][$indexType] = TYPES_NAMES[indexType]
+    store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT
+    store[eid][$subarray] = true
+  }
 
   return store
 }

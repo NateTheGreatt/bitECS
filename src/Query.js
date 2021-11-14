@@ -135,10 +135,10 @@ export const registerQuery = (world, query) => {
     .reduce((a,v) => a.concat(v), [])
 
   const shadows = flatProps.map(prop => {
-      const $ = Symbol()
-      createShadow(prop, $)
-      return prop[$]
-  }, [])
+    const $ = Symbol()
+    createShadow(prop, $)
+    return prop[$]
+  })
 
   const q = Object.assign(sparseSet, {
     archetypes,
