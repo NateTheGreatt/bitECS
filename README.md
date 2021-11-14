@@ -1,6 +1,26 @@
-# 👾 bitECS 👾 [![npm](https://img.shields.io/npm/v/bitecs.svg)](https://www.npmjs.com/package/bitecs) [![Minzipped](https://badgen.net/bundlephobia/minzip/bitecs)](https://www.npmjs.com/package/bitecs) [![npm](https://img.shields.io/npm/dt/bitecs.svg)](https://www.npmjs.com/package/bitecs) [![License](https://badgen.net/npm/license/bitecs)](https://www.npmjs.com/package/bitecs)
+<h1 align="center">
+❤ ❤ ❤ <br />
+bitECS
+</h1>
 
-Functional, minimal, [data-oriented](https://www.dataorienteddesign.com/dodbook/), ultra-high performance [ECS](https://en.wikipedia.org/wiki/Entity_component_system) library written using JavaScript TypedArrays.
+<p align="center">
+  <a href="https://www.npmjs.com/package/bitecs">
+    <img src="https://img.shields.io/npm/v/bitecs.svg" alt="Version" />
+  </a>
+  <a href="https://www.npmjs.com/package/bitecs">
+    <img src="https://badgen.net/bundlephobia/minzip/bitecs" alt="Minzipped" />
+  </a>
+  <a href="https://www.npmjs.com/package/bitecs">
+    <img src="https://img.shields.io/npm/dt/bitecs.svg" alt="Downloads" />
+  </a>
+  <a href="https://github.com/NateTheGreatt/bitECS/blob/master/LICENSE">
+    <img src="https://badgen.net/npm/license/bitecs" alt="License" />
+  </a>
+</p>
+
+<p align="center">
+Functional, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-oriented</a>, ultra-high performance <a herf="https://en.wikipedia.org/wiki/Entity_component_system">ECS</a> library written using JavaScript TypedArrays.
+</p>
 
 </center>
 
@@ -15,8 +35,6 @@ Functional, minimal, [data-oriented](https://www.dataorienteddesign.com/dodbook/
 | ❤  Made with love                | 🔺 [glMatrix](https://github.com/toji/gl-matrix) support |
 
 ### 📈 Benchmarks
-
-🚀 Unparalleled performance benchmarks
 
 |                                                                 |                                                                           |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------- |
