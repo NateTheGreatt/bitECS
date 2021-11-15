@@ -6,7 +6,6 @@ import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals, reset
 import { defineSerializer, defineDeserializer, DESERIALIZE_MODE } from './Serialize.js'
 import { parentArray } from './Storage.js'
 import { TYPES_ENUM } from './Constants.js'
-// import { defineProxy } from './Proxy.js'
 
 export const pipe = (...fns) => (input) => {
   let tmp = input
@@ -35,14 +34,10 @@ export {
   removeComponent,
   hasComponent,
   getEntityComponents,
-  // entityChanged,
-
-  // defineProxy,
 
   defineQuery,
   Changed,
   Not,
-  // Or,
   enterQuery,
   exitQuery,
   commitRemovals,
