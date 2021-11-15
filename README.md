@@ -19,7 +19,7 @@ bitECS
 </p>
 
 <p align="center">
-Functional, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-oriented</a>, ultra-high performance <a herf="https://en.wikipedia.org/wiki/Entity_component_system">ECS</a> library written using JavaScript TypedArrays.
+Functional, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-oriented</a>, ultra-high performance <a href="https://en.wikipedia.org/wiki/Entity_component_system">ECS</a> library written using JavaScript TypedArrays.
 </p>
 
 </center>
