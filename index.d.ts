@@ -97,7 +97,7 @@ declare module 'bitecs' {
   export type System = (world: IWorld, ...args: any[]) => IWorld
 
   export type Serializer = (target: IWorld | number[]) => ArrayBuffer
-  export type Deserializer = (world: IWorld, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => void
+  export type Deserializer = (world: IWorld, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => number[]
 
   export function setDefaultSize(size: number): void
   export function createWorld<T extends IWorld>(obj?: T): T
