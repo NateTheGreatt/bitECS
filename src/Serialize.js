@@ -2,6 +2,7 @@ import { $indexBytes, $indexType, $isEidType, $serializeShadow, $storeBase, $sto
 import { $componentMap, addComponent, hasComponent } from "./Component.js"
 import { $entityArray, $entitySparseSet, addEntity, eidToWorld } from "./Entity.js"
 import { $localEntities, $localEntityLookup } from "./World.js"
+import { SparseSet } from "./Util.js"
 
 export const DESERIALIZE_MODE = {
   REPLACE: 0,
@@ -278,10 +279,9 @@ export const defineDeserializer = (target) => {
   const isWorld = Object.getOwnPropertySymbols(target).includes($componentMap)
   let [componentProps] = canonicalize(target)
 
+  const deserializedEntities = new Set()
 
   return (world, packet, mode=0) => {
-
-    const deserializedEntities = []
 
     newEntities.clear()
     
@@ -351,7 +351,7 @@ export const defineDeserializer = (target) => {
         }
 
         // add eid to deserialized ents after it has been transformed by MAP mode
-        deserializedEntities.push(eid)
+        deserializedEntities.add(eid)
 
         if (component[$tagStore]) {
           continue
@@ -388,6 +388,10 @@ export const defineDeserializer = (target) => {
       }
     }
 
-    return deserializedEntities
+    const ents = Array.from(deserializedEntities)
+
+    deserializedEntities.clear()
+
+    return ents
   }
 }

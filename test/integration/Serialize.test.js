@@ -7,6 +7,7 @@ import { defineDeserializer, defineSerializer, DESERIALIZE_MODE } from '../../sr
 import { Changed, defineQuery } from '../../src/Query.js'
 import { TYPES_ENUM } from '../../src/Constants.js'
 import { pipe } from '../../src/index.js'
+import { strict } from 'assert/strict'
 
 const Types = TYPES_ENUM
 
@@ -43,7 +44,7 @@ describe('Serialize Integration Tests', () => {
     addComponent(world, TestComponent, eid)
 
     const serialize = defineSerializer([TestComponent])
-    const deserialize = defineDeserializer(world)
+    const deserialize = defineDeserializer([TestComponent])
 
     const packet = serialize(world)
 
@@ -64,7 +65,7 @@ describe('Serialize Integration Tests', () => {
     addComponent(world, TestComponent, eid)
 
     const serialize = defineSerializer([TestComponent])
-    const deserialize = defineDeserializer(world)
+    const deserialize = defineDeserializer([TestComponent])
 
     const packet = serialize(query(world))
 
@@ -375,6 +376,24 @@ describe('Serialize Integration Tests', () => {
     assert(packet.byteLength > 0)
     packet = serialize([eid])
     strictEqual(packet.byteLength, 0)
-    
+  })
+  it('should output an array of unique EIDs when deserializing', () => {
+    const world = createWorld()
+    const TestComponent = defineComponent({ value0: Types.f32, value1: Types.f32 })
+    const eid0 = addEntity(world)
+    addComponent(world, TestComponent, eid0)
+    const eid1 = addEntity(world)
+    addComponent(world, TestComponent, eid1)
+
+    const serialize = defineSerializer([TestComponent])
+    const deserialize = defineDeserializer([TestComponent])
+
+    const packet = serialize(world)
+
+    const ents = deserialize(world, packet)
+
+    strictEqual(ents.length, 2)
+    strictEqual(ents[0], 0)
+    strictEqual(ents[1], 1)
   })
 })
