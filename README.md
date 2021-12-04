@@ -73,13 +73,13 @@ const Velocity = defineComponent(Vector3)
 const movementQuery = defineQuery([Position, Velocity])
 
 const movementSystem = (world) => {
-  const { time } = world
+  const { time: { delta } } = world
   const ents = movementQuery(world)
   for (let i = 0; i < ents.length; i++) {
     const eid = ents[i]
-    Position.x[eid] += Velocity.x[eid] * time.delta
-    Position.y[eid] += Velocity.y[eid] * time.delta
-    Position.z[eid] += Velocity.z[eid] * time.delta
+    Position.x[eid] += Velocity.x[eid] * delta
+    Position.y[eid] += Velocity.y[eid] * delta
+    Position.z[eid] += Velocity.z[eid] * delta
   }
   return world
 }
