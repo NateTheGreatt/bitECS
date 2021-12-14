@@ -1,7 +1,7 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeFileSync } from 'fs'
-import glob from 'globby'
+import { globby } from 'globby'
 import jsdoc2md from 'jsdoc-to-markdown'
 
 const FILENAME = 'API.md'
@@ -9,7 +9,7 @@ const FILENAME = 'API.md'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 async function render (pattern, output) {
-  const files = await glob([
+  const files = await globby([
     pattern,
     '!**/**/node_modules',
     '!**/**/test',
