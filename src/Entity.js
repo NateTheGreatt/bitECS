@@ -119,4 +119,8 @@ export const removeEntity = (world, eid) => {
  * @param {*} world
  * @param {*} eid
  */
-export const getEntityComponents = (world, eid) => Array.from(world[$entityComponents].get(eid))
+export const getEntityComponents = (world, eid) => {
+  if (eid === undefined) throw new Error('bitECS - entity is undefined.')
+  if (!world[$entitySparseSet].has(eid)) throw new Error('bitECS - entity does not exist in the world.')
+  return Array.from(world[$entityComponents].get(eid))
+}
