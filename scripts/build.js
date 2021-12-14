@@ -8,7 +8,7 @@ import boxen from 'boxen'
 import chalk from 'chalk'
 import gradient from 'gradient-string'
 import sloc from 'sloc'
-import gzipSize from 'gzip-size'
+import { gzipSizeFromFileSync } from 'gzip-size'
 import brotliSize from 'brotli-size'
 import { sizeFormatter } from 'human-readable'
 import { logLogo } from './logLogo.js'
@@ -179,7 +179,7 @@ function pkg () {
   const loc = sloc(fs.readFileSync(outfileEsm, 'utf-8'), 'js')
   const cjsStats = fs.statSync(outfileCjs)
   const esmStats = fs.statSync(outfileEsm)
-  const gzippedSize = gzipSize.fileSync(outfileEsm)
+  const gzippedSize = gzipSizeFromFileSync(outfileEsm)
   const brotliedSize = brotliSize.fileSync(outfileEsm)
 
   log(`${chalk.yellow.bold('Lines of Code:')} ${chalk.green(loc.source)}`, true)
