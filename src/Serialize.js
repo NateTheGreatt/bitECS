@@ -370,8 +370,18 @@ export const defineDeserializer = (target) => {
             const value = view[`get${array.constructor.name.replace('Array', '')}`](where)
             where += array.BYTES_PER_ELEMENT
             if (prop[$isEidType]) {
-              let localEid = localEntities.get(value)
-              if (!world[$entitySparseSet].has(localEid)) localEid = addEntity(world)
+              let localEid
+              if (localEntities.has(value)) {
+                localEid = localEntities.get(value)
+              } else if (newEntities.has(value)) {
+                localEid = newEntities.get(value)
+              } else {
+                const newEid = addEntity(world)
+                localEntities.set(value, newEid)
+                localEntityLookup.set(newEid, value)
+                newEntities.set(value, newEid)
+                localEid = newEid
+              }
               prop[eid][index] = localEid
             } else prop[eid][index] = value
           }
@@ -380,8 +390,18 @@ export const defineDeserializer = (target) => {
           where += prop.BYTES_PER_ELEMENT
 
           if (prop[$isEidType]) {
-            let localEid = localEntities.get(value)
-            if (!world[$entitySparseSet].has(localEid)) localEid = addEntity(world)
+            let localEid
+            if (localEntities.has(value)) {
+              localEid = localEntities.get(value)
+            } else if (newEntities.has(value)) {
+              localEid = newEntities.get(value)
+            } else {
+              const newEid = addEntity(world)
+              localEntities.set(value, newEid)
+              localEntityLookup.set(newEid, value)
+              newEntities.set(value, newEid)
+              localEid = newEid
+            }
             prop[eid] = localEid
           } else prop[eid] = value
         }

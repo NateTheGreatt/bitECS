@@ -396,4 +396,17 @@ describe('Serialize Integration Tests', () => {
     strictEqual(ents[0], 0)
     strictEqual(ents[1], 1)
   })
+  it('should create EIDs when deserializing eid type properties with MAP mode even if the entity hasn\'t been created yet', () => {
+    const world = createWorld()
+    const EIDComponent = defineComponent({eid: Types.eid})
+    const eid1 = addEntity(world)
+    const eid2 = addEntity(world)
+    addComponent(world, EIDComponent, eid1)
+    EIDComponent.eid[eid1] = eid2
+    const serialize = defineSerializer([EIDComponent])
+    const deserialize = defineDeserializer([EIDComponent])
+    const packet = serialize([eid1])
+    const [eid1Mapped] = deserialize(world, packet, DESERIALIZE_MODE.MAP)
+    assert(EIDComponent.eid[eid1Mapped] != 0)
+  })
 })
