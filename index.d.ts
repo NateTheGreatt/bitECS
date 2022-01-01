@@ -90,44 +90,44 @@ declare module 'bitecs' {
 
   export type Component = IComponent | ComponentType<ISchema>
 
-  export type QueryModifier = (c: (IComponent | IComponentProp)[]) => (world: IWorld) => IComponent | QueryModifier
+  export type QueryModifier<W extends IWorld> = (c: (IComponent | IComponentProp)[]) => (world: W) => IComponent | QueryModifier<W>
 
-  export type Query = (world: IWorld, clearDiff?: Boolean) => number[]
+  export type Query<W extends IWorld> = (world: W, clearDiff?: Boolean) => number[]
 
-  export type System = (world: IWorld, ...args: any[]) => IWorld
+  export type System<W extends IWorld, Args extends any[]> = (world: W, ...args: Args) => W
 
-  export type Serializer = (target: IWorld | number[]) => ArrayBuffer
-  export type Deserializer = (world: IWorld, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => number[]
+  export type Serializer<W extends IWorld> = (target: W | number[]) => ArrayBuffer
+  export type Deserializer<W extends IWorld> = (world: W, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => number[]
 
   export function setDefaultSize(size: number): void
   export function createWorld<T extends IWorld>(obj?: T): T
-  export function resetWorld(world: IWorld): IWorld
-  export function deleteWorld(world: IWorld): void
-  export function addEntity(world: IWorld): number
-  export function removeEntity(world: IWorld, eid: number): void
+  export function resetWorld<W extends IWorld>(world: W): W
+  export function deleteWorld<W extends IWorld>(world: W): void
+  export function addEntity<W extends IWorld>(world: W): number
+  export function removeEntity<W extends IWorld>(world: W, eid: number): void
 
-  export function registerComponent(world: IWorld, component: Component): void
-  export function registerComponents(world: IWorld, components: Component[]): void
+  export function registerComponent<W extends IWorld>(world: W, component: Component): void
+  export function registerComponents<W extends IWorld>(world: W, components: Component[]): void
   export function defineComponent<T extends ISchema>(schema?: T): ComponentType<T>
   export function defineComponent<T>(schema?: any): T
-  export function addComponent(world: IWorld, component: Component, eid: number, reset?: boolean): void
-  export function removeComponent(world: IWorld, component: Component, eid: number, reset?: boolean): void
-  export function hasComponent(world: IWorld, component: Component, eid: number): boolean
-  export function getEntityComponents(world: IWorld, eid: number): Component[]
+  export function addComponent<W extends IWorld>(world: W, component: Component, eid: number, reset?: boolean): void
+  export function removeComponent<W extends IWorld>(world: W, component: Component, eid: number, reset?: boolean): void
+  export function hasComponent<W extends IWorld>(world: W, component: Component, eid: number): boolean
+  export function getEntityComponents<W extends IWorld>(world: W, eid: number): Component[]
 
-  export function defineQuery(components: (Component | QueryModifier)[]): Query
-  export function Changed(c: Component | ISchema): Component | QueryModifier
-  export function Not(c: Component | ISchema): Component | QueryModifier
-  export function enterQuery(query: Query): Query
-  export function exitQuery(query: Query): Query
-  export function resetChangedQuery(world: IWorld, query: Query): Query
-  export function removeQuery(world: IWorld, query: Query): Query
-  export function commitRemovals(world: IWorld): void
+  export function defineQuery<W extends IWorld>(components: (Component | QueryModifier<W>)[]): Query<W>
+  export function Changed<W extends IWorld>(c: Component | ISchema): Component | QueryModifier<W>
+  export function Not<W extends IWorld>(c: Component | ISchema): Component | QueryModifier<W>
+  export function enterQuery<W extends IWorld>(query: Query<W>): Query<W>
+  export function exitQuery<W extends IWorld>(query: Query<W>): Query<W>
+  export function resetChangedQuery<W extends IWorld>(world: W, query: Query<W>): Query<W>
+  export function removeQuery<W extends IWorld>(world: W, query: Query<W>): Query<W>
+  export function commitRemovals<W extends IWorld>(world: W): void
 
-  export function defineSystem(update: (world: IWorld, ...args: any[]) => IWorld): System
+  export function defineSystem<W extends IWorld, Args extends any[]>(update: (world: W, ...args: Args) => W): System<W, Args>
 
-  export function defineSerializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier, maxBytes?: number): Serializer
-  export function defineDeserializer(target: IWorld | Component[] | IComponentProp[] | QueryModifier): Deserializer
+  export function defineSerializer<W extends IWorld>(target: W | Component[] | IComponentProp[] | QueryModifier<W>, maxBytes?: number): Serializer<W>
+  export function defineDeserializer<W extends IWorld>(target: W | Component[] | IComponentProp[] | QueryModifier<W>): Deserializer<W>
   
   export function pipe(...fns: ((...args: any[]) => any)[]): (...input: any[]) => any
   
