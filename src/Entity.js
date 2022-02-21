@@ -124,3 +124,7 @@ export const getEntityComponents = (world, eid) => {
   if (!world[$entitySparseSet].has(eid)) throw new Error('bitECS - entity does not exist in the world.')
   return Array.from(world[$entityComponents].get(eid))
 }
+
+export const entityExists = (world, eid) => {
+  world[$entitySparseSet].has(eid)
+}

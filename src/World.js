@@ -82,3 +82,5 @@ export const deleteWorld = (world) => {
   Object.keys(world).forEach(key => { delete world[key] })
   worlds.splice(worlds.indexOf(world), 1)
 }
+
+export const getWorldComponents = (world) => Array.from(world[$componentMap].keys())

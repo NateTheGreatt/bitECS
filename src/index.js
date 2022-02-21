@@ -1,5 +1,5 @@
-import { createWorld, resetWorld, deleteWorld } from './World.js'
-import { addEntity, removeEntity, setDefaultSize, getEntityComponents} from './Entity.js'
+import { createWorld, resetWorld, deleteWorld, getWorldComponents } from './World.js'
+import { addEntity, removeEntity, setDefaultSize, getEntityComponents, entityExists } from './Entity.js'
 import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent } from './Component.js'
 import { defineSystem } from './System.js'
 import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals, resetChangedQuery, removeQuery } from './Query.js'
@@ -26,7 +26,9 @@ export {
   deleteWorld,
   addEntity,
   removeEntity,
-
+  entityExists,
+  getWorldComponents,
+  
   registerComponent,
   registerComponents,
   defineComponent,
