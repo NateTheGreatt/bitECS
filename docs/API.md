@@ -31,6 +31,9 @@
 <dt><a href="#getEntityComponents">getEntityComponents</a></dt>
 <dd><p>Returns an array of components that an entity possesses.</p>
 </dd>
+<dt><a href="#entityExists">entityExists</a></dt>
+<dd><p>Checks the existence of an entity in a world</p>
+</dd>
 <dt><a href="#enterQuery">enterQuery</a> ⇒ <code>function</code></dt>
 <dd><p>Given an existing query, returns a new function which returns entities who have been added to the given query since the last call of the function.</p>
 </dd>
@@ -63,6 +66,9 @@
 </dd>
 <dt><a href="#deleteWorld">deleteWorld</a></dt>
 <dd><p>Deletes a world.</p>
+</dd>
+<dt><a href="#getWorldComponents">getWorldComponents</a> ⇒</dt>
+<dd><p>Returns all components registered to a world</p>
 </dd>
 </dl>
 
@@ -151,7 +157,7 @@
 
 | Param | Type |
 | --- | --- |
-| size | <code>number</code> | 
+| newSize | <code>number</code> | 
 
 
 <br><a name="addEntity"></a>
@@ -188,6 +194,18 @@
 | --- | --- |
 | world | <code>\*</code> | 
 | eid | <code>\*</code> | 
+
+
+<br><a name="entityExists"></a>
+
+## entityExists
+> Checks the existence of an entity in a world
+
+
+| Param | Type |
+| --- | --- |
+| world | <code>World</code> | 
+| eid | <code>number</code> | 
 
 
 <br><a name="enterQuery"></a>
@@ -308,6 +326,18 @@
 ## deleteWorld
 > Deletes a world.
 
+
+| Param | Type |
+| --- | --- |
+| world | <code>World</code> | 
+
+
+<br><a name="getWorldComponents"></a>
+
+## getWorldComponents ⇒
+> Returns all components registered to a world
+
+**Returns**: Array  
 
 | Param | Type |
 | --- | --- |

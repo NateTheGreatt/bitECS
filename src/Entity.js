@@ -129,6 +129,10 @@ export const getEntityComponents = (world, eid) => {
   return Array.from(world[$entityComponents].get(eid))
 }
 
-export const entityExists = (world, eid) => {
-  world[$entitySparseSet].has(eid)
-}
+/**
+ * Checks the existence of an entity in a world
+ * 
+ * @param {World} world 
+ * @param {number} eid 
+ */
+export const entityExists = (world, eid) => world[$entitySparseSet].has(eid)

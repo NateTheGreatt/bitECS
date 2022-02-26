@@ -89,4 +89,10 @@ export const deleteWorld = (world) => {
   worlds.splice(worlds.indexOf(world), 1)
 }
 
+/**
+ * Returns all components registered to a world
+ * 
+ * @param {World} world 
+ * @returns Array
+ */
 export const getWorldComponents = (world) => Array.from(world[$componentMap].keys())
