@@ -31,7 +31,7 @@ Functional, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-
 | 🔮  Simple, declarative API       | 🔥  Blazing fast iteration               |
 | 🔍  Powerful & performant queries | 💾  Serialization included              |
 | 🍃  Zero dependencies             | 🌐  Node or browser                     |
-| 🤏  `<5kb` minzipped              | 🏷  TypeScript support                   |
+| 🤏  `~5kb` minzipped              | 🏷  TypeScript support                   |
 | ❤  Made with love                | 🔺 [glMatrix](https://github.com/toji/gl-matrix) support |
 
 ### 📈 Benchmarks
