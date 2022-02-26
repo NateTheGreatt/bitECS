@@ -31,9 +31,16 @@ export const resizeWorlds = (size) => {
  *
  * @returns {object}
  */
-export const createWorld = (obj={}) => {
-  const world = obj
-  resetWorld(world)
+export const createWorld = (...args) => {
+  const world = typeof args[0] === 'object'
+    ? args[0]
+    : {}
+  const size = typeof args[0] === 'number' 
+    ? args[0] 
+    : typeof args[1] === 'number' 
+      ? args[1] 
+      : getGlobalSize()
+  resetWorld(world, size)
   worlds.push(world)
   return world
 }
@@ -44,8 +51,7 @@ export const createWorld = (obj={}) => {
  * @param {World} world
  * @returns {object}
  */
-export const resetWorld = (world) => {
-  const size = getGlobalSize()
+export const resetWorld = (world, size = getGlobalSize()) => {
   world[$size] = size
 
   if (world[$entityArray]) world[$entityArray].forEach(eid => removeEntity(world, eid))

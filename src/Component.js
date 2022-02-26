@@ -18,8 +18,8 @@ export const resizeComponents = (size) => {
  * @param {object} schema
  * @returns {object}
  */
-export const defineComponent = (schema) => {
-  const component = createStore(schema, getGlobalSize())
+export const defineComponent = (schema, size) => {
+  const component = createStore(schema, size || getGlobalSize())
   if (schema && Object.keys(schema).length) components.push(component)
   return component
 }
