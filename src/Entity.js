@@ -34,11 +34,20 @@ export const getDefaultSize = () => defaultSize
 /**
  * Sets the default maximum number of entities for worlds and component stores.
  *
- * @param {number} size
+ * @param {number} newSize
  */
-export const setDefaultSize = size => { 
-  defaultSize = size
+export const setDefaultSize = newSize => { 
+  const oldSize = globalSize
+
+  defaultSize = newSize
   resetGlobals()
+
+  globalSize = newSize
+  resizeWorlds(newSize)
+  resizeComponents(newSize)
+  setSerializationResized(true)
+
+  console.info(`👾 bitECS - resizing all data stores from ${oldSize} to ${newSize}`)
 }
 
 export const getEntityCursor = () => globalEntityCursor
@@ -59,15 +68,10 @@ export const addEntity = (world) => {
     // grow by half the original size rounded up to a multiple of 4
     const size = globalSize
     const amount = Math.ceil((size/2) / 4) * 4
-    const newSize = size + amount
-    globalSize = newSize
-    resizeWorlds(newSize)
-    resizeComponents(newSize)
-    setSerializationResized(true)
-    console.info(`👾 bitECS - resizing all data stores from ${size} to ${newSize}`)
+    setDefaultSize(size + amount)
   }
-
-  const eid = removed.length > 0 ? removed.shift() : globalEntityCursor++
+  
+  const eid = removed.length > Math.round(defaultSize * 0.01) ? removed.shift() : globalEntityCursor++
   
   world[$entitySparseSet].add(eid)
   eidToWorld.set(eid, world)

@@ -33,17 +33,37 @@ describe('Entity Integration Tests', () => {
     strictEqual(removed[1], 1)
     strictEqual(removed[2], 2)
   })
-  it('should recycle entity IDs when removed', () => {
+  it('should recycle entity IDs after 1% have been removed', () => {
     const world = createWorld()
-    const eid1 = addEntity(world)
 
-    strictEqual(getEntityCursor(), 1)
-    strictEqual(eid1, 0)
-    
-    removeEntity(world, eid1)
-    const eid2 = addEntity(world)
-    
-    strictEqual(eid2, 0)
-    strictEqual(getEntityCursor(), 1)
+    for (let i = 0; i < 1500; i++) {
+      const eid = addEntity(world)
+      strictEqual(getEntityCursor(), eid+1)
+      strictEqual(eid, i)
+    }
+
+    strictEqual(getEntityCursor(), 1500)
+
+    for (let i = 0; i < 1000; i++) {
+      removeEntity(world, i)
+    }
+
+    let eid = addEntity(world)
+    strictEqual(eid, 1500)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1501)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1502)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1503)
+
+    removeEntity(world, eid)
+
+    eid = addEntity(world)
+    strictEqual(eid, 0)
+
   })
 })
