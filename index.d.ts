@@ -100,17 +100,19 @@ declare module 'bitecs' {
   export type Deserializer<W extends IWorld = IWorld> = (world: W, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => number[]
 
   export function setDefaultSize(size: number): void
-  export function createWorld<W extends IWorld = IWorld>(obj?: W): W
+  export function createWorld<W extends IWorld = IWorld>(obj?: W, size?: number): W
+  export function createWorld<W extends IWorld = IWorld>(size?: number): W
   export function resetWorld<W extends IWorld = IWorld>(world: W): W
   export function deleteWorld<W extends IWorld = IWorld>(world: W): void
   export function addEntity<W extends IWorld = IWorld>(world: W): number
   export function removeEntity<W extends IWorld = IWorld>(world: W, eid: number): void
   export function entityExists<W extends IWorld = IWorld>(world: W, eid: number): boolean
+  export function getWorldComponents<W extends IWorld = IWorld>(world: W): Component[]
 
   export function registerComponent<W extends IWorld = IWorld>(world: W, component: Component): void
   export function registerComponents<W extends IWorld = IWorld>(world: W, components: Component[]): void
-  export function defineComponent<T extends ISchema>(schema?: T): ComponentType<T>
-  export function defineComponent<T>(schema?: any): T
+  export function defineComponent<T extends ISchema>(schema?: T, size?: number): ComponentType<T>
+  export function defineComponent<T>(schema?: any, size?: number): T
   export function addComponent<W extends IWorld = IWorld>(world: W, component: Component, eid: number, reset?: boolean): void
   export function removeComponent<W extends IWorld = IWorld>(world: W, component: Component, eid: number, reset?: boolean): void
   export function hasComponent<W extends IWorld = IWorld>(world: W, component: Component, eid: number): boolean
