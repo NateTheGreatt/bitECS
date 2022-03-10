@@ -105,6 +105,7 @@ declare module 'bitecs' {
   export function deleteWorld<W extends IWorld = IWorld>(world: W): void
   export function addEntity<W extends IWorld = IWorld>(world: W): number
   export function removeEntity<W extends IWorld = IWorld>(world: W, eid: number): void
+  export function entityExists<W extends IWorld = IWorld>(world: W, eid: number): boolean
 
   export function registerComponent<W extends IWorld = IWorld>(world: W, component: Component): void
   export function registerComponents<W extends IWorld = IWorld>(world: W, components: Component[]): void
