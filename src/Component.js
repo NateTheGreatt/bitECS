@@ -102,7 +102,7 @@ export const hasComponent = (world, component, eid) => {
  * @param {number} eid
  * @param {boolean} [reset=false]
  */
-export const addComponent = (world, component, eid, reset=true) => {
+export const addComponent = (world, component, eid, reset=false) => {
   if (eid === undefined) throw new Error('bitECS - entity is undefined.')
   if (!world[$entitySparseSet].has(eid)) throw new Error('bitECS - entity does not exist in the world.')
   if (!world[$componentMap].has(component)) registerComponent(world, component)
@@ -137,7 +137,7 @@ export const addComponent = (world, component, eid, reset=true) => {
  * @param {number} eid
  * @param {boolean} [reset=true]
  */
-export const removeComponent = (world, component, eid, reset=false) => {
+export const removeComponent = (world, component, eid, reset=true) => {
   if (eid === undefined) throw new Error('bitECS - entity is undefined.')
   if (!world[$entitySparseSet].has(eid)) throw new Error('bitECS - entity does not exist in the world.')
   if (!hasComponent(world, component, eid)) return

@@ -35,6 +35,7 @@ export const $exitQuery = Symbol('exitQuery')
 export const enterQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
   const q = world[$queryMap].get(query)
+  // queryCommitRemovals(q)
   const entered = q.entered.dense.slice()
   q.entered = SparseSet()
   return entered
@@ -49,6 +50,7 @@ export const enterQuery = query => world => {
 export const exitQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
   const q = world[$queryMap].get(query)
+  // queryCommitRemovals(q)
   const exited = q.exited.dense.slice()
   q.exited = SparseSet()
   return exited
@@ -320,7 +322,8 @@ export const queryCheckComponent = (q, c) => {
 
 export const queryAddEntity = (q, eid) => {
   q.toRemove.remove(eid)
-  if (!q.has(eid)) q.entered.add(eid)
+  // if (!q.has(eid)) 
+  q.entered.add(eid)
   q.add(eid)
 }
 
