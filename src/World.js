@@ -96,3 +96,11 @@ export const deleteWorld = (world) => {
  * @returns Array
  */
 export const getWorldComponents = (world) => Array.from(world[$componentMap].keys())
+
+/**
+ * Returns all existing entities in a world
+ * 
+ * @param {World} world 
+ * @returns 
+ */
+export const getAllEntities = (world) => world[$entitySparseSet].dense.slice(0)
