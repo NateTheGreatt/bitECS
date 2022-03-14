@@ -72,9 +72,7 @@ declare module 'bitecs' {
 
   export type ComponentProp = TypedArray | Array<TypedArray>
 
-  export interface IWorld {
-    [key: string]: any
-  }
+  export interface IWorld {}
 
   export interface ISchema {
     [key: string]: Type | ListType | ISchema
