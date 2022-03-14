@@ -70,6 +70,9 @@
 <dt><a href="#getWorldComponents">getWorldComponents</a> ⇒</dt>
 <dd><p>Returns all components registered to a world</p>
 </dd>
+<dt><a href="#getAllEntities">getAllEntities</a> ⇒</dt>
+<dd><p>Returns all existing entities in a world</p>
+</dd>
 </dl>
 
 
@@ -336,6 +339,18 @@
 
 ## getWorldComponents ⇒
 > Returns all components registered to a world
+
+**Returns**: Array  
+
+| Param | Type |
+| --- | --- |
+| world | <code>World</code> | 
+
+
+<br><a name="getAllEntities"></a>
+
+## getAllEntities ⇒
+> Returns all existing entities in a world
 
 **Returns**: Array  
 

@@ -1,3 +1,17 @@
+## v0.0.37
+03-14-2022
+
+### Added
+
+  - `getAllEntities` function which returns all existing entities in a world
+
+### Changed
+
+  - cut initial memory footprint in half by lazily generating shadow state for `Changed` queries
+  - removed `any` property definition from `IWorld` def for stricter typings
+
+----
+
 ## v0.0.36
 03-10-2022
 
