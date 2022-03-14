@@ -136,11 +136,7 @@ export const registerQuery = (world, query) => {
     .map(c => Object.getOwnPropertySymbols(c).includes($storeFlattened) ? c[$storeFlattened] : [c])
     .reduce((a,v) => a.concat(v), [])
 
-  const shadows = flatProps.map(prop => {
-    const $ = Symbol()
-    createShadow(prop, $)
-    return prop[$]
-  })
+  const shadows = []
 
   const q = Object.assign(sparseSet, {
     archetypes,
@@ -160,7 +156,7 @@ export const registerQuery = (world, query) => {
     exited,
     shadows,
   })
-  
+
   world[$queryMap].set(query, q)
   world[$queries].add(q)
   
@@ -177,6 +173,14 @@ export const registerQuery = (world, query) => {
   }
 }
 
+const generateShadow = (q, pid) => {
+  const $ = Symbol()
+  const prop = q.flatProps[pid]
+  createShadow(prop, $)
+  q.shadows[pid] = prop[$]
+  return prop[$]
+}
+
 const diff = (q, clearDiff) => {
   if (clearDiff) q.changed = []
   const { flatProps, shadows } = q
@@ -185,7 +189,7 @@ const diff = (q, clearDiff) => {
     let dirty = false
     for (let pid = 0; pid < flatProps.length; pid++) {
       const prop = flatProps[pid]
-      const shadow = shadows[pid]
+      const shadow = shadows[pid] || generateShadow(q, pid)
       if (ArrayBuffer.isView(prop[eid])) {
         for (let i = 0; i < prop[eid].length; i++) {
           if (prop[eid][i] !== shadow[eid][i]) {
