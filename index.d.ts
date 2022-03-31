@@ -79,11 +79,9 @@ declare module 'bitecs' {
   }
 
   export interface IComponentProp {
-    [key: string]: ComponentProp
   }
 
   export interface IComponent {
-    [key: string]: IComponentProp
   }
 
   export type Component = IComponent | ComponentType<ISchema>
@@ -106,6 +104,7 @@ declare module 'bitecs' {
   export function removeEntity<W extends IWorld = IWorld>(world: W, eid: number): void
   export function entityExists<W extends IWorld = IWorld>(world: W, eid: number): boolean
   export function getWorldComponents<W extends IWorld = IWorld>(world: W): Component[]
+  export function getAllEntities<W extends IWorld = IWorld>(world: W): number[]
 
   export function registerComponent<W extends IWorld = IWorld>(world: W, component: Component): void
   export function registerComponents<W extends IWorld = IWorld>(world: W, components: Component[]): void
