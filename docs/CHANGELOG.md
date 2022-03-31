@@ -1,3 +1,10 @@
+## v0.0.38
+03-31-2022
+
+### Changed
+
+  - removed `any` property definition from `IComponent` type def for stricter typings
+
 ## v0.0.37
 03-14-2022
 
@@ -9,8 +16,6 @@
 
   - cut initial memory footprint in half by lazily generating shadow state for `Changed` queries
   - removed `any` property definition from `IWorld` def for stricter typings
-
-----
 
 ## v0.0.36
 03-10-2022
@@ -32,8 +37,6 @@
   - typings
     - `createWorld` sizing additions
     - `addComponent` sizing additions
-
-----
 
 ## v0.0.35
 02-26-2022
