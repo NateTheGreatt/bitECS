@@ -1,4 +1,4 @@
-import { createWorld, resetWorld, deleteWorld, getWorldComponents } from './World.js'
+import { createWorld, resetWorld, deleteWorld, getWorldComponents, getAllEntities } from './World.js'
 import { addEntity, removeEntity, setDefaultSize, getEntityComponents, entityExists } from './Entity.js'
 import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent } from './Component.js'
 import { defineSystem } from './System.js'
@@ -28,6 +28,7 @@ export {
   removeEntity,
   entityExists,
   getWorldComponents,
+  getAllEntities,
   
   registerComponent,
   registerComponents,
