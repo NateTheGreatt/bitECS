@@ -7,6 +7,9 @@ export const $componentMap = Symbol('componentMap')
 
 export const components = []
 
+export const resetComponentGlobals = () => (components = []);
+
+
 export const resizeComponents = (size) => {
   components.forEach(component => resizeStore(component, size))
 }

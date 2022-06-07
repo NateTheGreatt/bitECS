@@ -30,6 +30,8 @@ export const $isEidType = Symbol('isEidType')
 
 const stores = {}
 
+export const resetStorageGlobals = () => (stores = {});
+
 // const alloc = createAllocator()
 
 export const resize = (ta, size) => {

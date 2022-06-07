@@ -13,6 +13,8 @@ export const $localEntityLookup = Symbol('localEntityLookup')
 
 export const worlds = []
 
+export const resetWorldGlobals = () => (worlds = []);
+
 export const resizeWorlds = (size) => {
   worlds.forEach(world => {
     world[$size] = size

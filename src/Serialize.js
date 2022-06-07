@@ -10,7 +10,14 @@ export const DESERIALIZE_MODE = {
   MAP: 2
 }
 
+let newEntities = new Map()
 let resized = false
+
+export const resetSerializeGlobals = () => {
+  resized = false;
+  newEntities = new Map();
+};
+
 
 export const setSerializationResized = v => { resized = v }
 
@@ -266,8 +273,6 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
     return buffer.slice(0, where)
   }
 }
-
-const newEntities = new Map()
 
 /**
  * Defines a new deserializer which targets the given components to deserialize onto a given world.
