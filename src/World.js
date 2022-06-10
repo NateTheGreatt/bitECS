@@ -11,7 +11,7 @@ export const $archetypes = Symbol('archetypes')
 export const $localEntities = Symbol('localEntities')
 export const $localEntityLookup = Symbol('localEntityLookup')
 
-export const worlds = []
+export let worlds = []
 
 export const resetWorldGlobals = () => (worlds = []);
 

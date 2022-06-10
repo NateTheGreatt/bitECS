@@ -5,7 +5,7 @@ import { $entityMasks, getDefaultSize, eidToWorld, $entityComponents, getGlobalS
 
 export const $componentMap = Symbol('componentMap')
 
-export const components = []
+export let components = []
 
 export const resetComponentGlobals = () => (components = []);
 

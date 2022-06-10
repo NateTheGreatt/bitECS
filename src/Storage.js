@@ -28,7 +28,7 @@ export const $indexBytes = Symbol('indexBytes')
 
 export const $isEidType = Symbol('isEidType')
 
-const stores = {}
+let stores = {}
 
 export const resetStorageGlobals = () => (stores = {});
 
