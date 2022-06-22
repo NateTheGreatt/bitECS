@@ -1,6 +1,6 @@
 import { $componentMap } from './Component.js'
 import { $queryMap, $queries, $dirtyQueries, $notQueries } from './Query.js'
-import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet, getGlobalSize, removeEntity } from './Entity.js'
+import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet, getDefaultSize, getGlobalSize, removeEntity } from './Entity.js'
 import { resize } from './Storage.js'
 import { SparseSet } from './Util.js'
 
@@ -39,7 +39,7 @@ export const createWorld = (...args) => {
     ? args[0] 
     : typeof args[1] === 'number' 
       ? args[1] 
-      : getGlobalSize()
+      : getDefaultSize()
   resetWorld(world, size)
   worlds.push(world)
   return world
@@ -51,7 +51,7 @@ export const createWorld = (...args) => {
  * @param {World} world
  * @returns {object}
  */
-export const resetWorld = (world, size = getGlobalSize()) => {
+export const resetWorld = (world, size = world[$size]) => {
   world[$size] = size
 
   if (world[$entityArray]) world[$entityArray].forEach(eid => removeEntity(world, eid))

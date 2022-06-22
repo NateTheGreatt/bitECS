@@ -1,6 +1,6 @@
 import { resizeComponents } from './Component.js'
 import { $notQueries, $queries, queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query.js'
-import { $localEntities, $localEntityLookup, resizeWorlds } from './World.js'
+import { $localEntities, $localEntityLookup, $size, resizeWorlds, worlds } from './World.js'
 import { setSerializationResized } from './Serialize.js'
 
 export const $entityMasks = Symbol('entityMasks')
@@ -10,21 +10,19 @@ export const $entityArray = Symbol('entityArray')
 export const $entityIndices = Symbol('entityIndices')
 export const $removedEntities = Symbol('removedEntities')
 
-let defaultSize = 100000
+let defaultSize = 10000
 
 // need a global EID cursor which all worlds and all components know about
 // so that world entities can posess entire rows spanning all component tables
 let globalEntityCursor = 0
-let globalSize = defaultSize
-let resizeThreshold = () => globalSize - (globalSize / 5)
+let resizeThreshold = (size) => Math.round(size - (size / 5))
 
-export const getGlobalSize = () => globalSize
+export const getGlobalSize = () => worlds.reduce((a,w) => w[$size] + a, 0);
 
 // removed eids should also be global to prevent memory leaks
 const removed = []
 
 export const resetGlobals = () => {
-  globalSize = defaultSize
   globalEntityCursor = 0
   removed.length = 0
 }
@@ -37,12 +35,11 @@ export const getDefaultSize = () => defaultSize
  * @param {number} newSize
  */
 export const setDefaultSize = newSize => { 
-  const oldSize = globalSize
+  const oldSize = getGlobalSize()
 
   defaultSize = newSize
   resetGlobals()
 
-  globalSize = newSize
   resizeWorlds(newSize)
   resizeComponents(newSize)
   setSerializationResized(true)
@@ -64,9 +61,9 @@ export const eidToWorld = new Map()
 export const addEntity = (world) => {
 
   // if data stores are 80% full
-  if (globalEntityCursor >= resizeThreshold()) {
+  if (globalEntityCursor >= resizeThreshold(getGlobalSize())) {
     // grow by half the original size rounded up to a multiple of 4
-    const size = globalSize
+    const size = getGlobalSize()
     const amount = Math.ceil((size/2) / 4) * 4
     setDefaultSize(size + amount)
   }
