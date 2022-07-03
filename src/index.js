@@ -1,5 +1,6 @@
-import { createWorld, resetWorld, deleteWorld, getWorldComponents, getAllEntities } from './World.js'
-import { addEntity, removeEntity, setDefaultSize, getEntityComponents, entityExists } from './Entity.js'
+import { deleteWorld } from './Universe.js'
+import { createWorld, resetWorld, getWorldComponents, getAllEntities } from './World.js'
+import { addEntity, removeEntity, getEntityComponents, entityExists } from './Entity.js'
 import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent } from './Component.js'
 import { defineSystem } from './System.js'
 import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals, resetChangedQuery, removeQuery } from './Query.js'
@@ -20,10 +21,9 @@ export const Types = TYPES_ENUM
 
 export {
 
-  setDefaultSize,
   createWorld,
-  resetWorld,
   deleteWorld,
+  resetWorld,
   addEntity,
   removeEntity,
   entityExists,

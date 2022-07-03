@@ -1,7 +1,8 @@
 import { $storeSize, createStore, resetStoreFor, resizeStore } from './Storage.js'
 import { $queries, queryAddEntity, queryRemoveEntity, queryCheckEntity, commitRemovals } from './Query.js'
-import { $bitflag, $size } from './World.js'
-import { $entityMasks, getDefaultSize, eidToWorld, $entityComponents, getGlobalSize, $entitySparseSet } from './Entity.js'
+import { $bitflag, $universe } from './World.js'
+import { $entityMasks, eidToWorld, $entityComponents, $entitySparseSet } from './Entity.js'
+import { globalUniverse } from './Universe.js'
 
 export const $componentMap = Symbol('componentMap')
 
@@ -19,7 +20,7 @@ export const resizeComponents = (size) => {
  * @returns {object}
  */
 export const defineComponent = (schema, size) => {
-  const component = createStore(schema, size || getGlobalSize())
+  const component = createStore(schema, size || globalUniverse.capacity)
   if (schema && Object.keys(schema).length) components.push(component)
   return component
 }
@@ -28,7 +29,7 @@ export const incrementBitflag = (world) => {
   world[$bitflag] *= 2
   if (world[$bitflag] >= 2**31) {
     world[$bitflag] = 1
-    world[$entityMasks].push(new Uint32Array(world[$size]))
+    world[$entityMasks].push(new Uint32Array(world[$universe].capacity))
   }
 }
 
@@ -61,9 +62,10 @@ export const registerComponent = (world, component) => {
     changedQueries,
   })
 
-  if (component[$storeSize] < getGlobalSize()) {
-    resizeStore(component, getGlobalSize())
-  }
+  // TODO
+  // if (component[$storeSize] < world[$universe].capacity) {
+  //   resizeStore(component, world[$universe].capacity)
+  // }
 
   incrementBitflag(world)
 }

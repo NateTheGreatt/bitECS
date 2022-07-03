@@ -2,11 +2,12 @@ import assert from 'assert'
 import { Types } from '../../src/index.js'
 import { createWorld } from '../../src/World.js'
 import { $componentMap, addComponent, defineComponent, hasComponent, registerComponent, removeComponent } from '../../src/Component.js'
-import { addEntity, resetGlobals } from '../../src/Entity.js'
+import { addEntity } from '../../src/Entity.js'
+import { globalUniverse, resetUniverse } from '../../src/Universe.js'
 
 describe('Component Integration Tests', () => {
   afterEach(() => {
-    resetGlobals()
+    resetUniverse(globalUniverse)
   })
   it('should register components on-demand', () => {
     const world = createWorld()

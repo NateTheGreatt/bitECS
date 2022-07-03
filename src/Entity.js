@@ -1,57 +1,11 @@
-import { resizeComponents } from './Component.js'
 import { $notQueries, $queries, queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query.js'
-import { $localEntities, $localEntityLookup, resizeWorlds } from './World.js'
-import { setSerializationResized } from './Serialize.js'
+import { $localEntities, $localEntityLookup, $universe } from './World.js'
 
 export const $entityMasks = Symbol('entityMasks')
 export const $entityComponents = Symbol('entityComponents')
 export const $entitySparseSet = Symbol('entitySparseSet')
 export const $entityArray = Symbol('entityArray')
 export const $entityIndices = Symbol('entityIndices')
-export const $removedEntities = Symbol('removedEntities')
-
-let defaultSize = 100000
-
-// need a global EID cursor which all worlds and all components know about
-// so that world entities can posess entire rows spanning all component tables
-let globalEntityCursor = 0
-let globalSize = defaultSize
-let resizeThreshold = () => globalSize - (globalSize / 5)
-
-export const getGlobalSize = () => globalSize
-
-// removed eids should also be global to prevent memory leaks
-const removed = []
-
-export const resetGlobals = () => {
-  globalSize = defaultSize
-  globalEntityCursor = 0
-  removed.length = 0
-}
-
-export const getDefaultSize = () => defaultSize
-
-/**
- * Sets the default maximum number of entities for worlds and component stores.
- *
- * @param {number} newSize
- */
-export const setDefaultSize = newSize => { 
-  const oldSize = globalSize
-
-  defaultSize = newSize
-  resetGlobals()
-
-  globalSize = newSize
-  resizeWorlds(newSize)
-  resizeComponents(newSize)
-  setSerializationResized(true)
-
-  console.info(`👾 bitECS - resizing all data stores from ${oldSize} to ${newSize}`)
-}
-
-export const getEntityCursor = () => globalEntityCursor
-export const getRemovedEntities = () => removed
 
 export const eidToWorld = new Map()
 
@@ -63,15 +17,9 @@ export const eidToWorld = new Map()
  */
 export const addEntity = (world) => {
 
-  // if data stores are 80% full
-  if (globalEntityCursor >= resizeThreshold()) {
-    // grow by half the original size rounded up to a multiple of 4
-    const size = globalSize
-    const amount = Math.ceil((size/2) / 4) * 4
-    setDefaultSize(size + amount)
-  }
+  const { removedEntities, capacity } = world[$universe]
   
-  const eid = removed.length > Math.round(defaultSize * 0.01) ? removed.shift() : globalEntityCursor++
+  const eid = removedEntities.length > Math.round(capacity * 0.01) ? removedEntities.shift() : world[$universe].entityCursor++
   
   world[$entitySparseSet].add(eid)
   eidToWorld.set(eid, world)
@@ -103,13 +51,14 @@ export const removeEntity = (world, eid) => {
   })
 
   // Free the entity
-  removed.push(eid)
+  world[$universe].removedEntities.push(eid)
 
   // remove all eid state from world
   world[$entitySparseSet].remove(eid)
   world[$entityComponents].delete(eid)
 
   // remove from deserializer mapping
+  // TODO: remove when new serialization is implemented
   world[$localEntities].delete(world[$localEntityLookup].get(eid))
   world[$localEntityLookup].delete(eid)
 

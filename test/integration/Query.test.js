@@ -2,12 +2,13 @@ import { strictEqual } from 'assert'
 import { exitQuery, Types } from '../../src/index.js'
 import { createWorld } from '../../src/World.js'
 import { addComponent, removeComponent, defineComponent } from '../../src/Component.js'
-import { addEntity, removeEntity, resetGlobals } from '../../src/Entity.js'
+import { addEntity, removeEntity } from '../../src/Entity.js'
 import { Changed, defineQuery, enterQuery, Not } from '../../src/Query.js'
+import { globalUniverse, resetUniverse } from '../../src/Universe.js'
 
 describe('Query Integration Tests', () => {
   afterEach(() => {
-    resetGlobals()
+    resetUniverse(globalUniverse)
   })
   it('should define a query and return matching eids', () => {
     const world = createWorld()

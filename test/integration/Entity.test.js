@@ -1,22 +1,23 @@
 import { strictEqual } from 'assert'
-import { getEntityCursor, getRemovedEntities, resetGlobals } from '../../src/Entity.js'
-import { createWorld, addEntity, removeEntity } from '../../src/index.js'
+import { addEntity, removeEntity } from '../../src/Entity.js'
+import { globalUniverse, MAX_ENTITIES, resetUniverse } from '../../src/Universe.js'
+import { createWorld } from '../../src/World.js'
 
 describe('Entity Integration Tests', () => {
   afterEach(() => {
-    resetGlobals()
+    resetUniverse(globalUniverse)
   })
   it('should add and remove entities', () => {
     const world = createWorld()
     
     const eid1 = addEntity(world)
-    strictEqual(getEntityCursor(), 1)
+    strictEqual(globalUniverse.entityCursor, 1)
     
     const eid2 = addEntity(world)
-    strictEqual(getEntityCursor(), 2)
+    strictEqual(globalUniverse.entityCursor, 2)
     
     const eid3 = addEntity(world)
-    strictEqual(getEntityCursor(), 3)
+    strictEqual(globalUniverse.entityCursor, 3)
 
     strictEqual(eid1, 0)
     strictEqual(eid2, 1)
@@ -26,7 +27,7 @@ describe('Entity Integration Tests', () => {
     removeEntity(world, eid2)
     removeEntity(world, eid3)
 
-    const removed = getRemovedEntities()
+    const removed = globalUniverse.removedEntities
     
     strictEqual(removed.length, 3)
     strictEqual(removed[0], 0)
@@ -36,29 +37,30 @@ describe('Entity Integration Tests', () => {
   it('should recycle entity IDs after 1% have been removed', () => {
     const world = createWorld()
 
-    for (let i = 0; i < 1500; i++) {
+    const n = 0.01 * MAX_ENTITIES
+    for (let i = 0; i < n; i++) {
       const eid = addEntity(world)
-      strictEqual(getEntityCursor(), eid+1)
+      strictEqual(globalUniverse.entityCursor, eid+1)
       strictEqual(eid, i)
     }
 
-    strictEqual(getEntityCursor(), 1500)
+    strictEqual(globalUniverse.entityCursor, n)
 
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < n * 10; i++) {
       removeEntity(world, i)
     }
 
     let eid = addEntity(world)
-    strictEqual(eid, 1500)
+    strictEqual(eid, n)
 
     eid = addEntity(world)
-    strictEqual(eid, 1501)
+    strictEqual(eid, n + 1)
 
     eid = addEntity(world)
-    strictEqual(eid, 1502)
+    strictEqual(eid, n + 2)
 
     eid = addEntity(world)
-    strictEqual(eid, 1503)
+    strictEqual(eid, n + 3)
 
     removeEntity(world, eid)
 

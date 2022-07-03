@@ -1,5 +1,4 @@
 import assert from 'assert'
-import { resetGlobals } from '../../src/Entity.js'
 import {
   Types,
   addComponent,
@@ -13,6 +12,7 @@ import {
   DESERIALIZE_MODE,
   Changed
 } from '../../src/index.js'
+import { resetUniverse, globalUniverse } from '../../src/Universe.js'
 
 function getLocalEid(world, eid) {
   const $localEntities = Object.getOwnPropertySymbols(world)[12]
@@ -23,7 +23,7 @@ function getLocalEid(world, eid) {
 
 describe('adhoc deserialize enter query bug', () => {
   afterEach(() => {
-    resetGlobals()
+    resetUniverse(globalUniverse)
   })
 
   it('should', () => {

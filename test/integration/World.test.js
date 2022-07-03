@@ -1,14 +1,15 @@
 import assert, { strictEqual } from 'assert'
-import { $entityMasks, resetGlobals, addEntity, getDefaultSize } from '../../src/Entity.js'
+import { $entityMasks, addEntity } from '../../src/Entity.js'
+import { globalUniverse, resetUniverse } from '../../src/Universe.js'
 import { createWorld } from '../../src/World.js'
 
-const defaultSize = getDefaultSize()
+const defaultSize = globalUniverse.capacity
 
 const growAmount = defaultSize + defaultSize / 2
 
 describe('World Integration Tests', () => {
   afterEach(() => {
-    resetGlobals()
+    resetUniverse(globalUniverse)
   })
   // it('should resize automatically at 80% of ' + defaultSize, () => {
   //   const world = createWorld()

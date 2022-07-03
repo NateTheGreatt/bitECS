@@ -1,7 +1,8 @@
 import { SparseSet } from './Util.js'
 import { $queryShadow, $storeFlattened, $tagStore, createShadow } from './Storage.js'
 import { $componentMap, registerComponent } from './Component.js'
-import { $entityMasks, $entityArray, getEntityCursor, $entitySparseSet } from './Entity.js'
+import { $entityMasks, $entityArray, $entitySparseSet } from './Entity.js'
+import { $universe } from './World.js'
 
 
 
@@ -93,7 +94,7 @@ export const registerQuery = (world, query) => {
 
   const allComponents = components.concat(notComponents).map(mapComponents)
 
-  // const sparseSet = Uint32SparseSet(getGlobalSize())
+  // const sparseSet = Uint32SparseSet(world[$universe].capacity)
   const sparseSet = SparseSet()
 
   const archetypes = []
@@ -166,7 +167,7 @@ export const registerQuery = (world, query) => {
 
   if (notComponents.length) world[$notQueries].add(q)
 
-  for (let eid = 0; eid < getEntityCursor(); eid++) {
+  for (let eid = 0; eid < world[$universe].entityCursor; eid++) {
     if (!world[$entitySparseSet].has(eid)) continue
     const match = queryCheckEntity(world, q, eid)
     if (match) queryAddEntity(q, eid)

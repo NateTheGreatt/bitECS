@@ -1,10 +1,10 @@
 import assert, { strictEqual } from 'assert'
-import { getDefaultSize } from '../../src/Entity.js'
 import { Types } from '../../src/index.js'
 import { createStore, resizeStore } from '../../src/Storage.js'
 import { TYPES } from '../../src/Constants.js'
+import { globalUniverse } from '../../src/Universe.js'
 
-let defaultSize = getDefaultSize()
+let defaultSize = globalUniverse.capacity
 
 const arraysEqual = (a,b) => !!a && !!b && !(a<b || b<a)
 

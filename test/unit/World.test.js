@@ -1,21 +1,20 @@
 import assert, { strictEqual } from 'assert'
 import { $componentMap } from '../../src/Component.js'
-import { $entityMasks, resetGlobals, getDefaultSize } from '../../src/Entity.js'
+import { $entityMasks } from '../../src/Entity.js'
 import { $dirtyQueries, $queries, $queryMap } from '../../src/Query.js'
-import { createWorld, $size, $bitflag } from '../../src/World.js'
+import { globalUniverse, resetUniverse } from '../../src/Universe.js'
+import { createWorld, $bitflag } from '../../src/World.js'
 
-const defaultSize = getDefaultSize()
+const defaultSize = globalUniverse.capacity
 
 describe('World Unit Tests', () => {
   afterEach(() => {
-    resetGlobals()
+    resetUniverse(globalUniverse)
   })
   it('should initialize all private state', () => {
     const world = createWorld()
     
     strictEqual(Object.keys(world).length, 0)
-
-    strictEqual(world[$size], defaultSize)
 
     assert(Array.isArray(world[$entityMasks]))
 

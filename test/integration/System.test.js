@@ -1,13 +1,14 @@
 import { strictEqual } from 'assert'
 import { createWorld } from '../../src/World.js'
 import { addComponent, defineComponent } from '../../src/Component.js'
-import { addEntity, resetGlobals } from '../../src/Entity.js'
+import { addEntity } from '../../src/Entity.js'
 import { defineSystem } from '../../src/System.js'
 import { defineQuery, Types } from '../../src/index.js'
+import { globalUniverse, resetUniverse } from '../../src/Universe.js'
 
 describe('System Integration Tests', () => {
   afterEach(() => {
-    resetGlobals()
+    resetUniverse(globalUniverse)
   })
   it('should run against a world and update state', () => {
     const world = createWorld()

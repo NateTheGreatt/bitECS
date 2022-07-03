@@ -1,48 +1,38 @@
 import { $componentMap } from './Component.js'
 import { $queryMap, $queries, $dirtyQueries, $notQueries } from './Query.js'
-import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet, getGlobalSize, removeEntity } from './Entity.js'
+import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet, removeEntity } from './Entity.js'
 import { resize } from './Storage.js'
 import { SparseSet } from './Util.js'
+import { globalUniverse } from './Universe.js'
 
-export const $size = Symbol('size')
 export const $resizeThreshold = Symbol('resizeThreshold')
 export const $bitflag = Symbol('bitflag')
 export const $archetypes = Symbol('archetypes')
 export const $localEntities = Symbol('localEntities')
 export const $localEntityLookup = Symbol('localEntityLookup')
+export const $universe = Symbol('universe')
 
-export const worlds = []
+// TODO
+// export const resizeWorld = (world, size) => {
+//   world[$worldCapacity] = size
 
-export const resizeWorlds = (size) => {
-  worlds.forEach(world => {
-    world[$size] = size
-
-    for (let i = 0; i < world[$entityMasks].length; i++) {
-      const masks = world[$entityMasks][i];
-      world[$entityMasks][i] = resize(masks, size)
-    }
-    
-    world[$resizeThreshold] = world[$size] - (world[$size] / 5)
-  })
-}
+//   for (let i = 0; i < world[$entityMasks].length; i++) {
+//     const masks = world[$entityMasks][i];
+//     world[$entityMasks][i] = resize(masks, size)
+//   }
+  
+//   world[$resizeThreshold] = world[$worldCapacity] - (world[$worldCapacity] / 5)
+// }
 
 /**
  * Creates a new world.
  *
  * @returns {object}
  */
-export const createWorld = (...args) => {
-  const world = typeof args[0] === 'object'
-    ? args[0]
-    : {}
-  const size = typeof args[0] === 'number' 
-    ? args[0] 
-    : typeof args[1] === 'number' 
-      ? args[1] 
-      : getGlobalSize()
-  resetWorld(world, size)
-  worlds.push(world)
-  return world
+export const createWorld = (universe = globalUniverse, world = {}) => {
+  world[$universe] = universe
+  universe.worlds.push(world)
+  return resetWorld(world)
 }
 
 /**
@@ -51,12 +41,12 @@ export const createWorld = (...args) => {
  * @param {World} world
  * @returns {object}
  */
-export const resetWorld = (world, size = getGlobalSize()) => {
-  world[$size] = size
+export const resetWorld = (world) => {
+  const cap = world[$universe].capacity
 
   if (world[$entityArray]) world[$entityArray].forEach(eid => removeEntity(world, eid))
 
-  world[$entityMasks] = [new Uint32Array(size)]
+  world[$entityMasks] = [new Uint32Array(cap)]
   world[$entityComponents] = new Map()
   world[$archetypes] = []
 
@@ -76,17 +66,6 @@ export const resetWorld = (world, size = getGlobalSize()) => {
   world[$localEntityLookup] = new Map()
 
   return world
-}
-
-/**
- * Deletes a world.
- *
- * @param {World} world
- */
-export const deleteWorld = (world) => {
-  Object.getOwnPropertySymbols(world).forEach($ => { delete world[$] })
-  Object.keys(world).forEach(key => { delete world[key] })
-  worlds.splice(worlds.indexOf(world), 1)
 }
 
 /**

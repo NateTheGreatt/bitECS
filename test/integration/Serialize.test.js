@@ -1,13 +1,14 @@
 import assert, { strictEqual } from 'assert'
 import { createWorld } from '../../src/World.js'
 import { addComponent, defineComponent } from '../../src/Component.js'
-import { addEntity, resetGlobals } from '../../src/Entity.js'
+import { addEntity } from '../../src/Entity.js'
 // import { defineQuery, defineSerializer, defineDeserializer, Types } from '../../src/index.js'
 import { defineDeserializer, defineSerializer, DESERIALIZE_MODE } from '../../src/Serialize.js'
 import { Changed, defineQuery } from '../../src/Query.js'
 import { TYPES_ENUM } from '../../src/Constants.js'
 import { pipe } from '../../src/index.js'
 import { strict } from 'assert/strict'
+import { globalUniverse, resetUniverse } from '../../src/Universe.js'
 
 const Types = TYPES_ENUM
 
@@ -15,7 +16,7 @@ const arraysEqual = (a,b) => !!a && !!b && !(a<b || b<a)
 
 describe('Serialize Integration Tests', () => {
   afterEach(() => {
-    resetGlobals()
+    resetUniverse(globalUniverse)
   })
   it('should serialize/deserialize entire world of entities and all of their components', () => {
     const world = createWorld()
