@@ -22,10 +22,13 @@ export const getGlobalSize = () => globalSize
 
 // removed eids should also be global to prevent memory leaks
 const removed = []
+const defaultRemovedReuseThreshold = 0.01
+let removedReuseThreshold = defaultRemovedReuseThreshold
 
 export const resetGlobals = () => {
   globalSize = defaultSize
   globalEntityCursor = 0
+  removedReuseThreshold = defaultRemovedReuseThreshold
   removed.length = 0
 }
 
@@ -50,6 +53,16 @@ export const setDefaultSize = newSize => {
   console.info(`👾 bitECS - resizing all data stores from ${oldSize} to ${newSize}`)
 }
 
+/**
+ * Sets the number of entities that must be removed before removed entity ids begin to be recycled.
+ * This should be set to as a % (0-1) of `defaultSize` that you would never likely remove/add on a single frame.
+ *
+ * @param {number} newThreshold
+ */
+export const setRemovedRecycleThreshold = newThreshold => {
+  removedReuseThreshold = newThreshold
+}
+
 export const getEntityCursor = () => globalEntityCursor
 export const getRemovedEntities = () => removed
 
@@ -71,7 +84,7 @@ export const addEntity = (world) => {
     setDefaultSize(size + amount)
   }
   
-  const eid = removed.length > Math.round(defaultSize * 0.01) ? removed.shift() : globalEntityCursor++
+  const eid = removed.length > Math.round(defaultSize * removedReuseThreshold) ? removed.shift() : globalEntityCursor++
   
   world[$entitySparseSet].add(eid)
   eidToWorld.set(eid, world)
