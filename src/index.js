@@ -1,10 +1,10 @@
-import { createWorld, resetWorld, deleteWorld, getWorldComponents, getAllEntities } from './World.js'
-import { addEntity, removeEntity, setDefaultSize, getEntityComponents, entityExists } from './Entity.js'
-import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent } from './Component.js'
+import { createWorld, resetWorld, deleteWorld, getWorldComponents, getAllEntities, resetWorldGlobals } from './World.js'
+import { addEntity, removeEntity, setDefaultSize, getEntityComponents, entityExists, resetGlobals as resetEntityGlobals } from './Entity.js'
+import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent, resetComponentGlobals } from './Component.js'
 import { defineSystem } from './System.js'
 import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals, resetChangedQuery, removeQuery } from './Query.js'
-import { defineSerializer, defineDeserializer, DESERIALIZE_MODE } from './Serialize.js'
-import { parentArray } from './Storage.js'
+import { defineSerializer, defineDeserializer, DESERIALIZE_MODE, resetSerializeGlobals } from './Serialize.js'
+import { parentArray, resetStorageGlobals } from './Storage.js'
 import { TYPES_ENUM } from './Constants.js'
 
 export const pipe = (...fns) => (input) => {
@@ -14,6 +14,14 @@ export const pipe = (...fns) => (input) => {
     tmp = fn(tmp)
   }
   return tmp
+}
+
+export const resetAllGlobals = () => {
+  resetComponentGlobals()
+  resetSerializeGlobals()
+  resetWorldGlobals()
+  resetStorageGlobals()
+  resetEntityGlobals()
 }
 
 export const Types = TYPES_ENUM

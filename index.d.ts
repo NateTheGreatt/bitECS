@@ -99,6 +99,7 @@ declare module 'bitecs' {
   export function createWorld<W extends IWorld = IWorld>(obj?: W, size?: number): W
   export function createWorld<W extends IWorld = IWorld>(size?: number): W
   export function resetWorld<W extends IWorld = IWorld>(world: W): W
+  export function resetAllGlobals(): void
   export function deleteWorld<W extends IWorld = IWorld>(world: W): void
   export function addEntity<W extends IWorld = IWorld>(world: W): number
   export function removeEntity<W extends IWorld = IWorld>(world: W, eid: number): void
