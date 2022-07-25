@@ -1,5 +1,5 @@
 import { strictEqual } from 'assert'
-import { getEntityCursor, getRemovedEntities, resetGlobals } from '../../src/Entity.js'
+import { getEntityCursor, getRemovedEntities, resetGlobals, setRemovedRecycleThreshold } from '../../src/Entity.js'
 import { createWorld, addEntity, removeEntity } from '../../src/index.js'
 
 describe('Entity Integration Tests', () => {
@@ -33,7 +33,7 @@ describe('Entity Integration Tests', () => {
     strictEqual(removed[1], 1)
     strictEqual(removed[2], 2)
   })
-  it('should recycle entity IDs after 1% have been removed', () => {
+  it('should recycle entity IDs after 1% have been removed by default', () => {
     const world = createWorld()
 
     for (let i = 0; i < 1500; i++) {
@@ -45,6 +45,41 @@ describe('Entity Integration Tests', () => {
     strictEqual(getEntityCursor(), 1500)
 
     for (let i = 0; i < 1000; i++) {
+      removeEntity(world, i)
+    }
+
+    let eid = addEntity(world)
+    strictEqual(eid, 1500)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1501)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1502)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1503)
+
+    removeEntity(world, eid)
+
+    eid = addEntity(world)
+    strictEqual(eid, 0)
+
+  })
+  it('should be able to configure % of removed entity IDs before recycle', () => {
+    const world = createWorld()
+
+    setRemovedRecycleThreshold(0.012)
+
+    for (let i = 0; i < 1500; i++) {
+      const eid = addEntity(world)
+      strictEqual(getEntityCursor(), eid+1)
+      strictEqual(eid, i)
+    }
+
+    strictEqual(getEntityCursor(), 1500)
+
+    for (let i = 0; i < 1200; i++) {
       removeEntity(world, i)
     }
 

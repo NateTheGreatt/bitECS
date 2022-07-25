@@ -96,6 +96,7 @@ declare module 'bitecs' {
   export type Deserializer<W extends IWorld = IWorld> = (world: W, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => number[]
 
   export function setDefaultSize(size: number): void
+  export function setRemovedRecycleThreshold(newThreshold: number): void
   export function createWorld<W extends IWorld = IWorld>(obj?: W, size?: number): W
   export function createWorld<W extends IWorld = IWorld>(size?: number): W
   export function resetWorld<W extends IWorld = IWorld>(world: W): W
