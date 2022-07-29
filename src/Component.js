@@ -117,10 +117,12 @@ export const addComponent = (world, component, eid, reset=false) => {
   // todo: archetype graph
   queries.forEach(q => {
     // remove this entity from toRemove if it exists in this query
-    if (q.toRemove.has(eid)) q.toRemove.remove(eid)
+    q.toRemove.remove(eid)
     const match = queryCheckEntity(world, q, eid)
     if (match) queryAddEntity(q, eid)
     if (!match) queryRemoveEntity(world, q, eid)
+    q.entered.remove(eid)
+    q.exited.remove(eid)
   })
 
   world[$entityComponents].get(eid).add(component)
@@ -151,7 +153,7 @@ export const removeComponent = (world, component, eid, reset=true) => {
   // todo: archetype graph
   queries.forEach(q => {
     // remove this entity from toRemove if it exists in this query
-    if (q.toRemove.has(eid)) q.toRemove.remove(eid)
+    q.toRemove.remove(eid)
     const match = queryCheckEntity(world, q, eid)
     if (match) queryAddEntity(q, eid)
     if (!match) queryRemoveEntity(world, q, eid)
