@@ -933,12 +933,14 @@ var addComponent = (world, component, eid, reset = false) => {
   queries.forEach((q) => {
     q.toRemove.remove(eid);
     const match = queryCheckEntity(world, q, eid);
-    if (match)
+    if (match) {
+      q.exited.remove(eid);
       queryAddEntity(q, eid);
-    if (!match)
+    }
+    if (!match) {
+      q.entered.remove(eid);
       queryRemoveEntity(world, q, eid);
-    q.entered.remove(eid);
-    q.exited.remove(eid);
+    }
   });
   world[$entityComponents].get(eid).add(component);
   if (reset)
@@ -957,10 +959,14 @@ var removeComponent = (world, component, eid, reset = true) => {
   queries.forEach((q) => {
     q.toRemove.remove(eid);
     const match = queryCheckEntity(world, q, eid);
-    if (match)
+    if (match) {
+      q.exited.remove(eid);
       queryAddEntity(q, eid);
-    if (!match)
+    }
+    if (!match) {
+      q.entered.remove(eid);
       queryRemoveEntity(world, q, eid);
+    }
   });
   world[$entityComponents].get(eid).delete(component);
   if (reset)
