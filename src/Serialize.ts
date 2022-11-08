@@ -39,7 +39,7 @@ export const canonicalize = target => {
     .filter(isNotModifier)
     .filter(isFullComponent)
     .map(storeFlattened).reduce(concat, [])
-  
+
   // aggregate changed full components
   const changedComponentProps = target
     .filter(isChangedModifier).map(fromModifierToComponent)
@@ -55,7 +55,7 @@ export const canonicalize = target => {
   const changedProps = target
     .filter(isChangedModifier).map(fromModifierToComponent)
     .filter(isProperty)
-  
+
   const componentProps = [...fullComponentProps, ...props, ...changedComponentProps, ...changedProps]
   const allChangedProps = [...changedComponentProps, ...changedProps].reduce((map,prop) => {
     const $ = Symbol()
@@ -74,7 +74,7 @@ export const canonicalize = target => {
  * @param {number} [maxBytes=20000000]
  * @returns {function} serializer
  */
-export const defineSerializer = (target, maxBytes = 20000000) => {
+export const defineSerializer = (target: object, maxBytes = 20000000) => {
   const worldSerializer = isWorld(target)
 
   let [componentProps, changedProps] = canonicalize(target)
@@ -101,7 +101,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         else componentProps.push(component)
       })
     }
-    
+
     let world
     if (Object.getOwnPropertySymbols(ents).includes($componentMap)) {
       world = ents
@@ -140,14 +140,14 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
 
         let componentCache = entityComponentCache.get(eid)
         if (!componentCache) componentCache = entityComponentCache.set(eid, new Set()).get(eid)
-        
+
         componentCache.add(eid)
-        
-        const newlyAddedComponent = 
+
+        const newlyAddedComponent =
           // if we are diffing
-          shadow 
+          shadow
           // and we have already iterated over this component for this entity
-          // retrieve cached value    
+          // retrieve cached value
           && cache.get(component).get(eid)
           // or if entity did not have component last call
           || !componentCache.has(component)
@@ -162,9 +162,9 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
           // skip if entity doesn't have this component
           componentCache.delete(component)
           continue
-        } 
+        }
 
-        
+
         const rewindWhere = where
 
         // write eid
@@ -195,9 +195,9 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
             if (shadow) {
 
               const changed = shadow[eid][i] !== prop[eid][i]
-              
+
               // sync shadow
-              shadow[eid][i] = prop[eid][i]              
+              shadow[eid][i] = prop[eid][i]
 
               // if state has not changed since the last call
               // todo: if newly added then entire component will serialize (instead of only changed values)
@@ -206,11 +206,11 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
                 continue
               }
             }
-            
+
             // write array index
             view[`set${indexType}`](where, i)
             where += indexBytes
-            
+
             // write value at that index
             const value = prop[eid][i]
             view[`set${type}`](where, value)
@@ -242,7 +242,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
               continue
             }
 
-          }  
+          }
 
 
           const type = prop.constructor.name.replace('Array', '')
@@ -258,7 +258,7 @@ export const defineSerializer = (target, maxBytes = 20000000) => {
         // write how many eid/value pairs were written
         view.setUint32(countWhere, writeCount)
       } else {
-        // if nothing was written (diffed with no changes) 
+        // if nothing was written (diffed with no changes)
         // then move cursor back 5 bytes (remove PID and countWhere space)
         where -= 5
       }
@@ -284,7 +284,7 @@ export const defineDeserializer = (target) => {
   return (world, packet, mode=0) => {
 
     newEntities.clear()
-    
+
     if (resized) {
       [componentProps] = canonicalize(target)
       resized = false
@@ -337,7 +337,7 @@ export const defineDeserializer = (target) => {
           }
         }
 
-        if (mode === DESERIALIZE_MODE.APPEND ||  
+        if (mode === DESERIALIZE_MODE.APPEND ||
           mode === DESERIALIZE_MODE.REPLACE && !world[$entitySparseSet].has(eid)
         ) {
           const newEid = newEntities.get(eid) || addEntity(world)
@@ -356,7 +356,7 @@ export const defineDeserializer = (target) => {
         if (component[$tagStore]) {
           continue
         }
-        
+
         if (ArrayBuffer.isView(prop[eid])) {
           const array = prop[eid]
           const count = view[`get${array[$indexType]}`](where)
