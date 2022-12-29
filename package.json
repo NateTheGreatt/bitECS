@@ -55,5 +55,8 @@
     "ora": "^6.0.1",
     "sloc": "^0.2.1",
     "typescript": "^4.5.4"
+  },
+  "dependencies": {
+    "vitest": "^0.26.2"
   }
 }
