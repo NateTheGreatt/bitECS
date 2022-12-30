@@ -14,6 +14,6 @@ export type World = {
   entityToArchetype: Map<EntityId, Archetype>
   idToArchetype: Map<ArchetypeId, Archetype>
   rootArchetype: Archetype
-  queryToArchetypes: Map<Query, QueryArchetype>
+  // queryToArchetypes: Map<Query, QueryArchetype>
   size: number
 }

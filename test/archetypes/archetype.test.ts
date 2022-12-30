@@ -22,6 +22,7 @@ test('archetypes', () => {
   assert.equal(a.components[0].x[0], 1)
   assert.equal(a.components[0].y[0], 2)
   assert.equal(a.components[0].z[0], 3)
+  assert.ok(a.entities.dense.includes(eid))
 
   addComponent<typeof Vector3Schema>(world, Velocity, eid, (velocity, i) => {
     velocity.x[i] = 4
@@ -37,14 +38,13 @@ test('archetypes', () => {
   assert.equal(a.components[1].x[0], 4)
   assert.equal(a.components[1].y[0], 5)
   assert.equal(a.components[1].z[0], 6)
+  assert.ok(a.entities.dense.includes(eid))
 
-  getComponent(world, Position, eid, (p, i) => {
+  getComponent<typeof Vector3Schema>(world, Position, eid, (p, i) => {
     p.x[i]++
     p.y[i]++
     p.z[i]++
   })
-
-
 
   removeComponent(world, Velocity, eid)
 
@@ -53,5 +53,12 @@ test('archetypes', () => {
   assert.equal(a.components[0].x[0], 2)
   assert.equal(a.components[0].y[0], 3)
   assert.equal(a.components[0].z[0], 4)
+  assert.ok(a.entities.dense.includes(eid))
+
+  getComponent<typeof Vector3Schema>(world, Position, eid, (p, i) => {
+    assert.equal(p.x[i], 2)
+    assert.equal(p.y[i], 3)
+    assert.equal(p.z[i], 4)
+  })
 
 })

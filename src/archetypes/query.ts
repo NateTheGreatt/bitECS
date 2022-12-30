@@ -10,8 +10,7 @@ const findQueryArchetypes = (world: World, id: ArchetypeId): Archetype[] => {
   const node = world.graph.nodes.get(id)
   for (const edge of node.edges.values()) {
     if (edge.add) {
-      const archetype = world.idToArchetype.get(edge.add.id as string)
-      arr.push(archetype, ...findQueryArchetypes(world, edge.add.id as string))
+      arr.push(...findQueryArchetypes(world, edge.add.id as string))
     }
   }
   return arr

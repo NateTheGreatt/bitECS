@@ -108,10 +108,12 @@ export const moveEntityArchetype = (world: World, archetypeFrom: Archetype, arch
       j = addTableRow(componentTo);
     }
   }
-
-  world.entityToArchetype.set(eid, archetypeTo)
+  
+  archetypeTo.entities.add(eid)
   archetypeTo.entityIndices[eid] = j
   
+  world.entityToArchetype.set(eid, archetypeTo)
+
   return j
 }
 
@@ -159,11 +161,11 @@ export const removeComponent = <T extends ISchema>(world: World, cid: number, ei
 
   // get entity's current archetype
   const archetype = world.entityToArchetype.get(eid)
-  if (archetype === undefined) throw new Error(`current archetype not found for eid ${eid} when adding cid ${cid}`)
+  if (archetype === undefined) throw new Error(`current archetype not found for eid ${eid} when removing cid ${cid}`)
 
   // get the archetype's node
   const archetypeNode = world.graph.nodes.get(archetype.id)
-  if (archetypeNode === undefined) throw new Error(`archetype node not found for eid ${eid} when adding archetype ${archetype.id}`)
+  if (archetypeNode === undefined) throw new Error(`archetype node not found for eid ${eid} when removing archetype ${archetype.id}`)
 
   // get edge for component we're removing
   const prevEdge = archetypeNode.edges.get(`-${cid}`)
@@ -180,8 +182,8 @@ export const removeComponent = <T extends ISchema>(world: World, cid: number, ei
     prevArchetype = world.idToArchetype.get(prevEdge.remove.id as string);
   }
 
-  if (prevArchetype === undefined) throw new Error(`next archetype not found for eid ${eid} when adding cid ${cid}`)
-  
+  if (prevArchetype === undefined) throw new Error(`next archetype not found for eid ${eid} when removing cid ${cid}`)
+
   const entityIndex = moveEntityArchetype(world, archetype, prevArchetype, eid)
   const componentIndex = prevArchetype.componentIds.findIndex(_cid => _cid === cid)
 
