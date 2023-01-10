@@ -3,6 +3,7 @@ import { $componentMap, addComponent, hasComponent } from "./Component.js"
 import { $entityArray, $entitySparseSet, addEntity, eidToWorld } from "./Entity.js"
 import { $localEntities, $localEntityLookup } from "./World.js"
 import { SparseSet } from "./Util.js"
+import { $modifier } from "./Query.js"
 
 export const DESERIALIZE_MODE = {
   REPLACE: 0,
@@ -21,7 +22,7 @@ const storeFlattened = c => c[$storeFlattened]
 const isFullComponent = storeFlattened
 const isProperty = not(isFullComponent)
 
-const isModifier = c => typeof c === 'function'
+const isModifier = c => typeof c === "function" && c[$modifier]
 const isNotModifier = not(isModifier)
 
 const isChangedModifier = c => isModifier(c) && c()[1] === 'changed'

@@ -3,11 +3,17 @@ import { $queryShadow, $storeFlattened, $tagStore, createShadow } from './Storag
 import { $componentMap, registerComponent } from './Component.js'
 import { $entityMasks, $entityArray, getEntityCursor, $entitySparseSet } from './Entity.js'
 
+export const $modifier = Symbol("$modifier")
 
+function modifier(c, mod) {
+  const inner = () => [c, mod]
+  inner[$modifier] = true
+  return inner
+}
 
-export function Not(c) { return () => [c, 'not'] }
-export function Or(c) { return () => [c, 'or'] }
-export function Changed(c) { return () => [c, 'changed'] }
+export const Not = (c) => modifier(c, 'not')
+export const Or = (c) => modifier(c, 'or')
+export const Changed = (c) => modifier(c, 'changed')
 
 export function Any(...comps) { return function QueryAny() { return comps } }
 export function All(...comps) { return function QueryAll() { return comps } }
@@ -63,7 +69,7 @@ export const registerQuery = (world, query) => {
   const changedComponents = []
 
   query[$queryComponents].forEach(c => {
-    if (typeof c === 'function') {
+    if (typeof c === "function" && c[$modifier]) {
       const [comp, mod] = c()
       if (!world[$componentMap].has(comp)) registerComponent(world, comp)
       if (mod === 'not') {
