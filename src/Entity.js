@@ -1,6 +1,6 @@
 import { resizeComponents } from './Component.js'
 import { $notQueries, $queries, queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query.js'
-import { $localEntities, $localEntityLookup, resizeWorlds } from './World.js'
+import { $localEntities, $localEntityLookup, $manualEntityRecycling, $size, resizeWorlds } from './World.js'
 import { setSerializationResized } from './Serialize.js'
 
 export const $entityMasks = Symbol('entityMasks')
@@ -22,11 +22,13 @@ export const getGlobalSize = () => globalSize
 
 // removed eids should also be global to prevent memory leaks
 const removed = []
+const recycle = []
 
 export const resetGlobals = () => {
   globalSize = defaultSize
   globalEntityCursor = 0
   removed.length = 0
+  recycle.length = 0
 }
 
 export const getDefaultSize = () => defaultSize
@@ -51,9 +53,18 @@ export const setDefaultSize = newSize => {
 }
 
 export const getEntityCursor = () => globalEntityCursor
-export const getRemovedEntities = () => removed
+export const getRemovedEntities = () => [...recycle, ...removed]
 
 export const eidToWorld = new Map()
+
+export const flushRemovedEntities = (world) => {
+  if (!world[$manualEntityRecycling]) {
+    throw new Error("bitECS - cannot flush removed entities, enable feature with the enableManualEntityRecycling function")
+  }
+  recycle.length = 0
+  recycle.push(...removed)
+  removed.length = 0
+}
 
 /**
  * Adds a new entity to the specified world.
@@ -63,22 +74,17 @@ export const eidToWorld = new Map()
  */
 export const addEntity = (world) => {
 
-  // if data stores are 80% full
-  if (globalEntityCursor >= resizeThreshold()) {
-    // grow by half the original size rounded up to a multiple of 4
-    const size = globalSize
-    const amount = Math.ceil((size/2) / 4) * 4
-    setDefaultSize(size + amount)
-  }
-  
-  const eid = removed.length > Math.round(defaultSize * 0.01) ? removed.shift() : globalEntityCursor++
-  
+  const pool = world[$manualEntityRecycling] && recycle.length ? recycle : removed;
+
+  const eid = pool.length > Math.round(defaultSize * 0.01) ? pool.shift() : globalEntityCursor++
+
+  if (eid > world[$size]) throw new Error("bitECS - max entities reached")
+
   world[$entitySparseSet].add(eid)
   eidToWorld.set(eid, world)
 
   world[$notQueries].forEach(q => {
-    const match = queryCheckEntity(world, q, eid)
-    if (match) queryAddEntity(q, eid)
+    queryAddEntity(q, eid)
   })
 
   world[$entityComponents].set(eid, new Set())
@@ -103,7 +109,10 @@ export const removeEntity = (world, eid) => {
   })
 
   // Free the entity
-  removed.push(eid)
+  if (world[$manualEntityRecycling])
+    recycle.push(eid)
+  else
+    removed.push(eid)
 
   // remove all eid state from world
   world[$entitySparseSet].remove(eid)

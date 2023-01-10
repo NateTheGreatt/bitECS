@@ -1,6 +1,7 @@
 import { strictEqual } from 'assert'
-import { getEntityCursor, getRemovedEntities, resetGlobals } from '../../src/Entity.js'
+import { flushRemovedEntities, getEntityCursor, getRemovedEntities, resetGlobals } from '../../src/Entity.js'
 import { createWorld, addEntity, removeEntity } from '../../src/index.js'
+import { enableManualEntityRecycling } from '../../src/World.js'
 
 describe('Entity Integration Tests', () => {
   afterEach(() => {
@@ -35,9 +36,11 @@ describe('Entity Integration Tests', () => {
   })
   it('should recycle entity IDs after 1% have been removed', () => {
     const world = createWorld()
+    const ents = []
 
     for (let i = 0; i < 1500; i++) {
       const eid = addEntity(world)
+      ents.push(eid)
       strictEqual(getEntityCursor(), eid+1)
       strictEqual(eid, i)
     }
@@ -45,7 +48,8 @@ describe('Entity Integration Tests', () => {
     strictEqual(getEntityCursor(), 1500)
 
     for (let i = 0; i < 1000; i++) {
-      removeEntity(world, i)
+      const eid = ents[i]
+      removeEntity(world, eid)
     }
 
     let eid = addEntity(world)
@@ -64,6 +68,52 @@ describe('Entity Integration Tests', () => {
 
     eid = addEntity(world)
     strictEqual(eid, 0)
+
+  })
+  it('should flush entity IDs', () => {
+    const world = createWorld()
+    enableManualEntityRecycling(world)
+    const ents = []
+
+    for (let i = 0; i < 1500; i++) {
+      const eid = addEntity(world)
+      ents.push(eid)
+      strictEqual(getEntityCursor(), eid+1)
+      strictEqual(eid, i)
+    }
+
+    strictEqual(getEntityCursor(), 1500)
+
+    // remove more than 1%
+    for (let i = 0; i < 1500; i++) {
+      const eid = ents[i]
+      removeEntity(world, eid)
+    }
+
+    // flush removed ents, making them available again
+    flushRemovedEntities(world)
+
+    let eid = addEntity(world)
+    strictEqual(eid, 1500)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1501)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1502)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1503)
+
+    removeEntity(world, 1503)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1504)
+
+    removeEntity(world, 1502)
+
+    eid = addEntity(world)
+    strictEqual(eid, 1505)
 
   })
 })
