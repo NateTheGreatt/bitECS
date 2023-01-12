@@ -83,7 +83,8 @@ export const addEntity = (world) => {
   eidToWorld.set(eid, world)
 
   world[$notQueries].forEach(q => {
-    queryAddEntity(q, eid)
+    const match = queryCheckEntity(world, q, eid)
+    if (match) queryAddEntity(q, eid)
   })
 
   world[$entityComponents].set(eid, new Set())
