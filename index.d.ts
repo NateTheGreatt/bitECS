@@ -105,6 +105,8 @@ declare module 'bitecs' {
   export function entityExists<W extends IWorld = IWorld>(world: W, eid: number): boolean
   export function getWorldComponents<W extends IWorld = IWorld>(world: W): Component[]
   export function getAllEntities<W extends IWorld = IWorld>(world: W): number[]
+  export function enableManualEntityRecycling<W extends IWorld = IWorld>(world: W): void
+  export function flushRemovedEntities<W extends IWorld = IWorld>(world: W): void
 
   export function registerComponent<W extends IWorld = IWorld>(world: W, component: Component): void
   export function registerComponents<W extends IWorld = IWorld>(world: W, components: Component[]): void

@@ -22,13 +22,13 @@ export const getGlobalSize = () => globalSize
 
 // removed eids should also be global to prevent memory leaks
 const removed = []
-const recycle = []
+const recycled = []
 
 export const resetGlobals = () => {
   globalSize = defaultSize
   globalEntityCursor = 0
   removed.length = 0
-  recycle.length = 0
+  recycled.length = 0
 }
 
 export const getDefaultSize = () => defaultSize
@@ -53,17 +53,19 @@ export const setDefaultSize = newSize => {
 }
 
 export const getEntityCursor = () => globalEntityCursor
-export const getRemovedEntities = () => [...recycle, ...removed]
+export const getRemovedEntities = () => [...recycled, ...removed]
 
 export const eidToWorld = new Map()
 
 export const flushRemovedEntities = (world) => {
+  console.log("recycled",recycled)
+  console.log("removed",removed)
+  console.log("globalEntityCursor",globalEntityCursor)
   if (!world[$manualEntityRecycling]) {
     throw new Error("bitECS - cannot flush removed entities, enable feature with the enableManualEntityRecycling function")
   }
-  recycle.length = 0
-  recycle.push(...removed)
-  removed.length = 0
+  removed.push(...recycled)
+  recycled.length = 0
 }
 
 /**
@@ -74,9 +76,9 @@ export const flushRemovedEntities = (world) => {
  */
 export const addEntity = (world) => {
 
-  const pool = world[$manualEntityRecycling] && recycle.length ? recycle : removed;
-
-  const eid = pool.length > Math.round(defaultSize * 0.01) ? pool.shift() : globalEntityCursor++
+  const eid = world[$manualEntityRecycling]
+    ? removed.length ? removed.shift() : globalEntityCursor++
+    : removed.length > Math.round(defaultSize * 0.01) ? removed.shift() : globalEntityCursor++
 
   if (eid > world[$size]) throw new Error("bitECS - max entities reached")
 
@@ -110,7 +112,7 @@ export const removeEntity = (world, eid) => {
 
   // Free the entity
   if (world[$manualEntityRecycling])
-    recycle.push(eid)
+    recycled.push(eid)
   else
     removed.push(eid)
 
