@@ -38,9 +38,11 @@ __export(src_exports, {
   defineSerializer: () => defineSerializer,
   defineSystem: () => defineSystem,
   deleteWorld: () => deleteWorld,
+  enableManualEntityRecycling: () => enableManualEntityRecycling,
   enterQuery: () => enterQuery,
   entityExists: () => entityExists,
   exitQuery: () => exitQuery,
+  flushRemovedEntities: () => flushRemovedEntities,
   getAllEntities: () => getAllEntities,
   getEntityComponents: () => getEntityComponents,
   getWorldComponents: () => getWorldComponents,
@@ -351,7 +353,7 @@ var not = (fn) => (v) => !fn(v);
 var storeFlattened = (c) => c[$storeFlattened];
 var isFullComponent = storeFlattened;
 var isProperty = not(isFullComponent);
-var isModifier = (c) => typeof c === "function";
+var isModifier = (c) => typeof c === "function" && c[$modifier];
 var isNotModifier = not(isModifier);
 var isChangedModifier = (c) => isModifier(c) && c()[1] === "changed";
 var isWorld = (w) => Object.getOwnPropertySymbols(w).includes($componentMap);
@@ -612,9 +614,9 @@ var $removedEntities = Symbol("removedEntities");
 var defaultSize = 1e5;
 var globalEntityCursor = 0;
 var globalSize = defaultSize;
-var resizeThreshold = () => globalSize - globalSize / 5;
 var getGlobalSize = () => globalSize;
 var removed = [];
+var recycled = [];
 var defaultRemovedReuseThreshold = 0.01;
 var removedReuseThreshold = defaultRemovedReuseThreshold;
 var resetGlobals = () => {
@@ -622,6 +624,7 @@ var resetGlobals = () => {
   globalEntityCursor = 0;
   removedReuseThreshold = defaultRemovedReuseThreshold;
   removed.length = 0;
+  recycled.length = 0;
 };
 var setDefaultSize = (newSize) => {
   const oldSize = globalSize;
@@ -638,13 +641,17 @@ var setRemovedRecycleThreshold = (newThreshold) => {
 };
 var getEntityCursor = () => globalEntityCursor;
 var eidToWorld = /* @__PURE__ */ new Map();
-var addEntity = (world) => {
-  if (globalEntityCursor >= resizeThreshold()) {
-    const size = globalSize;
-    const amount = Math.ceil(size / 2 / 4) * 4;
-    setDefaultSize(size + amount);
+var flushRemovedEntities = (world) => {
+  if (!world[$manualEntityRecycling]) {
+    throw new Error("bitECS - cannot flush removed entities, enable feature with the enableManualEntityRecycling function");
   }
-  const eid = removed.length > Math.round(defaultSize * removedReuseThreshold) ? removed.shift() : globalEntityCursor++;
+  removed.push(...recycled);
+  recycled.length = 0;
+};
+var addEntity = (world) => {
+  const eid = world[$manualEntityRecycling] ? removed.length ? removed.shift() : globalEntityCursor++ : removed.length > Math.round(defaultSize * defaultRemovedReuseThreshold) ? removed.shift() : globalEntityCursor++;
+  if (eid > world[$size])
+    throw new Error("bitECS - max entities reached");
   world[$entitySparseSet].add(eid);
   eidToWorld.set(eid, world);
   world[$notQueries].forEach((q) => {
@@ -661,7 +668,10 @@ var removeEntity = (world, eid) => {
   world[$queries].forEach((q) => {
     queryRemoveEntity(world, q, eid);
   });
-  removed.push(eid);
+  if (world[$manualEntityRecycling])
+    recycled.push(eid);
+  else
+    removed.push(eid);
   world[$entitySparseSet].remove(eid);
   world[$entityComponents].delete(eid);
   world[$localEntities].delete(world[$localEntityLookup].get(eid));
@@ -679,12 +689,14 @@ var getEntityComponents = (world, eid) => {
 var entityExists = (world, eid) => world[$entitySparseSet].has(eid);
 
 // src/Query.js
-function Not(c) {
-  return () => [c, "not"];
+var $modifier = Symbol("$modifier");
+function modifier(c, mod) {
+  const inner = () => [c, mod];
+  inner[$modifier] = true;
+  return inner;
 }
-function Changed(c) {
-  return () => [c, "changed"];
-}
+var Not = (c) => modifier(c, "not");
+var Changed = (c) => modifier(c, "changed");
 function Any(...comps) {
   return function QueryAny() {
     return comps;
@@ -731,7 +743,7 @@ var registerQuery = (world, query) => {
   const notComponents = [];
   const changedComponents = [];
   query[$queryComponents].forEach((c) => {
-    if (typeof c === "function") {
+    if (typeof c === "function" && c[$modifier]) {
       const [comp, mod] = c();
       if (!world[$componentMap].has(comp))
         registerComponent(world, comp);
@@ -1040,6 +1052,7 @@ var $bitflag = Symbol("bitflag");
 var $archetypes = Symbol("archetypes");
 var $localEntities = Symbol("localEntities");
 var $localEntityLookup = Symbol("localEntityLookup");
+var $manualEntityRecycling = Symbol("manualEntityRecycling");
 var worlds = [];
 var resizeWorlds = (size) => {
   worlds.forEach((world) => {
@@ -1058,6 +1071,9 @@ var createWorld = (...args) => {
   worlds.push(world);
   return world;
 };
+var enableManualEntityRecycling = (world) => {
+  world[$manualEntityRecycling] = true;
+};
 var resetWorld = (world, size = getGlobalSize()) => {
   world[$size] = size;
   if (world[$entityArray])
@@ -1075,6 +1091,7 @@ var resetWorld = (world, size = getGlobalSize()) => {
   world[$dirtyQueries] = /* @__PURE__ */ new Set();
   world[$localEntities] = /* @__PURE__ */ new Map();
   world[$localEntityLookup] = /* @__PURE__ */ new Map();
+  world[$manualEntityRecycling] = false;
   return world;
 };
 var deleteWorld = (world) => {
@@ -1122,9 +1139,11 @@ module.exports = __toCommonJS(src_exports);
   defineSerializer,
   defineSystem,
   deleteWorld,
+  enableManualEntityRecycling,
   enterQuery,
   entityExists,
   exitQuery,
+  flushRemovedEntities,
   getAllEntities,
   getEntityComponents,
   getWorldComponents,
