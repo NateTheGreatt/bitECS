@@ -205,7 +205,7 @@ if (watch) {
     format: 'esm',
     platform: 'node',
     sourcemap: true,
-    outfile: outfileCjs,
+    outfile: outfileEsm,
     watch: {
       onRebuild (error) {
         if (error) {

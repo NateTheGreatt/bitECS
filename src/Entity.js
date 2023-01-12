@@ -24,9 +24,13 @@ export const getGlobalSize = () => globalSize
 const removed = []
 const recycled = []
 
+const defaultRemovedReuseThreshold = 0.01
+let removedReuseThreshold = defaultRemovedReuseThreshold
+
 export const resetGlobals = () => {
   globalSize = defaultSize
   globalEntityCursor = 0
+  removedReuseThreshold = defaultRemovedReuseThreshold
   removed.length = 0
   recycled.length = 0
 }
@@ -52,6 +56,16 @@ export const setDefaultSize = newSize => {
   console.info(`👾 bitECS - resizing all data stores from ${oldSize} to ${newSize}`)
 }
 
+/**
+ * Sets the number of entities that must be removed before removed entity ids begin to be recycled.
+ * This should be set to as a % (0-1) of `defaultSize` that you would never likely remove/add on a single frame.
+ *
+ * @param {number} newThreshold
+ */
+export const setRemovedRecycleThreshold = newThreshold => {
+  removedReuseThreshold = newThreshold
+}
+
 export const getEntityCursor = () => globalEntityCursor
 export const getRemovedEntities = () => [...recycled, ...removed]
 
@@ -75,7 +89,7 @@ export const addEntity = (world) => {
 
   const eid = world[$manualEntityRecycling]
     ? removed.length ? removed.shift() : globalEntityCursor++
-    : removed.length > Math.round(defaultSize * 0.01) ? removed.shift() : globalEntityCursor++
+    : removed.length > Math.round(defaultSize * defaultRemovedReuseThreshold) ? removed.shift() : globalEntityCursor++
 
   if (eid > world[$size]) throw new Error("bitECS - max entities reached")
 

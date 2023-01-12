@@ -1,5 +1,7 @@
 import { createWorld, resetWorld, deleteWorld, getWorldComponents, enableManualEntityRecycling } from './World.js'
 import { addEntity, removeEntity, setDefaultSize, getEntityComponents, entityExists, flushRemovedEntities } from './Entity.js'
+import { createWorld, resetWorld, deleteWorld, getWorldComponents, getAllEntities } from './World.js'
+import { addEntity, removeEntity, setDefaultSize, setRemovedRecycleThreshold, getEntityComponents, entityExists } from './Entity.js'
 import { defineComponent, registerComponent, registerComponents, hasComponent, addComponent, removeComponent } from './Component.js'
 import { defineSystem } from './System.js'
 import { defineQuery, enterQuery, exitQuery, Changed, Not, commitRemovals, resetChangedQuery, removeQuery } from './Query.js'
@@ -21,6 +23,7 @@ export const Types = TYPES_ENUM
 export {
 
   setDefaultSize,
+  setRemovedRecycleThreshold,
   createWorld,
   resetWorld,
   deleteWorld,
@@ -30,6 +33,7 @@ export {
   getWorldComponents,
   enableManualEntityRecycling,
   flushRemovedEntities,
+  getAllEntities,
   
   registerComponent,
   registerComponents,
