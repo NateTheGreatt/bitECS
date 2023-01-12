@@ -58,9 +58,6 @@ export const getRemovedEntities = () => [...recycled, ...removed]
 export const eidToWorld = new Map()
 
 export const flushRemovedEntities = (world) => {
-  console.log("recycled",recycled)
-  console.log("removed",removed)
-  console.log("globalEntityCursor",globalEntityCursor)
   if (!world[$manualEntityRecycling]) {
     throw new Error("bitECS - cannot flush removed entities, enable feature with the enableManualEntityRecycling function")
   }
