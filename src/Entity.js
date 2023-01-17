@@ -75,7 +75,7 @@ export const flushRemovedEntities = (world) => {
   if (!world[$manualEntityRecycling]) {
     throw new Error("bitECS - cannot flush removed entities, enable feature with the enableManualEntityRecycling function")
   }
-  removed.push(...recycled)
+  removed.concat(recycled)
   recycled.length = 0
 }
 
