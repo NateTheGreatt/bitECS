@@ -549,7 +549,7 @@ var $entitySparseSet = Symbol("entitySparseSet");
 var $entityArray = Symbol("entityArray");
 var $entityIndices = Symbol("entityIndices");
 var $removedEntities = Symbol("removedEntities");
-var defaultSize = 1e5;
+var defaultSize = 100;
 var globalEntityCursor = 0;
 var globalSize = defaultSize;
 var getGlobalSize = () => globalSize;
@@ -912,9 +912,6 @@ var registerComponent = (world, component) => {
     notQueries,
     changedQueries
   });
-  if (component[$storeSize] < getGlobalSize()) {
-    resizeStore(component, getGlobalSize());
-  }
   incrementBitflag(world);
 };
 var registerComponents = (world, components2) => {
@@ -1092,6 +1089,7 @@ export {
   removeEntity,
   removeQuery,
   resetChangedQuery,
+  resetGlobals,
   resetWorld,
   setDefaultSize,
   setRemovedRecycleThreshold

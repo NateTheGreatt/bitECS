@@ -61,10 +61,6 @@ export const registerComponent = (world, component) => {
     changedQueries,
   })
 
-  if (component[$storeSize] < getGlobalSize()) {
-    resizeStore(component, getGlobalSize())
-  }
-
   incrementBitflag(world)
 }
 
