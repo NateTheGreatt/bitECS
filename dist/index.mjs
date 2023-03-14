@@ -686,7 +686,7 @@ var exitQuery = (query) => (world) => {
     return empty;
   } else {
     const results = q.exited.dense.slice();
-    q.exit.reset();
+    q.exited.reset();
     return results;
   }
 };
