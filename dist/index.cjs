@@ -330,12 +330,17 @@ var SparseSet = () => {
       sparse[swapped] = index;
     }
   };
+  const reset = () => {
+    dense.length = 0;
+    sparse.length = 0;
+  };
   return {
     add,
     remove,
     has,
     sparse,
-    dense
+    dense,
+    reset
   };
 };
 
@@ -650,7 +655,7 @@ var flushRemovedEntities = (world) => {
   recycled.length = 0;
 };
 var addEntity = (world) => {
-  const eid = world[$manualEntityRecycling] ? removed.length ? removed.shift() : globalEntityCursor++ : removed.length > Math.round(defaultSize * defaultRemovedReuseThreshold) ? removed.shift() : globalEntityCursor++;
+  const eid = world[$manualEntityRecycling] ? removed.length ? removed.shift() : globalEntityCursor++ : removed.length > Math.round(globalSize * removedReuseThreshold) ? removed.shift() : globalEntityCursor++;
   if (eid > world[$size])
     throw new Error("bitECS - max entities reached");
   world[$entitySparseSet].add(eid);
@@ -723,21 +728,30 @@ var $dirtyQueries = Symbol("$dirtyQueries");
 var $queryComponents = Symbol("queryComponents");
 var $enterQuery = Symbol("enterQuery");
 var $exitQuery = Symbol("exitQuery");
+var empty = Object.freeze([]);
 var enterQuery = (query) => (world) => {
   if (!world[$queryMap].has(query))
     registerQuery(world, query);
   const q = world[$queryMap].get(query);
-  const entered = q.entered.dense.slice();
-  q.entered = SparseSet();
-  return entered;
+  if (q.entered.dense.length === 0) {
+    return empty;
+  } else {
+    const results = q.entered.dense.slice();
+    q.entered.reset();
+    return results;
+  }
 };
 var exitQuery = (query) => (world) => {
   if (!world[$queryMap].has(query))
     registerQuery(world, query);
   const q = world[$queryMap].get(query);
-  const exited = q.exited.dense.slice();
-  q.exited = SparseSet();
-  return exited;
+  if (q.exited.dense.length === 0) {
+    return empty;
+  } else {
+    const results = q.exited.dense.slice();
+    q.exit.reset();
+    return results;
+  }
 };
 var registerQuery = (world, query) => {
   const components2 = [];
