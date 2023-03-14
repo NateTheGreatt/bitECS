@@ -32,6 +32,8 @@ export const $queryComponents = Symbol('queryComponents')
 export const $enterQuery = Symbol('enterQuery')
 export const $exitQuery = Symbol('exitQuery')
 
+const empty = Object.freeze([])
+
 /**
  * Given an existing query, returns a new function which returns entities who have been added to the given query since the last call of the function.
  *
@@ -41,10 +43,13 @@ export const $exitQuery = Symbol('exitQuery')
 export const enterQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
   const q = world[$queryMap].get(query)
-  // queryCommitRemovals(q)
-  const entered = q.entered.dense.slice()
-  q.entered = SparseSet()
-  return entered
+  if (q.entered.dense.length === 0) {
+    return empty
+  } else {
+    const results = q.entered.dense.slice()
+    q.entered.reset()
+    return results
+  }
 }
 
 /**
@@ -56,10 +61,13 @@ export const enterQuery = query => world => {
 export const exitQuery = query => world => {
   if (!world[$queryMap].has(query)) registerQuery(world, query)
   const q = world[$queryMap].get(query)
-  // queryCommitRemovals(q)
-  const exited = q.exited.dense.slice()
-  q.exited = SparseSet()
-  return exited
+  if (q.exited.dense.length === 0) {
+    return empty
+  } else {
+    const results = q.exited.dense.slice()
+    q.exit.reset()
+    return results
+  }
 }
 
 export const registerQuery = (world, query) => {

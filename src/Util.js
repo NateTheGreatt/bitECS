@@ -67,11 +67,17 @@ export const SparseSet = () => {
     }
   }
 
+  const reset = () => {
+    dense.length = 0
+    sparse.length = 0
+  }
+
   return {
     add,
     remove,
     has,
     sparse,
     dense,
+    reset,
   }
 }
