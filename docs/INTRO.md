@@ -196,7 +196,7 @@ const enteredEnts = enteredMovementQuery(world)
 `exitQuery` returns a function which can be used to capture entities whose components no longer match the query:
 ```js
 const exitedMovementQuery = exitQuery(movementQuery)
-const enteredEnts = exitedMovementQuery(world)
+const exitedEnts = exitedMovementQuery(world)
 ```
 
 
