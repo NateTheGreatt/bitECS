@@ -3,6 +3,7 @@ import { Types } from '../../src/index.js'
 import { createWorld } from '../../src/World.js'
 import { $componentMap, addComponent, defineComponent, hasComponent, registerComponent, removeComponent } from '../../src/Component.js'
 import { addEntity, resetGlobals } from '../../src/Entity.js'
+import { addAndFillComponent, updateComponent } from 'bitecs'
 
 describe('Component Integration Tests', () => {
   afterEach(() => {
@@ -35,6 +36,36 @@ describe('Component Integration Tests', () => {
 
     removeComponent(world, TestComponent, eid)
     assert(hasComponent(world, TestComponent, eid) === false)
+  })
+  it('should add and fill, and update components from an entity', () => {
+    const world = createWorld()
+    const TestComponent = defineComponent({
+      foo: Types.f32,
+      bar: {
+        baz: Types.f32,
+      }
+    })
+    const originalFoo = 10
+    const originalBaz = 11
+    const newFoo = 1000
+    const newBaz = 1337
+
+    const eid = addEntity(world)
+
+    addAndFillComponent(world, TestComponent, eid, {
+      foo: originalFoo,
+      bar: { baz: originalBaz },
+    })
+    assert(hasComponent(world, TestComponent, eid))
+    assert(TestComponent.foo[eid] === originalFoo)
+    assert(TestComponent.foo.bar.baz[eid] === originalBaz)
+
+    updateComponent(world, TestComponent, eid, {
+      foo: newFoo,
+      bar: { baz: newBaz },
+    })
+    assert(TestComponent.foo[eid] === newFoo)
+    assert(TestComponent.foo.bar.baz[eid] === newBaz)
   })
   it('should only remove the component specified', () => {
     const world = createWorld()

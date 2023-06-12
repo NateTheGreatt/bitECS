@@ -70,6 +70,32 @@ declare module 'bitecs' {
           : unknown;
   };
 
+  export type CompleteComponentSchemaArgs<T extends ISchema> = {
+    [key in keyof T]:
+      T[key] extends Type
+      ? number
+      : T[key] extends [infer RT, number]
+        ? RT extends Type
+          ? Array<number>
+          : unknown
+        : T[key] extends ISchema
+          ? CompleteComponentSchemaArgs<T[key]>
+          : unknown;
+  }
+  
+  export type PartialComponentSchemaArgs<T extends ISchema> = Partial<{
+    [key in keyof T]:
+      T[key] extends Type
+      ? number
+      : T[key] extends [infer RT, number]
+        ? RT extends Type
+          ? Array<number>
+          : unknown
+        : T[key] extends ISchema
+          ? PartialComponentSchemaArgs<T[key]>
+          : unknown;
+  }>
+
   export type ComponentProp = TypedArray | Array<TypedArray>
 
   export interface IWorld {}
@@ -114,6 +140,9 @@ declare module 'bitecs' {
   export function defineComponent<T extends ISchema>(schema?: T, size?: number): ComponentType<T>
   export function defineComponent<T>(schema?: any, size?: number): T
   export function addComponent<W extends IWorld = IWorld>(world: W, component: Component, eid: number, reset?: boolean): void
+  export function addAndFillComponent<W extends IWorld = IWorld, S extends ISchema = ISchema>(world: W, component: ComponentType<S>, eid: number, data: CompleteComponentSchemaArgs<S>): void
+  export function addAndPartiallyFillComponent<W extends IWorld = IWorld, S extends ISchema = ISchema>(world: W, component: ComponentType<S>, eid: number, data: PartialComponentSchemaArgs<S>): void
+  export function updateComponent<W extends IWorld = IWorld, S extends ISchema = ISchema>(world: W, component: ComponentType<S>, eid: number, data: PartialComponentSchemaArgs<S>): void
   export function removeComponent<W extends IWorld = IWorld>(world: W, component: Component, eid: number, reset?: boolean): void
   export function hasComponent<W extends IWorld = IWorld>(world: W, component: Component, eid: number): boolean
   export function getEntityComponents<W extends IWorld = IWorld>(world: W, eid: number): Component[]
