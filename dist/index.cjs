@@ -28,6 +28,8 @@ __export(src_exports, {
   DESERIALIZE_MODE: () => DESERIALIZE_MODE,
   Not: () => Not,
   Types: () => Types,
+  addAndFillComponent: () => addAndFillComponent,
+  addAndPartiallyFillComponent: () => addAndPartiallyFillComponent,
   addComponent: () => addComponent,
   addEntity: () => addEntity,
   commitRemovals: () => commitRemovals,
@@ -58,7 +60,8 @@ __export(src_exports, {
   resetGlobals: () => resetGlobals,
   resetWorld: () => resetWorld,
   setDefaultSize: () => setDefaultSize,
-  setRemovedRecycleThreshold: () => setRemovedRecycleThreshold
+  setRemovedRecycleThreshold: () => setRemovedRecycleThreshold,
+  updateComponent: () => updateComponent
 });
 
 // src/Constants.js
@@ -957,6 +960,18 @@ var components = [];
 var resizeComponents = (size) => {
   components.forEach((component) => resizeStore(component, size));
 };
+var recursivelySetComponentAttributes = (eid, componentSection, data) => {
+  if (typeof data !== "object") {
+    return;
+  }
+  Object.keys(data).forEach((k) => {
+    if (typeof data[k] !== "number") {
+      recursivelySetComponentAttributes(eid, componentSection[k], data[k]);
+      return;
+    }
+    componentSection[k][eid] = data[k];
+  });
+};
 var defineComponent = (schema, size) => {
   const component = createStore(schema, size || getGlobalSize());
   if (schema && Object.keys(schema).length)
@@ -1029,6 +1044,22 @@ var addComponent = (world, component, eid, reset = false) => {
   world[$entityComponents].get(eid).add(component);
   if (reset)
     resetStoreFor(component, eid);
+};
+var updateComponent = (world, component, eid, data) => {
+  if (eid === void 0)
+    throw new Error("bitECS - entity is undefined.");
+  if (!world[$entitySparseSet].has(eid))
+    throw new Error("bitECS - entity does not exist in the world.");
+  if (!hasComponent(world, component, eid))
+    return;
+  recursivelySetComponentAttributes(eid, component, data);
+};
+var addAndPartiallyFillComponent = (world, component, eid, data, reset = false) => {
+  addComponent(world, component, eid, reset);
+  updateComponent(world, component, eid, data);
+};
+var addAndFillComponent = (world, component, eid, data, reset = false) => {
+  addAndPartiallyFillComponent(world, component, eid, data, reset);
 };
 var removeComponent = (world, component, eid, reset = true) => {
   if (eid === void 0)
@@ -1141,6 +1172,8 @@ module.exports = __toCommonJS(src_exports);
   DESERIALIZE_MODE,
   Not,
   Types,
+  addAndFillComponent,
+  addAndPartiallyFillComponent,
   addComponent,
   addEntity,
   commitRemovals,
@@ -1171,6 +1204,7 @@ module.exports = __toCommonJS(src_exports);
   resetGlobals,
   resetWorld,
   setDefaultSize,
-  setRemovedRecycleThreshold
+  setRemovedRecycleThreshold,
+  updateComponent
 });
 //# sourceMappingURL=index.cjs.map

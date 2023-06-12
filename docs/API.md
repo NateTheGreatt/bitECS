@@ -1,6 +1,10 @@
 ## Constants
 
 <dl>
+<dt><a href="#recursivelySetComponentAttributes">recursivelySetComponentAttributes</a></dt>
+<dd><p>Given data matching the schema of a component, goes through a section of a
+component and sets its attributes.</p>
+</dd>
 <dt><a href="#defineComponent">defineComponent</a> ⇒ <code>object</code></dt>
 <dd><p>Defines a new component store.</p>
 </dd>
@@ -16,11 +20,22 @@
 <dt><a href="#addComponent">addComponent</a></dt>
 <dd><p>Adds a component to an entity</p>
 </dd>
+<dt><a href="#addAndPartiallyFillComponent">addAndPartiallyFillComponent</a></dt>
+<dd><p>Adds a component to an entity and partially fills some of its values.</p>
+</dd>
+<dt><a href="#addAndFillComponent">addAndFillComponent</a></dt>
+<dd><p>Adds a component to an entity and fills <em>all</em> of its values.</p>
+<p>This function is merely calls the one above, but the type is stricter.</p>
+</dd>
 <dt><a href="#removeComponent">removeComponent</a></dt>
 <dd><p>Removes a component from an entity and resets component state unless otherwise specified.</p>
 </dd>
 <dt><a href="#setDefaultSize">setDefaultSize</a></dt>
 <dd><p>Sets the default maximum number of entities for worlds and component stores.</p>
+</dd>
+<dt><a href="#setRemovedRecycleThreshold">setRemovedRecycleThreshold</a></dt>
+<dd><p>Sets the number of entities that must be removed before removed entity ids begin to be recycled.
+This should be set to as a % (0-1) of <code>defaultSize</code> that you would never likely remove/add on a single frame.</p>
 </dd>
 <dt><a href="#addEntity">addEntity</a> ⇒ <code>number</code></dt>
 <dd><p>Adds a new entity to the specified world.</p>
@@ -74,6 +89,20 @@
 <dd><p>Returns all existing entities in a world</p>
 </dd>
 </dl>
+
+
+<br><a name="recursivelySetComponentAttributes"></a>
+
+## recursivelySetComponentAttributes
+> Given data matching the schema of a component, goes through a section of a
+> component and sets its attributes.
+
+
+| Param | Type |
+| --- | --- |
+| eid | <code>number</code> | 
+| componentSection | <code>ComponentType.&lt;S&gt;</code> | 
+| data | <code>PartialComponentSchemaArgs.&lt;S&gt;</code> | 
 
 
 <br><a name="defineComponent"></a>
@@ -138,6 +167,38 @@
 | [reset] | <code>boolean</code> | <code>false</code> | 
 
 
+<br><a name="addAndPartiallyFillComponent"></a>
+
+## addAndPartiallyFillComponent
+> Adds a component to an entity and partially fills some of its values.
+
+
+| Param | Type |
+| --- | --- |
+| world | <code>World</code> | 
+| component | <code>ComponentType.&lt;S&gt;</code> | 
+| eid | <code>number</code> | 
+| data | <code>PartialComponentSchemaArgs.&lt;S&gt;</code> | 
+| reset | <code>boolean</code> | 
+
+
+<br><a name="addAndFillComponent"></a>
+
+## addAndFillComponent
+> Adds a component to an entity and fills *all* of its values.
+> 
+> This function is merely calls the one above, but the type is stricter.
+
+
+| Param | Type |
+| --- | --- |
+| world | <code>World</code> | 
+| component | <code>ComponentType.&lt;S&gt;</code> | 
+| eid | <code>number</code> | 
+| data | <code>CompleteComponentSchemaArgs.&lt;S&gt;</code> | 
+| reset | <code>boolean</code> | 
+
+
 <br><a name="removeComponent"></a>
 
 ## removeComponent
@@ -161,6 +222,18 @@
 | Param | Type |
 | --- | --- |
 | newSize | <code>number</code> | 
+
+
+<br><a name="setRemovedRecycleThreshold"></a>
+
+## setRemovedRecycleThreshold
+> Sets the number of entities that must be removed before removed entity ids begin to be recycled.
+> This should be set to as a % (0-1) of `defaultSize` that you would never likely remove/add on a single frame.
+
+
+| Param | Type |
+| --- | --- |
+| newThreshold | <code>number</code> | 
 
 
 <br><a name="addEntity"></a>

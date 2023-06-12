@@ -11,6 +11,35 @@ export const resizeComponents = (size) => {
   components.forEach(component => resizeStore(component, size))
 }
 
+/**
+ * Given data matching the schema of a component, goes through a section of a
+ * component and sets its attributes.
+ * 
+ * @param {number} eid 
+ * @param {ComponentType<S>} componentSection 
+ * @param {PartialComponentSchemaArgs<S>} data 
+ */
+export const recursivelySetComponentAttributes = (eid, componentSection, data) => {
+  if (typeof data !== 'object') {
+    return
+  }
+
+  (Object.keys(data)).forEach(k => {
+    if (typeof data[k] !== 'number') {
+      recursivelySetComponentAttributes(
+        eid,
+        componentSection[k],
+        data[k],
+      )
+
+      return
+    }
+
+    // todo: validate that the key is in this section?
+    (componentSection[k])[eid] = data[k]
+  })
+}
+
 
 /**
  * Defines a new component store.
@@ -129,6 +158,52 @@ export const addComponent = (world, component, eid, reset=false) => {
 
   // Zero out each property value
   if (reset) resetStoreFor(component, eid)
+}
+
+/**
+ * Updates the values in an entity.
+ * 
+ * @param {World} world 
+ * @param {ComponentType<S>} component 
+ * @param {number} eid 
+ * @param {PartialComponentSchemaArgs<S>} data
+ */
+export const updateComponent = (world, component, eid, data) => {
+  if (eid === undefined) throw new Error('bitECS - entity is undefined.')
+  if (!world[$entitySparseSet].has(eid)) throw new Error('bitECS - entity does not exist in the world.')
+  if (!hasComponent(world, component, eid)) return
+
+  recursivelySetComponentAttributes(eid, component, data)
+}
+
+/**
+ * Adds a component to an entity and partially fills some of its values.
+ * 
+ * @param {World} world 
+ * @param {ComponentType<S>} component 
+ * @param {number} eid 
+ * @param {PartialComponentSchemaArgs<S>} data 
+ * @param {boolean} [reset=false] 
+ */
+export const addAndPartiallyFillComponent = (world, component, eid, data, reset=false) => {
+  addComponent(world, component, eid, reset)
+
+  updateComponent(world, component, eid, data)
+}
+
+/**
+ * Adds a component to an entity and fills *all* of its values.
+ * 
+ * This function is merely calls the one above, but the type is stricter. 
+ * 
+ * @param {World} world 
+ * @param {ComponentType<S>} component 
+ * @param {number} eid 
+ * @param {CompleteComponentSchemaArgs<S>} data 
+ * @param {boolean} reset 
+ */
+export const addAndFillComponent = (world, component, eid, data, reset=false) => {
+  addAndPartiallyFillComponent(world, component, eid, data, reset)
 }
 
 /**
