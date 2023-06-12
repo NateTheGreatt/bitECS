@@ -108,7 +108,7 @@ Position.y[eid] = 1.23
 addAndFillComponent(world, Velocity, eid, {
   x: 4.56,
   y: 4.56,
-  x: 0,
+  z: 0,
 })
 
 setInterval(() => {
