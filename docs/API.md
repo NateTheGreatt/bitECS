@@ -20,6 +20,9 @@ component and sets its attributes.</p>
 <dt><a href="#addComponent">addComponent</a></dt>
 <dd><p>Adds a component to an entity</p>
 </dd>
+<dt><a href="#updateComponent">updateComponent</a></dt>
+<dd><p>Updates the values in an entity&#39;s component.</p>
+</dd>
 <dt><a href="#addAndPartiallyFillComponent">addAndPartiallyFillComponent</a></dt>
 <dd><p>Adds a component to an entity and partially fills some of its values.</p>
 </dd>
@@ -167,10 +170,10 @@ This should be set to as a % (0-1) of <code>defaultSize</code> that you would ne
 | [reset] | <code>boolean</code> | <code>false</code> | 
 
 
-<br><a name="addAndPartiallyFillComponent"></a>
+<br><a name="updateComponent"></a>
 
-## addAndPartiallyFillComponent
-> Adds a component to an entity and partially fills some of its values.
+## updateComponent
+> Updates the values in an entity's component.
 
 
 | Param | Type |
@@ -179,7 +182,21 @@ This should be set to as a % (0-1) of <code>defaultSize</code> that you would ne
 | component | <code>ComponentType.&lt;S&gt;</code> | 
 | eid | <code>number</code> | 
 | data | <code>PartialComponentSchemaArgs.&lt;S&gt;</code> | 
-| reset | <code>boolean</code> | 
+
+
+<br><a name="addAndPartiallyFillComponent"></a>
+
+## addAndPartiallyFillComponent
+> Adds a component to an entity and partially fills some of its values.
+
+
+| Param | Type | Default |
+| --- | --- | --- |
+| world | <code>World</code> |  | 
+| component | <code>ComponentType.&lt;S&gt;</code> |  | 
+| eid | <code>number</code> |  | 
+| data | <code>PartialComponentSchemaArgs.&lt;S&gt;</code> |  | 
+| [reset] | <code>boolean</code> | <code>false</code> | 
 
 
 <br><a name="addAndFillComponent"></a>

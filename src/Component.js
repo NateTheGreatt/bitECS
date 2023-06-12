@@ -161,7 +161,7 @@ export const addComponent = (world, component, eid, reset=false) => {
 }
 
 /**
- * Updates the values in an entity.
+ * Updates the values in an entity's component.
  * 
  * @param {World} world 
  * @param {ComponentType<S>} component 

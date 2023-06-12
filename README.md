@@ -63,6 +63,7 @@ import {
   defineQuery,
   addEntity,
   addComponent,
+  addAndFillComponent,
   pipe,
 } from 'bitecs'
 
@@ -101,9 +102,14 @@ world.time = { delta: 0, elapsed: 0, then: performance.now() }
 
 const eid = addEntity(world)
 addComponent(world, Position, eid)
-addComponent(world, Velocity, eid)
-Velocity.x[eid] = 1.23
-Velocity.y[eid] = 1.23
+Position.x[eid] = 1.23
+Position.y[eid] = 1.23
+// An alternative way of adding and filling components:
+addAndFillComponent(world, Velocity, eid, {
+  x: 4.56,
+  y: 4.56,
+  x: 0,
+})
 
 setInterval(() => {
   pipeline(world)
