@@ -14,8 +14,14 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "import":  {
+        "default": "./dist/index.mjs",
+        "types": "./dist/index.d.ts"
+      },
+      "require":  {
+        "default": "./dist/index.cjs",
+        "types": "./dist/index.d.ts"
+      }
     }
   },
   "author": {
