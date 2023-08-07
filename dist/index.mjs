@@ -83,56 +83,6 @@ var createShadow = (store, key) => {
     store[key] = store.slice(0);
   }
 };
-var resizeSubarray = (metadata, store, storeSize) => {
-  const cursors = metadata[$subarrayCursors];
-  let type = store[$storeType];
-  const length = store[0].length;
-  const indexType = length <= UNSIGNED_MAX.uint8 ? TYPES_ENUM.ui8 : length <= UNSIGNED_MAX.uint16 ? TYPES_ENUM.ui16 : TYPES_ENUM.ui32;
-  if (cursors[type] === 0) {
-    const arrayElementCount = metadata[$storeArrayElementCounts][type];
-    const array = new TYPES[type](roundToMultiple4(arrayElementCount * storeSize));
-    array.set(metadata[$storeSubarrays][type]);
-    metadata[$storeSubarrays][type] = array;
-    array[$indexType] = TYPES_NAMES[indexType];
-    array[$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT;
-  }
-  const start = cursors[type];
-  const end = start + storeSize * length;
-  cursors[type] = end;
-  store[$parentArray] = metadata[$storeSubarrays][type].subarray(start, end);
-  for (let eid = 0; eid < storeSize; eid++) {
-    const start2 = length * eid;
-    const end2 = start2 + length;
-    store[eid] = store[$parentArray].subarray(start2, end2);
-    store[eid][$indexType] = TYPES_NAMES[indexType];
-    store[eid][$indexBytes] = TYPES[indexType].BYTES_PER_ELEMENT;
-    store[eid][$subarray] = true;
-  }
-};
-var resizeRecursive = (metadata, store, size) => {
-  Object.keys(store).forEach((key) => {
-    const ta = store[key];
-    if (Array.isArray(ta)) {
-      resizeSubarray(metadata, ta, size);
-      store[$storeFlattened].push(ta);
-    } else if (ArrayBuffer.isView(ta)) {
-      store[key] = resize(ta, size);
-      store[$storeFlattened].push(store[key]);
-    } else if (typeof ta === "object") {
-      resizeRecursive(metadata, store[key], size);
-    }
-  });
-};
-var resizeStore = (store, size) => {
-  if (store[$tagStore])
-    return;
-  store[$storeSize] = size;
-  store[$storeFlattened].length = 0;
-  Object.keys(store[$subarrayCursors]).forEach((k) => {
-    store[$subarrayCursors][k] = 0;
-  });
-  resizeRecursive(store, store, size);
-};
 var resetStoreFor = (store, eid) => {
   if (store[$storeFlattened]) {
     store[$storeFlattened].forEach((ta) => {
@@ -575,9 +525,7 @@ var setDefaultSize = (newSize) => {
   resetGlobals();
   globalSize = newSize;
   resizeWorlds(newSize);
-  resizeComponents(newSize);
   setSerializationResized(true);
-  console.info(`\u{1F47E} bitECS - resizing all data stores from ${oldSize} to ${newSize}`);
 };
 var setRemovedRecycleThreshold = (newThreshold) => {
   removedReuseThreshold = newThreshold;
@@ -891,9 +839,6 @@ var removeQuery = (world, query) => {
 // src/Component.js
 var $componentMap = Symbol("componentMap");
 var components = [];
-var resizeComponents = (size) => {
-  components.forEach((component) => resizeStore(component, size));
-};
 var defineComponent = (schema, size) => {
   const component = createStore(schema, size || getGlobalSize());
   if (schema && Object.keys(schema).length)

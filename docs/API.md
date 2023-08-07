@@ -22,6 +22,10 @@
 <dt><a href="#setDefaultSize">setDefaultSize</a></dt>
 <dd><p>Sets the default maximum number of entities for worlds and component stores.</p>
 </dd>
+<dt><a href="#setRemovedRecycleThreshold">setRemovedRecycleThreshold</a></dt>
+<dd><p>Sets the number of entities that must be removed before removed entity ids begin to be recycled.
+This should be set to as a % (0-1) of <code>defaultSize</code> that you would never likely remove/add on a single frame.</p>
+</dd>
 <dt><a href="#addEntity">addEntity</a> ⇒ <code>number</code></dt>
 <dd><p>Adds a new entity to the specified world.</p>
 </dd>
@@ -161,6 +165,17 @@
 | Param | Type |
 | --- | --- |
 | newSize | <code>number</code> | 
+
+
+<br><a name="setRemovedRecycleThreshold"></a>
+
+## setRemovedRecycleThreshold
+> Sets the number of entities that must be removed before removed entity ids begin to be recycled.> This should be set to as a % (0-1) of `defaultSize` that you would never likely remove/add on a single frame.
+
+
+| Param | Type |
+| --- | --- |
+| newThreshold | <code>number</code> | 
 
 
 <br><a name="addEntity"></a>
