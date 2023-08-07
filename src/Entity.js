@@ -50,10 +50,7 @@ export const setDefaultSize = newSize => {
 
   globalSize = newSize
   resizeWorlds(newSize)
-  resizeComponents(newSize)
   setSerializationResized(true)
-
-  console.info(`👾 bitECS - resizing all data stores from ${oldSize} to ${newSize}`)
 }
 
 /**
