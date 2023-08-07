@@ -94,26 +94,26 @@ describe('Entity Integration Tests', () => {
     flushRemovedEntities(world)
 
     let eid = addEntity(world)
-    strictEqual(eid, 1500)
+    strictEqual(eid, 0)
 
     eid = addEntity(world)
-    strictEqual(eid, 1501)
+    strictEqual(eid, 1)
 
     eid = addEntity(world)
-    strictEqual(eid, 1502)
+    strictEqual(eid, 2)
 
     eid = addEntity(world)
-    strictEqual(eid, 1503)
+    strictEqual(eid, 3)
 
-    removeEntity(world, 1503)
-
-    eid = addEntity(world)
-    strictEqual(eid, 1504)
-
-    removeEntity(world, 1502)
+    removeEntity(world, 3)
 
     eid = addEntity(world)
-    strictEqual(eid, 1505)
+    strictEqual(eid, 4)
+
+    removeEntity(world, 2)
+
+    eid = addEntity(world)
+    strictEqual(eid, 5)
 
   })
   it('should be able to configure % of removed entity IDs before recycle', () => {
