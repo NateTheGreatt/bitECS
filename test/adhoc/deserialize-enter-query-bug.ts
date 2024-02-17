@@ -1,5 +1,4 @@
 import assert from "assert";
-import { resetGlobals } from "../../src/entity/Entity.ts/index.js";
 import {
   Types,
   addComponent,
@@ -12,6 +11,7 @@ import {
   enterQuery,
   DESERIALIZE_MODE,
   Changed,
+  resetGlobals,
 } from "../../src/index.js";
 import { describe, it, afterEach } from "vitest";
 

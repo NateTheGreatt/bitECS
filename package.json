@@ -39,6 +39,7 @@
     "dist": "npm run test && npm run build && npm run docs"
   },
   "devDependencies": {
+    "@types/assert": "^1.5.10",
     "boxen": "^6.2.1",
     "brotli-size": "^4.0.0",
     "c8": "^7.10.0",
