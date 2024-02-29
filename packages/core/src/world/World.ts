@@ -6,7 +6,6 @@ import {
   $notQueries,
 } from "../query/symbols.js";
 import { getGlobalSize, removeEntity } from "../entity/Entity.js";
-import { resize } from "../storage/Storage";
 import { World } from "./types.js";
 import {
   $archetypes,
@@ -24,6 +23,7 @@ import {
   $entityMasks,
   $entitySparseSet,
 } from "../entity/symbols.js";
+import { resize } from "../utils/resize.js";
 
 export const worlds: World[] = [];
 

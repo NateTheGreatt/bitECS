@@ -1,4 +1,3 @@
-import { createStore, resetStoreFor, resizeStore } from "../storage/Storage.js";
 import {
   queryAddEntity,
   queryRemoveEntity,
@@ -12,32 +11,12 @@ import {
   $entityComponents,
 } from "../entity/symbols.js";
 import { Component, ComponentType } from "./types.js";
-import { Schema } from "../storage/types.js";
 import { World } from "../world/types.js";
 import { $componentMap } from "./symbols.js";
 import { TODO } from "../utils/types.js";
 import { $queries } from "../query/symbols.js";
 
 export const components: Component[] = [];
-
-export const resizeComponents = (size: number) => {
-  components.forEach((component) => resizeStore(component, size));
-};
-
-/**
- * Defines a new component store.
- *
- * @param {object} schema
- * @returns {object}
- */
-export const defineComponent = <T extends Schema>(
-  schema: T = {} as T,
-  size?: number
-): ComponentType<T> => {
-  const component = createStore(schema, size || getGlobalSize());
-  if (schema && Object.keys(schema).length) components.push(component);
-  return component;
-};
 
 export const incrementBitflag = (world: World) => {
   world[$bitflag] *= 2;
@@ -120,8 +99,7 @@ export const hasComponent = (
 export const addComponent = (
   world: World,
   component: Component,
-  eid: number,
-  reset = false
+  eid: number
 ) => {
   if (eid === undefined) throw new Error("bitECS - entity is undefined.");
   if (!world[$entitySparseSet].has(eid))
@@ -151,9 +129,6 @@ export const addComponent = (
   });
 
   world[$entityComponents].get(eid)!.add(component);
-
-  // Zero out each property value
-  if (reset) resetStoreFor(component, eid);
 };
 
 /**
@@ -167,8 +142,7 @@ export const addComponent = (
 export const removeComponent = (
   world: World,
   component: Component,
-  eid: number,
-  reset = true
+  eid: number
 ) => {
   if (eid === undefined) throw new Error("bitECS - entity is undefined.");
   if (!world[$entitySparseSet].has(eid))
@@ -197,7 +171,4 @@ export const removeComponent = (
   });
 
   world[$entityComponents].get(eid)!.delete(component);
-
-  // Zero out each property value
-  if (reset) resetStoreFor(component, eid);
 };

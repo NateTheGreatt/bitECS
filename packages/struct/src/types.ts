@@ -1,5 +1,4 @@
-import { TYPES } from "../constants/Constants";
-import { TypedArray } from "../utils/types";
+import { TYPES } from "./constants";
 import {
   $storeArrayElementCounts,
   $storeBase,
@@ -31,3 +30,19 @@ export type ListType = readonly [ComponentType, number];
 export interface Schema {
   [key: string]: ComponentType | ListType | Schema;
 }
+
+export type TODO = any;
+
+export type Constructor = new (...args: any[]) => any;
+
+export type TypedArray =
+  | Uint8Array
+  | Int8Array
+  | Uint8Array
+  | Uint8ClampedArray
+  | Int16Array
+  | Uint16Array
+  | Int32Array
+  | Uint32Array
+  | Float32Array
+  | Float64Array;

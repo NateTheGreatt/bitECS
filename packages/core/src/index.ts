@@ -18,7 +18,6 @@ import {
   getDefaultSize,
 } from "./entity/Entity.js";
 import {
-  defineComponent,
   registerComponent,
   registerComponents,
   hasComponent,
@@ -35,10 +34,6 @@ import {
   resetChangedQuery,
   removeQuery,
 } from "./query/Query.js";
-import { parentArray } from "./storage/Storage.js";
-import { TYPES_ENUM } from "./constants/Constants.js";
-
-export const Types = TYPES_ENUM;
 
 export {
   setDefaultSize,
@@ -55,7 +50,6 @@ export {
   getAllEntities,
   registerComponent,
   registerComponents,
-  defineComponent,
   addComponent,
   removeComponent,
   hasComponent,
@@ -68,7 +62,6 @@ export {
   commitRemovals,
   resetChangedQuery,
   removeQuery,
-  parentArray,
   resetGlobals,
   getDefaultSize,
 };

@@ -1,0 +1,24 @@
+{
+  "name": "@bitecs/struct",
+  "version": "0.0.1",
+  "description": "SoA creation library",
+  "license": "MPL-2.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "test": "bun test",
+    "build": "tsup src/index.ts --format cjs,esm --dts"
+  },
+  "dependencies": {
+    "tsup": "^8.0.2"
+  }
+}

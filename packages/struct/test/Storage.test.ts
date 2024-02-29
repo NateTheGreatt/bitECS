@@ -1,41 +1,38 @@
 import assert, { strictEqual } from "assert";
-import { getDefaultSize } from "../../src/index.js";
-import { Types } from "../../src/index.js";
-import { createStore, resizeStore } from "../../src/storage/Storage.js";
-import { TYPES } from "../../src/constants/Constants.js";
+import { Types, TYPES, createSoA, resizeStore } from "../src/index.js";
 import { describe, it, afterEach } from "bun:test";
 
-let defaultSize = getDefaultSize();
+let defaultSize = 100000;
 
 const arraysEqual = (a: number[], b: number[]) =>
   !!a && !!b && !(a < b || b < a);
 
 describe("Storage Integration Tests", () => {
   it("should default to size of " + defaultSize, () => {
-    const store = createStore({ value: Types.i8 }, defaultSize);
+    const store = createSoA({ value: Types.i8 }, defaultSize);
     strictEqual(store.value.length, defaultSize);
   });
   it("should allow custom size", () => {
-    const store = createStore({ value: Types.i8 }, 10);
+    const store = createSoA({ value: Types.i8 }, 10);
     strictEqual(store.value.length, 10);
   });
   (Object.keys(Types) as (keyof typeof Types)[]).forEach((type) => {
     it("should create a store with " + type, () => {
-      const store = createStore({ value: type }, defaultSize);
+      const store = createSoA({ value: type }, defaultSize);
       assert(store.value instanceof TYPES[type]);
       strictEqual(store.value.length, defaultSize);
     });
   });
   (Object.keys(Types) as (keyof typeof Types)[]).forEach((type) => {
     it("should create a store with array of " + type, () => {
-      const store = createStore({ value: [type, 4] }, 10);
+      const store = createSoA({ value: [type, 4] }, 10);
       assert(store.value instanceof Object);
       strictEqual(Object.keys(store.value).length, 10);
       assert(store.value[0] instanceof TYPES[type]);
       strictEqual(store.value[0].length, 4);
     });
     it("should correctly set values on arrays of " + type, () => {
-      const store = createStore({ array: [type, 4] }, 3);
+      const store = createSoA({ array: [type, 4] }, 3);
       store.array[0].set([1, 2, 3, 4]);
       store.array[1].set([5, 6, 7, 8]);
       store.array[2].set([9, 10, 11, 12]);
@@ -45,7 +42,7 @@ describe("Storage Integration Tests", () => {
       strictEqual(store.array[3], undefined);
     });
     it("should resize arrays of " + type, () => {
-      const store = createStore({ array: [type, 4] }, 3);
+      const store = createSoA({ array: [type, 4] }, 3);
       store.array[0].set([1, 2, 3, 4]);
       store.array[1].set([5, 6, 7, 8]);
       store.array[2].set([9, 10, 11, 12]);
@@ -68,7 +65,7 @@ describe("Storage Integration Tests", () => {
     });
   });
   it("should create flat stores", () => {
-    const store = createStore(
+    const store = createSoA(
       { value1: Types.i8, value2: Types.ui16, value3: Types.f32 },
       defaultSize
     );
@@ -80,12 +77,12 @@ describe("Storage Integration Tests", () => {
     assert(store.value3 instanceof Float32Array);
   });
   it("should create nested stores", () => {
-    const store1 = createStore({ nest: { value: Types.i8 } }, defaultSize);
-    const store2 = createStore(
+    const store1 = createSoA({ nest: { value: Types.i8 } }, defaultSize);
+    const store2 = createSoA(
       { nest: { nest: { value: Types.ui32 } } },
       defaultSize
     );
-    const store3 = createStore(
+    const store3 = createSoA(
       { nest: { nest: { nest: { value: Types.i16 } } } },
       defaultSize
     );

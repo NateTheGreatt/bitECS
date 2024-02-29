@@ -1,10 +1,5 @@
-import {
-  TYPES,
-  TYPES_ENUM,
-  TYPES_NAMES,
-  UNSIGNED_MAX,
-} from "../constants/Constants.js";
-import { Constructor, TODO, TypedArray } from "../utils/types.js";
+import { TYPES, TYPES_ENUM, TYPES_NAMES, UNSIGNED_MAX } from "./constants.js";
+import { Constructor, TODO, TypedArray, Metadata, Schema } from "./types.js";
 import {
   $indexBytes,
   $indexType,
@@ -22,7 +17,6 @@ import {
   $subarrayCursors,
   $tagStore,
 } from "./symbols.js";
-import { Metadata, Schema } from "./types.js";
 
 const roundToMultiple = (mul: number) => (x: number) =>
   Math.ceil(x / mul) * mul;
@@ -216,7 +210,7 @@ const createArrayStore = (
 const isArrayType = (x: TODO) =>
   Array.isArray(x) && typeof x[0] === "string" && typeof x[1] === "number";
 
-export const createStore = (schema: Schema, size: number) => {
+export const createSoA = (schema: Schema, size: number) => {
   const $store = Symbol("store");
 
   if (!schema || !Object.keys(schema).length) {
