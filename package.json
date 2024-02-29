@@ -1,12 +1,7 @@
 {
   "name": "bitecs",
+  "private": true,
   "workspaces": [
     "packages/*"
-  ],
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  }
+  ]
 }

@@ -1,11 +1,10 @@
-import { createDataWriter } from './src/DataWriter'
-import { createDataReader } from './src/DataReader'
+import { createDataWriter } from "./DataWriter.js";
+import { createDataReader } from "./DataReader.js";
 import {
   createViewCursor,
   sliceViewCursor,
   scrollViewCursor,
   moveViewCursor,
-
   writeProp,
   writePropIfChanged,
   writeFloat64,
@@ -18,7 +17,6 @@ import {
   writeInt16,
   writeUint8,
   writeInt8,
-
   spaceFloat64,
   spaceUint64,
   spaceInt64,
@@ -28,7 +26,6 @@ import {
   spaceInt16,
   spaceUint8,
   spaceInt8,
-
   readProp,
   readFloat64,
   readFloat32,
@@ -40,7 +37,7 @@ import {
   readInt16,
   readUint8,
   readInt8,
-} from './src/ViewCursor'
+} from "./ViewCursor.js";
 
 export default {
   createDataWriter,
@@ -85,4 +82,4 @@ export default {
   readInt16,
   readUint8,
   readInt8,
-}
+};

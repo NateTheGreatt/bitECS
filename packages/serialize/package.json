@@ -2,10 +2,16 @@
   "name": "@bitecs/serialize",
   "version": "0.0.1",
   "description": "SoA serialization library",
-  "main": "index.js",
   "type": "module",
-  "scripts": {
-    "test": "mocha ./**/*.test.js"
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
   },
   "repository": {
     "type": "git",
@@ -17,5 +23,12 @@
     "ECS"
   ],
   "author": "Nathaniel Martin",
-  "license": "MPL-2.0"
+  "license": "MPL-2.0",
+  "scripts": {
+    "test": "bun test",
+    "build": "tsup src/index.ts --format cjs,esm --dts"
+  },
+  "dependencies": {
+    "tsup": "^8.0.2"
+  }
 }

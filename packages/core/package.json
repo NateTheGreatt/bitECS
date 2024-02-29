@@ -31,30 +31,11 @@
     }
   ],
   "scripts": {
-    "test": "vitest",
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "watch": "npm run build -- -w",
-    "twatch": "npm run build -- -w -t",
-    "docs": "node scripts/docs.js",
-    "dist": "npm run test && npm run build && npm run docs"
+    "test": "bun test",
+    "build": "tsup src/index.ts --format cjs,esm --dts"
   },
   "devDependencies": {
-    "@types/assert": "^1.5.10",
-    "boxen": "^6.2.1",
-    "brotli-size": "^4.0.0",
-    "c8": "^7.10.0",
-    "chalk": "^5.0.0",
-    "dmd-readable": "^1.2.4",
-    "esbuild": "^0.14.5",
-    "fs-extra": "^10.0.0",
-    "globby": "^12.0.2",
-    "gradient-string": "^2.0.0",
-    "gzip-size": "^7.0.0",
-    "human-readable": "^0.2.1",
-    "jsdoc-to-markdown": "^7.1.0",
-    "minimist": "^1.2.5",
-    "ora": "^6.0.1",
-    "sloc": "^0.3.2"
+    "@types/assert": "^1.5.10"
   },
   "dependencies": {
     "tsup": "^8.0.2"

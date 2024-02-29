@@ -31,7 +31,7 @@ export const resizeComponents = (size: number) => {
  * @returns {object}
  */
 export const defineComponent = <T extends Schema>(
-  schema?: T,
+  schema: T = {} as T,
   size?: number
 ): ComponentType<T> => {
   const component = createStore(schema, size || getGlobalSize());
@@ -150,7 +150,7 @@ export const addComponent = (
     }
   });
 
-  world[$entityComponents].get(eid).add(component);
+  world[$entityComponents].get(eid)!.add(component);
 
   // Zero out each property value
   if (reset) resetStoreFor(component, eid);
@@ -196,7 +196,7 @@ export const removeComponent = (
     }
   });
 
-  world[$entityComponents].get(eid).delete(component);
+  world[$entityComponents].get(eid)!.delete(component);
 
   // Zero out each property value
   if (reset) resetStoreFor(component, eid);
