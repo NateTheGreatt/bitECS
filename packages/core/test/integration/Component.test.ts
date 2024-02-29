@@ -10,7 +10,7 @@ import {
   removeComponent,
 } from "../../src/index.js";
 import { createWorld } from "../../src/world/World.js";
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach } from "bun:test";
 import { $componentMap } from "../../src/component/symbols.js";
 
 describe("Component Integration Tests", () => {

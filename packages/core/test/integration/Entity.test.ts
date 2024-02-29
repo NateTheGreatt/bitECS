@@ -8,7 +8,7 @@ import {
 } from "../../src/entity/Entity.js";
 import { createWorld, addEntity, removeEntity } from "../../src/index.js";
 import { enableManualEntityRecycling } from "../../src/world/World.js";
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach } from "bun:test";
 
 describe("Entity Integration Tests", () => {
   afterEach(() => {

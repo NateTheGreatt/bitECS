@@ -281,11 +281,11 @@ export const defineQuery = (...args: TODO) => {
   }
 
   if (components === undefined || components[$componentMap] !== undefined) {
-    return (world: World) =>
+    return (world: World, clearDiff = false): number[] =>
       world ? world[$entityArray] : components[$entityArray];
   }
 
-  const query = function (world: World, clearDiff = true) {
+  const query = function (world: World, clearDiff = true): number[] {
     if (!world[$queryMap].has(query)) registerQuery(world, query);
 
     const q = world[$queryMap].get(query);

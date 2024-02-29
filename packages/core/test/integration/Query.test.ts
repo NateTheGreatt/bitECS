@@ -14,7 +14,7 @@ import {
   enterQuery,
   Not,
 } from "../../src/index.js";
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach } from "bun:test";
 
 describe("Query Integration Tests", () => {
   afterEach(() => {

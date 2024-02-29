@@ -8,7 +8,7 @@ import { World } from "../world/types";
  */
 export const defineSystem =
   <W extends World = World, R extends any[] = any[]>(
-    update: (world: W, ...args: R) => W
+    update: (world: W, ...args: R) => void
   ): System<W, R> =>
   (world: W, ...args: R) => {
     update(world, ...args);

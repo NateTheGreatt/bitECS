@@ -9,7 +9,7 @@ import {
   addComponent,
   defineComponent,
 } from "../../src/index.js";
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach } from "bun:test";
 
 describe("System Integration Tests", () => {
   afterEach(() => {
@@ -32,5 +32,7 @@ describe("System Integration Tests", () => {
     system(world);
 
     strictEqual(TestComponent.value[eid], 1);
+
+    return world;
   });
 });

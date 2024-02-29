@@ -1,7 +1,7 @@
 import assert, { strictEqual } from "assert";
 import { resetGlobals, getDefaultSize } from "../../src/index.js";
 import { createWorld } from "../../src/world/World.js";
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach } from "bun:test";
 
 const defaultSize = getDefaultSize();
 

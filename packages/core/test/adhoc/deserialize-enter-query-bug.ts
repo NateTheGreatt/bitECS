@@ -13,9 +13,10 @@ import {
   Changed,
   resetGlobals,
 } from "../../src/index.js";
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach } from "bun:test";
+import { World } from "../../src/world/types.js";
 
-function getLocalEid(world, eid) {
+function getLocalEid(world: World, eid: number) {
   const $localEntities = Object.getOwnPropertySymbols(world)[12];
   // @ts-ignore
   const localEntities = world[$localEntities];

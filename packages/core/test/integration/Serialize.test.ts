@@ -1,6 +1,6 @@
 import assert, { strictEqual } from "assert";
 import { TYPES_ENUM } from "../../src/constants/Constants.js";
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach } from "bun:test";
 import { pipe } from "../../src/utils/pipe.js";
 import {
   addEntity,
@@ -17,7 +17,8 @@ import {
 
 const Types = TYPES_ENUM;
 
-const arraysEqual = (a, b) => !!a && !!b && !(a < b || b < a);
+const arraysEqual = (a: number[], b: number[]) =>
+  !!a && !!b && !(a < b || b < a);
 
 describe("Serialize Integration Tests", () => {
   afterEach(() => {

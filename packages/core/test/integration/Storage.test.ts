@@ -3,11 +3,12 @@ import { getDefaultSize } from "../../src/index.js";
 import { Types } from "../../src/index.js";
 import { createStore, resizeStore } from "../../src/storage/Storage.js";
 import { TYPES } from "../../src/constants/Constants.js";
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach } from "bun:test";
 
 let defaultSize = getDefaultSize();
 
-const arraysEqual = (a, b) => !!a && !!b && !(a < b || b < a);
+const arraysEqual = (a: number[], b: number[]) =>
+  !!a && !!b && !(a < b || b < a);
 
 describe("Storage Integration Tests", () => {
   it("should default to size of " + defaultSize, () => {
