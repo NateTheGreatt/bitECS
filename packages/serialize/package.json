@@ -1,0 +1,21 @@
+{
+  "name": "@bitecs/serialize",
+  "version": "0.0.1",
+  "description": "SoA serialization library",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "mocha ./**/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Web-ECS/SoA-serializer.git"
+  },
+  "keywords": [
+    "SoA",
+    "serialization",
+    "ECS"
+  ],
+  "author": "Nathaniel Martin",
+  "license": "MPL-2.0"
+}
