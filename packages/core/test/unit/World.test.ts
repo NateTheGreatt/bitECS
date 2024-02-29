@@ -2,7 +2,7 @@ import assert, { strictEqual } from "assert";
 import { $componentMap } from "../../src/component/symbols.js";
 import { resetGlobals, getDefaultSize } from "../../src/index.js";
 import { createWorld } from "../../src/world/World.js";
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach } from "bun:test";
 import { $bitflag, $size } from "../../src/world/symbols.js";
 import { $entityMasks } from "../../src/entity/symbols.js";
 import { $dirtyQueries, $queries, $queryMap } from "../../src/query/symbols.js";

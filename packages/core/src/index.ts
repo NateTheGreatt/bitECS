@@ -36,11 +36,6 @@ import {
   resetChangedQuery,
   removeQuery,
 } from "./query/Query.js";
-import {
-  defineSerializer,
-  defineDeserializer,
-  DESERIALIZE_MODE,
-} from "./serialize/Serialize.js";
 import { parentArray } from "./storage/Storage.js";
 import { TYPES_ENUM } from "./constants/Constants.js";
 import { pipe } from "./utils/pipe.js";
@@ -76,9 +71,6 @@ export {
   resetChangedQuery,
   removeQuery,
   defineSystem,
-  defineSerializer,
-  defineDeserializer,
-  DESERIALIZE_MODE,
   parentArray,
   resetGlobals,
   pipe,

@@ -10,7 +10,6 @@ import {
   $manualEntityRecycling,
   $size,
 } from "../world/symbols.js";
-import { setSerializationResized } from "../serialize/Serialize.js";
 import { World } from "../world/types.js";
 import {
   $entityComponents,
@@ -59,7 +58,6 @@ export const setDefaultSize = (newSize: number) => {
 
   globalSize = newSize;
   resizeWorlds(newSize);
-  setSerializationResized(true);
 };
 
 /**
@@ -94,12 +92,12 @@ export const flushRemovedEntities = (world: World) => {
  * @returns {number} eid
  */
 export const addEntity = (world: World): number => {
-  const eid = world[$manualEntityRecycling]
+  const eid: number = world[$manualEntityRecycling]
     ? removed.length
-      ? removed.shift()
+      ? removed.shift()!
       : globalEntityCursor++
     : removed.length > Math.round(globalSize * removedReuseThreshold)
-    ? removed.shift()
+    ? removed.shift()!
     : globalEntityCursor++;
 
   if (eid > world[$size]) throw new Error("bitECS - max entities reached");
@@ -160,7 +158,7 @@ export const getEntityComponents = (world: World, eid: number): TODO[] => {
   if (eid === undefined) throw new Error("bitECS - entity is undefined.");
   if (!world[$entitySparseSet].has(eid))
     throw new Error("bitECS - entity does not exist in the world.");
-  return Array.from(world[$entityComponents].get(eid));
+  return Array.from(world[$entityComponents].get(eid)!);
 };
 
 /**
