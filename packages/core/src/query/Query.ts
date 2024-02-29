@@ -1,6 +1,4 @@
 import { SparseSet } from "../utils/SparseSet.js";
-import { createShadow } from "../storage/Storage.js";
-import { $storeFlattened, $tagStore } from "../storage/symbols.js";
 import { registerComponent } from "../component/Component.js";
 import { $componentMap } from "../component/symbols.js";
 import {
@@ -157,14 +155,14 @@ export const registerQuery = (world: World, query: TODO) => {
 
   const hasMasks = allComponents.reduce(reduceBitflags, {});
 
-  const flatProps = components
-    .filter((c: TODO) => !c[$tagStore])
-    .map((c: TODO) =>
-      Object.getOwnPropertySymbols(c).includes($storeFlattened)
-        ? c[$storeFlattened]
-        : [c]
-    )
-    .reduce((a: TODO, v: TODO) => a.concat(v), []);
+  // const flatProps = components
+  //   .filter((c: TODO) => !c[$tagStore])
+  //   .map((c: TODO) =>
+  //     Object.getOwnPropertySymbols(c).includes($storeFlattened)
+  //       ? c[$storeFlattened]
+  //       : [c]
+  //   )
+  //   .reduce((a: TODO, v: TODO) => a.concat(v), []);
 
   const shadows: TODO = [];
 
@@ -180,7 +178,7 @@ export const registerQuery = (world: World, query: TODO) => {
     // orMasks,
     hasMasks,
     generations,
-    flatProps,
+    // flatProps,
     toRemove,
     entered,
     exited,
@@ -203,42 +201,42 @@ export const registerQuery = (world: World, query: TODO) => {
   }
 };
 
-const generateShadow = (q: TODO, pid: number) => {
-  const $ = Symbol();
-  const prop = q.flatProps[pid];
-  createShadow(prop, $);
-  q.shadows[pid] = prop[$];
-  return prop[$];
-};
+// const generateShadow = (q: TODO, pid: number) => {
+//   const $ = Symbol();
+//   const prop = q.flatProps[pid];
+//   createShadow(prop, $);
+//   q.shadows[pid] = prop[$];
+//   return prop[$];
+// };
 
-const diff = (q: TODO, clearDiff: boolean) => {
-  if (clearDiff) q.changed = [];
-  const { flatProps, shadows } = q;
-  for (let i = 0; i < q.dense.length; i++) {
-    const eid = q.dense[i];
-    let dirty = false;
-    for (let pid = 0; pid < flatProps.length; pid++) {
-      const prop = flatProps[pid];
-      const shadow = shadows[pid] || generateShadow(q, pid);
-      if (ArrayBuffer.isView(prop[eid])) {
-        for (let i = 0; i < prop[eid].length; i++) {
-          if (prop[eid][i] !== shadow[eid][i]) {
-            dirty = true;
-            break;
-          }
-        }
-        shadow[eid].set(prop[eid]);
-      } else {
-        if (prop[eid] !== shadow[eid]) {
-          dirty = true;
-          shadow[eid] = prop[eid];
-        }
-      }
-    }
-    if (dirty) q.changed.push(eid);
-  }
-  return q.changed;
-};
+// const diff = (q: TODO, clearDiff: boolean) => {
+//   if (clearDiff) q.changed = [];
+//   const { flatProps, shadows } = q;
+//   for (let i = 0; i < q.dense.length; i++) {
+//     const eid = q.dense[i];
+//     let dirty = false;
+//     for (let pid = 0; pid < flatProps.length; pid++) {
+//       const prop = flatProps[pid];
+//       const shadow = shadows[pid] || generateShadow(q, pid);
+//       if (ArrayBuffer.isView(prop[eid])) {
+//         for (let i = 0; i < prop[eid].length; i++) {
+//           if (prop[eid][i] !== shadow[eid][i]) {
+//             dirty = true;
+//             break;
+//           }
+//         }
+//         shadow[eid].set(prop[eid]);
+//       } else {
+//         if (prop[eid] !== shadow[eid]) {
+//           dirty = true;
+//           shadow[eid] = prop[eid];
+//         }
+//       }
+//     }
+//     if (dirty) q.changed.push(eid);
+//   }
+//   return q.changed;
+// };
 
 // const queryEntityChanged = (q, eid) => {
 //   if (q.changed.has(eid)) return
@@ -292,7 +290,7 @@ export const defineQuery = (...args: TODO) => {
 
     commitRemovals(world);
 
-    if (q.changedComponents.length) return diff(q, clearDiff);
+    // if (q.changedComponents.length) return diff(q, clearDiff);
     // if (q.changedComponents.length) return q.changed.dense
 
     return q.dense;
