@@ -25,7 +25,6 @@ import {
   addComponent,
   removeComponent,
 } from "./component/Component.js";
-import { defineSystem } from "./system/System.js";
 import {
   defineQuery,
   enterQuery,
@@ -38,7 +37,6 @@ import {
 } from "./query/Query.js";
 import { parentArray } from "./storage/Storage.js";
 import { TYPES_ENUM } from "./constants/Constants.js";
-import { pipe } from "./utils/pipe.js";
 
 export const Types = TYPES_ENUM;
 
@@ -70,9 +68,7 @@ export {
   commitRemovals,
   resetChangedQuery,
   removeQuery,
-  defineSystem,
   parentArray,
   resetGlobals,
-  pipe,
   getDefaultSize,
 };
