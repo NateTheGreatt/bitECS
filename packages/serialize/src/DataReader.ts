@@ -36,7 +36,7 @@ export const readComponentProp = (
  */
 export const readComponent = (
   component: Component,
-  diff: boolean
+  diff = false
 ): ComponentReader => {
   // todo: test performance of using flatten in this scope vs return function scope
   const props = flatten(component);
@@ -64,7 +64,7 @@ export const readComponent = (
 
 export const readEntity = (
   componentReaders: ComponentReader[],
-  diff: boolean
+  diff = false
 ) => {
   const readChanged =
     componentReaders.length <= 8

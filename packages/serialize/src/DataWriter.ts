@@ -27,7 +27,7 @@ import {
  */
 export const writeComponent = (
   component: Component,
-  diff: boolean
+  diff = false
 ): ComponentWriter => {
   // todo: test performance of using flatten in the return scope vs this scope
   const props = flatten(component);
@@ -58,7 +58,7 @@ export const writeComponent = (
 
 export const writeEntity = (
   componentWriters: ComponentWriter[],
-  diff: boolean
+  diff = false
 ) => {
   const changeMaskSpacer =
     componentWriters.length <= 8
@@ -95,7 +95,7 @@ export const writeEntity = (
 
 export const createEntityWriter = (
   components: Component[],
-  diff: boolean
+  diff = false
 ): EntityWriter =>
   writeEntity(
     components.map((c) => writeComponent(c, diff)),
@@ -106,12 +106,13 @@ export const writeEntities = (
   entityWriter: EntityWriter,
   v: DataViewWithCursor,
   entities: number[],
-  idMap: IdMap
+  idMap?: IdMap
 ) => {
   const writeCount = spaceUint32(v);
 
   let count = 0;
   for (let i = 0, l = entities.length; i < l; i++) {
+    // This assumes idMap always gets the entity.
     const eid = idMap ? idMap.get(entities[i])! : entities[i];
     count += entityWriter(v, eid);
   }
@@ -130,7 +131,7 @@ export const createDataWriter = (
 
   const entityWriter = createEntityWriter(components, diff);
 
-  return (entities: number[], idMap: IdMap) => {
+  return (entities: number[], idMap?: IdMap) => {
     return writeEntities(entityWriter, view, entities, idMap);
   };
 };

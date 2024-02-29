@@ -21,6 +21,11 @@ export type IdMap = Map<number, number>;
 
 export type ComponentWriter = (v: DataViewWithCursor, entity: number) => 0 | 1;
 export type EntityWriter = (v: DataViewWithCursor, entity: number) => 0 | 1;
+export type DataWriter = (
+  packet: ArrayBuffer,
+  entities: number[],
+  idMap?: IdMap
+) => void;
 
 export type ComponentReader = (v: DataViewWithCursor, entity: number) => void;
 export type EntityReader = (v: DataViewWithCursor, idMap: IdMap) => void;
