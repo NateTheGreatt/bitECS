@@ -4,15 +4,10 @@ import {
   queryCheckEntity,
 } from "../query/Query.js";
 import { $bitflag } from "../world/symbols.js";
-import {
-  $entitySparseSet,
-  $entityMasks,
-  $entityComponents,
-} from "../entity/symbols.js";
+import { $entityMasks, $entityComponents } from "../entity/symbols.js";
 import { Component, ComponentNode } from "./types.js";
 import { World } from "../world/types.js";
 import { $componentMap } from "./symbols.js";
-import { TODO } from "../utils/types.js";
 import { $queries } from "../query/symbols.js";
 import { entityExists, incrementWorldBitflag } from "../world/World.js";
 import { QueryNode } from "../query/types.js";
@@ -26,8 +21,9 @@ export const components: Component[] = [];
  * @param {Component} component
  */
 export const registerComponent = (world: World, component: Component) => {
-  if (!component)
+  if (!component) {
     throw new Error(`bitECS - Cannot register null or undefined component`);
+  }
 
   const queries = new Set<QueryNode>();
 
