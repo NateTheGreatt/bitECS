@@ -61,7 +61,7 @@ declare module 'bitecs' {
     [key in keyof T]:
       T[key] extends Type
       ? ArrayByType[T[key]]
-      : T[key] extends [infer RT, number]
+      : T[key] extends readonly [infer RT, number]
         ? RT extends Type
           ? Array<ArrayByType[RT]>
           : unknown
