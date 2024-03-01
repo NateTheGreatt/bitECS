@@ -6,83 +6,103 @@ import {
   hasComponent,
   registerComponent,
   removeComponent,
+  getDefaultSize,
 } from "../../src/index.js";
 import { createWorld } from "../../src/world/World.js";
 import { describe, it, afterEach } from "bun:test";
 import { $componentMap } from "../../src/component/symbols.js";
 
+const defaultSize = getDefaultSize();
+
+const componentTypes = {
+  SoA: {
+    value: new Float32Array(defaultSize),
+  },
+  object: {},
+  array: [],
+  buffer: new ArrayBuffer(8),
+  string: "test",
+  number: 1,
+  Map: new Map(),
+  Set: new Set(),
+};
+
 describe("Component Integration Tests", () => {
   afterEach(() => {
     resetGlobals();
   });
-  // it("should register components on-demand", () => {
-  //   const world = createWorld();
-  //   const TestComponent = defineComponent({ value: Types.f32 });
 
-  //   registerComponent(world, TestComponent);
-  //   assert(world[$componentMap].has(TestComponent));
-  // });
-  // it("should register components automatically upon adding to an entity", () => {
-  //   const world = createWorld();
-  //   const TestComponent = defineComponent({ value: Types.f32 });
+  it("should register components on-demand", () => {
+    const world = createWorld();
+    const TestComponent = { value: new Float32Array(defaultSize) };
 
-  //   const eid = addEntity(world);
+    registerComponent(world, TestComponent);
+    assert(world[$componentMap].has(TestComponent));
+  });
 
-  //   addComponent(world, TestComponent, eid);
-  //   assert(world[$componentMap].has(TestComponent));
-  // });
-  // it("should add and remove components from an entity", () => {
-  //   const world = createWorld();
-  //   const TestComponent = defineComponent({ value: Types.f32 });
+  it("should register components automatically upon adding to an entity", () => {
+    const world = createWorld();
+    const TestComponent = { value: new Float32Array(defaultSize) };
 
-  //   const eid = addEntity(world);
+    const eid = addEntity(world);
 
-  //   addComponent(world, TestComponent, eid);
-  //   assert(hasComponent(world, TestComponent, eid));
+    addComponent(world, TestComponent, eid);
+    assert(world[$componentMap].has(TestComponent));
+  });
 
-  //   removeComponent(world, TestComponent, eid);
-  //   assert(hasComponent(world, TestComponent, eid) === false);
-  // });
-  // it("should only remove the component specified", () => {
-  //   const world = createWorld();
-  //   const TestComponent = defineComponent({ value: Types.f32 });
-  //   const TestComponent2 = defineComponent({ value: Types.f32 });
+  it("should add and remove components from an entity", () => {
+    const world = createWorld();
+    const TestComponent = { value: new Float32Array(defaultSize) };
 
-  //   const eid = addEntity(world);
+    const eid = addEntity(world);
 
-  //   addComponent(world, TestComponent, eid);
-  //   addComponent(world, TestComponent2, eid);
-  //   assert(hasComponent(world, TestComponent, eid));
-  //   assert(hasComponent(world, TestComponent2, eid));
+    addComponent(world, TestComponent, eid);
+    assert(hasComponent(world, TestComponent, eid));
 
-  //   removeComponent(world, TestComponent, eid);
-  //   assert(hasComponent(world, TestComponent, eid) === false);
-  //   assert(hasComponent(world, TestComponent2, eid) === true);
-  // });
-  // it("should create tag components", () => {
-  //   const world = createWorld();
-  //   const TestComponent = defineComponent();
+    removeComponent(world, TestComponent, eid);
+    assert(hasComponent(world, TestComponent, eid) === false);
+  });
 
-  //   const eid = addEntity(world);
+  (Object.keys(componentTypes) as (keyof typeof componentTypes)[]).forEach(
+    (type) => {
+      it(`should correctly add ${type} components`, () => {
+        const world = createWorld();
 
-  //   addComponent(world, TestComponent, eid);
-  //   assert(hasComponent(world, TestComponent, eid));
+        const eid = addEntity(world);
 
-  //   removeComponent(world, TestComponent, eid);
-  //   assert(hasComponent(world, TestComponent, eid) === false);
-  // });
-  // it("should correctly register more than 32 components", () => {
-  //   const world = createWorld();
+        addComponent(world, componentTypes[type], eid);
+        assert(hasComponent(world, componentTypes[type], eid));
+      });
+    }
+  );
 
-  //   const eid = addEntity(world);
+  it("should only remove the component specified", () => {
+    const world = createWorld();
+    const TestComponent = { value: new Float32Array(defaultSize) };
+    const TestComponent2 = { value: new Float32Array(defaultSize) };
 
-  //   Array(1024)
-  //     .fill(null)
+    const eid = addEntity(world);
 
-  //     .map((_) => defineComponent())
-  //     .forEach((c) => {
-  //       addComponent(world, c, eid);
-  //       assert(hasComponent(world, c, eid));
-  //     });
-  // });
+    addComponent(world, TestComponent, eid);
+    addComponent(world, TestComponent2, eid);
+    assert(hasComponent(world, TestComponent, eid));
+    assert(hasComponent(world, TestComponent2, eid));
+
+    removeComponent(world, TestComponent, eid);
+    assert(hasComponent(world, TestComponent, eid) === false);
+    assert(hasComponent(world, TestComponent2, eid) === true);
+  });
+
+  it("should correctly register more than 32 components", () => {
+    const world = createWorld();
+
+    const eid = addEntity(world);
+
+    Array<{}>(1024)
+      .fill({})
+      .forEach((c) => {
+        addComponent(world, c, eid);
+        assert(hasComponent(world, c, eid));
+      });
+  });
 });

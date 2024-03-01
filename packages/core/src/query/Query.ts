@@ -7,7 +7,7 @@ import {
   $entitySparseSet,
 } from "../entity/symbols.js";
 import { getEntityCursor } from "../entity/Entity.js";
-import { Component } from "../component/types.js";
+import { Component, ComponentNode } from "../component/types.js";
 import { TODO } from "../utils/types.js";
 import {
   $dirtyQueries,
@@ -103,22 +103,13 @@ export const registerQuery = (world: World, query: TODO) => {
         changedComponents.push(comp);
         components.push(comp);
       }
-      // if (mod === 'all') {
-      //   allComponents.push(comp)
-      // }
-      // if (mod === 'any') {
-      //   anyComponents.push(comp)
-      // }
-      // if (mod === 'none') {
-      //   noneComponents.push(comp)
-      // }
     } else {
       if (!world[$componentMap].has(c)) registerComponent(world, c);
       components.push(c);
     }
   });
 
-  const mapComponents = (c: TODO) => world[$componentMap].get(c);
+  const mapComponents = (c: Component) => world[$componentMap].get(c)!;
 
   const allComponents = components.concat(notComponents).map(mapComponents);
 

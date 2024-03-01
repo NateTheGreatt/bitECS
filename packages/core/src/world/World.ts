@@ -135,3 +135,15 @@ export const getWorldComponents = (world: World) =>
  */
 export const getAllEntities = (world: World) =>
   world[$entitySparseSet].dense.slice(0);
+
+export const incrementWorldBitflag = (world: World) => {
+  world[$bitflag] *= 2;
+  if (world[$bitflag] >= 2 ** 31) {
+    world[$bitflag] = 1;
+    world[$entityMasks].push(new Uint32Array(world[$size]));
+  }
+};
+
+export const entityExists = (world: World, eid: number) => {
+  return world[$entitySparseSet].has(eid);
+};
