@@ -1,4 +1,4 @@
-import {
+export {
   createWorld,
   resetWorld,
   deleteWorld,
@@ -6,7 +6,8 @@ import {
   getAllEntities,
   enableManualEntityRecycling,
 } from "./world/World.js";
-import {
+
+export {
   addEntity,
   removeEntity,
   setDefaultSize,
@@ -17,14 +18,16 @@ import {
   resetGlobals,
   getDefaultSize,
 } from "./entity/Entity.js";
-import {
+
+export {
   registerComponent,
   registerComponents,
   hasComponent,
   addComponent,
   removeComponent,
 } from "./component/Component.js";
-import {
+
+export {
   defineQuery,
   enterQuery,
   exitQuery,
@@ -34,34 +37,3 @@ import {
   resetChangedQuery,
   removeQuery,
 } from "./query/Query.js";
-
-export {
-  setDefaultSize,
-  setRemovedRecycleThreshold,
-  createWorld,
-  resetWorld,
-  deleteWorld,
-  addEntity,
-  removeEntity,
-  entityExists,
-  getWorldComponents,
-  enableManualEntityRecycling,
-  flushRemovedEntities,
-  getAllEntities,
-  registerComponent,
-  registerComponents,
-  addComponent,
-  removeComponent,
-  hasComponent,
-  getEntityComponents,
-  defineQuery,
-  Changed,
-  Not,
-  enterQuery,
-  exitQuery,
-  commitRemovals,
-  resetChangedQuery,
-  removeQuery,
-  resetGlobals,
-  getDefaultSize,
-};

@@ -20,7 +20,6 @@ import {
   $resizeThreshold,
   $size,
 } from "./symbols";
-import { TODO } from "../utils/types";
 import { $componentMap } from "../component/symbols";
 import { QueryNode } from "../query/types";
 import { Component } from "../../../serialize/src/types";
