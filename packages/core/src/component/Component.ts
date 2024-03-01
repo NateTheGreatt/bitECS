@@ -129,6 +129,21 @@ export const addComponent = (
 };
 
 /**
+ * Adds multiple components to an entity.
+ *
+ * @param {World} world
+ * @param {Component[]} components
+ * @param {number} eid
+ */
+export const addComponents = (
+  world: World,
+  components: Component[],
+  eid: number
+) => {
+  components.forEach((component) => addComponent(world, component, eid));
+};
+
+/**
  * Removes a component from an entity.
  *
  * @param {World} world
@@ -173,4 +188,19 @@ export const removeComponent = (
 
   // Remove component from entity internally.
   world[$entityComponents].get(eid)!.delete(component);
+};
+
+/**
+ * Removes multiple components from an entity.
+ *
+ * @param {World} world
+ * @param {Component[]} components
+ * @param {number} eid
+ */
+export const removeComponents = (
+  world: World,
+  components: Component[],
+  eid: number
+) => {
+  components.forEach((component) => removeComponent(world, component, eid));
 };

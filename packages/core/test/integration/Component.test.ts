@@ -11,6 +11,10 @@ import {
 import { createWorld } from "../../src/world/World.js";
 import { describe, it, afterEach } from "bun:test";
 import { $componentMap } from "../../src/component/symbols.js";
+import {
+  addComponents,
+  removeComponents,
+} from "../../src/component/Component.js";
 
 const defaultSize = getDefaultSize();
 
@@ -104,5 +108,21 @@ describe("Component Integration Tests", () => {
         addComponent(world, c, eid);
         assert(hasComponent(world, c, eid));
       });
+  });
+
+  it("should correctly add and remove multiple components with one call", () => {
+    const world = createWorld();
+    const TestComponent = { value: new Float32Array(defaultSize) };
+    const TestComponent2 = { value: new Float32Array(defaultSize) };
+
+    const eid = addEntity(world);
+
+    addComponents(world, [TestComponent, TestComponent2], eid);
+    assert(hasComponent(world, TestComponent, eid));
+    assert(hasComponent(world, TestComponent2, eid));
+
+    removeComponents(world, [TestComponent, TestComponent2], eid);
+    assert(hasComponent(world, TestComponent, eid) === false);
+    assert(hasComponent(world, TestComponent2, eid) === false);
   });
 });
