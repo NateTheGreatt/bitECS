@@ -11,161 +11,167 @@ import {
   defineQuery,
   enterQuery,
   Not,
+  getDefaultSize,
 } from "../../src/index.js";
 import { describe, it, afterEach } from "bun:test";
+
+const defaultSize = getDefaultSize();
 
 describe("Query Integration Tests", () => {
   afterEach(() => {
     resetGlobals();
   });
-  // it("should define a query and return matching eids", () => {
-  //   const world = createWorld();
-  //   const TestComponent = defineComponent({ value: Types.f32 });
-  //   const query = defineQuery([TestComponent]);
-  //   const eid = addEntity(world);
-  //   addComponent(world, TestComponent, eid);
+  it("should define a query and return matching eids", () => {
+    const world = createWorld();
+    const TestComponent = { value: new Float32Array(defaultSize) };
+    const query = defineQuery([TestComponent]);
+    const eid = addEntity(world);
+    addComponent(world, TestComponent, eid);
 
-  //   let ents = query(world);
+    let ents = query(world);
 
-  //   strictEqual(ents.length, 1);
-  //   strictEqual(ents[0], 0);
+    strictEqual(ents.length, 1);
+    strictEqual(ents[0], 0);
 
-  //   removeEntity(world, eid);
+    removeEntity(world, eid);
 
-  //   ents = query(world);
-  //   strictEqual(ents.length, 0);
-  // });
-  // it("should define a query with Not and return matching eids", () => {
-  //   const world = createWorld();
-  //   const Foo = defineComponent({ value: Types.f32 });
-  //   const notFooQuery = defineQuery([Not(Foo)]);
+    ents = query(world);
+    strictEqual(ents.length, 0);
+  });
 
-  //   const eid0 = addEntity(world);
+  it("should define a query with Not and return matching eids", () => {
+    const world = createWorld();
+    const Foo = { value: new Float32Array(defaultSize) };
+    const notFooQuery = defineQuery([Not(Foo)]);
 
-  //   let ents = notFooQuery(world);
-  //   strictEqual(ents.length, 1);
-  //   strictEqual(ents[0], eid0);
+    const eid0 = addEntity(world);
 
-  //   addComponent(world, Foo, eid0);
+    let ents = notFooQuery(world);
+    strictEqual(ents.length, 1);
+    strictEqual(ents[0], eid0);
 
-  //   ents = notFooQuery(world);
-  //   strictEqual(ents.length, 0);
+    addComponent(world, Foo, eid0);
 
-  //   const eid1 = addEntity(world);
+    ents = notFooQuery(world);
+    strictEqual(ents.length, 0);
 
-  //   ents = notFooQuery(world);
-  //   strictEqual(ents.length, 1);
-  //   strictEqual(ents[0], eid1);
+    const eid1 = addEntity(world);
 
-  //   removeEntity(world, eid1);
+    ents = notFooQuery(world);
+    strictEqual(ents.length, 1);
+    strictEqual(ents[0], eid1);
 
-  //   ents = notFooQuery(world);
-  //   strictEqual(ents.length, 0);
-  // });
-  // it("should correctly populate Not queries when adding/removing components", () => {
-  //   const world = createWorld();
+    removeEntity(world, eid1);
 
-  //   const Foo = defineComponent();
-  //   const Bar = defineComponent();
+    ents = notFooQuery(world);
+    strictEqual(ents.length, 0);
+  });
 
-  //   const fooQuery = defineQuery([Foo]);
-  //   const notFooQuery = defineQuery([Not(Foo)]);
+  it("should correctly populate Not queries when adding/removing components", () => {
+    const world = createWorld();
 
-  //   const fooBarQuery = defineQuery([Foo, Bar]);
-  //   const notFooBarQuery = defineQuery([Not(Foo), Not(Bar)]);
+    const Foo = {};
+    const Bar = {};
 
-  //   const eid0 = addEntity(world);
-  //   const eid1 = addEntity(world);
-  //   const eid2 = addEntity(world);
+    const fooQuery = defineQuery([Foo]);
+    const notFooQuery = defineQuery([Not(Foo)]);
 
-  //   /* initial state */
+    const fooBarQuery = defineQuery([Foo, Bar]);
+    const notFooBarQuery = defineQuery([Not(Foo), Not(Bar)]);
 
-  //   // foo query should have nothing
-  //   let ents = fooQuery(world);
-  //   strictEqual(ents.length, 0);
+    const eid0 = addEntity(world);
+    const eid1 = addEntity(world);
+    const eid2 = addEntity(world);
 
-  //   // notFoo query should have eid 0, 1, and 2
-  //   ents = notFooQuery(world);
-  //   strictEqual(ents.length, 3);
-  //   strictEqual(ents[0], 0);
-  //   strictEqual(ents[1], 1);
-  //   strictEqual(ents[2], 2);
+    /* initial state */
 
-  //   /* add components */
+    // foo query should have nothing
+    let ents = fooQuery(world);
+    strictEqual(ents.length, 0);
 
-  //   addComponent(world, Foo, eid0);
+    // notFoo query should have eid 0, 1, and 2
+    ents = notFooQuery(world);
+    strictEqual(ents.length, 3);
+    strictEqual(ents[0], 0);
+    strictEqual(ents[1], 1);
+    strictEqual(ents[2], 2);
 
-  //   addComponent(world, Bar, eid1);
+    /* add components */
 
-  //   addComponent(world, Foo, eid2);
-  //   addComponent(world, Bar, eid2);
+    addComponent(world, Foo, eid0);
 
-  //   // now fooQuery should have eid 0 & 2
-  //   ents = fooQuery(world);
-  //   strictEqual(ents.length, 2);
-  //   strictEqual(ents[0], 0);
-  //   strictEqual(ents[1], 2);
+    addComponent(world, Bar, eid1);
 
-  //   // fooBarQuery should only have eid 2
-  //   ents = fooBarQuery(world);
-  //   strictEqual(ents.length, 1);
-  //   strictEqual(ents[0], 2);
+    addComponent(world, Foo, eid2);
+    addComponent(world, Bar, eid2);
 
-  //   // notFooBarQuery should have nothing
-  //   ents = notFooBarQuery(world);
-  //   strictEqual(ents.length, 0);
+    // now fooQuery should have eid 0 & 2
+    ents = fooQuery(world);
+    strictEqual(ents.length, 2);
+    strictEqual(ents[0], 0);
+    strictEqual(ents[1], 2);
 
-  //   // and notFooQuery should have eid 1
-  //   ents = notFooQuery(world);
-  //   strictEqual(ents.length, 1);
-  //   strictEqual(ents[0], 1);
+    // fooBarQuery should only have eid 2
+    ents = fooBarQuery(world);
+    strictEqual(ents.length, 1);
+    strictEqual(ents[0], 2);
 
-  //   /* remove components */
+    // notFooBarQuery should have nothing
+    ents = notFooBarQuery(world);
+    strictEqual(ents.length, 0);
 
-  //   removeComponent(world, Foo, eid0);
+    // and notFooQuery should have eid 1
+    ents = notFooQuery(world);
+    strictEqual(ents.length, 1);
+    strictEqual(ents[0], 1);
 
-  //   // now fooQuery should only have eid 2
-  //   ents = fooQuery(world);
-  //   strictEqual(ents.length, 1);
-  //   strictEqual(ents[0], 2);
+    /* remove components */
 
-  //   // notFooQuery should have eid 0 & 1
-  //   ents = notFooQuery(world);
-  //   strictEqual(ents.length, 2);
-  //   strictEqual(ents[0], 1);
-  //   strictEqual(ents[1], 0);
+    removeComponent(world, Foo, eid0);
 
-  //   // fooBarQuery should still only have eid 2
-  //   ents = fooBarQuery(world);
-  //   strictEqual(ents.length, 1);
-  //   strictEqual(ents[0], 2);
+    // now fooQuery should only have eid 2
+    ents = fooQuery(world);
+    strictEqual(ents.length, 1);
+    strictEqual(ents[0], 2);
 
-  //   // notFooBarQuery should only have eid 0
-  //   ents = notFooBarQuery(world);
-  //   strictEqual(ents.length, 1);
-  //   strictEqual(ents[0], 0);
+    // notFooQuery should have eid 0 & 1
+    ents = notFooQuery(world);
+    strictEqual(ents.length, 2);
+    strictEqual(ents[0], 1);
+    strictEqual(ents[1], 0);
 
-  //   /* remove more components */
+    // fooBarQuery should still only have eid 2
+    ents = fooBarQuery(world);
+    strictEqual(ents.length, 1);
+    strictEqual(ents[0], 2);
 
-  //   removeComponent(world, Foo, eid2);
-  //   removeComponent(world, Bar, eid2);
+    // notFooBarQuery should only have eid 0
+    ents = notFooBarQuery(world);
+    strictEqual(ents.length, 1);
+    strictEqual(ents[0], 0);
 
-  //   // notFooBarQuery should have eid 0 & 2
-  //   ents = notFooBarQuery(world);
-  //   strictEqual(ents.length, 2);
-  //   strictEqual(ents[0], 0);
-  //   strictEqual(ents[1], 2);
+    /* remove more components */
 
-  //   // and notFooQuery should have eid 1, 0, & 2
-  //   ents = notFooQuery(world);
-  //   strictEqual(ents.length, 3);
-  //   strictEqual(ents[0], 1);
-  //   strictEqual(ents[1], 0);
-  //   strictEqual(ents[2], 2);
-  // });
+    removeComponent(world, Foo, eid2);
+    removeComponent(world, Bar, eid2);
+
+    // notFooBarQuery should have eid 0 & 2
+    ents = notFooBarQuery(world);
+    strictEqual(ents.length, 2);
+    strictEqual(ents[0], 0);
+    strictEqual(ents[1], 2);
+
+    // and notFooQuery should have eid 1, 0, & 2
+    ents = notFooQuery(world);
+    strictEqual(ents.length, 3);
+    strictEqual(ents[0], 1);
+    strictEqual(ents[1], 0);
+    strictEqual(ents[2], 2);
+  });
+
   // it("should define a query with Changed and return matching eids whose component state has changed", () => {
   //   const world = createWorld();
-  //   const TestComponent = defineComponent({ value: Types.f32 });
+  //   const TestComponent = { value: new Float32Array(defaultSize) };
   //   const query = defineQuery([Changed(TestComponent)]);
   //   const eid1 = addEntity(world);
   //   const eid2 = addEntity(world);
@@ -182,9 +188,10 @@ describe("Query Integration Tests", () => {
   //   strictEqual(ents.length, 1);
   //   strictEqual(ents[0], eid1);
   // });
+
   // it("should define a query for an array component with Changed and return matching eids whose component state has changed", () => {
   //   const world = createWorld();
-  //   const ArrayComponent = defineComponent({ value: [Types.f32, 3] });
+  //   // const ArrayComponent = defineComponent({ value: [Types.f32, 3] });
   //   const query = defineQuery([Changed(ArrayComponent)]);
   //   const eid1 = addEntity(world);
   //   const eid2 = addEntity(world);
@@ -201,48 +208,50 @@ describe("Query Integration Tests", () => {
   //   strictEqual(ents.length, 1);
   //   strictEqual(ents[0], eid1);
   // });
-  // it("should return entities from enter/exitQuery who entered/exited the query", () => {
-  //   const world = createWorld();
-  //   const TestComponent = defineComponent({ value: Types.f32 });
-  //   const query = defineQuery([TestComponent]);
-  //   const enteredQuery = enterQuery(query);
-  //   const exitedQuery = exitQuery(query);
 
-  //   const eid = addEntity(world);
-  //   addComponent(world, TestComponent, eid);
+  it("should return entities from enter/exitQuery who entered/exited the query", () => {
+    const world = createWorld();
+    const TestComponent = { value: new Float32Array(defaultSize) };
+    const query = defineQuery([TestComponent]);
+    const enteredQuery = enterQuery(query);
+    const exitedQuery = exitQuery(query);
 
-  //   const entered = enteredQuery(world);
-  //   strictEqual(entered.length, 1);
-  //   strictEqual(entered[0], 0);
+    const eid = addEntity(world);
+    addComponent(world, TestComponent, eid);
 
-  //   let ents = query(world);
-  //   strictEqual(ents.length, 1);
-  //   strictEqual(ents[0], 0);
+    const entered = enteredQuery(world);
+    strictEqual(entered.length, 1);
+    strictEqual(entered[0], 0);
 
-  //   removeEntity(world, eid);
+    let ents = query(world);
+    strictEqual(ents.length, 1);
+    strictEqual(ents[0], 0);
 
-  //   ents = query(world);
-  //   strictEqual(ents.length, 0);
+    removeEntity(world, eid);
 
-  //   const exited = exitedQuery(world);
-  //   strictEqual(exited.length, 1);
-  //   strictEqual(exited[0], 0);
-  // });
-  // it("shouldn't pick up entities in enterQuery after adding a component a second time", () => {
-  //   const world = createWorld();
-  //   const TestComponent = defineComponent({ value: Types.f32 });
-  //   const query = defineQuery([TestComponent]);
-  //   const enteredQuery = enterQuery(query);
+    ents = query(world);
+    strictEqual(ents.length, 0);
 
-  //   const eid = addEntity(world);
-  //   addComponent(world, TestComponent, eid);
+    const exited = exitedQuery(world);
+    strictEqual(exited.length, 1);
+    strictEqual(exited[0], 0);
+  });
 
-  //   const entered = enteredQuery(world);
-  //   strictEqual(entered.length, 1);
+  it("shouldn't pick up entities in enterQuery after adding a component a second time", () => {
+    const world = createWorld();
+    const TestComponent = { value: new Float32Array(defaultSize) };
+    const query = defineQuery([TestComponent]);
+    const enteredQuery = enterQuery(query);
 
-  //   addComponent(world, TestComponent, eid);
+    const eid = addEntity(world);
+    addComponent(world, TestComponent, eid);
 
-  //   const entered2 = enteredQuery(world);
-  //   strictEqual(entered2.length, 0);
-  // });
+    const entered = enteredQuery(world);
+    strictEqual(entered.length, 1);
+
+    addComponent(world, TestComponent, eid);
+
+    const entered2 = enteredQuery(world);
+    strictEqual(entered2.length, 0);
+  });
 });
