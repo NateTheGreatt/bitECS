@@ -13,6 +13,17 @@ import { createWorld } from "../../src/world/World.js";
 import { describe, it, afterEach } from "bun:test";
 import { $componentMap } from "../../src/component/symbols.js";
 
+const componentTypes = {
+  SoA: defineComponent({ value: Types.f32 }),
+  object: {},
+  array: [],
+  buffer: new ArrayBuffer(8),
+  string: "test",
+  number: 1,
+  Map: new Map(),
+  Set: new Set(),
+};
+
 describe("Component Integration Tests", () => {
   afterEach(() => {
     resetGlobals();
@@ -48,6 +59,19 @@ describe("Component Integration Tests", () => {
     removeComponent(world, TestComponent, eid);
     assert(hasComponent(world, TestComponent, eid) === false);
   });
+
+  (Object.keys(componentTypes) as (keyof typeof componentTypes)[]).forEach(
+    (type) => {
+      it(`should correctly add ${type} components`, () => {
+        const world = createWorld();
+
+        const eid = addEntity(world);
+
+        addComponent(world, componentTypes[type], eid);
+        assert(hasComponent(world, componentTypes[type], eid));
+      });
+    }
+  );
 
   it("should only remove the component specified", () => {
     const world = createWorld();
