@@ -22,8 +22,7 @@ import {
 } from "./symbols";
 import { $componentMap } from "../component/symbols";
 import { QueryNode } from "../query/types";
-import { Component } from "../../../serialize/src/types";
-import { ComponentNode } from "../component/types";
+import { Component, ComponentNode } from "../component/types";
 
 export interface World {
   [key: string]: any;

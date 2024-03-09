@@ -1,7 +1,7 @@
 import assert, { strictEqual } from "assert";
 import { defineComponent, Changed } from "../../src/index.js";
 import { TYPES_ENUM } from "../../src/constants/Constants.js";
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach } from "bun:test";
 import { canonicalize } from "../../src/serialize/Serialize.js";
 
 const Types = TYPES_ENUM;

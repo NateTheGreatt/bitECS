@@ -60,7 +60,7 @@ export const SparseSet = () => {
   const remove = (val: number) => {
     if (!has(val)) return;
     const index = sparse[val];
-    const swapped = dense.pop();
+    const swapped = dense.pop()!;
     if (swapped !== val) {
       dense[index] = swapped;
       sparse[swapped] = index;
