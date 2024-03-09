@@ -1,4 +1,4 @@
-import {
+export {
   createWorld,
   resetWorld,
   deleteWorld,
@@ -6,7 +6,7 @@ import {
   getAllEntities,
   enableManualEntityRecycling,
 } from "./world/World.js";
-import {
+export {
   addEntity,
   removeEntity,
   setDefaultSize,
@@ -17,16 +17,18 @@ import {
   resetGlobals,
   getDefaultSize,
 } from "./entity/Entity.js";
-import {
+export {
   defineComponent,
   registerComponent,
   registerComponents,
   hasComponent,
   addComponent,
+  addComponents,
   removeComponent,
+  removeComponents,
 } from "./component/Component.js";
-import { defineSystem } from "./system/System.js";
-import {
+export { defineSystem } from "./system/System.js";
+export {
   defineQuery,
   enterQuery,
   exitQuery,
@@ -36,51 +38,11 @@ import {
   resetChangedQuery,
   removeQuery,
 } from "./query/Query.js";
-import {
+export {
   defineSerializer,
   defineDeserializer,
   DESERIALIZE_MODE,
 } from "./serialize/Serialize.js";
-import { parentArray } from "./storage/Storage.js";
-import { TYPES_ENUM } from "./constants/Constants.js";
-import { pipe } from "./utils/pipe.js";
-
-export const Types = TYPES_ENUM;
-
-export {
-  setDefaultSize,
-  setRemovedRecycleThreshold,
-  createWorld,
-  resetWorld,
-  deleteWorld,
-  addEntity,
-  removeEntity,
-  entityExists,
-  getWorldComponents,
-  enableManualEntityRecycling,
-  flushRemovedEntities,
-  getAllEntities,
-  registerComponent,
-  registerComponents,
-  defineComponent,
-  addComponent,
-  removeComponent,
-  hasComponent,
-  getEntityComponents,
-  defineQuery,
-  Changed,
-  Not,
-  enterQuery,
-  exitQuery,
-  commitRemovals,
-  resetChangedQuery,
-  removeQuery,
-  defineSystem,
-  defineSerializer,
-  defineDeserializer,
-  DESERIALIZE_MODE,
-  parentArray,
-  resetGlobals,
-  pipe,
-  getDefaultSize,
-};
+export { parentArray } from "./storage/Storage.js";
+export { TYPES_ENUM as Types } from "./constants/Constants.js";
+export { pipe } from "./utils/pipe.js";
