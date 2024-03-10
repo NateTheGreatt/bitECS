@@ -1,0 +1,11 @@
+{
+  "name": "@bitecs/bench",
+  "version": "0.0.1",
+  "description": "Benchmarks for bitECS",
+  "dependencies": {
+    "@bitecs/classic": "workspace:*"
+  },
+  "devDependencies": {
+    "tsconfig": "workspace:*"
+  }
+}
