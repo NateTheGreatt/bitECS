@@ -43,7 +43,7 @@ const suiteName = argsObj._ ? argsObj._[0] : args[0];
 const engineArg = argsObj.e;
 
 // Function to execute the main.ts file within a directory
-const executeMainTs = (directoryPath: string, engine: string) => {
+const executeMainTs = (directoryPath: string, engine: string = "bun") => {
   const mainTsPath = join(directoryPath, "main.ts");
 
   // Check if main.ts exists in the directory
