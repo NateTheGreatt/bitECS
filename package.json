@@ -5,6 +5,7 @@
     "packages/*"
   ],
   "scripts": {
+    "bench": "bun run ./scripts/bench.ts",
     "build": "bun run ./scripts/build.ts"
   },
   "dependencies": {
