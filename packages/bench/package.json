@@ -2,6 +2,7 @@
   "name": "@bitecs/bench",
   "version": "0.0.1",
   "description": "Benchmarks for bitECS",
+  "type": "module",
   "dependencies": {
     "@bitecs/classic": "workspace:*"
   },
