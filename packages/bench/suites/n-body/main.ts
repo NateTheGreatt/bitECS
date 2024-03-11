@@ -1,3 +1,6 @@
+// Based on Sander Mertens' ECS N-Body simulation for Flecs
+// https://github.com/SanderMertens/ecs_nbody
+
 import { createWorld, pipe } from "@bitecs/classic";
 import { updateGravity } from "./systems/updateGravity";
 import { moveBodies } from "./systems/moveBodies";
@@ -11,7 +14,7 @@ const world = createWorld();
 // Define the simulation pipeline.
 const pipeline = pipe(setInitial, updateGravity, moveBodies, updateColor);
 
-// Initialize all entities with initial values.
+// Initialize all entities.
 init(world);
 
 // Run the simulation.
