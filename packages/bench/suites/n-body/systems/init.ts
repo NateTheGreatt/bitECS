@@ -1,7 +1,7 @@
 import { World } from "@bitecs/classic/dist/world/types";
 import { NBODIES } from "../constants";
 import { addComponent, addEntity } from "@bitecs/classic";
-import { IsCentralMass } from "../components/CentralMass";
+import { IsCentralMass } from "../components/IsCentralMass";
 import { Position } from "../components/Position";
 import { Velocity } from "../components/Velocity";
 import { Mass } from "../components/Mass";
