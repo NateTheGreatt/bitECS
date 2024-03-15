@@ -1,7 +1,7 @@
-import { SPEED } from "../constants";
+import { CONSTANTS } from "../constants";
 
 export function colorFromSpeed(speed: number) {
-  let f = (speed / 8) * Math.sqrt(SPEED);
+  let f = (speed / 8) * Math.sqrt(CONSTANTS.SPEED);
   f = Math.min(f, 1.0);
 
   let fRed = Math.max(0, f - 0.2) / 0.8;

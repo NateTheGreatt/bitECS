@@ -1,8 +1,10 @@
 {
-  "name": "@bitecs/bench",
+  "name": "bench-tools",
+  "private": true,
   "version": "0.0.1",
-  "description": "Benchmarks for bitECS",
+  "description": "Benchmark tools",
   "type": "module",
+  "main": "./src/index.ts",
   "dependencies": {
     "@bitecs/classic": "workspace:*"
   },

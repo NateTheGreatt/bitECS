@@ -1,16 +1,14 @@
 import { execSync } from "child_process";
 import { readdirSync, existsSync, promises } from "fs";
 import { join } from "path";
-import { parseArguments } from "./utils/parseArguments";
 import { COLORS } from "./constants/colors";
 
 // Parse the command-line arguments
 const args = process.argv.slice(2);
-const argsObj = parseArguments(args);
 
 // Retrieve the suite name and engine type from parsed arguments
-const suiteName = argsObj._ ? argsObj._[0] : args[0];
-const engineArg = argsObj.e;
+const suiteName = args[0];
+const bunArg = args.includes("--bun");
 
 // Function to execute the main.ts file within a directory
 const executeMainTs = (directoryPath: string, engine: string = "bun") => {
@@ -23,7 +21,7 @@ const executeMainTs = (directoryPath: string, engine: string = "bun") => {
     );
     // Execute the main.ts file
     if (engine === "node")
-      execSync(`npx tsx ${mainTsPath}`, { stdio: "inherit" });
+      execSync(`bunx tsx ${mainTsPath}`, { stdio: "inherit" });
     if (engine === "bun")
       execSync(`bun run ${mainTsPath}`, { stdio: "inherit" });
   } else {
@@ -32,21 +30,16 @@ const executeMainTs = (directoryPath: string, engine: string = "bun") => {
 };
 
 // Function to find and run main.ts files for the specified suite
-const runSuites = async (suite: string) => {
-  const rootPackageJson = JSON.parse(
-    await promises.readFile("./package.json", { encoding: "utf8" })
-  );
-  const workspaces = rootPackageJson.workspaces;
-  const [basePath] = workspaces[0].split("/*");
-
-  const baseDir = join(basePath, "bench", "suites");
-  const suiteDir = join(baseDir, suite);
+const runSuites = async (sim: string) => {
+  const rootPath = process.cwd();
+  const baseDir = join(rootPath, "benches", "sims");
+  const simDir = join(baseDir, sim);
 
   // Check if the specified suite directory exists
-  if (existsSync(suiteDir) && readdirSync(baseDir).includes(suite)) {
-    executeMainTs(suiteDir, engineArg);
+  if (existsSync(simDir) && readdirSync(baseDir).includes(sim)) {
+    executeMainTs(simDir, bunArg ? "bun" : "node");
   } else {
-    console.error(`Suite not found: ${suite}`);
+    console.error(`Suite not found: ${sim}`);
   }
 };
 

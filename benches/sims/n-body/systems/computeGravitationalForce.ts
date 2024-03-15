@@ -1,8 +1,7 @@
-import { defineQuery } from "@bitecs/classic";
 import { Position } from "../components/Position";
 import { Mass } from "../components/Mass";
 import { World } from "@bitecs/classic/dist/world/types";
-import { STICKY } from "../constants";
+import { CONSTANTS } from "../constants";
 import { bodyQuery } from "../queries/queries";
 
 export function computeGravitationalForce(
@@ -21,7 +20,7 @@ export function computeGravitationalForce(
     const dy = Position.y[currentId] - Position.y[meId];
     let distanceSquared = dx * dx + dy * dy;
 
-    if (distanceSquared < STICKY) distanceSquared = STICKY; // Apply stickiness
+    if (distanceSquared < CONSTANTS.STICKY) distanceSquared = CONSTANTS.STICKY; // Apply stickiness
 
     const distance = Math.sqrt(distanceSquared);
     const forceMagnitude =

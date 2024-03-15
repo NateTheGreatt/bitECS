@@ -1,7 +1,7 @@
 import { defineSystem } from "@bitecs/classic";
 import { bodyQuery } from "../queries/queries";
 import { Position } from "../components/Position";
-import { SPEED } from "../constants";
+import { CONSTANTS } from "../constants";
 import { Velocity } from "../components/Velocity";
 
 export const moveBodies = defineSystem((world) => {
@@ -11,8 +11,8 @@ export const moveBodies = defineSystem((world) => {
     const eid = eids[i];
 
     // Update position based on velocity and the global SPEED factor
-    Position.x[eid] += SPEED * Velocity.x[eid];
-    Position.y[eid] += SPEED * Velocity.y[eid];
+    Position.x[eid] += CONSTANTS.SPEED * Velocity.x[eid];
+    Position.y[eid] += CONSTANTS.SPEED * Velocity.y[eid];
   }
 
   return world;

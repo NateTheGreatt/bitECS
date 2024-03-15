@@ -20,11 +20,17 @@ function requestAnimationFrameLoop() {
 }
 
 export function requestAnimationFrame(func: (...args: any[]) => any) {
-  callbacks.push(func);
-  if (callbacks.length === 1) {
-    setImmediate(requestAnimationFrameLoop);
+  // @ts-expect-error
+  if (typeof window !== "undefined" && window.requestAnimationFrame) {
+    // @ts-expect-error
+    return window.requestAnimationFrame(func);
+  } else {
+    callbacks.push(func);
+    if (callbacks.length === 1) {
+      setImmediate(requestAnimationFrameLoop);
+    }
+    return callbacks.length - 1;
   }
-  return callbacks.length - 1;
 }
 
 export function cancelAnimationFrame(id: number) {

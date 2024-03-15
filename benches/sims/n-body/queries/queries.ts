@@ -12,3 +12,4 @@ export const centralMassQuery = defineQuery([
   IsCentralMass,
 ]);
 export const enterBodyQuery = enterQuery(bodyQuery);
+export const enterCentralMassQuery = enterQuery(centralMassQuery);

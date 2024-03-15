@@ -1,33 +1,24 @@
-import {
-  BASE_MASS,
-  CENTRAL_MASS,
-  INITIAL_C,
-  MAX_RADIUS,
-  SPEED,
-  VAR_MASS,
-} from "../constants";
+import { CONSTANTS } from "../constants";
 import { Position } from "../components/Position";
 import { Velocity } from "../components/Velocity";
 import { Mass } from "../components/Mass";
 import { Circle } from "../components/Circle";
 import { randInRange } from "../utils/randInRange";
-import { centralMassQuery, enterBodyQuery } from "../queries/queries";
+import { enterBodyQuery, enterCentralMassQuery } from "../queries/queries";
 import { defineSystem } from "@bitecs/classic";
 
 export const setInitial = defineSystem((world) => {
   const eids = enterBodyQuery(world);
   // We only allow there to be one central mass.
-  const centralMassId = centralMassQuery(world)[0];
+  const centralMassIds = enterCentralMassQuery(world);
 
-  for (let i = 0; i < eids; i++) {
+  for (let i = 0; i < eids.length; i++) {
     const eid = eids[i];
-
-    if (eid === centralMassId) continue; // Skip central mass
 
     // Random positions
     Position.x[eid] = randInRange(-4000, 4000);
     Position.y[eid] = randInRange(-100, 100);
-    Mass.value[eid] = BASE_MASS + randInRange(0, VAR_MASS);
+    Mass.value[eid] = CONSTANTS.BASE_MASS + randInRange(0, CONSTANTS.VAR_MASS);
 
     // Calculate velocity for a stable orbit, assuming a circular orbit logic
     if (Position.x[eid] !== 0 || Position.y[eid] !== 0) {
@@ -39,19 +30,23 @@ export const setInitial = defineSystem((world) => {
       const vecRotX = -normY;
       const vecRotY = normX;
 
-      const v = Math.sqrt(INITIAL_C / radius / Mass.value[eid] / SPEED);
+      const v = Math.sqrt(
+        CONSTANTS.INITIAL_C / radius / Mass.value[eid] / CONSTANTS.SPEED
+      );
       Velocity.x[eid] = vecRotX * v;
       Velocity.y[eid] = vecRotY * v;
     }
 
     // Set circle radius based on mass
     Circle.radius[eid] =
-      MAX_RADIUS * (Mass.value[eid] / (BASE_MASS + VAR_MASS)) + 1;
+      CONSTANTS.MAX_RADIUS *
+        (Mass.value[eid] / (CONSTANTS.BASE_MASS + CONSTANTS.VAR_MASS)) +
+      1;
   }
 
   // Set the central mass properties.
-  if (centralMassId) {
-    const eid = centralMassId;
+  for (let i = 0; i < centralMassIds.length; i++) {
+    const eid = centralMassIds[i];
 
     Position.x[eid] = 0;
     Position.y[eid] = 0;
@@ -59,9 +54,8 @@ export const setInitial = defineSystem((world) => {
     Velocity.x[eid] = 0;
     Velocity.y[eid] = 0;
 
-    Mass.value[eid] = CENTRAL_MASS;
+    Mass.value[eid] = CONSTANTS.CENTRAL_MASS;
 
-    Circle.radius[eid] =
-      MAX_RADIUS * (Mass.value[eid] / (BASE_MASS + VAR_MASS)) + 1;
+    Circle.radius[eid] = CONSTANTS.MAX_RADIUS / 1.5;
   }
 });

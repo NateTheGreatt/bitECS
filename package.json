@@ -2,11 +2,13 @@
   "name": "bitecs",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "benches/sims/*"
   ],
   "scripts": {
-    "bench": "bun run ./scripts/bench.ts",
-    "build": "bun run ./scripts/build.ts"
+    "app": "bun run ./scripts/app.ts",
+    "build": "bun run ./scripts/build.ts",
+    "sim": "bun run ./scripts/sim.ts"
   },
   "dependencies": {
     "typescript": "^5.4.2"

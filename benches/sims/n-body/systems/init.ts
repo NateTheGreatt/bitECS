@@ -1,5 +1,5 @@
 import { World } from "@bitecs/classic/dist/world/types";
-import { NBODIES } from "../constants";
+import { CONSTANTS } from "../constants";
 import { addComponent, addEntity } from "@bitecs/classic";
 import { IsCentralMass } from "../components/IsCentralMass";
 import { Position } from "../components/Position";
@@ -8,7 +8,7 @@ import { Mass } from "../components/Mass";
 import { Circle } from "../components/Circle";
 
 export const init = (world: World) => {
-  for (let i = 0; i < NBODIES; i++) {
+  for (let i = 0; i < CONSTANTS.NBODIES; i++) {
     const eid = addEntity(world);
     addComponent(world, Position, eid);
     addComponent(world, Velocity, eid);
