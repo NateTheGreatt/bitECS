@@ -3,6 +3,8 @@ import { Color, bodyQuery } from '@sim/n-body';
 import * as THREE from 'three';
 import { ThreeObject } from '../components/ThreeObject';
 
+const normalize = (x: number, min: number, max: number) => (x - min) / (max - min);
+
 export const syncColor = defineSystem((world) => {
 	const eids = bodyQuery(world);
 
@@ -10,10 +12,10 @@ export const syncColor = defineSystem((world) => {
 		const eid = eids[i];
 		const sphere = ThreeObject[eid];
 
-		(sphere.material as THREE.MeshBasicMaterial).color.set(
-			Color.r[eid],
-			Color.g[eid],
-			Color.b[eid]
-		);
+		const r = normalize(Color.r[eid], 0, 255);
+		const g = normalize(Color.g[eid], 0, 255);
+		const b = normalize(Color.b[eid], 0, 255);
+
+		(sphere.material as THREE.MeshBasicMaterial).color.set(r,g,b);
 	}
 });
