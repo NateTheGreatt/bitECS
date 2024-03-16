@@ -16,6 +16,9 @@ import { spawnThreeObjects } from './systems/spawnThreeObjects';
 import { syncPosition } from './systems/syncPosition';
 import { syncColor } from './systems/syncColor';
 
+// Configure the simulation
+CONSTANTS.NBODIES = 2000;
+
 // Renderer
 const renderer = new THREE.WebGLRenderer({
 	antialias: true,
@@ -25,7 +28,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Camera
-const frustumSize = 10000;
+const frustumSize = 8000;
 const aspect = window.innerWidth / window.innerHeight;
 const camera = new THREE.OrthographicCamera(
 	(-frustumSize * aspect) / 2,
@@ -53,9 +56,6 @@ window.addEventListener('resize', onWindowResize);
 // Camera position
 camera.position.set(0, 0, 100);
 camera.lookAt(0, 0, 0);
-
-// Configure the simulation
-CONSTANTS.NBODIES = 100;
 
 const pipeline = pipe(
 	setInitial,
