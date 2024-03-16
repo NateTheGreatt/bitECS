@@ -1,42 +1,21 @@
 {
-  "name": "@bitecs/core",
-  "version": "0.0.1",
-  "description": "ECS toolkit",
-  "license": "MPL-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/NateTheGreatt/bitECS"
-  },
-  "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
-    }
-  },
-  "author": {
-    "name": "Nathaniel Martin",
-    "email": "mrtn.nathaniel@gmail.com",
-    "url": "https://github.com/NateTheGreatt"
-  },
-  "contributors": [
-    {
-      "name": "Randy Lebeau",
-      "email": "randylebeau@gmail.com",
-      "url": "https://github.com/SupremeTechnopriest"
-    }
-  ],
-  "scripts": {
-    "test": "bun test",
-    "build": "bun build ./src/index.ts --outdir ./dist && bun run build:declaration",
-    "build:declaration": "tsc --outdir ./dist"
-  },
-  "devDependencies": {
-    "@types/assert": "^1.5.10",
-    "tsconfig": "workspace:*"
-  }
+	"name": "@bitecs/core",
+	"version": "0.0.1",
+	"description": "ECS toolkit",
+	"license": "MPL-2.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/NateTheGreatt/bitECS"
+	},
+	"type": "module",
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
+	"scripts": {
+		"test": "vitest"
+	},
+	"devDependencies": {
+		"@types/assert": "^1.5.10",
+		"tsconfig": "workspace:*",
+		"vitest": "^1.4.0"
+	}
 }

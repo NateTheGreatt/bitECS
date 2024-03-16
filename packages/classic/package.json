@@ -8,14 +8,8 @@
 		"url": "https://github.com/NateTheGreatt/bitECS"
 	},
 	"type": "module",
-	"module": "./dist/index.js",
-	"types": "./dist/index.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
 	"author": {
 		"name": "Nathaniel Martin",
 		"email": "mrtn.nathaniel@gmail.com",
@@ -29,12 +23,11 @@
 		}
 	],
 	"scripts": {
-		"test": "bun test",
-		"build": "bun build ./src/index.ts --outdir ./dist && bun run build:declaration",
-		"build:declaration": "tsc --outdir ./dist"
+		"test": "vitest"
 	},
 	"devDependencies": {
 		"@types/assert": "^1.5.10",
-		"tsconfig": "workspace:*"
+		"tsconfig": "workspace:*",
+		"vitest": "^1.4.0"
 	}
 }

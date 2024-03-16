@@ -3,14 +3,13 @@
 To install dependencies:
 
 ```bash
-bun install
-bun run build
+pnpm install
 ```
 
 To benchmark apps, there are two flavors. `sim` will run just the simulation with no view while `app` will run the simulation + web DOM renderer.
 
 ```bash
-bun run sim n-body # `--bun` to run with Bun instead of Node
+pnpm sim n-body #name of the folder
 # or
-bun run app n-body
+bun app n-body
 ```

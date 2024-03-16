@@ -1,5 +1,5 @@
 {
-	"name": "n-body-app",
+	"name": "@app/n-body",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -11,6 +11,7 @@
 	"dependencies": {
 		"@bitecs/classic": "workspace:*",
 		"bench-tools": "workspace:*",
+		"@sim/n-body": "workspace:*",
 		"three": "^0.162.0"
 	},
 	"devDependencies": {

@@ -1,16 +1,16 @@
 {
-  "name": "n-body-sim",
-  "private": true,
-  "version": "0.0.1",
-  "description": "N-Body simulation using BiteCS",
-  "type": "module",
-  "main": "index.ts",
-  "dependencies": {
-    "@bitecs/classic": "workspace:*",
-    "bench-tools": "workspace:*"
-  },
-  "devDependencies": {
-    "tsx": "latest",
-    "tsconfig": "workspace:*"
-  }
+	"name": "@sim/n-body",
+	"private": true,
+	"version": "0.0.1",
+	"description": "N-Body simulation using BiteCS",
+	"type": "module",
+	"main": "index.ts",
+	"dependencies": {
+		"@bitecs/classic": "workspace:*",
+		"bench-tools": "workspace:*"
+	},
+	"devDependencies": {
+		"tsx": "latest",
+		"tsconfig": "workspace:*"
+	}
 }

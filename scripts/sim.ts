@@ -1,5 +1,5 @@
-import { execSync } from 'node:child_process';
-import { existsSync, readdirSync } from 'node:fs';
+import { execSync } from 'child_process';
+import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { COLORS } from './constants/colors';
 
@@ -20,8 +20,8 @@ const executeMainTs = (directoryPath: string, engine: string = 'bun') => {
 			`Executing ${COLORS.fg.blue}${suiteName}${COLORS.reset} using ${COLORS.fg.yellow}${engine}${COLORS.reset}`
 		);
 		// Execute the main.ts file
-		if (engine === 'node') execSync(`bunx tsx ${mainTsPath}`, { stdio: 'inherit' });
-		if (engine === 'bun') execSync(`bun run ${mainTsPath}`, { stdio: 'inherit' });
+		execSync(`npx tsx ${mainTsPath}`, { stdio: 'inherit' });
+		// if (engine === 'bun') execSync(`bun run ${mainTsPath}`, { stdio: 'inherit' });
 	} else {
 		console.error(`main.ts not found in ${directoryPath}`);
 	}

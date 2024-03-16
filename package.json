@@ -1,18 +1,14 @@
 {
 	"name": "bitecs",
 	"private": true,
-	"workspaces": [
-		"packages/*",
-		"benches/sims/*",
-		"benches/apps/*"
-	],
 	"scripts": {
-		"app": "bun run ./scripts/app.ts",
-		"build": "bun run ./scripts/build.ts",
-		"sim": "bun run ./scripts/sim.ts"
+		"app": "npx tsx ./scripts/app.ts",
+		"build": "npx tsx ./scripts/build.ts",
+		"sim": "npx tsx ./scripts/sim.ts"
 	},
 	"dependencies": {
-		"@types/bun": "^1.0.8",
+		"@types/node": "latest",
+		"tsx": "^4.7.1",
 		"typescript": "latest"
 	}
 }

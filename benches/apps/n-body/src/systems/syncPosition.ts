@@ -1,15 +1,15 @@
-import { defineSystem } from "@bitecs/classic";
-import { Position, bodyQuery } from "n-body-sim";
-import { ThreeObject } from "../components/ThreeObject";
+import { defineSystem } from '@bitecs/classic';
+import { Position, bodyQuery } from '@sim/n-body';
+import { ThreeObject } from '../components/ThreeObject';
 
 export const syncPosition = defineSystem((world) => {
-  const eids = bodyQuery(world);
+	const eids = bodyQuery(world);
 
-  for (let i = 0; i < eids.length; i++) {
-    const eid = eids[i];
-    const sphere = ThreeObject[eid];
+	for (let i = 0; i < eids.length; i++) {
+		const eid = eids[i];
+		const sphere = ThreeObject[eid];
 
-    sphere.position.x = Position.x[eid];
-    sphere.position.y = Position.y[eid];
-  }
+		sphere.position.x = Position.x[eid];
+		sphere.position.y = Position.y[eid];
+	}
 });
