@@ -12,6 +12,6 @@
   },
   "dependencies": {
     "@types/bun": "^1.0.8",
-    "typescript": "^5.4.2"
+    "typescript": "latest"
   }
 }
