@@ -1,21 +1,21 @@
 {
-  "name": "n-body-app",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@bitecs/classic": "workspace:*",
-    "bench-tools": "workspace:*",
-    "three": "^0.162.0"
-  },
-  "devDependencies": {
-    "@types/three": "^0.162.0",
-    "typescript": "^5.2.2",
-    "vite": "^5.1.6"
-  }
+	"name": "n-body-app",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc && vite build",
+		"preview": "vite preview"
+	},
+	"dependencies": {
+		"@bitecs/classic": "workspace:*",
+		"bench-tools": "workspace:*",
+		"three": "^0.162.0"
+	},
+	"devDependencies": {
+		"@types/three": "^0.162.0",
+		"typescript": "^5.2.2",
+		"vite": "^5.1.6"
+	}
 }

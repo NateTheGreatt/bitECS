@@ -1,17 +1,18 @@
 {
-  "name": "bitecs",
-  "private": true,
-  "workspaces": [
-    "packages/*",
-    "benches/sims/*"
-  ],
-  "scripts": {
-    "app": "bun run ./scripts/app.ts",
-    "build": "bun run ./scripts/build.ts",
-    "sim": "bun run ./scripts/sim.ts"
-  },
-  "dependencies": {
-    "@types/bun": "^1.0.8",
-    "typescript": "latest"
-  }
+	"name": "bitecs",
+	"private": true,
+	"workspaces": [
+		"packages/*",
+		"benches/sims/*",
+		"benches/apps/*"
+	],
+	"scripts": {
+		"app": "bun run ./scripts/app.ts",
+		"build": "bun run ./scripts/build.ts",
+		"sim": "bun run ./scripts/sim.ts"
+	},
+	"dependencies": {
+		"@types/bun": "^1.0.8",
+		"typescript": "latest"
+	}
 }
