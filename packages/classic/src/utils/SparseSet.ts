@@ -1,6 +1,6 @@
 export const Uint32SparseSet = (length: number) => {
-  const dense = new Uint32Array(length);
-  const sparse = new Uint32Array(length);
+  const dense = new Uint32Array(new SharedArrayBuffer(length * Uint32Array.BYTES_PER_ELEMENT));
+  const sparse: number[] = [];
 
   let cursor = 0;
   const count = () => cursor + 1;

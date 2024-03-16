@@ -1,4 +1,4 @@
-import { SparseSet } from "../utils/SparseSet.js";
+import { SparseSet, Uint32SparseSet } from "../utils/SparseSet.js";
 import { registerComponent } from "../component/Component.js";
 import { $componentMap } from "../component/symbols.js";
 import {
@@ -6,7 +6,7 @@ import {
   $entityArray,
   $entitySparseSet,
 } from "../entity/symbols.js";
-import { getEntityCursor } from "../entity/Entity.js";
+import { getEntityCursor, getGlobalSize } from "../entity/Entity.js";
 import { Component, ComponentNode } from "../component/types.js";
 import { TODO } from "../utils/types.js";
 import {
@@ -115,8 +115,8 @@ export const registerQuery = (world: World, query: TODO) => {
 
   const allComponents = components.concat(notComponents).map(mapComponents);
 
-  // const sparseSet = Uint32SparseSet(getGlobalSize())
-  const sparseSet = SparseSet();
+  const sparseSet = Uint32SparseSet(getGlobalSize())
+  // const sparseSet = SparseSet();
 
   const archetypes: TODO = [];
   // const changed = SparseSet()
@@ -271,7 +271,7 @@ export const defineQuery = (...args: TODO) => {
       world ? world[$entityArray] : components[$entityArray];
   }
 
-  const query = function (world: World, clearDiff = true): number[] {
+  const query = function (world: World, clearDiff = true): ArrayLike<number> {
     if (!world[$queryMap].has(query)) registerQuery(world, query);
 
     const q = world[$queryMap].get(query);
@@ -281,7 +281,7 @@ export const defineQuery = (...args: TODO) => {
     if (q.changedComponents.length) return diff(q, clearDiff);
     if (q.changedComponents.length) return q.changed.dense;
 
-    return q.dense;
+    return new Uint32Array(q.dense.buffer, 0, q.count());
   };
 
   query[$queryComponents] = components;
