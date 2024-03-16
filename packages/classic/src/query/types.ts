@@ -8,7 +8,7 @@ export type QueryModifier<W extends World = World> = (
 export type Query<W extends World = World> = (
   world: W,
   clearDiff?: boolean
-) => number[];
+) => ArrayLike<number>;
 
 export interface QueryNode {
   [key: string | symbol | number]: any;
