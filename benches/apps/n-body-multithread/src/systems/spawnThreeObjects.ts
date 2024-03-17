@@ -10,16 +10,17 @@ const bodyQuery = defineQuery([Position, Velocity, Mass, Circle]);
 const enterBodyQuery = enterQuery(bodyQuery);
 
 export const spawnThreeObjects = defineSystem((world) => {
-	const eids = enterBodyQuery(world);
+    const eids = enterBodyQuery(world);
 
-	for (let i = 0; i < eids.length; i++) {
-		const eid = eids[i];
+	if (eids.length) {
+		const maxInstances = eids.length;
+	
+		const geometry = new THREE.SphereGeometry(Circle.radius[0], 12, 12);
+		const material = new THREE.MeshBasicMaterial({ color: new THREE.Color().setRGB(1,1,1) });
+		const instancedMesh = new THREE.InstancedMesh(geometry, material, maxInstances);
 
-		const geometry = new THREE.SphereGeometry(Circle.radius[eid], 32, 32);
-		const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-		const sphere = new THREE.Mesh(geometry, material);
-		scene.add(sphere);
-
-		ThreeObject[eid] = sphere;
+		scene.add(instancedMesh);
+		
+		ThreeObject[0] = instancedMesh;
 	}
 });
