@@ -18,8 +18,7 @@ import {
 import { initStats } from 'bench-tools';
 import { scene } from './scene';
 import { spawnThreeObjects } from './systems/spawnThreeObjects';
-import { syncPosition } from './systems/syncPosition';
-import { syncColor } from './systems/syncColor';
+import { syncThreeObjects } from './systems/syncThreeObjects';
 import { World } from '@sim/n-body-multithread/world';
 import { updateTime } from '@sim/n-body-multithread/systems/time';
 
@@ -82,8 +81,7 @@ const pipeline = async (world: World) => {
 	await updateGravity(world);
 	moveBodies(world);
 	updateColor(world);
-	syncPosition(world);
-	syncColor(world);
+	syncThreeObjects(world);
 }
 
 const { updateStats, measure } = initStats({ Bodies: () => CONSTANTS.NBODIES, Threads: () => window.navigator.hardwareConcurrency });
