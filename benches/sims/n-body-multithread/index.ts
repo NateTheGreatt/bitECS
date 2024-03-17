@@ -1,7 +1,6 @@
 export * from './components'
 
 export { updateColor } from "./systems/updateColor";
-export { updateVelocity } from "./systems/updateVelocity";
 export { updateGravityMain } from "./systems/updateGravity.main"
 export { moveBodies } from "./systems/moveBodies";
 export { setInitial } from "./systems/setInitial";

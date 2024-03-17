@@ -12,6 +12,7 @@ export type UpdateGravityComponents = ThreadedComponents & {
 }
 
 export type UpdateGravityInput = {
+    delta: number,
     workerEntities: Uint32Array,
     bodyEntities: Uint32Array,
 }

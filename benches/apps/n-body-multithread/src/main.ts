@@ -20,6 +20,7 @@ import { spawnThreeObjects } from './systems/spawnThreeObjects';
 import { syncPosition } from './systems/syncPosition';
 import { syncColor } from './systems/syncColor';
 import { World } from '@sim/n-body-multithread/world';
+import { updateTime } from '@sim/n-body-multithread/systems/time';
 
 // Configure the simulation
 // CONSTANTS.NBODIES = 2000;
@@ -74,6 +75,7 @@ const updateGravity = updateGravityMain({
 })
   
 const pipeline = async (world: World) => {
+	updateTime(world);
 	setInitial(world);
 	spawnThreeObjects(world);
 	await updateGravity(world);

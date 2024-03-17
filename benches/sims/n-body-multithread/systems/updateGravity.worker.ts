@@ -4,7 +4,8 @@ const STICKY = 10000;
 console.log('worker alive')
 
 function updateGravityWorker(
-    { 
+    {
+        delta,
         workerEntities, 
         bodyEntities, 
         read: { Position, Mass }, 
@@ -34,8 +35,8 @@ function updateGravityWorker(
             Acceleration.y[meId] += (dy / distance) * forceMagnitude;
         }
 
-        Velocity.x[meId] += Acceleration.x[meId] / +Mass.value[meId];
-        Velocity.y[meId] += Acceleration.y[meId] / +Mass.value[meId];
+        Velocity.x[meId] += Acceleration.x[meId] * delta / +Mass.value[meId];
+        Velocity.y[meId] += Acceleration.y[meId] * delta / +Mass.value[meId];
 
     }
 }

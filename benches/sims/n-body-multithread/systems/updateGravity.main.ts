@@ -1,6 +1,7 @@
 import { World } from "../world"
 import { Query } from "@bitecs/classic"
 import { UpdateGravityComponents } from "./updateGravity.common"
+import { CONSTANTS } from "../constants"
 
 export const updateGravityMain = (
     {
@@ -19,7 +20,7 @@ export const updateGravityMain = (
         // TODO: initialize max workers once and select system in worker?
         if (!world.workers[workerFile]) {
             const workers = world.workers[workerFile] = 
-                Array(window.navigator.hardwareConcurrency)
+            Array(window.navigator.hardwareConcurrency)
                 .fill(null)
                 .map(() => new Worker(new URL(workerFile, import.meta.url))) as Worker[]
 
@@ -45,7 +46,7 @@ export const updateGravityMain = (
                 const start = i * entitiesPerPartition
                 const end = start + entitiesPerPartition
                 const workerEntities = partitionEntities.subarray(start, end)
-                worker.postMessage({ bodyEntities, workerEntities })
+                worker.postMessage({ bodyEntities, workerEntities, delta: world.time.delta })
             })
         ))
 
