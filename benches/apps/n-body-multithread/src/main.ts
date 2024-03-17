@@ -86,7 +86,7 @@ const pipeline = async (world: World) => {
 	syncColor(world);
 }
 
-const { updateStats, measure } = initStats({ Bodies: () => CONSTANTS.NBODIES });
+const { updateStats, measure } = initStats({ Bodies: () => CONSTANTS.NBODIES, Threads: () => window.navigator.hardwareConcurrency });
 
 // Run the simulation
 const main = async () => {
