@@ -13,9 +13,9 @@ import {
 	Mass,
 	Velocity,
 	Acceleration,
-	CONSTANTS
+	CONSTANTS,
 } from '@sim/n-body-multithread';
-import { initStats } from 'bench-tools';
+import { initStats } from '@app/bench-tools';
 import { scene } from './scene';
 import { spawnThreeObjects } from './systems/spawnThreeObjects';
 import { syncPosition } from './systems/syncPosition';
@@ -45,16 +45,16 @@ const camera = new THREE.OrthographicCamera(
 	0.1,
 	500
 );
-	
+
 function onWindowResize() {
 	const aspect = window.innerWidth / window.innerHeight;
-	
+
 	camera.left = (-frustumSize * aspect) / 2;
 	camera.right = (frustumSize * aspect) / 2;
 	camera.top = frustumSize / 2;
 	camera.bottom = -frustumSize / 2;
 	camera.updateProjectionMatrix();
-	
+
 	renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
@@ -64,17 +64,16 @@ window.addEventListener('resize', onWindowResize);
 camera.position.set(0, 0, 100);
 camera.lookAt(0, 0, 0);
 
-
 const updateGravity = updateGravityMain({
 	queries: { bodyQuery },
 	partitionQuery: bodyQuery,
 	components: {
 		// TODO: Fix types
 		read: { Position, Mass },
-		write: { Velocity, Acceleration }
-	}
-})
-  
+		write: { Velocity, Acceleration },
+	},
+});
+
 const pipeline = async (world: World) => {
 	updateTime(world);
 	setInitial(world);
@@ -84,13 +83,15 @@ const pipeline = async (world: World) => {
 	updateColor(world);
 	syncPosition(world);
 	syncColor(world);
-}
+};
 
-const { updateStats, measure } = initStats({ Bodies: () => CONSTANTS.NBODIES, Threads: () => window.navigator.hardwareConcurrency });
+const { updateStats, measure } = initStats({
+	Bodies: () => CONSTANTS.NBODIES,
+	Threads: () => window.navigator.hardwareConcurrency,
+});
 
 // Run the simulation
 const main = async () => {
-	
 	await measure(async () => {
 		await pipeline(world);
 		renderer.render(scene, camera);
@@ -102,4 +103,4 @@ const main = async () => {
 // Initialize all entities
 init(world);
 
-main()
+main();

@@ -18,17 +18,27 @@ importers:
         specifier: latest
         version: 5.4.2
 
+  benches/apps/app-tools:
+    dependencies:
+      '@sim/bench-tools':
+        specifier: workspace:*
+        version: link:../../sims/bench-tools
+    devDependencies:
+      tsconfig:
+        specifier: workspace:*
+        version: link:../../../packages/tsconfig
+
   benches/apps/n-body:
     dependencies:
+      '@app/bench-tools':
+        specifier: workspace:*
+        version: link:../app-tools
       '@bitecs/classic':
         specifier: workspace:*
         version: link:../../../packages/classic
       '@sim/n-body':
         specifier: workspace:*
         version: link:../../sims/n-body
-      bench-tools:
-        specifier: workspace:*
-        version: link:../../sims/bench-tools
       three:
         specifier: ^0.162.0
         version: 0.162.0
@@ -45,15 +55,15 @@ importers:
 
   benches/apps/n-body-multithread:
     dependencies:
+      '@app/bench-tools':
+        specifier: workspace:*
+        version: link:../app-tools
       '@bitecs/classic':
         specifier: workspace:*
         version: link:../../../packages/classic
       '@sim/n-body-multithread':
         specifier: workspace:*
         version: link:../../sims/n-body-multithread
-      bench-tools:
-        specifier: workspace:*
-        version: link:../../sims/bench-tools
       three:
         specifier: ^0.162.0
         version: 0.162.0
@@ -83,7 +93,7 @@ importers:
       '@bitecs/classic':
         specifier: workspace:*
         version: link:../../../packages/classic
-      bench-tools:
+      '@sim/bench-tools':
         specifier: workspace:*
         version: link:../bench-tools
     devDependencies:
@@ -99,7 +109,7 @@ importers:
       '@bitecs/classic':
         specifier: workspace:*
         version: link:../../../packages/classic
-      bench-tools:
+      '@sim/bench-tools':
         specifier: workspace:*
         version: link:../bench-tools
     devDependencies:
@@ -115,7 +125,7 @@ importers:
       '@bitecs/classic':
         specifier: workspace:*
         version: link:../../../packages/classic
-      bench-tools:
+      '@sim/bench-tools':
         specifier: workspace:*
         version: link:../bench-tools
     devDependencies:
@@ -840,7 +850,7 @@ packages:
     dependencies:
       nanoid: 3.3.7
       picocolors: 1.0.0
-      source-map-js: 1.0.2
+      source-map-js: 1.1.0
     dev: true
 
   /pretty-format@29.7.0:
@@ -903,8 +913,8 @@ packages:
     engines: {node: '>=14'}
     dev: true
 
-  /source-map-js@1.0.2:
-    resolution: {integrity: sha512-R0XvVJ9WusLiqTCEiGCmICCMplcCkIwwR11mOSD9CR5u+IXYdiseeEuXCVAjS54zqwkLcPNnmU4OeJ6tUrWhDw==}
+  /source-map-js@1.1.0:
+    resolution: {integrity: sha512-9vC2SfsJzlej6MAaMPLu8HiBSHGdRAJ9hVFYN1ibZoNkeanmDmLUcIrj6G9DGL7XMJ54AKg/G75akXl1/izTOw==}
     engines: {node: '>=0.10.0'}
     dev: true
 

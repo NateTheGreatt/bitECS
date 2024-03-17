@@ -10,7 +10,7 @@
 	},
 	"dependencies": {
 		"@bitecs/classic": "workspace:*",
-		"bench-tools": "workspace:*",
+		"@app/bench-tools": "workspace:*",
 		"@sim/n-body": "workspace:*",
 		"three": "^0.162.0"
 	},

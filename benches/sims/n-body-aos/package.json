@@ -7,7 +7,7 @@
 	"main": "index.ts",
 	"dependencies": {
 		"@bitecs/classic": "workspace:*",
-		"bench-tools": "workspace:*"
+		"@sim/bench-tools": "workspace:*"
 	},
 	"devDependencies": {
 		"tsx": "latest",

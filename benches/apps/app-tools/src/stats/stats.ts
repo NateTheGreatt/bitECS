@@ -1,5 +1,4 @@
-import { getFPS } from '../get-fps';
-import { Measurement, measure } from '../measure';
+import { Measurement, measure, getFPS } from '@sim/bench-tools';
 import './stats.css';
 
 type Stats = Record<string, () => any>;

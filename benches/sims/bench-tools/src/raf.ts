@@ -20,7 +20,9 @@ function requestAnimationFrameLoop() {
 }
 
 export function requestAnimationFrame(func: (...args: any[]) => any) {
+	// @ts-expect-error
 	if (typeof window !== 'undefined' && window.requestAnimationFrame) {
+		// @ts-expect-error
 		return window.requestAnimationFrame(func);
 	} else {
 		callbacks.push(func);

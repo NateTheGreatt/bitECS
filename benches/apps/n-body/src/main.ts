@@ -9,7 +9,7 @@ import {
 	updateGravity,
 	world,
 } from '@sim/n-body';
-import { initStats } from 'bench-tools';
+import { initStats } from '@app/bench-tools';
 import { scene } from './scene';
 import { pipe } from '@bitecs/classic';
 import { spawnThreeObjects } from './systems/spawnThreeObjects';

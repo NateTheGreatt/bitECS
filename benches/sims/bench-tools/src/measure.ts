@@ -27,6 +27,7 @@ export async function measure(
 			average,
 		};
 	} else {
+		// @ts-expect-error
 		if (typeof window !== 'undefined') {
 			// Browser environment: use console.log
 			console.log(
