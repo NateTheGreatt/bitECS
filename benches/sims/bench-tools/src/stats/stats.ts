@@ -35,7 +35,7 @@ export function initStats(extras?: Stats) {
 
 	return {
 		updateStats,
-		measure: (fn: (...args: any[]) => any) => measure(fn, measurementRef),
+		measure: async (fn: (...args: any[]) => any) => await measure(fn, measurementRef),
 	};
 }
 

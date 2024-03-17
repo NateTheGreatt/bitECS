@@ -12,9 +12,10 @@ import {
 	Position,
 	Mass,
 	Velocity,
-	Acceleration
+	Acceleration,
+	CONSTANTS
 } from '@sim/n-body-multithread';
-import { measure } from 'bench-tools';
+import { initStats } from 'bench-tools';
 import { scene } from './scene';
 import { spawnThreeObjects } from './systems/spawnThreeObjects';
 import { syncPosition } from './systems/syncPosition';
@@ -85,10 +86,16 @@ const pipeline = async (world: World) => {
 	syncColor(world);
 }
 
+const { updateStats, measure } = initStats({ Bodies: () => CONSTANTS.NBODIES });
+
 // Run the simulation
 const main = async () => {
-	await measure(async () => await pipeline(world));
-	renderer.render(scene, camera);
+	
+	await measure(async () => {
+		await pipeline(world);
+		renderer.render(scene, camera);
+		updateStats();
+	});
 	requestAnimationFrame(main);
 };
 
