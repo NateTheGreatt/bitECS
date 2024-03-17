@@ -9,6 +9,8 @@ import { ThreeObject } from '../components/ThreeObject';
 const bodyQuery = defineQuery([Position, Velocity, Mass, Circle]);
 const enterBodyQuery = enterQuery(bodyQuery);
 
+const normalize = (x: number, min: number, max: number) => (x - min) / (max - min);
+
 export const spawnThreeObjects = defineSystem((world) => {
     const eids = enterBodyQuery(world);
 
@@ -18,7 +20,6 @@ export const spawnThreeObjects = defineSystem((world) => {
 		const geometry = new THREE.SphereGeometry(Circle.radius[0], 12, 12);
 		const material = new THREE.MeshBasicMaterial({ color: new THREE.Color().setRGB(1,1,1) });
 		const instancedMesh = new THREE.InstancedMesh(geometry, material, maxInstances);
-		const matrix = new THREE.Matrix4();
 		const dummy = new THREE.Object3D();
 	
 		for (let i = 0; i < eids.length; i++) {
@@ -30,7 +31,8 @@ export const spawnThreeObjects = defineSystem((world) => {
 				0,
 			);
 
-			dummy.scale.setScalar(Circle.radius[eid]);
+			const r = normalize(Circle.radius[eid], 0, 100)
+			dummy.scale.set(r,r,r);
 
 			dummy.updateMatrix();
 
@@ -38,6 +40,7 @@ export const spawnThreeObjects = defineSystem((world) => {
 	
 		}
 		instancedMesh.instanceMatrix.needsUpdate = true;
+		instancedMesh.computeBoundingSphere();
 		scene.add(instancedMesh);
 		
 		ThreeObject[0] = instancedMesh;
