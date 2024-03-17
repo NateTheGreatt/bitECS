@@ -9,7 +9,7 @@ import {
 	updateGravity,
 	world,
 } from '@sim/n-body';
-import { measure } from 'bench-tools';
+import { initStats } from 'bench-tools';
 import { scene } from './scene';
 import { pipe } from '@bitecs/classic';
 import { spawnThreeObjects } from './systems/spawnThreeObjects';
@@ -67,10 +67,16 @@ const pipeline = pipe(
 	syncColor
 );
 
+// Init stats
+const { updateStats, measure } = initStats({ Bodies: () => CONSTANTS.NBODIES });
+
 // Run the simulation
 const main = () => {
-	measure(() => pipeline(world));
-	renderer.render(scene, camera);
+	measure(() => {
+		pipeline(world);
+		renderer.render(scene, camera);
+		updateStats();
+	});
 	requestAnimationFrame(main);
 };
 

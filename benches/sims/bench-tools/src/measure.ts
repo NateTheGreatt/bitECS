@@ -1,38 +1,44 @@
+export type Measurement = {
+	delta: number;
+	average: number;
+};
+
 let totalExecutionTime = 0;
 let executionCount = 0;
 
-export async function measure(fn: (...args: any[]) => any) {
-  const startTime = performance.now();
+export async function measure(
+	fn: (...args: any[]) => any,
+	measurementRef?: { current: Measurement }
+) {
+	const startTime = performance.now();
 
-  const result = await fn();
+	const result = await fn();
 
-  const endTime = performance.now();
-  const executionTime = endTime - startTime;
+	const endTime = performance.now();
+	const delta = endTime - startTime;
 
-  totalExecutionTime += executionTime;
-  executionCount += 1;
-  const averageTime = totalExecutionTime / executionCount;
+	totalExecutionTime += delta;
+	executionCount += 1;
+	const average = totalExecutionTime / executionCount;
 
-  // @ts-expect-error
-  if (typeof window !== "undefined") {
-    // Browser environment: use console.log
-    console.log(
-      `Execution time: ${executionTime.toFixed(
-        3
-      )} ms, Average time: ${averageTime.toFixed(3)} ms`
-    );
-  } else if (
-    typeof process !== "undefined" &&
-    process.stdout &&
-    process.stdout.write
-  ) {
-    // Node.js environment: use process.stdout.write to update the same line
-    process.stdout.write(
-      `\rExecution time: ${executionTime.toFixed(
-        3
-      )} ms, Average time: ${averageTime.toFixed(3)} ms`
-    );
-  }
+	if (measurementRef) {
+		measurementRef.current = {
+			delta,
+			average,
+		};
+	} else {
+		if (typeof window !== 'undefined') {
+			// Browser environment: use console.log
+			console.log(
+				`Execution time: ${delta.toFixed(3)} ms, Average time: ${average.toFixed(3)} ms`
+			);
+		} else if (typeof process !== 'undefined' && process.stdout && process.stdout.write) {
+			// Node.js environment: use process.stdout.write to update the same line
+			process.stdout.write(
+				`\rExecution time: ${delta.toFixed(3)} ms, Average time: ${average.toFixed(3)} ms`
+			);
+		}
+	}
 
-  return result;
+	return result;
 }
