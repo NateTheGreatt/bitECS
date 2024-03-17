@@ -87,7 +87,7 @@ const pipeline = async (world: World) => {
 
 // Run the simulation
 const main = async () => {
-	measure(async () => await pipeline(world));
+	await measure(async () => await pipeline(world));
 	renderer.render(scene, camera);
 	requestAnimationFrame(main);
 };
