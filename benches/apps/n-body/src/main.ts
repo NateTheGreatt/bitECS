@@ -13,9 +13,7 @@ import { initStats } from '@app/bench-tools';
 import { scene } from './scene';
 import { pipe } from '@bitecs/classic';
 import { spawnThreeObjects } from './systems/spawnThreeObjects';
-import { syncPosition } from './systems/syncPosition';
-import { syncColor } from './systems/syncColor';
-
+import { syncThreeObjects } from './systems/syncThreeObjects';
 // Configure the simulation
 CONSTANTS.NBODIES = 2000;
 
@@ -63,8 +61,7 @@ const pipeline = pipe(
 	updateGravity,
 	moveBodies,
 	updateColor,
-	syncPosition,
-	syncColor
+	syncThreeObjects
 );
 
 // Init stats
