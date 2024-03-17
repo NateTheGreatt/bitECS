@@ -1,10 +1,10 @@
 let totalExecutionTime = 0;
 let executionCount = 0;
 
-export function measure(fn: (...args: any[]) => any) {
+export async function measure(fn: (...args: any[]) => any) {
   const startTime = performance.now();
 
-  const result = fn();
+  const result = await fn();
 
   const endTime = performance.now();
   const executionTime = endTime - startTime;

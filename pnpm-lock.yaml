@@ -43,6 +43,31 @@ importers:
         specifier: ^5.1.6
         version: 5.1.6(@types/node@20.11.28)
 
+  benches/apps/n-body-multithread:
+    dependencies:
+      '@bitecs/classic':
+        specifier: workspace:*
+        version: link:../../../packages/classic
+      '@sim/n-body-multithread':
+        specifier: workspace:*
+        version: link:../../sims/n-body-multithread
+      bench-tools:
+        specifier: workspace:*
+        version: link:../../sims/bench-tools
+      three:
+        specifier: ^0.162.0
+        version: 0.162.0
+    devDependencies:
+      '@types/three':
+        specifier: ^0.162.0
+        version: 0.162.0
+      typescript:
+        specifier: ^5.2.2
+        version: 5.4.2
+      vite:
+        specifier: ^5.1.6
+        version: 5.1.6(@types/node@20.11.28)
+
   benches/sims/bench-tools:
     dependencies:
       '@bitecs/classic':
@@ -70,6 +95,22 @@ importers:
         version: 4.7.1
 
   benches/sims/n-body-aos:
+    dependencies:
+      '@bitecs/classic':
+        specifier: workspace:*
+        version: link:../../../packages/classic
+      bench-tools:
+        specifier: workspace:*
+        version: link:../bench-tools
+    devDependencies:
+      tsconfig:
+        specifier: workspace:*
+        version: link:../../../packages/tsconfig
+      tsx:
+        specifier: latest
+        version: 4.7.1
+
+  benches/sims/n-body-multithread:
     dependencies:
       '@bitecs/classic':
         specifier: workspace:*

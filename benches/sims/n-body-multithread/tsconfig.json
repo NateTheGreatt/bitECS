@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "lib": ["DOM","WebWorker","ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": ["**/*"]
+}
