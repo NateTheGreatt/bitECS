@@ -1,16 +1,12 @@
-import { Component, ComponentNode } from "../component/types";
-import { World } from "../world/types";
+import { Component } from '../component/types';
+import { World } from '../world/types';
 
 export type QueryModifier<W extends World = World> = (
-  c: Component[]
+	c: Component[]
 ) => (world: W) => Component | QueryModifier<W>;
 
-export type Query<W extends World = World> = (
-  world: W,
-  clearDiff?: boolean
-) => ArrayLike<number>;
+export type Query<W extends World = World> = (world: W, clearDiff?: boolean) => Uint32Array;
 
-export interface QueryNode {
-  [key: string | symbol | number]: any;
-  allComponents: Component[];
-}
+export type QueryNode = Record<string | symbol, any> & {
+	allComponents: Component[];
+};
