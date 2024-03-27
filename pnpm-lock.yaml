@@ -186,6 +186,18 @@ importers:
 
   packages/tsconfig: {}
 
+  packages/utils:
+    devDependencies:
+      '@types/assert':
+        specifier: ^1.5.10
+        version: 1.5.10
+      tsconfig:
+        specifier: workspace:*
+        version: link:../tsconfig
+      vitest:
+        specifier: ^1.4.0
+        version: 1.4.0(@types/node@20.11.28)
+
 packages:
 
   /@esbuild/aix-ppc64@0.19.12:
