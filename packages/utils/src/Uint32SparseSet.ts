@@ -60,3 +60,7 @@ function sparseSetGrow(sparseSet: Uint32SparseSet, newCapacity: number): void {
 export function sparseSetGetLength(sparseSet: Uint32SparseSet): number {
     return sparseSet[$length]
 }
+
+export function sparseSetGetDense(sparseSet: Uint32SparseSet): Uint32Array {
+    return new Uint32Array(sparseSet[$buffer], 0, sparseSet[$length])
+}
