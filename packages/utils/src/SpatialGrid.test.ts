@@ -3,7 +3,7 @@ import { test, describe, beforeEach } from "vitest"
 import { 
     type SpatialGrid,
     createSpatialGrid,
-    spatialGridXtoCell,
+    spatialGridToCell,
     spatialGridIndexOf,
     spatialGridGetCell,
     spatialGridGetCellX,
@@ -26,7 +26,7 @@ describe("SpatialGrid", () => {
     
     test("initialize correctly", () => {
         strictEqual(grid.cellSize, 10)
-        strictEqual(spatialGridXtoCell(grid, 20), 2)
+        strictEqual(spatialGridToCell(grid, 20), 2)
         strictEqual(spatialGridIndexOf(grid, 5, 5), 55)
         deepEqual(spatialGridGetCell(grid, 5, 5).dense, new Uint32Array([]))
         strictEqual(spatialGridGetCellX(grid, 5), 5)

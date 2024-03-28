@@ -60,8 +60,8 @@ export function createSpatialGrid(options: SpatialGridOptions): SpatialGrid {
         height: h,
     }
 }
-export function spatialGridXtoCell(grid: SpatialGrid, x: number): number {
-    return Math.floor(x / grid.cellSize)
+export function spatialGridToCell(grid: SpatialGrid, xOrY: number): number {
+    return Math.floor(xOrY / grid.cellSize)
 }
 
 export function spatialGridIndexOf(grid: SpatialGrid, x: number, y: number): number {
@@ -85,8 +85,8 @@ export function spatialGridInBounds(grid: SpatialGrid, x: number, y: number): bo
 }
 
 export function spatialGridAdd(grid: SpatialGrid, x: number, y: number, id: number): number {
-    const cx: number = spatialGridXtoCell(grid, x)
-    const cy: number = spatialGridXtoCell(grid, y)
+    const cx: number = spatialGridToCell(grid, x)
+    const cy: number = spatialGridToCell(grid, y)
     const cellIndex: number = spatialGridIndexOf(grid, cx, cy)
     if (!grid.cells[cellIndex]) {
         throw new Error(`Cell index ${cellIndex} out of bounds of grid`)
@@ -123,15 +123,15 @@ export function spatialGridBroadphaseRadius(grid: SpatialGrid, cellIndex: number
 }
 
 export function spatialGridBroadphasePosition(grid: SpatialGrid, x: number, y: number, r: number): number[] {
-    const cx: number = spatialGridXtoCell(grid, x)
-    const cy: number = spatialGridXtoCell(grid, y)
+    const cx: number = spatialGridToCell(grid, x)
+    const cy: number = spatialGridToCell(grid, y)
     const cellIndex: number = spatialGridIndexOf(grid, cx, cy)
     return spatialGridBroadphaseRadius(grid, cellIndex, r)
 }
 
 export function spatialGridBroadphaseView(grid: SpatialGrid, x: number, y: number, cellsWide: number, cellsHigh: number): number[] {
-    const cx: number = spatialGridXtoCell(grid, x)
-    const cy: number = spatialGridXtoCell(grid, y)
+    const cx: number = spatialGridToCell(grid, x)
+    const cy: number = spatialGridToCell(grid, y)
     const startGridX: number = Math.ceil(cx - cellsWide / 2)
     const startGridY: number = Math.ceil(cy - cellsHigh / 2)
     const endGridX: number = Math.floor(cx + cellsWide / 2)
@@ -147,8 +147,8 @@ export function spatialGridBroadphaseView(grid: SpatialGrid, x: number, y: numbe
 }
 
 export function spatialGridBroadphaseCell(grid: SpatialGrid, x: number, y: number, cellsWide: number, cellsHigh: number): Cell[] {
-    const cx: number = spatialGridXtoCell(grid, x)
-    const cy: number = spatialGridXtoCell(grid, y)
+    const cx: number = spatialGridToCell(grid, x)
+    const cy: number = spatialGridToCell(grid, y)
     const startGridX: number = Math.ceil(cx - cellsWide / 2)
     const startGridY: number = Math.ceil(cy - cellsHigh / 2)
     const endGridX: number = Math.floor(cx + cellsWide / 2)
@@ -166,7 +166,7 @@ export function spatialGridBroadphaseCell(grid: SpatialGrid, x: number, y: numbe
 
 export default {
     create: createSpatialGrid,
-    toCell: spatialGridXtoCell,
+    toCell: spatialGridToCell,
     indexOf: spatialGridIndexOf,
     getCell: spatialGridGetCell,
     getCellX: spatialGridGetCellX,
