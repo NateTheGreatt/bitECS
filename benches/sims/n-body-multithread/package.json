@@ -10,7 +10,7 @@
 		"@sim/bench-tools": "workspace:*"
 	},
 	"devDependencies": {
-		"tsx": "latest",
-		"tsconfig": "workspace:*"
+		"tsconfig": "workspace:*",
+		"tsx": "latest"
 	}
 }

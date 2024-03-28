@@ -1,7 +1,7 @@
-import { World } from '../world';
+import { World } from '../world.js';
 import { Query } from '@bitecs/classic';
-import { UpdateGravityComponents } from './updateGravity.common';
-import { getThreadCount } from '@sim/bench-tools';
+import { UpdateGravityComponents } from './updateGravity.common.js';
+import { getThreadCount, Worker } from '@sim/bench-tools';
 
 export const updateGravityMain = ({
 	queries: { bodyQuery },
@@ -17,6 +17,7 @@ export const updateGravityMain = ({
 		// initialize workers with components
 		// TODO: initialize max workers once and select system in worker?
 		if (!world.workers[workerFile]) {
+			console.log(Worker);
 			const workers = (world.workers[workerFile] = Array(getThreadCount())
 				.fill(null)
 				.map(() => new Worker(new URL(workerFile, import.meta.url))) as Worker[]);

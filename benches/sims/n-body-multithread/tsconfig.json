@@ -1,8 +1,9 @@
 {
-  "compilerOptions": {
-    "lib": ["DOM","WebWorker","ESNext"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler"
-  },
-  "include": ["**/*"]
+	"extends": "tsconfig/base.json",
+	"compilerOptions": {
+		"lib": ["DOM", "WebWorker", "ESNext"],
+		"module": "ESNext",
+		"moduleResolution": "Bundler"
+	},
+	"include": ["**/*"]
 }
