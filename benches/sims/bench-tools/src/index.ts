@@ -1,4 +1,5 @@
-export * from './measure';
-export { requestAnimationFrame } from './raf';
-export { getFPS } from './get-fps';
-export { getThreadCount } from './get-thread-count';
+export * from './measure.js';
+export { requestAnimationFrame } from './raf.js';
+export { getFPS } from './getFPS.js';
+export { getThreadCount } from './getThreadCount.js';
+export { Worker } from './Worker.js';
