@@ -1,0 +1,1 @@
+export const Position: { x: number, y: number }[] = []

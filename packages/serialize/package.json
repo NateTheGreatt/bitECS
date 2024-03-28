@@ -1,0 +1,27 @@
+{
+	"name": "@bitecs/serialize",
+	"version": "0.0.1",
+	"description": "SoA serialization library",
+	"type": "module",
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Web-ECS/SoA-serializer.git"
+	},
+	"keywords": [
+		"SoA",
+		"serialization",
+		"ECS"
+	],
+	"author": "Nathaniel Martin",
+	"license": "MPL-2.0",
+	"scripts": {
+		"test": "bun vitest"
+	},
+	"devDependencies": {
+		"@types/assert": "^1.5.10",
+		"tsconfig": "workspace:*",
+		"vitest": "^1.4.0"
+	}
+}

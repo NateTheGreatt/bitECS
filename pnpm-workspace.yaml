@@ -1,0 +1,4 @@
+packages:
+    - 'packages/*'
+    - 'benches/sims/*'
+    - 'benches/apps/*'

@@ -1,0 +1,9 @@
+{
+	"extends": "tsconfig/base.json",
+	"compilerOptions": {
+		"lib": ["DOM", "WebWorker", "ESNext"],
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext"
+	},
+	"include": ["src/**/*"]
+}
