@@ -163,3 +163,20 @@ export function spatialGridBroadphaseCell(grid: SpatialGrid, x: number, y: numbe
     }
     return cells
 }
+
+export default {
+    create: createSpatialGrid,
+    toCell: spatialGridXtoCell,
+    indexOf: spatialGridIndexOf,
+    getCell: spatialGridGetCell,
+    getCellX: spatialGridGetCellX,
+    getCellY: spatialGridGetCellY,
+    inBounds: spatialGridInBounds,
+    add: spatialGridAdd,
+    remove: spatialGridRemove,
+    refresh: spatialGridRefresh,
+    broadphaseRadius: spatialGridBroadphaseRadius,
+    broadphasePosition: spatialGridBroadphasePosition,
+    broadphaseView: spatialGridBroadphaseView,
+    broadphaseCell: spatialGridBroadphaseCell,
+}

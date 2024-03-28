@@ -52,7 +52,7 @@ export function sparseSetRemove(sparseSet: Uint32SparseSet, value: number): void
     }
 }
 
-function sparseSetGrow(sparseSet: Uint32SparseSet, newCapacity: number): void {
+export function sparseSetGrow(sparseSet: Uint32SparseSet, newCapacity: number): void {
     sparseSet[$buffer].grow(newCapacity * Uint32Array.BYTES_PER_ELEMENT)
     sparseSet[$dense] = new Uint32Array(sparseSet[$buffer])
 }
@@ -63,4 +63,14 @@ export function sparseSetGetLength(sparseSet: Uint32SparseSet): number {
 
 export function sparseSetGetDense(sparseSet: Uint32SparseSet): Uint32Array {
     return new Uint32Array(sparseSet[$buffer], 0, sparseSet[$length])
+}
+
+export default {
+    create: createUint32SparseSet,
+    add: sparseSetAdd,
+    remove: sparseSetRemove,
+    has: sparseSetHas,
+    grow: sparseSetGrow,
+    length: sparseSetGetLength,
+    dense: sparseSetGetDense,
 }
