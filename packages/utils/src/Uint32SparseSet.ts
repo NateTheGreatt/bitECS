@@ -1,3 +1,5 @@
+import { isSabSupported } from './isSabSupported';
+
 const $dense = Symbol('dense');
 const $length = Symbol('length');
 const $buffer = Symbol('buffer');
@@ -7,14 +9,23 @@ export interface Uint32SparseSet {
 	dense: Uint32Array;
 	[$dense]: Uint32Array;
 	[$length]: number;
-	[$buffer]: SharedArrayBuffer;
+	[$buffer]: SharedArrayBuffer | ArrayBuffer;
 }
 
-export function createUint32SparseSet(initialCapacity: number, maxCapacity: number = initialCapacity): Uint32SparseSet {
-	// @ts-expect-error - TS Doesn't know SAB can grow
-	const buffer = new SharedArrayBuffer(initialCapacity * Uint32Array.BYTES_PER_ELEMENT, {
-		maxByteLength: maxCapacity * Uint32Array.BYTES_PER_ELEMENT,
-	});
+export function createUint32SparseSet(
+	initialCapacity: number,
+	maxCapacity: number = initialCapacity
+): Uint32SparseSet {
+	const buffer = isSabSupported()
+		? // @ts-expect-error - TS Doesn't know buffers can grow
+		  new SharedArrayBuffer(initialCapacity * Uint32Array.BYTES_PER_ELEMENT, {
+				maxByteLength: maxCapacity * Uint32Array.BYTES_PER_ELEMENT,
+		  })
+		: // @ts-expect-error - TS Doesn't know buffers can grow
+		  new ArrayBuffer(initialCapacity * Uint32Array.BYTES_PER_ELEMENT, {
+				maxByteLength: maxCapacity * Uint32Array.BYTES_PER_ELEMENT,
+		  });
+
 	const dense = new Uint32Array(buffer);
 	const sparse = new Array(initialCapacity);
 	const length = 0;
