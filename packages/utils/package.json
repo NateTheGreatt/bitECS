@@ -10,6 +10,20 @@
 	"type": "module",
 	"main": "./src/index.ts",
 	"types": "./src/index.ts",
+	"exports": {
+		".": {
+			"default": "./src/index.ts",
+			"types": "./src/index.ts"
+		},
+		"./Uint32SparseSet": {
+			"default": "./src/Uint32SparseSet.ts",
+			"types": "./src/Uint32SparseSet.ts"
+		},
+		"./SpatialGrid": {
+			"default": "./src/SpatialGrid.ts",
+			"types": "./src/SpatialGrid.ts"
+		}
+	},
 	"scripts": {
 		"test": "vitest"
 	},
