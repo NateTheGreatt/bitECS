@@ -53,7 +53,7 @@ importers:
         specifier: ^5.1.6
         version: 5.1.6(@types/node@20.11.28)
 
-  benches/apps/n-body-multithread:
+  benches/apps/n-body-mt:
     dependencies:
       '@app/bench-tools':
         specifier: workspace:*
@@ -61,9 +61,9 @@ importers:
       '@bitecs/classic':
         specifier: workspace:*
         version: link:../../../packages/classic
-      '@sim/n-body-multithread':
+      '@sim/n-body-mt':
         specifier: workspace:*
-        version: link:../../sims/n-body-multithread
+        version: link:../../sims/n-body-mt
       three:
         specifier: ^0.162.0
         version: 0.162.0
@@ -73,7 +73,7 @@ importers:
         version: 0.162.0
       typescript:
         specifier: ^5.2.2
-        version: 5.4.2
+        version: 5.4.3
       vite:
         specifier: ^5.1.6
         version: 5.1.6(@types/node@20.11.28)
@@ -123,7 +123,7 @@ importers:
         specifier: latest
         version: 4.7.1
 
-  benches/sims/n-body-multithread:
+  benches/sims/n-body-mt:
     dependencies:
       '@bitecs/classic':
         specifier: workspace:*
@@ -989,6 +989,12 @@ packages:
     resolution: {integrity: sha512-+2/g0Fds1ERlP6JsakQQDXjZdZMM+rqpamFZJEKh4kwTIn3iDkgKtby0CeNd5ATNZ4Ry1ax15TMx0W2V+miizQ==}
     engines: {node: '>=14.17'}
     hasBin: true
+
+  /typescript@5.4.3:
+    resolution: {integrity: sha512-KrPd3PKaCLr78MalgiwJnA25Nm8HAmdwN3mYUYZgG/wizIo9EainNVQI9/yDavtVFRN2h3k8uf3GLHuhDMgEHg==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+    dev: true
 
   /ufo@1.5.1:
     resolution: {integrity: sha512-HGyF79+/qZ4soRvM+nHERR2pJ3VXDZ/8sL1uLahdgEDf580NkgiWOxLk33FetExqOWp352JZRsgXbG/4MaGOSg==}

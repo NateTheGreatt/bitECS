@@ -17,7 +17,6 @@ export const updateGravityMain = ({
 		// initialize workers with components
 		// TODO: initialize max workers once and select system in worker?
 		if (!world.workers[workerFile]) {
-			console.log(Worker);
 			const workers = (world.workers[workerFile] = Array(getThreadCount())
 				.fill(null)
 				.map(() => new Worker(new URL(workerFile, import.meta.url))) as Worker[]);

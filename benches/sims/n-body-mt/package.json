@@ -1,5 +1,5 @@
 {
-	"name": "@sim/n-body-multithread",
+	"name": "@sim/n-body-mt",
 	"private": true,
 	"version": "0.0.1",
 	"description": "N-Body simulation using BiteCS",

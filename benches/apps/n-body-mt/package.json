@@ -1,5 +1,5 @@
 {
-	"name": "@app/n-body-multithread",
+	"name": "@app/n-body-mt",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -11,7 +11,7 @@
 	"dependencies": {
 		"@bitecs/classic": "workspace:*",
 		"@app/bench-tools": "workspace:*",
-		"@sim/n-body-multithread": "workspace:*",
+		"@sim/n-body-mt": "workspace:*",
 		"three": "^0.162.0"
 	},
 	"devDependencies": {

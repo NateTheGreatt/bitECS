@@ -14,13 +14,13 @@ import {
 	Velocity,
 	Acceleration,
 	CONSTANTS,
-} from '@sim/n-body-multithread';
+} from '@sim/n-body-mt';
 import { initStats } from '@app/bench-tools';
 import { scene } from './scene';
 import { spawnThreeObjects } from './systems/spawnThreeObjects';
 import { syncThreeObjects } from './systems/syncThreeObjects';
-import { World } from '@sim/n-body-multithread/world';
-import { updateTime } from '@sim/n-body-multithread/systems/time';
+import { World } from '@sim/n-body-mt/world';
+import { updateTime } from '@sim/n-body-mt/systems/time';
 
 // Configure the simulation
 // CONSTANTS.NBODIES = 2000;
@@ -67,7 +67,7 @@ const updateGravity = updateGravityMain({
 	queries: { bodyQuery },
 	partitionQuery: bodyQuery,
 	components: {
-		// TODO: Fix types
+		// @ts-expect-error TODO: Fix types
 		read: { Position, Mass },
 		write: { Velocity, Acceleration },
 	},
