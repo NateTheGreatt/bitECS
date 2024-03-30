@@ -1,5 +1,6 @@
 import { Component } from '../component/types';
 import { World } from '../world/types';
+import { type Uint32SparseSet } from '@bitecs/utils/Uint32SparseSet';
 
 export type QueryModifier<W extends World = World> = (
 	c: Component[]
@@ -7,6 +8,19 @@ export type QueryModifier<W extends World = World> = (
 
 export type Query<W extends World = World> = (world: W, clearDiff?: boolean) => Uint32Array;
 
-export type QueryNode = Record<string | symbol, any> & {
+export type QueryNode = Uint32SparseSet & {
+	archetypes: any;
+	changed: any;
+	notComponents: any;
+	changedComponents: any;
 	allComponents: Component[];
+	masks: any;
+	notMasks: any;
+	hasMasks: any;
+	generations: any;
+	flatProps: any;
+	toRemove: any;
+	entered: any;
+	exited: any;
+	shadows: any;
 };

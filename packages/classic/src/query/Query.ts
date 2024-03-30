@@ -1,9 +1,10 @@
-import { SparseSet, Uint32SparseSet } from '../utils/SparseSet.js';
+import { SparseSet } from '../utils/SparseSet.js';
+import Uint32SparseSet from '@bitecs/utils/Uint32SparseSet';
 import { registerComponent } from '../component/Component.js';
 import { $componentMap } from '../component/symbols.js';
 import { $entityMasks, $entityArray, $entitySparseSet } from '../entity/symbols.js';
 import { getEntityCursor, getGlobalSize } from '../entity/Entity.js';
-import { Component, ComponentNode } from '../component/types.js';
+import { Component } from '../component/types.js';
 import { TODO } from '../utils/types.js';
 import {
 	$dirtyQueries,
@@ -16,7 +17,7 @@ import {
 	$queryMap,
 	$queryNone,
 } from './symbols.js';
-import { Query, QueryModifier } from './types.js';
+import { Query, QueryModifier, QueryNode } from './types.js';
 import { World } from '../world/types.js';
 import { createShadow } from '../storage/Storage.js';
 import { $storeFlattened, $tagStore } from '../storage/symbols.js';
@@ -114,10 +115,9 @@ export const registerQuery = (world: World, query: TODO) => {
 	});
 
 	const mapComponents = (c: Component) => world[$componentMap].get(c)!;
-
 	const allComponents = components.concat(notComponents).map(mapComponents);
 
-	const sparseSet = Uint32SparseSet(getGlobalSize());
+	const sparseSet = Uint32SparseSet.create(getGlobalSize());
 	// const sparseSet = SparseSet();
 
 	const archetypes: TODO = [];
@@ -282,8 +282,7 @@ export const defineQuery = (...args: TODO) => {
 		if (q.changedComponents.length) return diff(q, clearDiff);
 		if (q.changedComponents.length) return q.changed.dense;
 
-		return new Uint32Array(q.dense.buffer, 0, q.count());
-		// return q.dense;
+		return new Uint32Array(q.dense.buffer, 0, Uint32SparseSet.length(q));
 	};
 
 	query[$queryComponents] = components;
@@ -324,18 +323,17 @@ export const queryCheckEntity = (world: World, q: TODO, eid: number) => {
 	return true;
 };
 
-export const queryCheckComponent = (q: TODO, c: TODO) => {
+export const queryCheckComponent = (q: QueryNode, c: TODO) => {
 	const { generationId, bitflag } = c;
 	const { hasMasks } = q;
 	const mask = hasMasks[generationId];
 	return (mask & bitflag) === bitflag;
 };
 
-export const queryAddEntity = (q: TODO, eid: number) => {
+export const queryAddEntity = (q: QueryNode, eid: number) => {
 	q.toRemove.remove(eid);
-	// if (!q.has(eid))
 	q.entered.add(eid);
-	q.add(eid);
+	Uint32SparseSet.add(q, eid);
 };
 
 const queryCommitRemovals = (q: TODO) => {

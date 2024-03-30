@@ -152,6 +152,10 @@ importers:
         version: 1.4.0(@types/node@20.11.28)
 
   packages/classic:
+    dependencies:
+      '@bitecs/utils':
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       '@types/assert':
         specifier: ^1.5.10

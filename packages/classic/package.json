@@ -25,6 +25,9 @@
 	"scripts": {
 		"test": "vitest"
 	},
+	"dependencies": {
+		"@bitecs/utils": "workspace:*"
+	},
 	"devDependencies": {
 		"@types/assert": "^1.5.10",
 		"tsconfig": "workspace:*",
