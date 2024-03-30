@@ -336,11 +336,11 @@ export const queryAddEntity = (q: QueryNode, eid: number) => {
 	Uint32SparseSet.add(q, eid);
 };
 
-const queryCommitRemovals = (q: TODO) => {
+const queryCommitRemovals = (q: QueryNode) => {
 	for (let i = q.toRemove.dense.length - 1; i >= 0; i--) {
 		const eid = q.toRemove.dense[i];
 		q.toRemove.remove(eid);
-		q.remove(eid);
+		Uint32SparseSet.remove(q, eid);
 	}
 };
 
@@ -350,8 +350,9 @@ export const commitRemovals = (world: World) => {
 	world[$dirtyQueries].clear();
 };
 
-export const queryRemoveEntity = (world: World, q: TODO, eid: number) => {
-	if (!q.has(eid) || q.toRemove.has(eid)) return;
+export const queryRemoveEntity = (world: World, q: QueryNode, eid: number) => {
+	// if (!q.has(eid) || q.toRemove.has(eid)) return;
+	if (!Uint32SparseSet.has(q, eid) || q.toRemove.has(eid)) return;
 	q.toRemove.add(eid);
 	world[$dirtyQueries].add(q);
 	q.exited.add(eid);

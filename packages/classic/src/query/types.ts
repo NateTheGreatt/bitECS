@@ -1,4 +1,5 @@
 import { Component } from '../component/types';
+import { SparseSet } from '../utils/SparseSet';
 import { World } from '../world/types';
 import { type Uint32SparseSet } from '@bitecs/utils/Uint32SparseSet';
 
@@ -19,7 +20,7 @@ export type QueryNode = Uint32SparseSet & {
 	hasMasks: any;
 	generations: any;
 	flatProps: any;
-	toRemove: any;
+	toRemove: ReturnType<typeof SparseSet>;
 	entered: any;
 	exited: any;
 	shadows: any;
