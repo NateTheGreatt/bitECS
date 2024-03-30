@@ -10,8 +10,8 @@ export interface Uint32SparseSet {
     [$buffer]: SharedArrayBuffer
 }
 
-export function createUint32SparseSet(initialCapacity: number, maxByteLength = 1000 * Uint32Array.BYTES_PER_ELEMENT): Uint32SparseSet {
-    const buffer = new SharedArrayBuffer(initialCapacity * Uint32Array.BYTES_PER_ELEMENT, { maxByteLength })
+export function createUint32SparseSet(initialCapacity: number, maxCapacity: number): Uint32SparseSet {
+    const buffer = new SharedArrayBuffer(initialCapacity * Uint32Array.BYTES_PER_ELEMENT, { maxByteLength: maxCapacity * Uint32Array.BYTES_PER_ELEMENT })
     const dense = new Uint32Array(buffer)
     const sparse = new Array(initialCapacity)
     const length = 0
