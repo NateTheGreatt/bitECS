@@ -10,7 +10,7 @@ export interface Uint32SparseSet {
 	[$buffer]: SharedArrayBuffer;
 }
 
-export function createUint32SparseSet(initialCapacity: number, maxCapacity: number): Uint32SparseSet {
+export function createUint32SparseSet(initialCapacity: number, maxCapacity: number = initialCapacity): Uint32SparseSet {
 	// @ts-expect-error - TS Doesn't know SAB can grow
 	const buffer = new SharedArrayBuffer(initialCapacity * Uint32Array.BYTES_PER_ELEMENT, {
 		maxByteLength: maxCapacity * Uint32Array.BYTES_PER_ELEMENT,
