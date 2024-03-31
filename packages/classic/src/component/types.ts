@@ -3,7 +3,7 @@ import { QueryNode } from "../query/types";
 import { Schema } from "../storage/types";
 import { TypedArray } from "../utils/types";
 
-export interface Component extends Object {}
+export type Component = any;
 
 export interface ComponentNode {
   generationId: number;
