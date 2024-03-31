@@ -1,5 +1,5 @@
 import { $componentMap } from '../component/symbols.js';
-import { $queryMap, $queries, $dirtyQueries, $notQueries } from '../query/symbols.js';
+import { $queryDataMap, $queries, $dirtyQueries, $notQueries } from '../query/symbols.js';
 import { getGlobalSize, removeEntity } from '../entity/Entity.js';
 import { World } from './types.js';
 import {
@@ -81,7 +81,7 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
 
 	world[$componentMap] = new Map();
 
-	world[$queryMap] = new Map();
+	world[$queryDataMap] = new Map();
 	world[$queries] = new Set();
 	world[$notQueries] = new Set();
 	world[$dirtyQueries] = new Set();

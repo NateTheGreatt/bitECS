@@ -9,7 +9,7 @@ export type QueryModifier<W extends World = World> = (
 
 export type Query<W extends World = World> = (world: W, clearDiff?: boolean) => Uint32Array;
 
-export type QueryNode = Uint32SparseSet & {
+export type QueryData = Uint32SparseSet & {
 	archetypes: any;
 	changed: any;
 	notComponents: any;
@@ -21,7 +21,7 @@ export type QueryNode = Uint32SparseSet & {
 	generations: any;
 	flatProps: any;
 	toRemove: ReturnType<typeof SparseSet>;
-	entered: any;
-	exited: any;
+	enterQueues: ReturnType<typeof SparseSet>[];
+	exitQueues: ReturnType<typeof SparseSet>[];
 	shadows: any;
 };

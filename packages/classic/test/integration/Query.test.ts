@@ -13,6 +13,8 @@ import {
 	defineQuery,
 	enterQuery,
 	Not,
+	defineEnterQueue,
+	defineExitQueue,
 } from '../../src/index.js';
 import { describe, it, afterEach } from 'vitest';
 
@@ -20,6 +22,7 @@ describe('Query Integration Tests', () => {
 	afterEach(() => {
 		resetGlobals();
 	});
+
 	it('should define a query and return matching eids', () => {
 		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
@@ -37,6 +40,7 @@ describe('Query Integration Tests', () => {
 		ents = query(world);
 		strictEqual(ents.length, 0);
 	});
+
 	it('should define a query with Not and return matching eids', () => {
 		const world = createWorld();
 		const Foo = defineComponent({ value: Types.f32 });
@@ -64,6 +68,7 @@ describe('Query Integration Tests', () => {
 		ents = notFooQuery(world);
 		strictEqual(ents.length, 0);
 	});
+
 	it('should correctly populate Not queries when adding/removing components', () => {
 		const world = createWorld();
 
@@ -165,6 +170,7 @@ describe('Query Integration Tests', () => {
 		strictEqual(ents[1], 0);
 		strictEqual(ents[2], 2);
 	});
+
 	it('should define a query with Changed and return matching eids whose component state has changed', () => {
 		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
@@ -184,6 +190,7 @@ describe('Query Integration Tests', () => {
 		strictEqual(ents.length, 1);
 		strictEqual(ents[0], eid1);
 	});
+
 	it('should define a query for an array component with Changed and return matching eids whose component state has changed', () => {
 		const world = createWorld();
 		const ArrayComponent = defineComponent({ value: [Types.f32, 3] });
@@ -203,6 +210,7 @@ describe('Query Integration Tests', () => {
 		strictEqual(ents.length, 1);
 		strictEqual(ents[0], eid1);
 	});
+
 	it('should return entities from enter/exitQuery who entered/exited the query', () => {
 		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
@@ -230,6 +238,7 @@ describe('Query Integration Tests', () => {
 		strictEqual(exited.length, 1);
 		strictEqual(exited[0], 0);
 	});
+
 	it("shouldn't pick up entities in enterQuery after adding a component a second time", () => {
 		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
@@ -246,5 +255,56 @@ describe('Query Integration Tests', () => {
 
 		const entered2 = enteredQuery(world);
 		strictEqual(entered2.length, 0);
+	});
+
+	it('should define independent enter queues', () => {
+		const world = createWorld();
+		const TestComponent = defineComponent({ value: Types.f32 });
+		const query = defineQuery([TestComponent]);
+
+		const enteredQueryA = defineEnterQueue(query);
+		const enteredQueryB = defineEnterQueue(query);
+
+		const eidA = addEntity(world);
+		const eidB = addEntity(world);
+		addComponent(world, TestComponent, eidA);
+
+		let enteredA = enteredQueryA(world);
+
+		strictEqual(enteredA.length, 1);
+
+		addComponent(world, TestComponent, eidB);
+
+		enteredA = enteredQueryA(world);
+		let enteredB = enteredQueryB(world);
+
+		strictEqual(enteredA.length, 1);
+		strictEqual(enteredB.length, 2);
+	});
+
+	it('should define independent exit queues', () => {
+		const world = createWorld();
+		const TestComponent = defineComponent({ value: Types.f32 });
+		const query = defineQuery([TestComponent]);
+
+		const exitedQueryA = defineExitQueue(query);
+		const exitedQueryB = defineExitQueue(query);
+
+		const eidA = addEntity(world);
+		const eidB = addEntity(world);
+		addComponent(world, TestComponent, eidA);
+		addComponent(world, TestComponent, eidB);
+
+		let exitedA = exitedQueryA(world);
+
+		strictEqual(exitedA.length, 0);
+
+		removeComponent(world, TestComponent, eidA);
+
+		exitedA = exitedQueryA(world);
+		let exitedB = exitedQueryB(world);
+
+		strictEqual(exitedA.length, 1);
+		strictEqual(exitedB.length, 1);
 	});
 });

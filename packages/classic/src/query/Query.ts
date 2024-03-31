@@ -14,10 +14,10 @@ import {
 	$queryAll,
 	$queryAny,
 	$queryComponents,
-	$queryMap,
+	$queryDataMap,
 	$queryNone,
 } from './symbols.js';
-import { Query, QueryModifier, QueryNode } from './types.js';
+import { Query, QueryModifier, QueryData } from './types.js';
 import { World } from '../world/types.js';
 import { createShadow } from '../storage/Storage.js';
 import { $storeFlattened, $tagStore } from '../storage/symbols.js';
@@ -49,48 +49,6 @@ export function None(...comps: Component[]) {
 }
 
 const empty = Object.freeze([] as number[]);
-
-/**
- * Given an existing query, returns a new function which returns entities who have been added to the given query since the last call of the function.
- *
- * @param {function} query
- * @returns {function} enteredQuery
- */
-export const enterQuery =
-	(query: Query) =>
-	(world: World): readonly number[] => {
-		if (!world[$queryMap].has(query)) registerQuery(world, query);
-		const q = world[$queryMap].get(query)!;
-
-		if (q.entered.dense.length === 0) {
-			return empty;
-		} else {
-			const results = q.entered.dense.slice();
-			q.entered.reset();
-			return results;
-		}
-	};
-
-/**
- * Given an existing query, returns a new function which returns entities who have been removed from the given query since the last call of the function.
- *
- * @param {function} query
- * @returns {function} enteredQuery
- */
-export const exitQuery =
-	(query: Query) =>
-	(world: World): readonly number[] => {
-		if (!world[$queryMap].has(query)) registerQuery(world, query);
-		const q = world[$queryMap].get(query)!;
-
-		if (q.exited.dense.length === 0) {
-			return empty;
-		} else {
-			const results = q.exited.dense.slice();
-			q.exited.reset();
-			return results;
-		}
-	};
 
 export const registerQuery = (world: World, query: TODO) => {
 	const components: TODO = [];
@@ -124,8 +82,10 @@ export const registerQuery = (world: World, query: TODO) => {
 	// const changed = SparseSet()
 	const changed: TODO = [];
 	const toRemove = SparseSet();
-	const entered = SparseSet();
-	const exited = SparseSet();
+
+	// A default queue is created and index 0 to be used for enterQuery and exitQuery.
+	const enterQueues = [SparseSet()];
+	const exitQueues = [SparseSet()];
 
 	const generations = allComponents
 		.map((c: TODO) => c.generationId)
@@ -168,12 +128,12 @@ export const registerQuery = (world: World, query: TODO) => {
 		generations,
 		flatProps,
 		toRemove,
-		entered,
-		exited,
+		enterQueues,
+		exitQueues,
 		shadows,
 	});
 
-	world[$queryMap].set(query, q);
+	world[$queryDataMap].set(query, q);
 	world[$queries].add(q);
 
 	allComponents.forEach((c: TODO) => {
@@ -273,9 +233,9 @@ export const defineQuery = (...args: TODO) => {
 	}
 
 	const query = function (world: World, clearDiff = true): Uint32Array {
-		if (!world[$queryMap].has(query)) registerQuery(world, query);
+		if (!world[$queryDataMap].has(query)) registerQuery(world, query);
 
-		const q = world[$queryMap].get(query)!;
+		const q = world[$queryDataMap].get(query)!;
 
 		commitRemovals(world);
 
@@ -293,7 +253,6 @@ export const defineQuery = (...args: TODO) => {
 	return query;
 };
 
-// TODO: archetype graph
 export const queryCheckEntity = (world: World, q: TODO, eid: number) => {
 	const { masks, notMasks, generations } = q;
 	let or = 0;
@@ -323,20 +282,30 @@ export const queryCheckEntity = (world: World, q: TODO, eid: number) => {
 	return true;
 };
 
-export const queryCheckComponent = (q: QueryNode, c: TODO) => {
+export const queryCheckComponent = (q: QueryData, c: TODO) => {
 	const { generationId, bitflag } = c;
 	const { hasMasks } = q;
 	const mask = hasMasks[generationId];
 	return (mask & bitflag) === bitflag;
 };
 
-export const queryAddEntity = (q: QueryNode, eid: number) => {
+export const queryAddEntity = (q: QueryData, eid: number) => {
 	q.toRemove.remove(eid);
-	q.entered.add(eid);
+
+	// Add to all entered queues.
+	for (let i = 0; i < q.enterQueues.length; i++) {
+		q.enterQueues[i].add(eid);
+	}
+
+	// Remove from all exited queues.
+	for (let i = 0; i < q.exitQueues.length; i++) {
+		q.exitQueues[i].remove(eid);
+	}
+
 	Uint32SparseSet.add(q, eid);
 };
 
-const queryCommitRemovals = (q: QueryNode) => {
+const queryCommitRemovals = (q: QueryData) => {
 	for (let i = q.toRemove.dense.length - 1; i >= 0; i--) {
 		const eid = q.toRemove.dense[i];
 		q.toRemove.remove(eid);
@@ -350,12 +319,20 @@ export const commitRemovals = (world: World) => {
 	world[$dirtyQueries].clear();
 };
 
-export const queryRemoveEntity = (world: World, q: QueryNode, eid: number) => {
-	// if (!q.has(eid) || q.toRemove.has(eid)) return;
+export const queryRemoveEntity = (world: World, q: QueryData, eid: number) => {
 	if (!Uint32SparseSet.has(q, eid) || q.toRemove.has(eid)) return;
 	q.toRemove.add(eid);
 	world[$dirtyQueries].add(q);
-	q.exited.add(eid);
+
+	// Add to all exited queues.
+	for (let i = 0; i < q.exitQueues.length; i++) {
+		q.exitQueues[i].add(eid);
+	}
+
+	// Remove from all entered queues.
+	for (let i = 0; i < q.enterQueues.length; i++) {
+		q.enterQueues[i].remove(eid);
+	}
 };
 
 /**
@@ -365,7 +342,7 @@ export const queryRemoveEntity = (world: World, q: QueryNode, eid: number) => {
  * @param {function} query
  */
 export const resetChangedQuery = (world: World, query: TODO) => {
-	const q = world[$queryMap].get(query)!;
+	const q = world[$queryDataMap].get(query)!;
 	q.changed = [];
 };
 
@@ -376,7 +353,108 @@ export const resetChangedQuery = (world: World, query: TODO) => {
  * @param {function} query
  */
 export const removeQuery = (world: World, query: Query) => {
-	const q = world[$queryMap].get(query)!;
+	const q = world[$queryDataMap].get(query)!;
 	world[$queries].delete(q);
-	world[$queryMap].delete(query);
+	world[$queryDataMap].delete(query);
 };
+
+export function defineEnterQueue(query: Query) {
+	let index = -1;
+
+	return (world: World) => {
+		// Register query if it isn't already.
+		if (!world[$queryDataMap].has(query)) registerQuery(world, query);
+
+		// Get query data.
+		const data = world[$queryDataMap].get(query)!;
+
+		if (index === -1) {
+			index = data.enterQueues.push(SparseSet()) - 1;
+
+			// Fill the queue with all current entities.
+			for (let i = 0; i < data.dense.length; i++) {
+				data.enterQueues[index].add(data.dense[i]);
+			}
+		}
+
+		if (data.enterQueues[index].dense.length === 0) {
+			return empty;
+		} else {
+			const results = data.enterQueues[index].dense.slice();
+			data.enterQueues[index].reset();
+			return results;
+		}
+	};
+}
+
+export function defineExitQueue(query: Query) {
+	let index = -1;
+
+	return (world: World) => {
+		// Register query if it isn't already.
+		if (!world[$queryDataMap].has(query)) registerQuery(world, query);
+
+		// Get query data.
+		const data = world[$queryDataMap].get(query)!;
+
+		if (index === -1) {
+			index = data.exitQueues.push(SparseSet()) - 1;
+
+			// TODO: toRemove is not an accurate way to get all entities removed.
+			// Fill the queue with all entities removed since defining the query.
+			for (let i = 0; i < data.toRemove.dense.length; i++) {
+				data.exitQueues[index].add(data.toRemove.dense[i]);
+			}
+		}
+
+		if (data.exitQueues[index].dense.length === 0) {
+			return empty;
+		} else {
+			const results = data.exitQueues[index].dense.slice();
+			data.exitQueues[index].reset();
+			return results;
+		}
+	};
+}
+
+/**
+ * Given an existing query, returns a new function which returns entities who have been added to the given query since the last call of the function.
+ *
+ * @param {function} query
+ * @returns {function} enteredQuery
+ */
+export const enterQuery =
+	(query: Query) =>
+	(world: World): readonly number[] => {
+		if (!world[$queryDataMap].has(query)) registerQuery(world, query);
+		const q = world[$queryDataMap].get(query)!;
+
+		if (q.enterQueues[0].dense.length === 0) {
+			return empty;
+		} else {
+			const results = q.enterQueues[0].dense.slice();
+			q.enterQueues[0].reset();
+			return results;
+		}
+	};
+
+/**
+ * Given an existing query, returns a new function which returns entities who have been removed from the given query since the last call of the function.
+ *
+ * @param {function} query
+ * @returns {function} enteredQuery
+ */
+export const exitQuery =
+	(query: Query) =>
+	(world: World): readonly number[] => {
+		if (!world[$queryDataMap].has(query)) registerQuery(world, query);
+		const q = world[$queryDataMap].get(query)!;
+
+		if (q.exitQueues[0].dense.length === 0) {
+			return empty;
+		} else {
+			const results = q.exitQueues[0].dense.slice();
+			q.exitQueues[0].reset();
+			return results;
+		}
+	};

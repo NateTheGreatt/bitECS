@@ -1,4 +1,4 @@
-import { $dirtyQueries, $notQueries, $queries, $queryMap } from '../query/symbols';
+import { $dirtyQueries, $notQueries, $queries, $queryDataMap } from '../query/symbols';
 import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from '../entity/symbols';
 import {
 	$archetypes,
@@ -10,7 +10,7 @@ import {
 	$size,
 } from './symbols';
 import { $componentMap } from '../component/symbols';
-import { Query, QueryNode } from '../query/types';
+import { Query, QueryData } from '../query/types';
 import { Component, ComponentNode } from '../component/types';
 import { SparseSet } from '../utils/SparseSet';
 
@@ -24,8 +24,8 @@ export interface World {
 	[$entitySparseSet]: ReturnType<typeof SparseSet>;
 	[$bitflag]: number;
 	[$componentMap]: Map<Component, ComponentNode>;
-	[$queryMap]: Map<Query, QueryNode>;
-	[$queries]: Set<QueryNode>;
+	[$queryDataMap]: Map<Query, QueryData>;
+	[$queries]: Set<QueryData>;
 	[$notQueries]: Set<any>;
 	[$dirtyQueries]: Set<any>;
 	[$localEntities]: Map<any, any>;

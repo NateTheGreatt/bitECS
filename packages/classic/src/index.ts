@@ -37,6 +37,8 @@ export {
 	commitRemovals,
 	resetChangedQuery,
 	removeQuery,
+	defineEnterQueue,
+	defineExitQueue,
 } from './query/Query.js';
 export { defineSerializer, defineDeserializer, DESERIALIZE_MODE } from './serialize/Serialize.js';
 export { parentArray } from './storage/Storage.js';

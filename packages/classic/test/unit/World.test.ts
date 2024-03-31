@@ -5,7 +5,7 @@ import { createWorld } from '../../src/world/World.js';
 import { describe, it, afterEach } from 'vitest';
 import { $bitflag, $size } from '../../src/world/symbols.js';
 import { $entityMasks } from '../../src/entity/symbols.js';
-import { $dirtyQueries, $queries, $queryMap } from '../../src/query/symbols.js';
+import { $dirtyQueries, $queries, $queryDataMap } from '../../src/query/symbols.js';
 
 const defaultSize = getDefaultSize();
 
@@ -28,7 +28,7 @@ describe('World Unit Tests', () => {
 		strictEqual(world[$bitflag], 1);
 
 		strictEqual(world[$componentMap].constructor.name, 'Map');
-		strictEqual(world[$queryMap].constructor.name, 'Map');
+		strictEqual(world[$queryDataMap].constructor.name, 'Map');
 		strictEqual(world[$queries].constructor.name, 'Set');
 		strictEqual(world[$dirtyQueries].constructor.name, 'Set');
 	});
