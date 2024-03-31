@@ -1,7 +1,7 @@
 type PairType = string | number | object;
 export type Pair = { relation: PairType; target: PairType };
 const pairsMap = new Map<PairType, Map<PairType, Pair>>();
-export const Pair = (relation: PairType, target: PairType) => {
+export const Pair = (relation: PairType, target: PairType): Pair => {
   // If a is not in the Map, add it.
   if (!pairsMap.has(relation)) {
     pairsMap.set(relation, new Map<PairType, Pair>());
@@ -14,5 +14,5 @@ export const Pair = (relation: PairType, target: PairType) => {
     innerMap.set(target, { relation, target });
   }
 
-  return innerMap.get(target);
+  return innerMap.get(target) as Pair;
 };
