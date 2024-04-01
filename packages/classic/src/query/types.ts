@@ -25,3 +25,5 @@ export type QueryData = Uint32SparseSet & {
 	exitQueues: ReturnType<typeof SparseSet>[];
 	shadows: any;
 };
+
+export type Queue<W extends World = World> = (world: W) => readonly number[];

@@ -21,6 +21,7 @@ import { Query, QueryModifier, QueryData } from './types.js';
 import { World } from '../world/types.js';
 import { createShadow } from '../storage/Storage.js';
 import { $storeFlattened, $tagStore } from '../storage/symbols.js';
+import { EMPTY } from '../constants/Constants.js';
 
 function modifier(c: Component, mod: string): QueryModifier {
 	const inner: TODO = () => [c, mod] as const;
@@ -48,8 +49,6 @@ export function None(...comps: Component[]) {
 	};
 }
 
-const empty = Object.freeze([] as number[]);
-
 export const registerQuery = (world: World, query: TODO) => {
 	const components: TODO = [];
 	const notComponents: TODO = [];
@@ -76,10 +75,8 @@ export const registerQuery = (world: World, query: TODO) => {
 	const allComponents = components.concat(notComponents).map(mapComponents);
 
 	const sparseSet = Uint32SparseSet.create(getGlobalSize());
-	// const sparseSet = SparseSet();
 
 	const archetypes: TODO = [];
-	// const changed = SparseSet()
 	const changed: TODO = [];
 	const toRemove = SparseSet();
 
@@ -358,65 +355,6 @@ export const removeQuery = (world: World, query: Query) => {
 	world[$queryDataMap].delete(query);
 };
 
-export function defineEnterQueue(query: Query) {
-	let index = -1;
-
-	return (world: World) => {
-		// Register query if it isn't already.
-		if (!world[$queryDataMap].has(query)) registerQuery(world, query);
-
-		// Get query data.
-		const data = world[$queryDataMap].get(query)!;
-
-		if (index === -1) {
-			index = data.enterQueues.push(SparseSet()) - 1;
-
-			// Fill the queue with all current entities.
-			for (let i = 0; i < data.dense.length; i++) {
-				data.enterQueues[index].add(data.dense[i]);
-			}
-		}
-
-		if (data.enterQueues[index].dense.length === 0) {
-			return empty;
-		} else {
-			const results = data.enterQueues[index].dense.slice();
-			data.enterQueues[index].reset();
-			return results;
-		}
-	};
-}
-
-export function defineExitQueue(query: Query) {
-	let index = -1;
-
-	return (world: World) => {
-		// Register query if it isn't already.
-		if (!world[$queryDataMap].has(query)) registerQuery(world, query);
-
-		// Get query data.
-		const data = world[$queryDataMap].get(query)!;
-
-		if (index === -1) {
-			index = data.exitQueues.push(SparseSet()) - 1;
-
-			// TODO: toRemove is not an accurate way to get all entities removed.
-			// Fill the queue with all entities removed since defining the query.
-			for (let i = 0; i < data.toRemove.dense.length; i++) {
-				data.exitQueues[index].add(data.toRemove.dense[i]);
-			}
-		}
-
-		if (data.exitQueues[index].dense.length === 0) {
-			return empty;
-		} else {
-			const results = data.exitQueues[index].dense.slice();
-			data.exitQueues[index].reset();
-			return results;
-		}
-	};
-}
-
 /**
  * Given an existing query, returns a new function which returns entities who have been added to the given query since the last call of the function.
  *
@@ -430,7 +368,7 @@ export const enterQuery =
 		const q = world[$queryDataMap].get(query)!;
 
 		if (q.enterQueues[0].dense.length === 0) {
-			return empty;
+			return EMPTY;
 		} else {
 			const results = q.enterQueues[0].dense.slice();
 			q.enterQueues[0].reset();
@@ -451,7 +389,7 @@ export const exitQuery =
 		const q = world[$queryDataMap].get(query)!;
 
 		if (q.exitQueues[0].dense.length === 0) {
-			return empty;
+			return EMPTY;
 		} else {
 			const results = q.exitQueues[0].dense.slice();
 			q.exitQueues[0].reset();

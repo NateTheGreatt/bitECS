@@ -15,6 +15,7 @@ import {
 	Not,
 	defineEnterQueue,
 	defineExitQueue,
+	registerQuery,
 } from '../../src/index.js';
 import { describe, it, afterEach } from 'vitest';
 
@@ -262,6 +263,9 @@ describe('Query Integration Tests', () => {
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const query = defineQuery([TestComponent]);
 
+		// Register the query so queues track immediately.
+		registerQuery(world, query);
+
 		const enteredQueryA = defineEnterQueue(query);
 		const enteredQueryB = defineEnterQueue(query);
 
@@ -286,6 +290,9 @@ describe('Query Integration Tests', () => {
 		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const query = defineQuery([TestComponent]);
+
+		// Register the query so queues track immediately.
+		registerQuery(world, query);
 
 		const exitedQueryA = defineExitQueue(query);
 		const exitedQueryB = defineExitQueue(query);
