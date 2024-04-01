@@ -10,6 +10,7 @@ import { QueryData } from '../query/types.js';
 import { Schema } from '../storage/types.js';
 import { createStore, resetStoreFor } from '../storage/Storage.js';
 import { getGlobalSize } from '../entity/Entity.js';
+import { $isPairComponent, $relation, Pair, Wildcard } from '../relation/Relation.js';
 
 export const components: Component[] = [];
 
@@ -141,6 +142,11 @@ export const addComponent = (world: World, component: Component, eid: number, re
 
 	// Zero out each property value.
 	if (reset) resetStoreFor(component, eid);
+
+	// Add wildcard relation if its a Pair component
+	if (component[$isPairComponent]) {
+		addComponent(world, Pair(component[$relation], Wildcard), eid)
+	}
 };
 
 /**

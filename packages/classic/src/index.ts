@@ -44,7 +44,7 @@ export { defineSerializer, defineDeserializer, DESERIALIZE_MODE } from './serial
 export { parentArray } from './storage/Storage.js';
 export { TYPES_ENUM as Types } from './constants/Constants.js';
 export { pipe } from './utils/pipe.js';
-export { type RelationType, defineRelation, Pair } from './relation/Relation.js';
+export { type RelationType, defineRelation, Pair, Wildcard } from './relation/Relation.js';
 
 // Types
 export * from './component/types.js';
