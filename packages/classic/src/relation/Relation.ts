@@ -5,7 +5,7 @@ const $pairsMap = Symbol('pairsMap')
 export const $isPairComponent = Symbol('isPairComponent')
 export const $relation = Symbol('relation')
 
-export const Wildcard = 'Wildcard'
+export const Wildcard = '*'
 
 export type RelationType<T extends Schema> = T & {
     [$pairsMap]: Map<number | string, ComponentType<T>>
