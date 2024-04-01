@@ -199,6 +199,11 @@ export const removeComponent = (world: World, component: Component, eid: number,
 
 	// Zero out each property value.
 	if (reset) resetStoreFor(component, eid);
+
+	// Add wildcard relation if its a Pair component
+	if (component[$isPairComponent]) {
+		removeComponent(world, Pair(component[$relation], Wildcard), eid)
+	}
 };
 
 /**
