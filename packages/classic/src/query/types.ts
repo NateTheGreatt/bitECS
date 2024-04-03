@@ -27,4 +27,4 @@ export type QueryData = IUint32SparseSet & {
 	query: Query;
 };
 
-export type Queue<W extends World = World> = (world: W) => readonly number[];
+export type Queue<W extends World = World> = (world: W, drain?: boolean) => readonly number[];
