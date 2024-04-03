@@ -81,7 +81,7 @@ export const registerComponent = (world: World, component: Component) => {
  * @param {Component[]} components
  */
 export const registerComponents = (world: World, components: Component[]) => {
-	components.forEach((componetn) => registerComponent(world, componetn));
+	components.forEach((component) => registerComponent(world, component));
 };
 
 /**

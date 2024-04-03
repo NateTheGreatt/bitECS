@@ -11,6 +11,7 @@ import {
 	$modifier,
 	$notQueries,
 	$queries,
+	$queriesHashMap,
 	$queryAll,
 	$queryAny,
 	$queryComponents,
@@ -47,6 +48,15 @@ export function None(...comps: Component[]) {
 	return function QueryNone() {
 		return comps;
 	};
+}
+
+const archetypeHash = (world: World, components: Component[]) => {
+	return components.reduce((acc,component) => {
+		if (!world[$componentMap].has(component)) registerComponent(world, component);
+		const componentNode = world[$componentMap].get(component)!
+		acc += `-${componentNode.generationId}-${componentNode.bitflag}`
+		return acc
+	}, '')
 }
 
 export const registerQuery = (world: World, query: TODO) => {
@@ -132,6 +142,9 @@ export const registerQuery = (world: World, query: TODO) => {
 
 	world[$queryDataMap].set(query, q);
 	world[$queries].add(q);
+
+	const hash = archetypeHash(world, components)
+	world[$queriesHashMap].set(hash, query);
 
 	allComponents.forEach((c: TODO) => {
 		c.queries.add(q);
@@ -249,6 +262,16 @@ export const defineQuery = (...args: TODO) => {
 
 	return query;
 };
+
+export const query = (world: World, components: Component[]) => {
+	const hash = archetypeHash(world, components)
+	let query = world[$queriesHashMap].get(hash)
+	if (!query) {
+		return defineQuery(components)(world)
+	} else {
+		return query(world)
+	}
+}
 
 export const queryCheckEntity = (world: World, q: TODO, eid: number) => {
 	const { masks, notMasks, generations } = q;

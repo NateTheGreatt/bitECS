@@ -1,4 +1,4 @@
-import { $dirtyQueries, $notQueries, $queries, $queryDataMap } from '../query/symbols';
+import { $dirtyQueries, $notQueries, $queries, $queriesHashMap, $queryDataMap } from '../query/symbols';
 import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from '../entity/symbols';
 import {
 	$archetypes,
@@ -26,6 +26,7 @@ export interface World {
 	[$componentMap]: Map<Component, ComponentNode>;
 	[$queryDataMap]: Map<Query, QueryData>;
 	[$queries]: Set<QueryData>;
+	[$queriesHashMap]: Map<string, Query>;
 	[$notQueries]: Set<any>;
 	[$dirtyQueries]: Set<any>;
 	[$localEntities]: Map<any, any>;

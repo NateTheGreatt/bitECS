@@ -3,6 +3,8 @@ export const $modifier = Symbol('$modifier');
 export const $queries = Symbol('queries');
 export const $notQueries = Symbol('notQueries');
 
+export const $queriesHashMap = Symbol('queriesHashMap')
+
 export const $queryAny = Symbol('queryAny');
 export const $queryAll = Symbol('queryAll');
 export const $queryNone = Symbol('queryNone');

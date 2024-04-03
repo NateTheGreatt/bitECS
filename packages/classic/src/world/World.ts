@@ -1,5 +1,5 @@
 import { $componentMap } from '../component/symbols.js';
-import { $queryDataMap, $queries, $dirtyQueries, $notQueries } from '../query/symbols.js';
+import { $queryDataMap, $queries, $dirtyQueries, $notQueries, $queriesHashMap } from '../query/symbols.js';
 import { getGlobalSize, removeEntity } from '../entity/Entity.js';
 import { World } from './types.js';
 import {
@@ -40,7 +40,7 @@ export const resizeWorlds = (size: number) => {
  *
  * @returns {object}
  */
-export function createWorld<W extends World = World>(world?: W, size?: number): W;
+export function createWorld<W extends object = {}>(world?: W, size?: number): W & World;
 export function createWorld<W extends World = World>(size?: number): W;
 export function createWorld(...args: any[]) {
 	const world = typeof args[0] === 'object' ? args[0] : {};
@@ -83,6 +83,7 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
 
 	world[$queryDataMap] = new Map();
 	world[$queries] = new Set();
+	world[$queriesHashMap] = new Map();
 	world[$notQueries] = new Set();
 	world[$dirtyQueries] = new Set();
 
