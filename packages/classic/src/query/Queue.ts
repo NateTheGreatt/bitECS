@@ -18,7 +18,7 @@ export function defineEnterQueue(query: Query): Queue {
 		}
 	}
 
-	return (world: World) => {
+	return (world: World, drain = true) => {
 		// Register the query if it isn't already.
 		if (!world[$queryDataMap].has(query)) registerQuery(world, query);
 
@@ -33,8 +33,10 @@ export function defineEnterQueue(query: Query): Queue {
 		if (data.enterQueues[index].dense.length === 0) {
 			return EMPTY;
 		} else {
-			const results = data.enterQueues[index].dense.slice();
-			data.enterQueues[index].reset();
+			const results = drain 
+				? data.enterQueues[index].dense.slice()
+				: data.enterQueues[index].dense;
+			if (drain) data.enterQueues[index].reset();
 			return results;
 		}
 	};
@@ -52,7 +54,7 @@ export function defineExitQueue(query: Query): Queue {
 		}
 	}
 
-	return (world: World) => {
+	return (world: World, drain = true) => {
 		// Register the query if it isn't already.
 		if (!world[$queryDataMap].has(query)) registerQuery(world, query);
 
@@ -67,8 +69,10 @@ export function defineExitQueue(query: Query): Queue {
 		if (data.exitQueues[index].dense.length === 0) {
 			return EMPTY;
 		} else {
-			const results = data.exitQueues[index].dense.slice();
-			data.exitQueues[index].reset();
+			const results = drain 
+				? data.exitQueues[index].dense.slice() 
+				: data.exitQueues[index].dense;
+			if (drain) data.exitQueues[index].reset();
 			return results;
 		}
 	};
