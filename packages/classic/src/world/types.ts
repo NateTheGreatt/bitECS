@@ -26,7 +26,7 @@ export interface World {
 	[$componentMap]: Map<Component, ComponentNode>;
 	[$queryDataMap]: Map<Query, QueryData>;
 	[$queries]: Set<QueryData>;
-	[$queriesHashMap]: Map<string, Query>;
+	[$queriesHashMap]: Map<string, QueryData>;
 	[$notQueries]: Set<any>;
 	[$dirtyQueries]: Set<any>;
 	[$localEntities]: Map<any, any>;

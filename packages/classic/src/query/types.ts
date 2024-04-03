@@ -24,6 +24,7 @@ export type QueryData = IUint32SparseSet & {
 	enterQueues: ReturnType<typeof SparseSet>[];
 	exitQueues: ReturnType<typeof SparseSet>[];
 	shadows: any;
+	query: Query;
 };
 
 export type Queue<W extends World = World> = (world: W) => readonly number[];

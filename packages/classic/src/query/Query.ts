@@ -138,13 +138,14 @@ export const registerQuery = (world: World, query: TODO) => {
 		enterQueues,
 		exitQueues,
 		shadows,
+		query,
 	});
 
 	world[$queryDataMap].set(query, q);
 	world[$queries].add(q);
 
 	const hash = archetypeHash(world, components)
-	world[$queriesHashMap].set(hash, query);
+	world[$queriesHashMap].set(hash, q);
 
 	allComponents.forEach((c: TODO) => {
 		c.queries.add(q);
@@ -265,11 +266,11 @@ export const defineQuery = (...args: TODO) => {
 
 export const query = (world: World, components: Component[]) => {
 	const hash = archetypeHash(world, components)
-	let query = world[$queriesHashMap].get(hash)
-	if (!query) {
+	let queryData = world[$queriesHashMap].get(hash)
+	if (!queryData) {
 		return defineQuery(components)(world)
 	} else {
-		return query(world)
+		return queryData.query(world)
 	}
 }
 
