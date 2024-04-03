@@ -4,7 +4,7 @@ const $dense = Symbol('dense');
 const $length = Symbol('length');
 const $buffer = Symbol('buffer');
 
-export interface Uint32SparseSet {
+export interface IUint32SparseSet {
 	sparse: number[];
 	dense: Uint32Array;
 	[$dense]: Uint32Array;
@@ -15,7 +15,7 @@ export interface Uint32SparseSet {
 export function createUint32SparseSet(
 	initialCapacity: number,
 	maxCapacity: number = initialCapacity
-): Uint32SparseSet {
+): IUint32SparseSet {
 	const buffer = isSabSupported()
 		? // @ts-expect-error - TS Doesn't know buffers can grow
 		  new SharedArrayBuffer(initialCapacity * Uint32Array.BYTES_PER_ELEMENT, {
@@ -41,7 +41,7 @@ export function createUint32SparseSet(
 	};
 }
 
-export function sparseSetAdd(sparseSet: Uint32SparseSet, value: number): void {
+export function sparseSetAdd(sparseSet: IUint32SparseSet, value: number): void {
 	if (sparseSet[$length] + 1 > sparseSet[$dense].length) {
 		sparseSetGrow(sparseSet, Math.max(value, sparseSet[$length] * 2));
 	}
@@ -52,14 +52,14 @@ export function sparseSetAdd(sparseSet: Uint32SparseSet, value: number): void {
 	}
 }
 
-export function sparseSetHas(sparseSet: Uint32SparseSet, value: number): boolean {
+export function sparseSetHas(sparseSet: IUint32SparseSet, value: number): boolean {
 	return (
 		sparseSet.sparse[value] < sparseSet[$length] &&
 		sparseSet[$dense][sparseSet.sparse[value]] === value
 	);
 }
 
-export function sparseSetRemove(sparseSet: Uint32SparseSet, value: number): void {
+export function sparseSetRemove(sparseSet: IUint32SparseSet, value: number): void {
 	if (sparseSetHas(sparseSet, value)) {
 		const denseIndex = sparseSet.sparse[value];
 		sparseSet[$dense][denseIndex] = sparseSet[$dense][sparseSet[$length] - 1];
@@ -69,17 +69,17 @@ export function sparseSetRemove(sparseSet: Uint32SparseSet, value: number): void
 	}
 }
 
-export function sparseSetGrow(sparseSet: Uint32SparseSet, newCapacity: number): void {
+export function sparseSetGrow(sparseSet: IUint32SparseSet, newCapacity: number): void {
 	// @ts-expect-error - TS Doesn't know SAB can grow
 	sparseSet[$buffer].grow(newCapacity * Uint32Array.BYTES_PER_ELEMENT);
 	sparseSet[$dense] = new Uint32Array(sparseSet[$buffer]);
 }
 
-export function sparseSetGetLength(sparseSet: Uint32SparseSet): number {
+export function sparseSetGetLength(sparseSet: IUint32SparseSet): number {
 	return sparseSet[$length];
 }
 
-export function sparseSetGetDense(sparseSet: Uint32SparseSet): Uint32Array {
+export function sparseSetGetDense(sparseSet: IUint32SparseSet): Uint32Array {
 	return new Uint32Array(sparseSet[$buffer], 0, sparseSet[$length]);
 }
 

@@ -1,7 +1,7 @@
 import { strictEqual, deepEqual } from "assert"
 import { test, describe, beforeEach } from "vitest"
 import { 
-    type SpatialGrid,
+    type ISpatialGrid,
     createSpatialGrid,
     spatialGridToCell,
     spatialGridIndexOf,
@@ -18,7 +18,7 @@ import {
 } from "./SpatialGrid"
 
 describe("SpatialGrid", () => {
-    let grid: SpatialGrid
+    let grid: ISpatialGrid
     
     beforeEach(() => {
         grid = createSpatialGrid({ cellsHigh: 10, cellsWide: 10, cellSize: 10 })
