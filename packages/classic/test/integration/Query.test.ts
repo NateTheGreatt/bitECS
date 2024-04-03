@@ -314,4 +314,60 @@ describe('Query Integration Tests', () => {
 		strictEqual(exitedA.length, 1);
 		strictEqual(exitedB.length, 1);
 	});
+
+	it('should only start tracking changes in queues after registering the query', () => {
+		const world = createWorld();
+		const TestComponent = defineComponent({ value: Types.f32 });
+		const query = defineQuery([TestComponent]);
+
+		const enteredQuery = defineEnterQueue(query);
+
+		const eid = addEntity(world);
+		addComponent(world, TestComponent, eid);
+
+		// First call lazy registers the query.
+		let entered = enteredQuery(world);
+		strictEqual(entered.length, 0);
+
+		// Now the query is registered and tracking changes.
+		removeComponent(world, TestComponent, eid);
+		addComponent(world, TestComponent, eid);
+
+		entered = enteredQuery(world);
+		strictEqual(entered.length, 1);
+
+		// Alternatively you can register the query manually to start tracking right away.
+		const query2 = defineQuery([TestComponent]);
+		registerQuery(world, query2);
+
+		const extiQuery = defineExitQueue(query2);
+		removeComponent(world, TestComponent, eid);
+
+		const exited = extiQuery(world);
+		strictEqual(exited.length, 1);
+	});
+
+	it('should optionally not drain queues when read', () => {
+		const world = createWorld();
+		const TestComponent = defineComponent({ value: Types.f32 });
+		const query = defineQuery([TestComponent]);
+		registerQuery(world, query);
+
+		const enteredQuery = defineEnterQueue(query);
+
+		const eid = addEntity(world);
+		addComponent(world, TestComponent, eid);
+
+		let entered = enteredQuery(world, false);
+		strictEqual(entered.length, 1);
+
+		entered = enteredQuery(world, false);
+		strictEqual(entered.length, 1);
+
+		entered = enteredQuery(world, true);
+		strictEqual(entered.length, 1);
+
+		entered = enteredQuery(world, false);
+		strictEqual(entered.length, 0);
+	});
 });
