@@ -1,4 +1,10 @@
-import { $dirtyQueries, $notQueries, $queries, $queriesHashMap, $queryDataMap } from '../query/symbols';
+import {
+	$dirtyQueries,
+	$notQueries,
+	$queries,
+	$queriesHashMap,
+	$queryDataMap,
+} from '../query/symbols';
 import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from '../entity/symbols';
 import {
 	$archetypes,
@@ -15,7 +21,6 @@ import { Component, ComponentNode } from '../component/types';
 import { SparseSet } from '../utils/SparseSet';
 
 export interface World {
-	[key: string]: any;
 	[$size]: number;
 	[$entityArray]: number[];
 	[$entityMasks]: Uint32Array[];
