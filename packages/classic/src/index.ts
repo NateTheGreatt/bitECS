@@ -5,6 +5,7 @@ export {
 	getWorldComponents,
 	getAllEntities,
 	enableManualEntityRecycling,
+	worlds,
 } from './world/World.js';
 export {
 	addEntity,
