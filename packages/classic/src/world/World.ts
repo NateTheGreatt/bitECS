@@ -1,5 +1,11 @@
 import { $componentMap } from '../component/symbols.js';
-import { $queryDataMap, $queries, $dirtyQueries, $notQueries, $queriesHashMap } from '../query/symbols.js';
+import {
+	$queryDataMap,
+	$queries,
+	$dirtyQueries,
+	$notQueries,
+	$queriesHashMap,
+} from '../query/symbols.js';
 import { getGlobalSize, removeEntity } from '../entity/Entity.js';
 import { World } from './types.js';
 import {
@@ -101,12 +107,15 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
  * @param {World} world
  */
 export const deleteWorld = (world: World) => {
+	// Delete all symbol properties
 	Object.getOwnPropertySymbols(world).forEach(($) => {
 		delete world[$ as keyof World];
 	});
+	// Delete all string properties too, even though there shouldn't be any
 	Object.keys(world).forEach((key) => {
-		delete world[key as keyof World];
+		delete world[key as unknown as keyof World];
 	});
+	// Remove the world from the worlds array
 	worlds.splice(worlds.indexOf(world), 1);
 };
 
