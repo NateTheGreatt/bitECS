@@ -55,3 +55,18 @@ export * from './storage/types.js';
 export * from './system/types.js';
 export * from './world/types.js';
 export * from './utils/types.js';
+
+// Symbols
+import * as worldSymbols from './world/symbols.js';
+import * as entitySymbols from './entity/symbols.js';
+import * as componentSymbols from './component/symbols.js';
+import * as querySymbols from './query/symbols.js';
+import * as storageSymbols from './storage/symbols.js';
+
+export const SYMBOLS = {
+	...worldSymbols,
+	...entitySymbols,
+	...componentSymbols,
+	...querySymbols,
+	...storageSymbols,
+};
