@@ -39,6 +39,7 @@ export {
 	resetChangedQuery,
 	removeQuery,
 	registerQuery,
+	query,
 } from './query/Query.js';
 export { defineEnterQueue, defineExitQueue } from './query/Queue.js';
 export { defineSerializer, defineDeserializer, DESERIALIZE_MODE } from './serialize/Serialize.js';

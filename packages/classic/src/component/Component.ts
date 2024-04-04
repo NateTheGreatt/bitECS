@@ -3,7 +3,7 @@ import { $bitflag, $size } from '../world/symbols.js';
 import { $entityMasks, $entityComponents } from '../entity/symbols.js';
 import { Component, ComponentNode, ComponentType } from './types.js';
 import { World } from '../world/types.js';
-import { $componentMap } from './symbols.js';
+import { $componentCount, $componentMap } from './symbols.js';
 import { $queries } from '../query/symbols.js';
 import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { QueryData } from '../query/types.js';
@@ -61,6 +61,7 @@ export const registerComponent = (world: World, component: Component) => {
 
 	// Register internal component node with world.
 	const componentNode: ComponentNode = {
+		id: world[$componentCount]++,
 		generationId: world[$entityMasks].length - 1,
 		bitflag: world[$bitflag],
 		ref: component,

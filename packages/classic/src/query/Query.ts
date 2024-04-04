@@ -51,12 +51,19 @@ export function None(...comps: Component[]) {
 }
 
 const archetypeHash = (world: World, components: Component[]) => {
-	return components.reduce((acc,component) => {
-		if (!world[$componentMap].has(component)) registerComponent(world, component);
-		const componentNode = world[$componentMap].get(component)!
-		acc += `-${componentNode.generationId}-${componentNode.bitflag}`
-		return acc
-	}, '')
+	return components
+		.sort((a,b) => {
+			if (!world[$componentMap].has(a)) registerComponent(world, a);
+			if (!world[$componentMap].has(b)) registerComponent(world, b);
+			const aData = world[$componentMap].get(a)!
+			const bData = world[$componentMap].get(b)!
+			return aData.id > bData.id ? 1 : -1
+		})
+		.reduce((acc,component) => {
+			const componentData = world[$componentMap].get(component)!
+			acc += `-${componentData.generationId}-${componentData.bitflag}`
+			return acc
+		}, '')
 }
 
 export const registerQuery = (world: World, query: TODO) => {

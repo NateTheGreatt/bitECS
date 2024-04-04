@@ -1,4 +1,4 @@
-import { $componentMap } from '../component/symbols.js';
+import { $componentCount, $componentMap } from '../component/symbols.js';
 import {
 	$queryDataMap,
 	$queries,
@@ -69,6 +69,7 @@ export function createWorld(...args: any[]) {
 		[$entityArray]: { value: entitySparseSet.dense, writable: true, enumerable: false },
 		[$bitflag]: { value: 1, writable: true, enumerable: false },
 		[$componentMap]: { value: new Map(), writable: true, enumerable: false },
+		[$componentCount]: { value: 0, writable: true, enumerable: false },
 		[$queryDataMap]: { value: new Map(), writable: true, enumerable: false },
 		[$queries]: { value: new Set(), writable: true, enumerable: false },
 		[$queriesHashMap]: { value: new Map(), writable: true, enumerable: false },
@@ -111,6 +112,7 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
 	world[$bitflag] = 1;
 
 	world[$componentMap] = new Map();
+	world[$componentCount] = 0;
 
 	world[$queryDataMap] = new Map();
 	world[$queries] = new Set();

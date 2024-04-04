@@ -15,7 +15,7 @@ import {
 	$resizeThreshold,
 	$size,
 } from './symbols';
-import { $componentMap } from '../component/symbols';
+import { $componentCount, $componentMap } from '../component/symbols';
 import { Query, QueryData } from '../query/types';
 import { Component, ComponentNode } from '../component/types';
 import { SparseSet } from '../utils/SparseSet';
@@ -29,6 +29,7 @@ export interface World {
 	[$entitySparseSet]: ReturnType<typeof SparseSet>;
 	[$bitflag]: number;
 	[$componentMap]: Map<Component, ComponentNode>;
+	[$componentCount]: number;
 	[$queryDataMap]: Map<Query, QueryData>;
 	[$queries]: Set<QueryData>;
 	[$queriesHashMap]: Map<string, QueryData>;

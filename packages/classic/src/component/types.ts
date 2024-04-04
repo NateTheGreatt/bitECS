@@ -6,6 +6,7 @@ import { TypedArray } from '../utils/types';
 export type Component = any;
 
 export interface ComponentNode {
+	id: number;
 	generationId: number;
 	bitflag: number;
 	ref: Component;
