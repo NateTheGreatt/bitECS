@@ -53,6 +53,12 @@ export function None(...comps: Component[]) {
 const archetypeHash = (world: World, components: Component[]) => {
 	return components
 		.sort((a,b) => {
+			if (typeof a === 'function' && a[$modifier]) {
+				a = a()[0]
+			}
+			if (typeof b === 'function' && b[$modifier]) {
+				b = b()[0]
+			}
 			if (!world[$componentMap].has(a)) registerComponent(world, a);
 			if (!world[$componentMap].has(b)) registerComponent(world, b);
 			const aData = world[$componentMap].get(a)!
@@ -60,8 +66,17 @@ const archetypeHash = (world: World, components: Component[]) => {
 			return aData.id > bData.id ? 1 : -1
 		})
 		.reduce((acc,component) => {
+			let mod
+			if (typeof component === 'function' && component[$modifier]) {
+				mod = component()[1]
+				component = component()[0]
+			}
 			const componentData = world[$componentMap].get(component)!
-			acc += `-${componentData.generationId}-${componentData.bitflag}`
+			if (mod) {
+				acc += `-${mod}(${componentData.generationId}-${componentData.bitflag})`
+			} else {
+				acc += `-${componentData.generationId}-${componentData.bitflag}`
+			}
 			return acc
 		}, '')
 }
