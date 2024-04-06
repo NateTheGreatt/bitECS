@@ -3,7 +3,7 @@ import { $bitflag, $size } from '../world/symbols.js';
 import { $entityMasks, $entityComponents } from '../entity/symbols.js';
 import { Component, ComponentNode, ComponentType } from './types.js';
 import { World } from '../world/types.js';
-import { $componentCount, $componentMap } from './symbols.js';
+import { $componentCount, $componentMap, $schema } from './symbols.js';
 import { $queries } from '../query/symbols.js';
 import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { QueryData } from '../query/types.js';
@@ -25,7 +25,10 @@ export const defineComponent = <T extends Schema>(
 	size?: number
 ): ComponentType<T> => {
 	const component = createStore(schema, size || getGlobalSize());
-	if (schema && Object.keys(schema).length) components.push(component);
+	if (schema && Object.keys(schema).length) {
+		component[$schema] = schema;
+		components.push(component);
+	}
 	return component;
 };
 

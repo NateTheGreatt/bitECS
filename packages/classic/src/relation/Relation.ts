@@ -14,7 +14,7 @@ export type RelationType<T extends Schema> = T & {
 export const defineRelation = 
     <T extends Schema>(schema: T = {} as T): RelationType<T> => {
         const relation = schema as RelationType<T>
-        relation[$pairsMap] = new Map()
+        Object.defineProperty(relation, $pairsMap, { enumerable: false, writable: true, value: new Map() })
         return relation
     }
 
