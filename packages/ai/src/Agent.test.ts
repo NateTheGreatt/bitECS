@@ -63,7 +63,7 @@ describe('bitECS AI Agent Tests', async () => {
             testEnts.push(eid)
         }
         const ents = await agent(world, "Find all entities that have the Mana component")
-        assert(ents.length === 20)
+        assert(ents.length === testEnts.length)
         assert(query(world, [Mana]).reduce((result,eid) => result && testEnts.includes(eid), true))
     })
 

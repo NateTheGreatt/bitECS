@@ -605,6 +605,7 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
             Entity IDs are integers.
             Filter operation names are: ${JSON.stringify(Object.keys(FilterOperationNames))}
             You must ALWAYS add a component or relation before setting a value for it.
+            ALWAYS look up entity IDs by name, NEVER assume or make up an entity ID.
             Think step-by-step, and return the word TERMINATE when you are finished with the request.
             
             Here are all of the component definitions:
@@ -690,6 +691,9 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                     const functionToCall = llmFunctions[functionName]
                     const functionArgs = JSON.parse(toolCall.function.arguments)
                     const functionResponse = functionToCall(world)(functionArgs)
+                    console.log('functionName',functionName)
+                    console.log('functionArgs',JSON.stringify(functionArgs,null,2))
+                    console.log('functionResponse',JSON.stringify(functionResponse,null,2))
                     messages.push({
                         tool_call_id: toolCall.id,
                         role: "tool",
