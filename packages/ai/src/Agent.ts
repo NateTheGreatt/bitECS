@@ -17,7 +17,7 @@ export type AddComponentParams = {
 
 export type PropertyValuesParams = {
     propertyName: string
-    propertyValue: string
+    propertyValue: number | string
 }
 
 export type ComponentValueParams = {
@@ -402,7 +402,7 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                                                     description: "The name of the property to set a value for."
                                                 },
                                                 propertyValue: {
-                                                    type: "string",
+                                                    type: ["number", "string"],
                                                     description: "The value to set for the property."
                                                 }
                                             },
@@ -462,7 +462,7 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                                                     description: "The name of the property to set a value for."
                                                 },
                                                 propertyValue: {
-                                                    type: "string",
+                                                    type: ["number", "string"],
                                                     description: "The value to set for the property."
                                                 }
                                             },
@@ -628,16 +628,27 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
             
             type PropertyValuesParams = {
                 propertyName: string
-                propertyValue: string
+                propertyValue: number | string
             }
             
             type ComponentValueParams = {
                 componentName: string
-                setProperties: PropertyValuesParams[]
+                propertyValues: PropertyValuesParams[]
             }
             
             type SetComponentValuesParams = {
                 setComponentValues: ComponentValueParams[]
+                entities: number[]
+            }
+            
+            type RelationValueParams = {
+                relationName: string
+                relationSubjectEntityId: number
+                propertyValues: PropertyValuesParams[]
+            }
+            
+            type SetRelationValuesParams = {
+                setRelationValues: RelationValueParams[]
                 entities: number[]
             }
             
@@ -655,7 +666,7 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
             
             type RelationQueryParam = {
                 relationName: string,
-                entityName: string,
+                relationSubjectEntityId: string,
             }
             
             type QueryParams = {
@@ -664,9 +675,9 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                 relations: RelationQueryParam[]
                 notRelations: RelationQueryParam[]
             }
+            \`\`\`
 
             NEVER CALL MULTIPLE TOOLS IN PARALLEL.
-            \`\`\`
             `},
             { role: "user", content: prompt },
         ]
@@ -691,9 +702,6 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                     const functionToCall = llmFunctions[functionName]
                     const functionArgs = JSON.parse(toolCall.function.arguments)
                     const functionResponse = functionToCall(world)(functionArgs)
-                    console.log('functionName',functionName)
-                    console.log('functionArgs',JSON.stringify(functionArgs,null,2))
-                    console.log('functionResponse',JSON.stringify(functionResponse,null,2))
                     messages.push({
                         tool_call_id: toolCall.id,
                         role: "tool",
