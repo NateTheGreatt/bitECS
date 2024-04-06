@@ -6,7 +6,7 @@ import { $schema } from "@bitecs/classic/src/component/symbols";
 
 export type AddRelationParams = {
     relationName: string
-    relationTargets: number[]
+    relationSubjects: number[]
     entities: number[]
 }
 
@@ -15,30 +15,43 @@ export type AddComponentParams = {
     entities: number[]
 }
 
-export type PropertyValuesParams = {
+export type SetPropertyValuesParams = {
     propertyName: string
     propertyValue: number | string
 }
 
-export type ComponentValueParams = {
+export type SetComponentValueParams = {
     componentName: string
-    propertyValues: PropertyValuesParams[]
+    propertyValues: SetPropertyValuesParams[]
 }
 
 export type SetComponentValuesParams = {
-    setComponentValues: ComponentValueParams[]
+    setComponentValues: SetComponentValueParams[]
     entities: number[]
 }
 
-export type RelationValueParams = {
+export type SetRelationValueParams = {
     relationName: string
     relationSubjectEntityId: number
-    propertyValues: PropertyValuesParams[]
+    propertyValues: SetPropertyValuesParams[]
 }
 
 export type SetRelationValuesParams = {
-    setRelationValues: RelationValueParams[]
+    setRelationValues: SetRelationValueParams[]
     entities: number[]
+}
+
+export type GetComponentValuesParams = {
+    componentName: string
+    propertyNames: string[]
+    entityId: number
+}
+
+export type GetRelationValuesParams = {
+    relationName: string
+    relationSubjectEntityId: number
+    propertyNames: string[]
+    entityId: number
 }
 
 export type ComponentFilter = {
@@ -122,23 +135,42 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
         }
         return 'relation values set'
     }
+
+    const ecsGetComponentValues = (world: World) => ({componentName, propertyNames, entityId}:GetComponentValuesParams) => {
+        const obj: any = {}
+        const component = componentMap[componentName]
+        for (const propertyName of propertyNames) {
+            obj[propertyName] = component[propertyName][entityId]
+        }
+        return obj
+    }
+
+    const ecsGetRelationValues = (world: World) => ({relationName, relationSubjectEntityId, propertyNames, entityId}:GetRelationValuesParams) => {
+        const obj: any = {}
+        const relation = relationMap[relationName]
+        const relationComponent = Pair(relation, relationSubjectEntityId)
+        for (const propertyName of propertyNames) {
+            obj[propertyName] = relationComponent[propertyName][entityId]
+        }
+        return obj
+    }
     
-    const ecsAddRelations = (world: World) => ({relationName, relationTargets, entities}:AddRelationParams) => {
+    const ecsAddRelations = (world: World) => ({relationName, relationSubjects, entities}:AddRelationParams) => {
         const relation = relationMap[relationName]
         for (const eid of entities) {
-            for (const target of relationTargets) {
-                addComponent(world, Pair(relation, target), eid)
+            for (const subject of relationSubjects) {
+                addComponent(world, Pair(relation, subject), eid)
             }
         }
         return 'relations added'
     }
     
     
-    const ecsRemoveRelations = (world: World) => ({relationName, relationTargets, entities}:AddRelationParams) => {
+    const ecsRemoveRelations = (world: World) => ({relationName, relationSubjects, entities}:AddRelationParams) => {
         const relation = relationMap[relationName]
         for (const eid of entities) {
-            for (const target of relationTargets) {
-                removeComponent(world, Pair(relation, target), eid)
+            for (const subject of relationSubjects) {
+                removeComponent(world, Pair(relation, subject), eid)
             }
         }
         return 'relations removed'
@@ -191,6 +223,8 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
         ecsRemoveRelations,
         ecsSetComponentValues,
         ecsSetRelationValues,
+        ecsGetComponentValues,
+        ecsGetRelationValues,
         ecsQuery,
         ecsFilter,
         ecsEntityIdLookup,
@@ -332,10 +366,10 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                             enum: Object.keys(relationMap),
                             description: "The name of the relation to add.",
                         },
-                        relationTargets: {
+                        relationSubjects: {
                             type: "array",
                             items: { type: "number" },
-                            description: "The array of target entity IDs to add the relation to.",
+                            description: "The array of subject entity IDs to add the relation to.",
                         },
                         entities: {
                             type: "array",
@@ -343,7 +377,7 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                             description: "The array of entity IDs to add the relation from.",
                         },
                     },
-                    required: ["relationName", "relationTargets", "entities"],
+                    required: ["relationName", "relationSubjects", "entities"],
                 },
             },
         },
@@ -360,10 +394,10 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                             enum: Object.keys(relationMap),
                             description: "The name of the relation to remove.",
                         },
-                        relationTargets: {
+                        relationSubjects: {
                             type: "array",
                             items: { type: "number" },
-                            description: "The array of target entity IDs to remove the relation from.",
+                            description: "The array of subject entity IDs to remove the relation from.",
                         },
                         entities: {
                             type: "array",
@@ -371,7 +405,7 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                             description: "The array of entity IDs to remove the relation from.",
                         },
                     },
-                    required: ["relationName", "relationTargets", "entities"],
+                    required: ["relationName", "relationSubjects", "entities"],
                 },
             },
         },
@@ -488,6 +522,70 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                     },
                     required: ["setRelationValues", "entities"],
                     description: "The parameters required to set relation values for entities."
+                }
+            }
+        },
+        {
+            type: "function",
+            function: {
+                name: "ecsGetComponentValues",
+                description: "Retrieves the values of specified properties from a component of an entity.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        componentName: {
+                            type: "string",
+                            description: "The name of the component from which values are to be retrieved."
+                        },
+                        propertyNames: {
+                            type: "array",
+                            items: {
+                                type: "string",
+                                description: "The names of the properties whose values are to be retrieved."
+                            },
+                            description: "An array of property names to retrieve values from within the component."
+                        },
+                        entityId: {
+                            type: "number",
+                            description: "The ID of the entity from which component values are to be retrieved."
+                        }
+                    },
+                    required: ["componentName", "propertyNames", "entityId"],
+                    description: "The parameters required to retrieve component values for an entity."
+                }
+            }
+        },
+        {
+            type: "function",
+            function: {
+                name: "ecsGetRelationValues",
+                description: "Retrieves the values of specified properties from a relation of an entity.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        relationName: {
+                            type: "string",
+                            description: "The name of the relation from which values are to be retrieved."
+                        },
+                        relationSubjectEntityId: {
+                            type: "number",
+                            description: "The entity ID that is the subject of the relation."
+                        },
+                        propertyNames: {
+                            type: "array",
+                            items: {
+                                type: "string",
+                                description: "The names of the properties whose values are to be retrieved from the relation."
+                            },
+                            description: "An array of property names to retrieve values from within the relation."
+                        },
+                        entityId: {
+                            type: "number",
+                            description: "The ID of the entity involved in the relation from which values are to be retrieved."
+                        }
+                    },
+                    required: ["relationName", "relationSubjectEntityId", "propertyNames", "entityId"],
+                    description: "The parameters required to retrieve relation values for an entity."
                 }
             }
         },
@@ -617,7 +715,7 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
             \`\`\`typescript
             type AddRelationParams = {
                 relationName: string
-                relationTargets: number[]
+                relationSubjects: number[]
                 entities: number[]
             }
             
@@ -626,30 +724,43 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                 entities: number[]
             }
             
-            type PropertyValuesParams = {
+            type SetPropertyValuesParams = {
                 propertyName: string
                 propertyValue: number | string
             }
             
-            type ComponentValueParams = {
+            type SetComponentValueParams = {
                 componentName: string
-                propertyValues: PropertyValuesParams[]
+                propertyValues: SetPropertyValuesParams[]
             }
             
             type SetComponentValuesParams = {
-                setComponentValues: ComponentValueParams[]
+                setComponentValues: SetComponentValueParams[]
                 entities: number[]
             }
             
-            type RelationValueParams = {
+            type SetRelationValueParams = {
                 relationName: string
                 relationSubjectEntityId: number
-                propertyValues: PropertyValuesParams[]
+                propertyValues: SetPropertyValuesParams[]
             }
             
             type SetRelationValuesParams = {
-                setRelationValues: RelationValueParams[]
+                setRelationValues: SetRelationValueParams[]
                 entities: number[]
+            }
+            
+            type GetComponentValuesParams = {
+                componentName: string
+                propertyNames: string[]
+                entityId: number
+            }
+            
+            type GetRelationValuesParams = {
+                relationName: string
+                relationSubjectEntityId: number
+                propertyNames: string[]
+                entityId: number
             }
             
             type ComponentFilter = {

@@ -4,7 +4,8 @@ import {describe, test, assert} from 'vitest'
 import { createAgent } from '.'
 
 const llm = new OpenAI({
-    apiKey: process.env['VITE_OPENAI_API_KEY']
+    apiKey: process.env['VITE_OPENAI_API_KEY'],
+    organization: process.env['VITE_OPENAI_ORG_ID'],
 })
 
 const world = createWorld()
@@ -17,6 +18,7 @@ const HasTarget = defineComponent()
 const Interactable = defineComponent()
 const Quest = defineComponent()
 const HasEquippedWeapon = defineComponent()
+const CharacterSheet: {description: string[]} = {description: []}
 
 const ComponentMap: {[key:string]: Component} = {
   Health,
@@ -27,6 +29,7 @@ const ComponentMap: {[key:string]: Component} = {
   Interactable,
   Quest,
   HasEquippedWeapon,
+  CharacterSheet,
 }
 
 const MemberOf = defineRelation()
@@ -155,9 +158,21 @@ describe('bitECS AI Agent Tests', async () => {
 
     test('set relation values', async () => {
         await agent(world, "make the adventurer interested in The Bronze Bastion with an amount of 3")
-        assert(
-            hasComponent(world, Pair(InterestedIn, TheBronzeBastion), Adventurer) &&
-            Pair(InterestedIn, TheBronzeBastion).amount[Adventurer] === 3
-        )
+        assert(hasComponent(world, Pair(InterestedIn, TheBronzeBastion), Adventurer))
+        assert(Pair(InterestedIn, TheBronzeBastion).amount[Adventurer] === 3)
+    })
+
+    test('set string-valued components', async () => {
+        await agent(world, "give the adventurer the CharacterSheet component and make the description say: 'a very brave adventurer'")
+        assert(hasComponent(world, CharacterSheet, Adventurer))
+        assert(CharacterSheet.description[Adventurer] === 'a very brave adventurer')
+    })
+
+    test('get string values from components', async () => {
+        await agent(world, "give the adventurer the CharacterSheet component and make the description say: 'a very brave adventurer'.")
+        assert(hasComponent(world, CharacterSheet, Adventurer))
+
+        const {description} = await agent(world, "get the description of the adventurer's CharacterSheet")
+        assert(description === 'a very brave adventurer')
     })
 })
