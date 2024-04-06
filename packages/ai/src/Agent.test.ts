@@ -54,6 +54,19 @@ const EntityMap: {[key:string]: number} = {
 const agent = createAgent(llm, ComponentMap, RelationMap, EntityMap)
 
 describe('bitECS AI Agent Tests', async () => {
+
+    test('query for components and return the results', async () => {
+        const testEnts: number[] = []
+        for (let i = 0; i < 20; i++) {
+            const eid = addEntity(world)
+            addComponent(world, Mana, eid)
+            testEnts.push(eid)
+        }
+        const ents = await agent(world, "Find all entities that have the Mana component")
+        assert(ents.length === 20)
+        assert(query(world, [Mana]).reduce((result,eid) => result && testEnts.includes(eid), true))
+    })
+
     test('query with components and add new components to the queried entities', async () => {
         for (let i = 0; i < 20; i++) {
             const eid = addEntity(world)
@@ -130,5 +143,21 @@ describe('bitECS AI Agent Tests', async () => {
             hasComponent(world, Pair(AllyOf, TheBronzeBastion), Adventurer) && 
             hasComponent(world, Pair(EnemyOf, BlackbannerSyndicate), Adventurer)
           )
+    })
+
+    test('set component values', async () => {
+        await agent(world, "add health component to the adventurer and set the amount to 5")
+        assert(
+            hasComponent(world, Health, Adventurer) &&
+            Health.amount[Adventurer] === 5
+        )
+    })
+
+    test('set relation values', async () => {
+        await agent(world, "make the adventurer interested in The Bronze Bastion with an amount of 3")
+        assert(
+            hasComponent(world, Pair(InterestedIn, TheBronzeBastion), Adventurer) &&
+            Pair(InterestedIn, TheBronzeBastion).amount[Adventurer] === 3
+        )
     })
 })

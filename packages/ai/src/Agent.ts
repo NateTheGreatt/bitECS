@@ -15,6 +15,32 @@ export type AddComponentParams = {
     entities: number[]
 }
 
+export type PropertyValuesParams = {
+    propertyName: string
+    propertyValue: string
+}
+
+export type ComponentValueParams = {
+    componentName: string
+    propertyValues: PropertyValuesParams[]
+}
+
+export type SetComponentValuesParams = {
+    setComponentValues: ComponentValueParams[]
+    entities: number[]
+}
+
+export type RelationValueParams = {
+    relationName: string
+    relationSubjectEntityId: number
+    propertyValues: PropertyValuesParams[]
+}
+
+export type SetRelationValuesParams = {
+    setRelationValues: RelationValueParams[]
+    entities: number[]
+}
+
 export type ComponentFilter = {
     componentName: string, 
     propertyName: string, 
@@ -29,7 +55,7 @@ export type FilterParams = {
 
 export type RelationQueryParam = {
     relationName: string,
-    entityName: string,
+    relationSubjectEntityId: string,
 }
 
 export type QueryParams = {
@@ -71,6 +97,31 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
         }
         return 'components removed'
     }
+
+    const ecsSetComponentValues = (world: World) => ({setComponentValues, entities}:SetComponentValuesParams) => {
+        for (const {componentName, propertyValues} of setComponentValues) {
+            const component = componentMap[componentName]
+            for (const {propertyName, propertyValue} of propertyValues) {
+                for (const eid of entities) {
+                    component[propertyName][eid] = propertyValue
+                }
+            }
+        }
+        return 'component values set'
+    }
+
+    const ecsSetRelationValues = (world: World) => ({setRelationValues, entities}:SetRelationValuesParams) => {
+        for (const {relationName, relationSubjectEntityId, propertyValues} of setRelationValues) {
+            const relation = relationMap[relationName]
+            const relationComponent = Pair(relation, relationSubjectEntityId)
+            for (const {propertyName, propertyValue} of propertyValues) {
+                for (const eid of entities) {
+                    relationComponent[propertyName][eid] = propertyValue
+                }
+            }
+        }
+        return 'relation values set'
+    }
     
     const ecsAddRelations = (world: World) => ({relationName, relationTargets, entities}:AddRelationParams) => {
         const relation = relationMap[relationName]
@@ -96,12 +147,12 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
     const ecsQuery = (world: World) => ({componentNames, notComponentNames, relations, notRelations}:QueryParams) => {
         const components = componentNames ? componentNames.map(name => componentMap[name]) : []
         const notComponents = notComponentNames ? notComponentNames.map(name => Not(componentMap[name])) : []
-        const relationPairs = relations ? relations.map(({relationName, entityName}) => {
-            const eid = parseInt(entityName) || entityMap[entityName]
+        const relationPairs = relations ? relations.map(({relationName, relationSubjectEntityId: entityId}) => {
+            const eid = parseInt(entityId) || entityMap[entityId]
             return Pair(relationMap[relationName], eid)
         }) : []    
-        const notRelationPairs = notRelations ? notRelations.map(({relationName, entityName}) => {
-            const eid = parseInt(entityName) || entityMap[entityName]
+        const notRelationPairs = notRelations ? notRelations.map(({relationName, relationSubjectEntityId: entityId}) => {
+            const eid = parseInt(entityId) || entityMap[entityId]
             return Not(Pair(relationMap[relationName], eid))
         }) : []
         
@@ -138,6 +189,8 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
         ecsRemoveComponents,
         ecsAddRelations,
         ecsRemoveRelations,
+        ecsSetComponentValues,
+        ecsSetRelationValues,
         ecsQuery,
         ecsFilter,
         ecsEntityIdLookup,
@@ -218,12 +271,12 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                                         enum: Object.keys(relationMap),
                                         description: "The name of the relation"
                                     },
-                                    entityName: {
-                                        type: "string",
-                                        description: "The name of the entity"
+                                    relationSubjectEntityId: {
+                                        type: "number",
+                                        description: "The ID of the entity"
                                     }
                                 },
-                                required: ["relationName", "entityName"],
+                                required: ["relationName", "relationSubjectEntityId"],
                             }
                         },
                         notRelations: {
@@ -236,12 +289,12 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                                         enum: Object.keys(relationMap),
                                         description: "The name of the relation"
                                     },
-                                    entityName: {
-                                        type: "string",
-                                        description: "The name of the entity"
+                                    relationSubjectEntityId: {
+                                        type: "number",
+                                        description: "The ID of the entity"
                                     }
                                 },
-                                required: ["relationName", "entityName"],
+                                required: ["relationName", "relationSubjectEntityId"],
                             }
                         }
                     },
@@ -282,12 +335,12 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                         relationTargets: {
                             type: "array",
                             items: { type: "number" },
-                            description: "The array of target entities to add the relation to.",
+                            description: "The array of target entity IDs to add the relation to.",
                         },
                         entities: {
                             type: "array",
                             items: { type: "number" },
-                            description: "The array of entities to add the relation from.",
+                            description: "The array of entity IDs to add the relation from.",
                         },
                     },
                     required: ["relationName", "relationTargets", "entities"],
@@ -310,17 +363,133 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                         relationTargets: {
                             type: "array",
                             items: { type: "number" },
-                            description: "The array of target entities to remove the relation from.",
+                            description: "The array of target entity IDs to remove the relation from.",
                         },
                         entities: {
                             type: "array",
                             items: { type: "number" },
-                            description: "The array of entities to remove the relation from.",
+                            description: "The array of entity IDs to remove the relation from.",
                         },
                     },
                     required: ["relationName", "relationTargets", "entities"],
                 },
             },
+        },
+        {
+            type: "function",
+            function: {
+                name: "ecsSetComponentValues",
+                description: "Sets the values of various components for a list of entities.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        setComponentValues: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    componentName: {
+                                        type: "string",
+                                        description: "The name of the component whose values are to be set."
+                                    },
+                                    propertyValues: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                propertyName: {
+                                                    type: "string",
+                                                    description: "The name of the property to set a value for."
+                                                },
+                                                propertyValue: {
+                                                    type: "string",
+                                                    description: "The value to set for the property."
+                                                }
+                                            },
+                                            required: ["propertyName", "propertyValue"],
+                                            description: "A list of property names and their corresponding values."
+                                        },
+                                        description: "An array of property values to be set for the component."
+                                    }
+                                },
+                                required: ["componentName", "propertyValues"],
+                                description: "Specifies a component and the values to be set for its properties."
+                            },
+                            description: "An array of components and their new values."
+                        },
+                        entities: {
+                            type: "array",
+                            items: { 
+                                type: "number",
+                                description: "An array of entity identifiers."
+                            },
+                            description: "The array of entities to update the component values for."
+                        }
+                    },
+                    required: ["setComponentValues", "entities"],
+                    description: "The parameters required to set component values for entities."
+                }
+            }
+        },
+        {
+            type: "function",
+            function: {
+                name: "ecsSetRelationValues",
+                description: "Sets the values of various relations for a list of entities.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        setRelationValues: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    relationName: {
+                                        type: "string",
+                                        description: "The name of the relation to be modified."
+                                    },
+                                    relationSubjectEntityId: {
+                                        type: "number",
+                                        description: "The entity ID that is the subject of the relation."
+                                    },
+                                    propertyValues: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                propertyName: {
+                                                    type: "string",
+                                                    description: "The name of the property to set a value for."
+                                                },
+                                                propertyValue: {
+                                                    type: "string",
+                                                    description: "The value to set for the property."
+                                                }
+                                            },
+                                            required: ["propertyName", "propertyValue"],
+                                            description: "A list of property names and their corresponding values to be set within the relation."
+                                        },
+                                        description: "An array of property values related to the specified relation."
+                                    }
+                                },
+                                required: ["relationName", "relationSubjectEntityId", "propertyValues"],
+                                description: "Specifies a relation and the values to be set for its properties."
+                            },
+                            description: "An array of relations and their new values to be set for specified entities."
+                        },
+                        entities: {
+                            type: "array",
+                            items: { 
+                                type: "number",
+                                description: "An array of entity identifiers."
+                            },
+                            description: "The array of entities to which the relation values updates apply."
+                        }
+                    },
+                    required: ["setRelationValues", "entities"],
+                    description: "The parameters required to set relation values for entities."
+                }
+            }
         },
         {
             type: "function",
@@ -435,6 +604,7 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
             Entity names are strings.
             Entity IDs are integers.
             Filter operation names are: ${JSON.stringify(Object.keys(FilterOperationNames))}
+            You must ALWAYS add a component or relation before setting a value for it.
             Think step-by-step, and return the word TERMINATE when you are finished with the request.
             
             Here are all of the component definitions:
@@ -452,6 +622,21 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
             
             type AddComponentParams = {
                 componentNames: string[]
+                entities: number[]
+            }
+            
+            type PropertyValuesParams = {
+                propertyName: string
+                propertyValue: string
+            }
+            
+            type ComponentValueParams = {
+                componentName: string
+                setProperties: PropertyValuesParams[]
+            }
+            
+            type SetComponentValuesParams = {
+                setComponentValues: ComponentValueParams[]
                 entities: number[]
             }
             
@@ -478,12 +663,14 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                 relations: RelationQueryParam[]
                 notRelations: RelationQueryParam[]
             }
+
+            NEVER CALL MULTIPLE TOOLS IN PARALLEL.
             \`\`\`
             `},
             { role: "user", content: prompt },
         ]
         
-        
+        let lastResponse
         while(true) {
             
             const response = await llm.chat.completions.create({
@@ -509,10 +696,13 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                         name: functionName,
                         content: JSON.stringify(functionResponse),
                     })
+                    lastResponse = functionResponse
                 }
             } else {
                 break
             }
         }
+
+        return lastResponse
     }
 }
