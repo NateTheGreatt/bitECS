@@ -92,7 +92,7 @@ declare module 'bitecs' {
 
   export type System<R extends any[] = any[], W extends IWorld = IWorld> = (world: W, ...args: R) => W
 
-  export type Serializer = (target: IWorld | number[]) => ArrayBuffer
+  export type Serializer<W extends IWorld = IWorld> = (target: W | number[]) => ArrayBuffer
   export type Deserializer = (world: IWorld, packet: ArrayBuffer, mode?: DESERIALIZE_MODE) => number[]
 
   export function setDefaultSize(size: number): void
@@ -129,7 +129,7 @@ declare module 'bitecs' {
 
   export function defineSystem<R extends any[] = any[], W extends IWorld = IWorld>(update: (world: W, ...args: R) => W): System<R, W>
 
-  export function defineSerializer<W extends IWorld = IWorld>(target: W | Component[] | IComponentProp[] | QueryModifier<W>, maxBytes?: number): Serializer
+  export function defineSerializer<W extends IWorld = IWorld>(target: W | Component[] | IComponentProp[] | QueryModifier<W>, maxBytes?: number): Serializer<W>
   export function defineDeserializer<W extends IWorld = IWorld>(target: W | Component[] | IComponentProp[] | QueryModifier<W>): Deserializer
   
   export function pipe(...fns: ((...args: any[]) => any)[]): (...input: any[]) => any
