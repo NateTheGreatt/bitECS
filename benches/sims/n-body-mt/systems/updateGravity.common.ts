@@ -1,18 +1,18 @@
-import { ThreadedComponents } from "../utils/threading"
+import { ThreadedComponents } from '../utils/threading';
 
 export type UpdateGravityComponents = ThreadedComponents & {
-    read: {
-        Position: { x: ReadonlyArray<Float64Array>, y: ReadonlyArray<Float64Array> },
-        Mass: { value: ReadonlyArray<Float64Array> },
-    },
-    write: {
-        Acceleration: { x: Float64Array, y: Float64Array },
-        Velocity: { x: Float64Array, y: Float64Array },
-    }
-}
+	read: {
+		Position: { x: Readonly<Float64Array>; y: Readonly<Float64Array> };
+		Mass: { value: Readonly<Float64Array> };
+	};
+	write: {
+		Acceleration: { x: Float64Array; y: Float64Array };
+		Velocity: { x: Float64Array; y: Float64Array };
+	};
+};
 
 export type UpdateGravityInput = {
-    delta: number,
-    workerEntities: Uint32Array,
-    bodyEntities: Uint32Array,
-}
+	delta: number;
+	workerEntities: Uint32Array;
+	bodyEntities: Uint32Array;
+};

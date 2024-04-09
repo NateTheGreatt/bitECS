@@ -35,8 +35,8 @@ export const updateGravityMain = ({
 
 		// run worker
 		const workers = world.workers[workerFile];
-		const bodyEntities = bodyQuery(world) as Uint32Array;
-		const partitionEntities = partitionQuery(world) as Uint32Array;
+		const bodyEntities = bodyQuery(world);
+		const partitionEntities = partitionQuery(world);
 		const numberOfPartitions = workers.length;
 		const entitiesPerPartition = Math.ceil(bodyEntities.length / numberOfPartitions);
 		// TODO: atomic wait/notify
