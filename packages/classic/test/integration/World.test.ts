@@ -1,13 +1,13 @@
-import { resetGlobals, getDefaultSize } from '../../src/index.js';
-import { describe, it, afterEach } from 'vitest';
-
-const defaultSize = getDefaultSize();
-
-const growAmount = defaultSize + defaultSize / 2;
+import { SYMBOLS, createWorld, resetGlobals } from '../../src/index.js';
+import { describe, it, afterEach, expect } from 'vitest';
 
 describe('World Integration Tests', () => {
 	afterEach(() => {
 		resetGlobals();
 	});
-	it('is not tested', () => {});
+
+	it('can be sized', () => {
+		const world = createWorld(10);
+		expect(world[SYMBOLS.$size]).toBe(10);
+	});
 });
