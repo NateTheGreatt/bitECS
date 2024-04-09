@@ -60,25 +60,26 @@ export function createWorld(...args: any[]) {
 	const entitySparseSet = SparseSet();
 
 	// Define world properties as non-enumerable symbols so they are internal secrets.
+	const descriptors = { writable: true, enumerable: false, configurable: true };
 	Object.defineProperties(world, {
-		[$size]: { value: size, writable: true, enumerable: false },
-		[$entityMasks]: { value: [new Uint32Array(size)], writable: true, enumerable: false },
-		[$entityComponents]: { value: new Map(), writable: true, enumerable: false },
-		[$archetypes]: { value: [], writable: true, enumerable: false },
-		[$entitySparseSet]: { value: entitySparseSet, writable: true, enumerable: false },
-		[$entityArray]: { value: entitySparseSet.dense, writable: true, enumerable: false },
-		[$bitflag]: { value: 1, writable: true, enumerable: false },
-		[$componentMap]: { value: new Map(), writable: true, enumerable: false },
-		[$componentCount]: { value: 0, writable: true, enumerable: false },
-		[$queryDataMap]: { value: new Map(), writable: true, enumerable: false },
-		[$queries]: { value: new Set(), writable: true, enumerable: false },
-		[$queriesHashMap]: { value: new Map(), writable: true, enumerable: false },
-		[$notQueries]: { value: new Set(), writable: true, enumerable: false },
-		[$dirtyQueries]: { value: new Set(), writable: true, enumerable: false },
-		[$localEntities]: { value: new Map(), writable: true, enumerable: false },
-		[$localEntityLookup]: { value: new Map(), writable: true, enumerable: false },
-		[$manualEntityRecycling]: { value: false, writable: true, enumerable: false },
-		[$resizeThreshold]: { value: size - size / 5, writable: true, enumerable: false },
+		[$size]: { value: size, ...descriptors },
+		[$entityMasks]: { value: [new Uint32Array(size)], ...descriptors },
+		[$entityComponents]: { value: new Map(), ...descriptors },
+		[$archetypes]: { value: [], ...descriptors },
+		[$entitySparseSet]: { value: entitySparseSet, ...descriptors },
+		[$entityArray]: { value: entitySparseSet.dense, ...descriptors },
+		[$bitflag]: { value: 1, ...descriptors },
+		[$componentMap]: { value: new Map(), ...descriptors },
+		[$componentCount]: { value: 0, ...descriptors },
+		[$queryDataMap]: { value: new Map(), ...descriptors },
+		[$queries]: { value: new Set(), ...descriptors },
+		[$queriesHashMap]: { value: new Map(), ...descriptors },
+		[$notQueries]: { value: new Set(), ...descriptors },
+		[$dirtyQueries]: { value: new Set(), ...descriptors },
+		[$localEntities]: { value: new Map(), ...descriptors },
+		[$localEntityLookup]: { value: new Map(), ...descriptors },
+		[$manualEntityRecycling]: { value: false, ...descriptors },
+		[$resizeThreshold]: { value: size - size / 5, ...descriptors },
 	});
 
 	// Register the world.
@@ -135,8 +136,8 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
  */
 export const deleteWorld = (world: World) => {
 	// Delete all symbol properties
-	Object.getOwnPropertySymbols(world).forEach(($) => {
-		delete world[$ as keyof World];
+	Object.getOwnPropertySymbols(world).forEach((symbol) => {
+		delete world[symbol as keyof World];
 	});
 	// Delete all string properties too, even though there shouldn't be any
 	Object.keys(world).forEach((key) => {
