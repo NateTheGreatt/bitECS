@@ -259,15 +259,14 @@ describe('Query Integration Tests', () => {
 	});
 
 	it('should define independent enter queues', () => {
-		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const query = defineQuery([TestComponent]);
 
-		// Register the query so queues track immediately.
-		registerQuery(world, query);
-
 		const enteredQueryA = defineEnterQueue(query);
 		const enteredQueryB = defineEnterQueue(query);
+
+		// This tests creating the world after the query and queues have been defined.
+		const world = createWorld();
 
 		const eidA = addEntity(world);
 		const eidB = addEntity(world);
@@ -291,9 +290,6 @@ describe('Query Integration Tests', () => {
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const query = defineQuery([TestComponent]);
 
-		// Register the query so queues track immediately.
-		registerQuery(world, query);
-
 		const exitedQueryA = defineExitQueue(query);
 		const exitedQueryB = defineExitQueue(query);
 
@@ -315,44 +311,11 @@ describe('Query Integration Tests', () => {
 		strictEqual(exitedB.length, 1);
 	});
 
-	it('should only start tracking changes in queues after registering the query', () => {
-		const world = createWorld();
-		const TestComponent = defineComponent({ value: Types.f32 });
-		const query = defineQuery([TestComponent]);
-
-		const enteredQuery = defineEnterQueue(query);
-
-		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
-
-		// First call lazy registers the query.
-		let entered = enteredQuery(world);
-		strictEqual(entered.length, 0);
-
-		// Now the query is registered and tracking changes.
-		removeComponent(world, TestComponent, eid);
-		addComponent(world, TestComponent, eid);
-
-		entered = enteredQuery(world);
-		strictEqual(entered.length, 1);
-
-		// Alternatively you can register the query manually to start tracking right away.
-		const query2 = defineQuery([TestComponent]);
-		registerQuery(world, query2);
-
-		const extiQuery = defineExitQueue(query2);
-		removeComponent(world, TestComponent, eid);
-
-		const exited = extiQuery(world);
-		strictEqual(exited.length, 1);
-	});
-
 	it('should optionally not drain queues when read', () => {
 		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
-		const query = defineQuery([TestComponent]);
-		registerQuery(world, query);
 
+		const query = defineQuery([TestComponent]);
 		const enteredQuery = defineEnterQueue(query);
 
 		const eid = addEntity(world);

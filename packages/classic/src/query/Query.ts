@@ -12,23 +12,24 @@ import {
 	$notQueries,
 	$queries,
 	$queriesHashMap,
-	$queryAll,
-	$queryAny,
 	$queryComponents,
 	$queryDataMap,
-	$queryNone,
+	$queueRegisters,
 } from './symbols.js';
-import { Query, QueryModifier, QueryData } from './types.js';
+import { Query, QueryModifier, QueryData, Queue } from './types.js';
 import { World } from '../world/types.js';
 import { createShadow } from '../storage/Storage.js';
 import { $storeFlattened, $tagStore } from '../storage/symbols.js';
 import { EMPTY } from '../constants/Constants.js';
+import { worlds } from '../world/World.js';
 
 function modifier(c: Component, mod: string): QueryModifier {
 	const inner: TODO = () => [c, mod] as const;
 	inner[$modifier] = true;
 	return inner;
 }
+
+export const queries: Query[] = [];
 
 export const Not = (c: Component) => modifier(c, 'not');
 export const Or = (c: Component) => modifier(c, 'or');
@@ -52,36 +53,39 @@ export function None(...comps: Component[]) {
 
 const archetypeHash = (world: World, components: Component[]) => {
 	return components
-		.sort((a,b) => {
+		.sort((a, b) => {
 			if (typeof a === 'function' && a[$modifier]) {
-				a = a()[0]
+				a = a()[0];
 			}
 			if (typeof b === 'function' && b[$modifier]) {
-				b = b()[0]
+				b = b()[0];
 			}
 			if (!world[$componentMap].has(a)) registerComponent(world, a);
 			if (!world[$componentMap].has(b)) registerComponent(world, b);
-			const aData = world[$componentMap].get(a)!
-			const bData = world[$componentMap].get(b)!
-			return aData.id > bData.id ? 1 : -1
+			const aData = world[$componentMap].get(a)!;
+			const bData = world[$componentMap].get(b)!;
+			return aData.id > bData.id ? 1 : -1;
 		})
-		.reduce((acc,component) => {
-			let mod
+		.reduce((acc, component) => {
+			let mod;
 			if (typeof component === 'function' && component[$modifier]) {
-				mod = component()[1]
-				component = component()[0]
+				mod = component()[1];
+				component = component()[0];
 			}
-			const componentData = world[$componentMap].get(component)!
+			const componentData = world[$componentMap].get(component)!;
 			if (mod) {
-				acc += `-${mod}(${componentData.generationId}-${componentData.bitflag})`
+				acc += `-${mod}(${componentData.generationId}-${componentData.bitflag})`;
 			} else {
-				acc += `-${componentData.generationId}-${componentData.bitflag}`
+				acc += `-${componentData.generationId}-${componentData.bitflag}`;
 			}
-			return acc
-		}, '')
-}
+			return acc;
+		}, '');
+};
 
-export const registerQuery = (world: World, query: TODO) => {
+export const registerQuery = (world: World, query: Query) => {
+	// Early exit if query is already registered.
+	if (world[$queryDataMap].has(query)) return;
+
 	const components: TODO = [];
 	const notComponents: TODO = [];
 	const changedComponents: TODO = [];
@@ -166,7 +170,7 @@ export const registerQuery = (world: World, query: TODO) => {
 	world[$queryDataMap].set(query, q);
 	world[$queries].add(q);
 
-	const hash = archetypeHash(world, components)
+	const hash = archetypeHash(world, components);
 	world[$queriesHashMap].set(hash, q);
 
 	allComponents.forEach((c: TODO) => {
@@ -174,6 +178,9 @@ export const registerQuery = (world: World, query: TODO) => {
 	});
 
 	if (notComponents.length) world[$notQueries].add(q);
+
+	// Register and create queues.
+	query[$queueRegisters].forEach((register) => register(world));
 
 	for (let eid = 0; eid < getEntityCursor(); eid++) {
 		if (!world[$entitySparseSet].has(eid)) continue;
@@ -248,53 +255,51 @@ const getNoneComponents = aggregateComponentsFor(None);
  * @returns {function} query
  */
 
-export const defineQuery = (...args: TODO) => {
+export const defineQuery = (...args: TODO): Query => {
 	let components: TODO;
-	let any, all, none;
-
-	if (Array.isArray(args[0])) {
-		components = args[0];
-	} else {
-		// any = getAnyComponents(args)
-		// all = getAllComponents(args)
-		// none = getNoneComponents(args)
-	}
+	components = args[0];
 
 	if (components === undefined || components[$componentMap] !== undefined) {
-		return (world: World, clearDiff = false): Uint32Array =>
+		const query = (world: World, clearDiff = false): Uint32Array =>
 			world ? world[$entityArray] : components[$entityArray];
+		query[$queryComponents] = components;
+		query[$queueRegisters] = [] as Queue[];
+
+		return query;
 	}
 
 	const query = function (world: World, clearDiff = true): Uint32Array {
-		if (!world[$queryDataMap].has(query)) registerQuery(world, query);
-
-		const q = world[$queryDataMap].get(query)!;
+		const data = world[$queryDataMap].get(query)!;
 
 		commitRemovals(world);
 
-		if (q.changedComponents.length) return diff(q, clearDiff);
-		if (q.changedComponents.length) return q.changed.dense;
+		if (data.changedComponents.length) return diff(data, clearDiff);
+		if (data.changedComponents.length) return data.changed.dense;
 
-		return new Uint32Array(q.dense.buffer, 0, Uint32SparseSet.length(q));
+		return new Uint32Array(data.dense.buffer, 0, Uint32SparseSet.length(data));
 	};
 
 	query[$queryComponents] = components;
-	query[$queryAny] = any;
-	query[$queryAll] = all;
-	query[$queryNone] = none;
+	query[$queueRegisters] = [] as Queue[];
+
+	// Add to query registry.
+	queries.push(query);
+
+	// Register with all worlds.
+	worlds.forEach((world) => registerQuery(world, query));
 
 	return query;
 };
 
 export const query = (world: World, components: Component[]) => {
-	const hash = archetypeHash(world, components)
-	let queryData = world[$queriesHashMap].get(hash)
+	const hash = archetypeHash(world, components);
+	let queryData = world[$queriesHashMap].get(hash);
 	if (!queryData) {
-		return defineQuery(components)(world)
+		return defineQuery(components)(world);
 	} else {
-		return queryData.query(world)
+		return queryData.query(world);
 	}
-}
+};
 
 export const queryCheckEntity = (world: World, q: TODO, eid: number) => {
 	const { masks, notMasks, generations } = q;

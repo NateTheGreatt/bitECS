@@ -25,6 +25,7 @@ import {
 	$entitySparseSet,
 } from '../entity/symbols.js';
 import { resize } from '../storage/Storage.js';
+import { queries, registerQuery } from '../query/Query.js';
 
 export const worlds: World[] = [];
 
@@ -84,6 +85,9 @@ export function createWorld(...args: any[]) {
 
 	// Register the world.
 	worlds.push(world);
+
+	// Register all queries with the world.
+	queries.forEach((query) => registerQuery(world, query));
 
 	return world;
 }

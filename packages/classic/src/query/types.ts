@@ -2,12 +2,16 @@ import { Component } from '../component/types';
 import { SparseSet } from '../utils/SparseSet';
 import { World } from '../world/types';
 import { type IUint32SparseSet } from '@bitecs/utils/Uint32SparseSet';
+import { $queryComponents, $queueRegisters } from './symbols';
 
 export type QueryModifier<W extends World = World> = (
 	c: Component[]
 ) => (world: W) => Component | QueryModifier<W>;
 
-export type Query<W extends World = World> = (world: W, clearDiff?: boolean) => Uint32Array;
+export type Query<W extends World = World> = ((world: W, clearDiff?: boolean) => Uint32Array) & {
+	[$queryComponents]: Component[];
+	[$queueRegisters]: ((world: World) => void)[];
+};
 
 export type QueryData = IUint32SparseSet & {
 	archetypes: any;

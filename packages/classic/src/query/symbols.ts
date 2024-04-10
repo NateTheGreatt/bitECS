@@ -3,11 +3,9 @@ export const $modifier = Symbol('$modifier');
 export const $queries = Symbol('queries');
 export const $notQueries = Symbol('notQueries');
 
-export const $queriesHashMap = Symbol('queriesHashMap')
+export const $queriesHashMap = Symbol('queriesHashMap');
 
-export const $queryAny = Symbol('queryAny');
-export const $queryAll = Symbol('queryAll');
-export const $queryNone = Symbol('queryNone');
+export const $queueRegisters = Symbol('queueRegisters');
 
 export const $queryDataMap = Symbol('queryDataMap');
 export const $dirtyQueries = Symbol('$dirtyQueries');

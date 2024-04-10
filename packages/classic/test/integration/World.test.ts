@@ -4,7 +4,6 @@ import { describe, it, afterEach, expect } from 'vitest';
 describe('World Integration Tests', () => {
 	afterEach(() => {
 		resetGlobals();
-		worlds.length = 0;
 	});
 
 	it('can be created with a sized', () => {

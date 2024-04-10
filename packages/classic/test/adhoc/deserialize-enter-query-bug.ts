@@ -18,7 +18,6 @@ import { World } from '../../src/world/types.js';
 
 function getLocalEid(world: World, eid: number) {
 	const $localEntities = Object.getOwnPropertySymbols(world)[12];
-	// @ts-expect-error
 	const localEntities = world[$localEntities];
 	return localEntities.get(eid);
 }
