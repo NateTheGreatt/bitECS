@@ -1,4 +1,4 @@
-import { Not, Pair, addComponent, addComponents, query, removeComponent, removeComponents, type Component, type RelationType, type World } from "@bitecs/classic";
+import { Not, Pair, Schema, addComponent, addComponents, addEntity, defineComponent, defineRelation, query, removeComponent, removeComponents, removeEntity, type Component, type RelationType, type World } from "@bitecs/classic";
 import type OpenAI from "openai";
 import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/index.mjs";
 import { FilterOperationNames, applyFilters, type FilterCriterion, type FilterOperations } from "./Filtering";
@@ -82,13 +82,40 @@ export type ComponentMap = { [key: string]: Component }
 export type RelationMap = { [key: string]: RelationType<any> }
 export type EntityMap = { [key: string]: number }
 
-export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap: ComponentMap, entityMap: EntityMap) => {
+export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap: ComponentMap, entityMap: EntityMap, log?: any[]) => {
     const componentDefinitions = Object.entries(componentMap)
         .reduce((defs,[name, component]) => {
             defs[name] = component[$schema]
             return defs
         }, {} as any)
-    
+
+    const ecsAddEntity = (world:World) => ({name}: {name:string}) => {
+        entityMap[name] = addEntity(world)
+        return entityMap[name]
+    }
+
+    const ecsRemoveEntity = (world:World) => ({entityId}: {entityId:number}) => {
+        // TODO: optimize
+        for (const key of Object.keys(entityMap)) {
+            if (entityMap[key] === entityId) {
+                delete entityMap[key]
+                break
+            }
+        }
+        removeEntity(world, entityId)
+        return 'entity removed'
+    }
+
+    const ecsCreateComponentType = (world:World) => ({name, schema}: {name:string, schema: Schema}) => {
+        componentMap[name] = defineComponent(schema)
+        return 'component created'
+    }
+
+    const ecsCreateRelationType = (world:World) => ({name, schema={}}: {name:string, schema: Schema}) => {
+        componentMap[name] = defineRelation(schema)
+        return 'relation created'
+    }
+        
     const ecsAddComponents = (world: World) => ({componentNames, entities}:AddComponentParams) => {
         if (!Array.isArray(componentNames)) {
             componentNames = [componentNames]
@@ -217,6 +244,8 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
     }
     
     const llmFunctions: {[key:string]: Function} = {
+        ecsAddEntity,
+        ecsRemoveEntity,
         ecsAddComponents,
         ecsRemoveComponents,
         ecsAddRelations,
@@ -231,6 +260,40 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
     }
     
     const tools: ChatCompletionTool[] = [
+        {
+            type: "function",
+            function: {
+                name: "ecsAddEntity",
+                description: "Adds a new entity to the world.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        name: {
+                            type: "string",
+                            description: "The name of the entity to add to the world.",
+                        },
+                    },
+                    required: ["name"],
+                },
+            },
+        },
+        {
+            type: "function",
+            function: {
+                name: "ecsRemoveEntity",
+                description: "Removes an entity from the world.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        entityId: {
+                            type: "number",
+                            description: "The entity ID to remove from the world.",
+                        },
+                    },
+                    required: ["entityId"],
+                },
+            },
+        },
         {
             type: "function",
             function: {
@@ -804,6 +867,8 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                 seed: 42,
             })
             const responseMessage = response.choices[0].message
+
+            if (log) log.push(responseMessage)
             
             const toolCalls = responseMessage.tool_calls
             if (toolCalls) {
@@ -813,12 +878,18 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
                     const functionToCall = llmFunctions[functionName]
                     const functionArgs = JSON.parse(toolCall.function.arguments)
                     const functionResponse = functionToCall(world)(functionArgs)
-                    messages.push({
+
+                    const functionMessage: ChatCompletionMessageParam = {
                         tool_call_id: toolCall.id,
                         role: "tool",
                         name: functionName,
+                        args: JSON.stringify(functionArgs),
                         content: JSON.stringify(functionResponse),
-                    })
+                    } as ChatCompletionMessageParam
+
+                    messages.push(functionMessage)
+                    if (log) log.push(functionMessage)
+
                     lastResponse = functionResponse
                 }
             } else {

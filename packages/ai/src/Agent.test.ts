@@ -58,6 +58,16 @@ const agent = createAgent(llm, ComponentMap, RelationMap, EntityMap)
 
 describe('bitECS AI Agent Tests', async () => {
 
+    test('add an entity to the world', async () => {
+        const eid = await agent(world, 'add a new entity to the world called BigBadBoss')
+        assert(EntityMap['BigBadBoss'] === eid)
+    })
+
+    test('remove an entity to the world', async () => {
+        await agent(world, 'remove the entity called BigBadBoss')
+        assert(EntityMap['BigBadBoss'] === undefined)
+    })
+
     test('query for components and return the results', async () => {
         const testEnts: number[] = []
         for (let i = 0; i < 20; i++) {
