@@ -1,4 +1,4 @@
-import { TODO, createWorld, World as IWorld } from '@bitecs/classic';
+import { createWorld, World as IWorld } from '@bitecs/classic';
 
 export type World = IWorld & {
 	workers: Record<string, Worker[]>;
@@ -14,4 +14,4 @@ export const world = createWorld({
 		then: performance.now(),
 		delta: 0,
 	},
-} as TODO);
+});

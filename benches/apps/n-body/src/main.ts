@@ -2,18 +2,18 @@ import './styles.css';
 import * as THREE from 'three';
 import {
 	CONSTANTS,
-	init,
 	moveBodies,
 	setInitial,
 	updateColor,
 	updateGravity,
+	updateTime,
 	world,
 } from '@sim/n-body';
 import { initStats } from '@app/bench-tools';
 import { scene } from './scene';
 import { pipe } from '@bitecs/classic';
-import { spawnThreeObjects } from './systems/spawnThreeObjects';
 import { syncThreeObjects } from './systems/syncThreeObjects';
+import { init } from './systems/init';
 // Configure the simulation
 CONSTANTS.NBODIES = 2000;
 
@@ -56,8 +56,8 @@ camera.position.set(0, 0, 100);
 camera.lookAt(0, 0, 0);
 
 const pipeline = pipe(
+	updateTime,
 	setInitial,
-	spawnThreeObjects,
 	updateGravity,
 	moveBodies,
 	updateColor,

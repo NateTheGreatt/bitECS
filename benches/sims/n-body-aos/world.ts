@@ -1,3 +1,15 @@
-import { createWorld } from "@bitecs/classic";
+import { createWorld, World as IWorld } from '@bitecs/classic';
 
-export const world = createWorld();
+export type World = IWorld & {
+	time: {
+		then: number;
+		delta: number;
+	};
+};
+
+export const world = createWorld({
+	time: {
+		then: performance.now(),
+		delta: 0,
+	},
+});
