@@ -22,6 +22,7 @@ import { createShadow } from '../storage/Storage.js';
 import { $storeFlattened, $tagStore } from '../storage/symbols.js';
 import { EMPTY } from '../constants/Constants.js';
 import { worlds } from '../world/World.js';
+import { archetypeHash } from './utils.js';
 
 function modifier(c: Component, mod: string): QueryModifier {
 	const inner: TODO = () => [c, mod] as const;
@@ -50,37 +51,6 @@ export function None(...comps: Component[]) {
 		return comps;
 	};
 }
-
-const archetypeHash = (world: World, components: Component[]) => {
-	return components
-		.sort((a, b) => {
-			if (typeof a === 'function' && a[$modifier]) {
-				a = a()[0];
-			}
-			if (typeof b === 'function' && b[$modifier]) {
-				b = b()[0];
-			}
-			if (!world[$componentMap].has(a)) registerComponent(world, a);
-			if (!world[$componentMap].has(b)) registerComponent(world, b);
-			const aData = world[$componentMap].get(a)!;
-			const bData = world[$componentMap].get(b)!;
-			return aData.id > bData.id ? 1 : -1;
-		})
-		.reduce((acc, component) => {
-			let mod;
-			if (typeof component === 'function' && component[$modifier]) {
-				mod = component()[1];
-				component = component()[0];
-			}
-			const componentData = world[$componentMap].get(component)!;
-			if (mod) {
-				acc += `-${mod}(${componentData.generationId}-${componentData.bitflag})`;
-			} else {
-				acc += `-${componentData.generationId}-${componentData.bitflag}`;
-			}
-			return acc;
-		}, '');
-};
 
 export const registerQuery = (world: World, query: Query) => {
 	// Early exit if query is already registered.
@@ -255,13 +225,10 @@ const getNoneComponents = aggregateComponentsFor(None);
  * @returns {function} query
  */
 
-export const defineQuery = (...args: TODO): Query => {
-	let components: TODO;
-	components = args[0];
-
-	if (components === undefined || components[$componentMap] !== undefined) {
+export const defineQuery = (components: Component[]): Query => {
+	if (components === undefined) {
 		const query = (world: World, clearDiff = false): Uint32Array =>
-			world ? world[$entityArray] : components[$entityArray];
+			Uint32Array.from(world[$entityArray]);
 		query[$queryComponents] = components;
 		query[$queueRegisters] = [] as Queue[];
 
