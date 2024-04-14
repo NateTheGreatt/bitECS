@@ -16,8 +16,10 @@ import {
 	defineEnterQueue,
 	defineExitQueue,
 	registerQuery,
+	query,
+	SYMBOLS,
 } from '../../src/index.js';
-import { describe, it, afterEach } from 'vitest';
+import { describe, it, afterEach, expect } from 'vitest';
 
 describe('Query Integration Tests', () => {
 	afterEach(() => {
@@ -332,5 +334,32 @@ describe('Query Integration Tests', () => {
 
 		entered = enteredQuery(world, false);
 		strictEqual(entered.length, 0);
+	});
+
+	it('should work inline no matter the order of components', () => {
+		const world = createWorld();
+		const TestComponent = defineComponent({ value: Types.f32 });
+		const FooComponent = defineComponent({ value: Types.f32 });
+		const BarComponent = defineComponent({ value: Types.f32 });
+
+		const eid = addEntity(world);
+
+		let eids = query(world, [TestComponent, FooComponent, BarComponent]);
+		strictEqual(eids.length, 0);
+
+		addComponent(world, TestComponent, eid);
+		addComponent(world, FooComponent, eid);
+		addComponent(world, BarComponent, eid);
+
+		eids = query(world, [TestComponent, BarComponent, FooComponent]);
+
+		strictEqual(eids.length, 1);
+
+		eids = query(world, [FooComponent, TestComponent, BarComponent]);
+
+		strictEqual(eids.length, 1);
+
+		// Should only be one hash even though the order of components is different.
+		expect(world[SYMBOLS.$queriesHashMap].size).toBe(1);
 	});
 });
