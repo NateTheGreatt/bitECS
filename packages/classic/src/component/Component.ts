@@ -12,8 +12,6 @@ import { createStore, resetStoreFor } from '../storage/Storage.js';
 import { getGlobalSize } from '../entity/Entity.js';
 import { $isPairComponent, $relation, Pair, Wildcard } from '../relation/Relation.js';
 
-export const components: Component[] = [];
-
 /**
  * Defines a new component store.
  *
@@ -25,10 +23,7 @@ export const defineComponent = <T extends Schema>(
 	size?: number
 ): ComponentType<T> => {
 	const component = createStore(schema, size || getGlobalSize());
-	if (schema && Object.keys(schema).length) {
-		component[$schema] = schema;
-		components.push(component);
-	}
+	if (schema && Object.keys(schema).length) component[$schema] = schema;
 	return component;
 };
 
@@ -149,7 +144,7 @@ export const addComponent = (world: World, component: Component, eid: number, re
 
 	// Add wildcard relation if its a Pair component
 	if (component[$isPairComponent]) {
-		addComponent(world, Pair(component[$relation], Wildcard), eid)
+		addComponent(world, Pair(component[$relation], Wildcard), eid);
 	}
 };
 
@@ -206,7 +201,7 @@ export const removeComponent = (world: World, component: Component, eid: number,
 
 	// Add wildcard relation if its a Pair component
 	if (component[$isPairComponent]) {
-		removeComponent(world, Pair(component[$relation], Wildcard), eid)
+		removeComponent(world, Pair(component[$relation], Wildcard), eid);
 	}
 };
 
