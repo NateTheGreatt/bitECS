@@ -24,13 +24,13 @@ import { EMPTY } from '../constants/Constants.js';
 import { worlds } from '../world/World.js';
 import { archetypeHash } from './utils.js';
 
+export const queries: Query[] = [];
+
 function modifier(c: Component, mod: string): QueryModifier {
 	const inner: TODO = () => [c, mod] as const;
 	inner[$modifier] = true;
 	return inner;
 }
-
-export const queries: Query[] = [];
 
 export const Not = (c: Component) => modifier(c, 'not');
 export const Or = (c: Component) => modifier(c, 'or');
@@ -258,15 +258,23 @@ export const defineQuery = (components: Component[]): Query => {
 	return query;
 };
 
-export const query = (world: World, components: Component[]) => {
-	const hash = archetypeHash(world, components);
-	let queryData = world[$queriesHashMap].get(hash);
-	if (!queryData) {
-		return defineQuery(components)(world);
+export function query(world: World, components: Component[]): Uint32Array;
+export function query(world: World, queue: Queue): Uint32Array;
+export function query(world: World, args: Component[] | Queue): Uint32Array {
+	if (Array.isArray(args)) {
+		const components = args;
+		const hash = archetypeHash(world, components);
+		let queryData = world[$queriesHashMap].get(hash);
+		if (!queryData) {
+			return defineQuery(components)(world);
+		} else {
+			return queryData.query(world);
+		}
 	} else {
-		return queryData.query(world);
+		const queue = args;
+		return new Uint32Array(queue(world));
 	}
-};
+}
 
 export const queryCheckEntity = (world: World, q: TODO, eid: number) => {
 	const { masks, notMasks, generations } = q;

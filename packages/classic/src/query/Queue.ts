@@ -1,11 +1,16 @@
+import { Component } from '../component/types';
 import { EMPTY } from '../constants/Constants';
 import { SparseSet } from '../utils/SparseSet';
 import { worlds } from '../world/World';
 import { World } from '../world/types';
+import { defineQuery } from './Query';
 import { $queryDataMap, $queueRegisters } from './symbols';
 import { Query, Queue } from './types';
 
-export function defineEnterQueue(query: Query): Queue {
+export function defineEnterQueue(query: Query): Queue;
+export function defineEnterQueue(components: Component[]): Queue;
+export function defineEnterQueue(args: Query | Component[]): Queue {
+	const query = typeof args === 'function' ? args : defineQuery(args);
 	let index = -1;
 
 	const registerQueue = (world: World) => {
@@ -37,7 +42,10 @@ export function defineEnterQueue(query: Query): Queue {
 	return queue;
 }
 
-export function defineExitQueue(query: Query): Queue {
+export function defineExitQueue(query: Query): Queue;
+export function defineExitQueue(components: Component[]): Queue;
+export function defineExitQueue(args: Query | Component[]): Queue {
+	const query = typeof args === 'function' ? args : defineQuery(args);
 	let index = -1;
 
 	const registerQueue = (world: World) => {
