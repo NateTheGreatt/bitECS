@@ -25,6 +25,7 @@ export const archetypeHash = (world: World, components: Component[]) => {
 				mod = component()[1];
 				component = component()[0];
 			}
+			if (!world[$componentMap].has(component)) registerComponent(world, component);
 			const componentData = world[$componentMap].get(component)!;
 			if (mod) {
 				acc += `-${mod}(${componentData.generationId}-${componentData.bitflag})`;
