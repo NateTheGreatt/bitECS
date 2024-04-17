@@ -1,5 +1,4 @@
-import { defineSystem } from '@bitecs/classic';
-import { bodyQuery } from '../queries/queries';
+import { defineSystem, query } from '@bitecs/classic';
 import { Velocity } from '../components/Velocity';
 import { Mass } from '../components/Mass';
 import { World } from '../world';
@@ -8,7 +7,7 @@ import { Position } from '../components/Position';
 import { CONSTANTS } from '../constants';
 
 export const updateGravity = defineSystem((world: World) => {
-	const eids = bodyQuery(world);
+	const eids = query(world, [Position, Mass, Velocity]);
 
 	for (let j = 0; j < eids.length; j++) {
 		const meId = eids[j];

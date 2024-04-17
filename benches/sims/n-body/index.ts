@@ -12,8 +12,6 @@ export { setInitial } from './systems/setInitial';
 export { init } from './systems/init';
 export { updateTime } from './systems/time';
 
-export * from './queries/queries';
-
 export { world } from './world';
 export { pipeline } from './systems/pipeline';
 export { CONSTANTS } from './constants';

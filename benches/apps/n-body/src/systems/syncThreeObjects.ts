@@ -1,5 +1,5 @@
-import { defineSystem } from '@bitecs/classic';
-import { Circle, Color, Position, bodyQuery } from '@sim/n-body';
+import { defineSystem, query } from '@bitecs/classic';
+import { Circle, Color, Position } from '@sim/n-body';
 import { ThreeObject } from '../components/ThreeObject';
 import * as THREE from 'three';
 
@@ -9,7 +9,7 @@ const dummy = new THREE.Object3D();
 const color = new THREE.Color();
 
 export const syncThreeObjects = defineSystem((world) => {
-	const eids = bodyQuery(world);
+	const eids = query(world, [Position, Circle, Color]);
 	const instancedMesh = ThreeObject[0];
 
 	for (let i = 0; i < eids.length; i++) {

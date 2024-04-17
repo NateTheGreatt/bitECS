@@ -1,12 +1,11 @@
-import { defineSystem } from '@bitecs/classic';
-import { bodyQuery } from '../queries/bodyQuery';
+import { defineSystem, query } from '@bitecs/classic';
 import { Position, Velocity } from '../components';
 import { CONSTANTS } from '../constants';
 import { World } from '../world';
 
 export const moveBodies = defineSystem((world: World) => {
 	const { delta } = world.time;
-	const eids = bodyQuery(world);
+	const eids = query(world, [Position, Velocity]);
 
 	for (let i = 0; i < eids.length; i++) {
 		const eid = eids[i];

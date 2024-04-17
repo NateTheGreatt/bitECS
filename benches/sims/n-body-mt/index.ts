@@ -6,8 +6,6 @@ export { moveBodies } from './systems/moveBodies';
 export { setInitial } from './systems/setInitial';
 export { init } from './systems/init';
 
-export { bodyQuery } from './queries/bodyQuery';
-
 export { world, type World } from './world';
 export { pipeline } from './systems/pipeline';
 export { CONSTANTS } from './constants';

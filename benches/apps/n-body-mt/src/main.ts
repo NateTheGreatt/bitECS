@@ -1,8 +1,6 @@
 import './styles.css';
 import * as THREE from 'three';
 import {
-	// CONSTANTS,
-	bodyQuery,
 	moveBodies,
 	setInitial,
 	updateColor,
@@ -20,6 +18,7 @@ import { syncThreeObjects } from './systems/syncThreeObjects';
 import { World } from '@sim/n-body-mt/world';
 import { updateTime } from '@sim/n-body-mt/systems/time';
 import { init } from './systems/init';
+import { defineQuery } from '@bitecs/classic';
 
 // Configure the simulation
 // CONSTANTS.NBODIES = 2000;
@@ -61,6 +60,8 @@ window.addEventListener('resize', onWindowResize);
 // Camera position
 camera.position.set(0, 0, 100);
 camera.lookAt(0, 0, 0);
+
+const bodyQuery = defineQuery([Position, Mass, Velocity, Acceleration]);
 
 const updateGravity = updateGravityMain({
 	queries: { bodyQuery },

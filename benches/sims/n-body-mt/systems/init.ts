@@ -1,7 +1,7 @@
 import { World } from '../world';
 import { CONSTANTS } from '../constants';
 import { addComponent, addEntity } from '@bitecs/classic';
-import { Position, Velocity, Mass, Circle, Color, IsCentralMass } from '../components';
+import { Position, Velocity, Mass, Circle, Color, IsCentralMass, Acceleration } from '../components';
 
 export const init = (world: World) => {
 	for (let i = 0; i < CONSTANTS.NBODIES; i++) {
@@ -11,6 +11,7 @@ export const init = (world: World) => {
 		addComponent(world, Mass, eid);
 		addComponent(world, Circle, eid);
 		addComponent(world, Color, eid);
+		addComponent(world, Acceleration, eid);
 
 		if (i === 0) {
 			// Make the first entity the central mass.
