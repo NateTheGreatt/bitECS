@@ -1,8 +1,9 @@
 import { Not, Pair, Schema, addComponent, addComponents, addEntity, defineComponent, defineRelation, query, removeComponent, removeComponents, removeEntity, type Component, type RelationType, type World } from "@bitecs/classic";
 import type OpenAI from "openai";
-import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/index.mjs";
+import type { ChatCompletionMessage, ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/index.mjs";
 import { FilterOperationNames, applyFilters, type FilterCriterion, type FilterOperations } from "./Filtering";
 import { $schema } from "@bitecs/classic/src/component/symbols";
+import { ChatCompletionMessageToolCall } from "openai/src/resources/index.js";
 
 export type AddRelationParams = {
     relationName: string
@@ -82,183 +83,181 @@ export type ComponentMap = { [key: string]: Component }
 export type RelationMap = { [key: string]: RelationType<any> }
 export type EntityMap = { [key: string]: number }
 
-export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap: ComponentMap, entityMap: EntityMap, log?: any[]) => {
+export type CreateAgentParams = {
+    llm: OpenAI,
+    model?: string,
+    components: ComponentMap,
+    relations: ComponentMap,
+    entities: EntityMap,
+    functionCallLog?: ChatCompletionMessage[]
+}
+
+
+const ecsAddEntity = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({name}: {name:string}) => {
+    entityMap[name] = addEntity(world)
+    return entityMap[name]
+}
+
+const ecsRemoveEntity = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({entityId}: {entityId:number}) => {
+    // TODO: optimize
+    for (const key of Object.keys(entityMap)) {
+        if (entityMap[key] === entityId) {
+            delete entityMap[key]
+            break
+        }
+    }
+    removeEntity(world, entityId)
+    return 'entity removed'
+}
+
+const ecsCreateComponentType = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({name, schema}: {name:string, schema: Schema}) => {
+    componentMap[name] = defineComponent(schema)
+    return 'component created'
+}
+
+const ecsCreateRelationType = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({name, schema={}}: {name:string, schema: Schema}) => {
+    componentMap[name] = defineRelation(schema)
+    return 'relation created'
+}
+
+const ecsAddComponents = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({componentNames, entities}:AddComponentParams) => {
+    if (!Array.isArray(componentNames)) {
+        componentNames = [componentNames]
+    }
+    const components = componentNames.map(name => componentMap[name])
+    for (const eid of entities) {
+        addComponents(world, components, eid)
+    }
+    return 'components added'
+}
+
+const ecsRemoveComponents = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({componentNames, entities}:AddComponentParams) => {
+    if (!Array.isArray(componentNames)) {
+        componentNames = [componentNames]
+    }
+    const components = componentNames.map(name => componentMap[name])
+    for (const eid of entities) {
+        removeComponents(world, components, eid)
+    }
+    return 'components removed'
+}
+
+const ecsSetComponentValues = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({setComponentValues, entities}:SetComponentValuesParams) => {
+    for (const {componentName, propertyValues} of setComponentValues) {
+        const component = componentMap[componentName]
+        for (const {propertyName, propertyValue} of propertyValues) {
+            for (const eid of entities) {
+                component[propertyName][eid] = propertyValue
+            }
+        }
+    }
+    return 'component values set'
+}
+
+const ecsSetRelationValues = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({setRelationValues, entities}:SetRelationValuesParams) => {
+    for (const {relationName, relationSubjectEntityId, propertyValues} of setRelationValues) {
+        const relation = relationMap[relationName]
+        const relationComponent = Pair(relation, relationSubjectEntityId)
+        for (const {propertyName, propertyValue} of propertyValues) {
+            for (const eid of entities) {
+                relationComponent[propertyName][eid] = propertyValue
+            }
+        }
+    }
+    return 'relation values set'
+}
+
+const ecsGetComponentValues = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({componentName, propertyNames, entityId}:GetComponentValuesParams) => {
+    const obj: any = {}
+    const component = componentMap[componentName]
+    for (const propertyName of propertyNames) {
+        obj[propertyName] = component[propertyName][entityId]
+    }
+    return obj
+}
+
+const ecsGetRelationValues = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({relationName, relationSubjectEntityId, propertyNames, entityId}:GetRelationValuesParams) => {
+    const obj: any = {}
+    const relation = relationMap[relationName]
+    const relationComponent = Pair(relation, relationSubjectEntityId)
+    for (const propertyName of propertyNames) {
+        obj[propertyName] = relationComponent[propertyName][entityId]
+    }
+    return obj
+}
+
+const ecsAddRelations = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({relationName, relationSubjects, entities}:AddRelationParams) => {
+    const relation = relationMap[relationName]
+    for (const eid of entities) {
+        for (const subject of relationSubjects) {
+            addComponent(world, Pair(relation, subject), eid)
+        }
+    }
+    return 'relations added'
+}
+
+
+const ecsRemoveRelations = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({relationName, relationSubjects, entities}:AddRelationParams) => {
+    const relation = relationMap[relationName]
+    for (const eid of entities) {
+        for (const subject of relationSubjects) {
+            removeComponent(world, Pair(relation, subject), eid)
+        }
+    }
+    return 'relations removed'
+}
+
+const ecsQuery = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({componentNames, notComponentNames, relations, notRelations}:QueryParams) => {
+    const components = componentNames ? componentNames.map(name => componentMap[name]) : []
+    const notComponents = notComponentNames ? notComponentNames.map(name => Not(componentMap[name])) : []
+    const relationPairs = relations ? relations.map(({relationName, relationSubjectEntityId: entityId}) => {
+        const eid = parseInt(entityId) || entityMap[entityId]
+        return Pair(relationMap[relationName], eid)
+    }) : []    
+    const notRelationPairs = notRelations ? notRelations.map(({relationName, relationSubjectEntityId: entityId}) => {
+        const eid = parseInt(entityId) || entityMap[entityId]
+        return Not(Pair(relationMap[relationName], eid))
+    }) : []
+    
+    const results = query(world, [...components, ...notComponents, ...relationPairs, ...notRelationPairs])
+    return Array.from(results)
+}
+
+// TODO: optimize
+const ecsFilter = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({componentFilters, entities}:FilterParams) => {
+    return entities.filter(eid => {
+        for (const {componentName, propertyName, operationName, values} of componentFilters) {
+            const component = componentMap[componentName]
+            const prop = component[propertyName]
+            
+            const filter = { field: propertyName, operation: operationName as FilterOperations, values } as FilterCriterion
+            
+            const obj = { [propertyName]: prop[eid] }
+            
+            if (applyFilters([obj], [filter]).length === 0) {
+                return false
+            }
+        }
+        
+        return true
+    })
+}
+
+const ecsEntityIdLookup = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({entityName}:{entityName:string}) => {
+    return entityMap[entityName]
+}
+
+export const createAgent = (
+    params:CreateAgentParams
+) => {
+    const {llm, model, components: componentMap, relations: relationMap, entities: entityMap, functionCallLog} = params
+    
     const componentDefinitions = Object.entries(componentMap)
         .reduce((defs,[name, component]) => {
             defs[name] = component[$schema]
             return defs
         }, {} as any)
 
-    const ecsAddEntity = (world:World) => ({name}: {name:string}) => {
-        entityMap[name] = addEntity(world)
-        return entityMap[name]
-    }
-
-    const ecsRemoveEntity = (world:World) => ({entityId}: {entityId:number}) => {
-        // TODO: optimize
-        for (const key of Object.keys(entityMap)) {
-            if (entityMap[key] === entityId) {
-                delete entityMap[key]
-                break
-            }
-        }
-        removeEntity(world, entityId)
-        return 'entity removed'
-    }
-
-    const ecsCreateComponentType = (world:World) => ({name, schema}: {name:string, schema: Schema}) => {
-        componentMap[name] = defineComponent(schema)
-        return 'component created'
-    }
-
-    const ecsCreateRelationType = (world:World) => ({name, schema={}}: {name:string, schema: Schema}) => {
-        componentMap[name] = defineRelation(schema)
-        return 'relation created'
-    }
-        
-    const ecsAddComponents = (world: World) => ({componentNames, entities}:AddComponentParams) => {
-        if (!Array.isArray(componentNames)) {
-            componentNames = [componentNames]
-        }
-        const components = componentNames.map(name => componentMap[name])
-        for (const eid of entities) {
-            addComponents(world, components, eid)
-        }
-        return 'components added'
-    }
-    
-    const ecsRemoveComponents = (world: World) => ({componentNames, entities}:AddComponentParams) => {
-        if (!Array.isArray(componentNames)) {
-            componentNames = [componentNames]
-        }
-        const components = componentNames.map(name => componentMap[name])
-        for (const eid of entities) {
-            removeComponents(world, components, eid)
-        }
-        return 'components removed'
-    }
-
-    const ecsSetComponentValues = (world: World) => ({setComponentValues, entities}:SetComponentValuesParams) => {
-        for (const {componentName, propertyValues} of setComponentValues) {
-            const component = componentMap[componentName]
-            for (const {propertyName, propertyValue} of propertyValues) {
-                for (const eid of entities) {
-                    component[propertyName][eid] = propertyValue
-                }
-            }
-        }
-        return 'component values set'
-    }
-
-    const ecsSetRelationValues = (world: World) => ({setRelationValues, entities}:SetRelationValuesParams) => {
-        for (const {relationName, relationSubjectEntityId, propertyValues} of setRelationValues) {
-            const relation = relationMap[relationName]
-            const relationComponent = Pair(relation, relationSubjectEntityId)
-            for (const {propertyName, propertyValue} of propertyValues) {
-                for (const eid of entities) {
-                    relationComponent[propertyName][eid] = propertyValue
-                }
-            }
-        }
-        return 'relation values set'
-    }
-
-    const ecsGetComponentValues = (world: World) => ({componentName, propertyNames, entityId}:GetComponentValuesParams) => {
-        const obj: any = {}
-        const component = componentMap[componentName]
-        for (const propertyName of propertyNames) {
-            obj[propertyName] = component[propertyName][entityId]
-        }
-        return obj
-    }
-
-    const ecsGetRelationValues = (world: World) => ({relationName, relationSubjectEntityId, propertyNames, entityId}:GetRelationValuesParams) => {
-        const obj: any = {}
-        const relation = relationMap[relationName]
-        const relationComponent = Pair(relation, relationSubjectEntityId)
-        for (const propertyName of propertyNames) {
-            obj[propertyName] = relationComponent[propertyName][entityId]
-        }
-        return obj
-    }
-    
-    const ecsAddRelations = (world: World) => ({relationName, relationSubjects, entities}:AddRelationParams) => {
-        const relation = relationMap[relationName]
-        for (const eid of entities) {
-            for (const subject of relationSubjects) {
-                addComponent(world, Pair(relation, subject), eid)
-            }
-        }
-        return 'relations added'
-    }
-    
-    
-    const ecsRemoveRelations = (world: World) => ({relationName, relationSubjects, entities}:AddRelationParams) => {
-        const relation = relationMap[relationName]
-        for (const eid of entities) {
-            for (const subject of relationSubjects) {
-                removeComponent(world, Pair(relation, subject), eid)
-            }
-        }
-        return 'relations removed'
-    }
-    
-    const ecsQuery = (world: World) => ({componentNames, notComponentNames, relations, notRelations}:QueryParams) => {
-        const components = componentNames ? componentNames.map(name => componentMap[name]) : []
-        const notComponents = notComponentNames ? notComponentNames.map(name => Not(componentMap[name])) : []
-        const relationPairs = relations ? relations.map(({relationName, relationSubjectEntityId: entityId}) => {
-            const eid = parseInt(entityId) || entityMap[entityId]
-            return Pair(relationMap[relationName], eid)
-        }) : []    
-        const notRelationPairs = notRelations ? notRelations.map(({relationName, relationSubjectEntityId: entityId}) => {
-            const eid = parseInt(entityId) || entityMap[entityId]
-            return Not(Pair(relationMap[relationName], eid))
-        }) : []
-        
-        const results = query(world, [...components, ...notComponents, ...relationPairs, ...notRelationPairs])
-        return Array.from(results)
-    }
-    
-    // TODO: optimize
-    const ecsFilter = (world: World) => ({componentFilters, entities}:FilterParams) => {
-        return entities.filter(eid => {
-            for (const {componentName, propertyName, operationName, values} of componentFilters) {
-                const component = componentMap[componentName]
-                const prop = component[propertyName]
-                
-                const filter = { field: propertyName, operation: operationName as FilterOperations, values } as FilterCriterion
-                
-                const obj = { [propertyName]: prop[eid] }
-                
-                if (applyFilters([obj], [filter]).length === 0) {
-                    return false
-                }
-            }
-            
-            return true
-        })
-    }
-    
-    const ecsEntityIdLookup = (world: World) => ({entityName}:{entityName:string}) => {
-        return entityMap[entityName]
-    }
-    
-    const llmFunctions: {[key:string]: Function} = {
-        ecsAddEntity,
-        ecsRemoveEntity,
-        ecsAddComponents,
-        ecsRemoveComponents,
-        ecsAddRelations,
-        ecsRemoveRelations,
-        ecsSetComponentValues,
-        ecsSetRelationValues,
-        ecsGetComponentValues,
-        ecsGetRelationValues,
-        ecsQuery,
-        ecsFilter,
-        ecsEntityIdLookup,
-    }
-    
     const tools: ChatCompletionTool[] = [
         {
             type: "function",
@@ -752,8 +751,23 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
             }
         }
     ]
-    
+        
     return async (world: World, prompt: string) => {
+        const llmFunctions: {[key:string]: Function} = {
+            ecsAddEntity: ecsAddEntity(world, params),
+            ecsRemoveEntity: ecsRemoveEntity(world, params),
+            ecsAddComponents: ecsAddComponents(world, params),
+            ecsRemoveComponents: ecsRemoveComponents(world, params),
+            ecsAddRelations: ecsAddRelations(world, params),
+            ecsRemoveRelations: ecsRemoveRelations(world, params),
+            ecsSetComponentValues: ecsSetComponentValues(world, params),
+            ecsSetRelationValues: ecsSetRelationValues(world, params),
+            ecsGetComponentValues: ecsGetComponentValues(world, params),
+            ecsGetRelationValues: ecsGetRelationValues(world, params),
+            ecsQuery: ecsQuery(world, params),
+            ecsFilter: ecsFilter(world, params),
+            ecsEntityIdLookup: ecsEntityIdLookup(world, params),
+        }
         const messages: ChatCompletionMessageParam[] = [
             { role: 'system', content: `
             You are an agent that is aware of a running ECS world. You are capable of calling functions that modify the state of the ECS.
@@ -767,8 +781,7 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
             Filter operation names are: ${JSON.stringify(Object.keys(FilterOperationNames))}
             You must ALWAYS add a component or relation before setting a value for it.
             ALWAYS look up entity IDs by name, NEVER assume or make up an entity ID.
-            Think step-by-step, and return the word TERMINATE when you are finished with the request.
-            
+
             Here are all of the component definitions:
             \`\`\`
             ${JSON.stringify(componentDefinitions)}
@@ -858,9 +871,8 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
         
         let lastResponse
         while(true) {
-            
             const response = await llm.chat.completions.create({
-                model: "gpt-4-turbo-preview",
+                model: model || "gpt-4-turbo-preview",
                 messages,
                 tools,
                 temperature: 0.7,
@@ -868,27 +880,29 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
             })
             const responseMessage = response.choices[0].message
 
-            if (log) log.push(responseMessage)
-            
             const toolCalls = responseMessage.tool_calls
             if (toolCalls) {
+                if (functionCallLog) functionCallLog.push(responseMessage)
                 messages.push(responseMessage)
                 for (const toolCall of toolCalls) {
                     const functionName = toolCall.function.name
                     const functionToCall = llmFunctions[functionName]
                     const functionArgs = JSON.parse(toolCall.function.arguments)
-                    const functionResponse = functionToCall(world)(functionArgs)
+                    const functionResponse = functionToCall(functionArgs)
 
                     const functionMessage: ChatCompletionMessageParam = {
                         tool_call_id: toolCall.id,
                         role: "tool",
                         name: functionName,
-                        args: JSON.stringify(functionArgs),
                         content: JSON.stringify(functionResponse),
                     } as ChatCompletionMessageParam
 
                     messages.push(functionMessage)
-                    if (log) log.push(functionMessage)
+                    // if (functionCallLog) functionCallLog.push({
+                    //     name: functionName,
+                    //     args: functionArgs,
+                    //     response: functionResponse,
+                    // } as FunctionCall)
 
                     lastResponse = functionResponse
                 }
@@ -899,4 +913,32 @@ export const createAgent = (llm: OpenAI, componentMap: ComponentMap, relationMap
 
         return lastResponse
     }
+}
+
+export const hydrateWithFunctionLogs = (world: World, params:CreateAgentParams) => {
+    const llmFunctions: {[key:string]: Function} = {
+        ecsAddEntity: ecsAddEntity(world, params),
+        ecsRemoveEntity: ecsRemoveEntity(world, params),
+        ecsAddComponents: ecsAddComponents(world, params),
+        ecsRemoveComponents: ecsRemoveComponents(world, params),
+        ecsAddRelations: ecsAddRelations(world, params),
+        ecsRemoveRelations: ecsRemoveRelations(world, params),
+        ecsSetComponentValues: ecsSetComponentValues(world, params),
+        ecsSetRelationValues: ecsSetRelationValues(world, params),
+        ecsGetComponentValues: ecsGetComponentValues(world, params),
+        ecsGetRelationValues: ecsGetRelationValues(world, params),
+        ecsQuery: ecsQuery(world, params),
+        ecsFilter: ecsFilter(world, params),
+        ecsEntityIdLookup: ecsEntityIdLookup(world, params),
+    }
+
+    if (params.functionCallLog)
+        for (const functionCall of params.functionCallLog) {
+            for (const toolCall of functionCall.tool_calls!) {
+                const functionName = toolCall.function.name
+                const functionToCall = llmFunctions[functionName]
+                const functionArgs = JSON.parse(toolCall.function.arguments)
+                const functionResponse = functionToCall(functionArgs)
+            }
+        }
 }

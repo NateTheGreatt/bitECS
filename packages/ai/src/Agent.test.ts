@@ -20,7 +20,7 @@ const Quest = defineComponent()
 const HasEquippedWeapon = defineComponent()
 const CharacterSheet: {description: string[]} = {description: []}
 
-const ComponentMap: {[key:string]: Component} = {
+const components: {[key:string]: Component} = {
   Health,
   Mana,
   OnFire,
@@ -37,7 +37,7 @@ const AllyOf = defineRelation()
 const EnemyOf = defineRelation()
 const InterestedIn = defineRelation({ amount: Types.ui8 })
 
-const RelationMap: {[key:string]: Component} = {
+const relations: {[key:string]: Component} = {
   MemberOf,
   AllyOf,
   EnemyOf,
@@ -48,24 +48,24 @@ const Adventurer = addEntity(world)
 const TheBronzeBastion = addEntity(world)
 const BlackbannerSyndicate = addEntity(world)
 
-const EntityMap: {[key:string]: number} = {
+const entities: {[key:string]: number} = {
   Adventurer,
   TheBronzeBastion,
   BlackbannerSyndicate,
 }
 
-const agent = createAgent(llm, ComponentMap, RelationMap, EntityMap)
+const agent = createAgent({llm, components, relations, entities})
 
 describe('bitECS AI Agent Tests', async () => {
 
     test('add an entity to the world', async () => {
         const eid = await agent(world, 'add a new entity to the world called BigBadBoss')
-        assert(EntityMap['BigBadBoss'] === eid)
+        assert(entities['BigBadBoss'] === eid)
     })
 
     test('remove an entity to the world', async () => {
         await agent(world, 'remove the entity called BigBadBoss')
-        assert(EntityMap['BigBadBoss'] === undefined)
+        assert(entities['BigBadBoss'] === undefined)
     })
 
     test('query for components and return the results', async () => {
