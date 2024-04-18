@@ -140,7 +140,7 @@ export const registerQuery = (world: World, query: Query) => {
 	world[$queryDataMap].set(query, q);
 	world[$queries].add(q);
 
-	const hash = archetypeHash(world, components);
+	const hash = archetypeHash(world, query[$queryComponents]);
 	world[$queriesHashMap].set(hash, q);
 
 	allComponents.forEach((c: TODO) => {
