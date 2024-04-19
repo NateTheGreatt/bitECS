@@ -23,6 +23,7 @@ import { $storeFlattened, $tagStore } from '../storage/symbols.js';
 import { EMPTY } from '../constants/Constants.js';
 import { worlds } from '../world/World.js';
 import { archetypeHash } from './utils.js';
+import { $size } from '../world/symbols.js';
 
 export const queries: Query[] = [];
 
@@ -80,7 +81,7 @@ export const registerQuery = (world: World, query: Query) => {
 	const mapComponents = (c: Component) => world[$componentMap].get(c)!;
 	const allComponents = components.concat(notComponents).map(mapComponents);
 
-	const sparseSet = Uint32SparseSet.create(getGlobalSize());
+	const sparseSet = Uint32SparseSet.create(world[$size]);
 
 	const archetypes: TODO = [];
 	const changed: TODO = [];
