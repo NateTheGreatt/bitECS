@@ -16,12 +16,12 @@
 			"types": "./src/index.ts"
 		},
 		"./Uint32SparseSet": {
-			"default": "./src/Uint32SparseSet.ts",
-			"types": "./src/Uint32SparseSet.ts"
+			"default": "./src/Uint32SparseSet/Uint32SparseSet.ts",
+			"types": "./src/Uint32SparseSet/Uint32SparseSet.ts"
 		},
 		"./SpatialGrid": {
-			"default": "./src/SpatialGrid.ts",
-			"types": "./src/SpatialGrid.ts"
+			"default": "./src/SpatialGrid/SpatialGrid.ts",
+			"types": "./src/SpatialGrid/SpatialGrid.ts"
 		}
 	},
 	"scripts": {
