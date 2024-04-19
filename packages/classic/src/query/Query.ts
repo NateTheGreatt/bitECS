@@ -243,7 +243,7 @@ export const defineQuery = (components: Component[]): Query => {
 		if (data.changedComponents.length) return diff(data, clearDiff);
 		if (data.changedComponents.length) return data.changed.dense;
 
-		return new Uint32Array(data.dense.buffer, 0, Uint32SparseSet.length(data));
+		return data.dense;
 	};
 
 	query[$queryComponents] = components;
