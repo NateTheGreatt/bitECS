@@ -7,7 +7,7 @@ import {
 	$size,
 } from '../world/symbols.js';
 import { World } from '../world/types.js';
-import { $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
+import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
 import { TODO } from '../utils/types.js';
 import { $notQueries, $queries } from '../query/symbols.js';
 
@@ -94,7 +94,8 @@ export const addEntity = (world: World): number => {
 		? removed.shift()!
 		: globalEntityCursor++;
 
-	if (eid > world[$size]) throw new Error('bitECS - max entities reached');
+	if (world[$entitySparseSet].dense.length >= world[$size])
+		throw new Error('bitECS - max entities reached');
 
 	world[$entitySparseSet].add(eid);
 	eidToWorld.set(eid, world);

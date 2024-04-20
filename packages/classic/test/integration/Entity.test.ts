@@ -155,4 +155,20 @@ describe('Entity Integration Tests', () => {
 		eid = addEntity(world);
 		strictEqual(eid, 0);
 	});
+
+	it('should handle multiple fixed size worlds', () => {
+		const worldA = createWorld(10);
+		const worldB = createWorld(100);
+
+		for (let i = 0; i < 10; i++) {
+			addEntity(worldA);
+		}
+
+		// Add 100 entities to world B
+		for (let i = 0; i < 100; i++) {
+			addEntity(worldB);
+		}
+
+		// Expect no errors thrown
+	});
 });
