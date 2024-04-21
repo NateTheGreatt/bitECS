@@ -85,7 +85,7 @@ export type EntityMap = { [key: string]: number }
 
 export type CreateAgentParams = {
     llm: OpenAI,
-    model?: string,
+    model: string,
     components: ComponentMap,
     relations: ComponentMap,
     entities: EntityMap,
@@ -148,6 +148,7 @@ const ecsSetComponentValues = (world: World, {components: componentMap, relation
         for (const {propertyName, propertyValue} of propertyValues) {
             for (const eid of entities) {
                 component[propertyName][eid] = propertyValue
+                // addComponent(world, component, eid)
             }
         }
     }
@@ -161,6 +162,7 @@ const ecsSetRelationValues = (world: World, {components: componentMap, relations
         for (const {propertyName, propertyValue} of propertyValues) {
             for (const eid of entities) {
                 relationComponent[propertyName][eid] = propertyValue
+                // addComponent(world, relationComponent, eid)
             }
         }
     }
@@ -243,8 +245,8 @@ const ecsFilter = (world: World, {components: componentMap, relations: relationM
     })
 }
 
-const ecsEntityIdLookup = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({entityName}:{entityName:string}) => {
-    return entityMap[entityName]
+const ecsEntityIdLookup = (world: World, {components: componentMap, relations: relationMap, entities: entityMap}: CreateAgentParams) => ({entityNames}:{entityNames:string[]}) => {
+    return entityNames.map(name => entityMap[name])
 }
 
 export const createAgent = (
@@ -401,13 +403,15 @@ export const createAgent = (
             type: "function",
             function: {
                 name: "ecsEntityIdLookup",
-                description: "Looks up an entity ID by name.",
+                description: "Looks up one or more entity IDs by name.",
                 parameters: {
                     type: "object",
                     properties: {
-                        entityName: {
-                            type: "string",
-                            enum: Object.keys(entityMap),
+                        entityNames: {
+                            type: "array",
+                            items: {
+                                enum: Object.keys(entityMap),
+                            },
                             description: "The name of the entity.",
                         },
                     },
@@ -864,7 +868,9 @@ export const createAgent = (
             }
             \`\`\`
 
-            NEVER CALL MULTIPLE TOOLS IN PARALLEL.
+            It is VERY important that you set component values BEFORE you add the component, to ensure that the data is available by the time you add it for on-add logic to catch.
+            ALWAYS SET COMPONENT VALUES BEFORE ADDING THEM. NEVER ADD COMPONENTS BEFORE SETTING VALUES.
+            ONLY USE ONE TOOL AT A TIME. NEVER USE MULTIPLE TOOLS AT ONCE. NEVER USE PARALLEL FUNCTION CALLING.
             `},
             { role: "user", content: prompt },
         ]

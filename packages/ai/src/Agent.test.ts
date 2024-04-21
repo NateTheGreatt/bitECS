@@ -4,9 +4,10 @@ import {describe, test, assert} from 'vitest'
 import { createAgent } from '.'
 
 const llm = new OpenAI({
-    apiKey: process.env['VITE_OPENAI_API_KEY'],
-    organization: process.env['VITE_OPENAI_ORG_ID'],
+  apiKey: process.env['VITE_OPENAI_API_KEY'],
+  organization: process.env['VITE_OPENAI_ORG_ID'],
 })
+const model = 'gpt-4-turbo-preview'
 
 const world = createWorld()
 
@@ -54,7 +55,7 @@ const entities: {[key:string]: number} = {
   BlackbannerSyndicate,
 }
 
-const agent = createAgent({llm, components, relations, entities})
+const agent = createAgent({llm, model, components, relations, entities})
 
 describe('bitECS AI Agent Tests', async () => {
 
@@ -63,7 +64,7 @@ describe('bitECS AI Agent Tests', async () => {
         assert(entities['BigBadBoss'] === eid)
     })
 
-    test('remove an entity to the world', async () => {
+    test('remove an entity from the world', async () => {
         await agent(world, 'remove the entity called BigBadBoss')
         assert(entities['BigBadBoss'] === undefined)
     })
