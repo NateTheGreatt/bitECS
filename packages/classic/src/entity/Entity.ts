@@ -124,6 +124,12 @@ export const removeEntity = (world: World, eid: number) => {
 	// Check if entity is already removed
 	if (!world[$entitySparseSet].has(eid)) return;
 
+	// Remove entity from all queries
+	// TODO: archetype graph
+	world[$queries].forEach((q) => {
+		queryRemoveEntity(world, q, eid);
+	});
+
 	// Remove relation components from entities that have a relation to this one
 	// e.g. addComponent(world, Pair(ChildOf, parent), child)
 	// when parent is removed, we need to remove the child
@@ -133,6 +139,10 @@ export const removeEntity = (world: World, eid: number) => {
 
 		// if it is, iterate over all subjects with any relation to this eid
 		for (const subject of query(world, [Pair(Wildcard, eid)])) {
+			// TODO: can we avoid this check? (subject may have been removed already)
+			if (!entityExists(world, subject)) {
+				continue
+			}
 			// remove the wildcard association with the subject for this entity
 			removeComponent(world, Pair(Wildcard, eid), subject)
 
@@ -142,7 +152,7 @@ export const removeEntity = (world: World, eid: number) => {
 					continue
 				}
 				const relation = component[$relation]
-				if (component[$pairTarget] === eid  && entityExists(world, subject)) {
+				if (component[$pairTarget] === eid) {
 					removeComponent(world, component, subject)
 					if (relation[$autoRemoveSubject]) {
 						removeEntity(world, subject)
@@ -154,12 +164,6 @@ export const removeEntity = (world: World, eid: number) => {
 			}
 		}
 	}
-
-	// Remove entity from all queries
-	// TODO: archetype graph
-	world[$queries].forEach((q) => {
-		queryRemoveEntity(world, q, eid);
-	});
 
 	// Free the entity
 	if (world[$manualEntityRecycling]) recycled.push(eid);
