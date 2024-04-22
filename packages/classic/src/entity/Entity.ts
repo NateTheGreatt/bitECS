@@ -126,9 +126,14 @@ export const removeEntity = (world: World, eid: number) => {
 
 	// Remove relation components from entities that have a relation to this one
 	// e.g. addComponent(world, Pair(ChildOf, parent), child)
-	// when parent is removed, we need to remove the child (onDeleteTarget == CleanupPolicy.Delete)
+	// when parent is removed, we need to remove the child
+
+	// check to see if this entity is a relation target at all
 	if (world[$relationTargetEntities].has(eid)) {
+
+		// if it is, iterate over all subjects with any relation to this eid
 		for (const subject of query(world, [Pair(Wildcard, eid)])) {
+			// remove the wildcard association with the subject for this entity
 			removeComponent(world, Pair(Wildcard, eid), subject)
 
 			// iterate all relations that the subject has to this entity
@@ -137,7 +142,7 @@ export const removeEntity = (world: World, eid: number) => {
 					continue
 				}
 				const relation = component[$relation]
-				if (component[$pairTarget] === eid) {
+				if (component[$pairTarget] === eid  && entityExists(world, subject)) {
 					removeComponent(world, component, subject)
 					if (relation[$autoRemoveSubject]) {
 						removeEntity(world, subject)

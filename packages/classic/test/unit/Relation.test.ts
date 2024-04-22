@@ -3,7 +3,7 @@ import { addComponent, addEntity, createWorld, defineRelation, entityExists, rem
 import { describe, test } from 'vitest';
 
 describe('Relation Unit Tests', () => {
-	test('should auto remove', () => {
+	test('should auto remove subject', () => {
 		const world = createWorld();
 
         const ChildOf = defineRelation({}, { autoRemoveSubject: true })
