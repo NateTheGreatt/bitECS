@@ -26,6 +26,8 @@ import {
 } from '../entity/symbols.js';
 import { resize } from '../storage/Storage.js';
 import { queries, registerQuery } from '../query/Query.js';
+import { defineHiddenProperties } from '../utils/defineHiddenProperty.js';
+import { $relationTargetEntities } from '../relation/symbols.js';
 
 export const worlds: World[] = [];
 
@@ -61,26 +63,26 @@ export function createWorld(...args: any[]) {
 	const entitySparseSet = SparseSet();
 
 	// Define world properties as non-enumerable symbols so they are internal secrets.
-	const descriptors = { writable: true, enumerable: false, configurable: true };
-	Object.defineProperties(world, {
-		[$size]: { value: size, ...descriptors },
-		[$entityMasks]: { value: [new Uint32Array(size)], ...descriptors },
-		[$entityComponents]: { value: new Map(), ...descriptors },
-		[$archetypes]: { value: [], ...descriptors },
-		[$entitySparseSet]: { value: entitySparseSet, ...descriptors },
-		[$entityArray]: { value: entitySparseSet.dense, ...descriptors },
-		[$bitflag]: { value: 1, ...descriptors },
-		[$componentMap]: { value: new Map(), ...descriptors },
-		[$componentCount]: { value: 0, ...descriptors },
-		[$queryDataMap]: { value: new Map(), ...descriptors },
-		[$queries]: { value: new Set(), ...descriptors },
-		[$queriesHashMap]: { value: new Map(), ...descriptors },
-		[$notQueries]: { value: new Set(), ...descriptors },
-		[$dirtyQueries]: { value: new Set(), ...descriptors },
-		[$localEntities]: { value: new Map(), ...descriptors },
-		[$localEntityLookup]: { value: new Map(), ...descriptors },
-		[$manualEntityRecycling]: { value: false, ...descriptors },
-		[$resizeThreshold]: { value: size - size / 5, ...descriptors },
+	defineHiddenProperties(world, {
+		[$size]: size,
+		[$entityMasks]: [new Uint32Array(size)],
+		[$entityComponents]: new Map(),
+		[$archetypes]: [],
+		[$entitySparseSet]: entitySparseSet,
+		[$entityArray]: entitySparseSet.dense,
+		[$bitflag]: 1,
+		[$componentMap]: new Map(),
+		[$componentCount]: 0,
+		[$queryDataMap]: new Map(),
+		[$queries]: new Set(),
+		[$queriesHashMap]: new Map(),
+		[$notQueries]: new Set(),
+		[$dirtyQueries]: new Set(),
+		[$localEntities]: new Map(),
+		[$localEntityLookup]: new Map(),
+		[$manualEntityRecycling]: false,
+		[$resizeThreshold]: size - size / 5,
+		[$relationTargetEntities]: SparseSet()
 	});
 
 	// Register the world.

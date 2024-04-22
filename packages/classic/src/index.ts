@@ -46,7 +46,8 @@ export { defineSerializer, defineDeserializer, DESERIALIZE_MODE } from './serial
 export { parentArray } from './storage/Storage.js';
 export { TYPES_ENUM as Types } from './constants/Constants.js';
 export { pipe } from './utils/pipe.js';
-export { type RelationType, defineRelation, Pair, Wildcard } from './relation/Relation.js';
+export * from './relation/Relation.js';
+export * from './relation/types.js';
 
 // Types
 export * from './component/types.js';
@@ -63,6 +64,7 @@ import * as entitySymbols from './entity/symbols.js';
 import * as componentSymbols from './component/symbols.js';
 import * as querySymbols from './query/symbols.js';
 import * as storageSymbols from './storage/symbols.js';
+import * as relationSymbols from './relation/symbols.js';
 
 export const SYMBOLS = {
 	...worldSymbols,
@@ -70,4 +72,5 @@ export const SYMBOLS = {
 	...componentSymbols,
 	...querySymbols,
 	...storageSymbols,
+	...relationSymbols,
 };

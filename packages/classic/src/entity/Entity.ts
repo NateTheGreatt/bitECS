@@ -1,4 +1,4 @@
-import { queries, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
+import { queries, query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
 import { resizeWorlds, worlds } from '../world/World.js';
 import {
 	$localEntities,
@@ -10,6 +10,9 @@ import { World } from '../world/types.js';
 import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
 import { TODO } from '../utils/types.js';
 import { $notQueries, $queries } from '../query/symbols.js';
+import { Pair, Wildcard } from '../relation/Relation.js';
+import { removeComponent } from '../component/Component.js';
+import { $autoRemoveSubject, $isPairComponent, $onTargetRemoved, $pairTarget, $relation, $relationTargetEntities } from '../relation/symbols.js';
 
 let defaultSize = 100000;
 
@@ -120,6 +123,32 @@ export const addEntity = (world: World): number => {
 export const removeEntity = (world: World, eid: number) => {
 	// Check if entity is already removed
 	if (!world[$entitySparseSet].has(eid)) return;
+
+	// Remove relation components from entities that have a relation to this one
+	// e.g. addComponent(world, Pair(ChildOf, parent), child)
+	// when parent is removed, we need to remove the child (onDeleteTarget == CleanupPolicy.Delete)
+	if (world[$relationTargetEntities].has(eid)) {
+		for (const subject of query(world, [Pair(Wildcard, eid)])) {
+			removeComponent(world, Pair(Wildcard, eid), subject)
+
+			// iterate all relations that the subject has to this entity
+			for (const component of world[$entityComponents].get(subject)!) {
+				if (!component[$isPairComponent]) {
+					continue
+				}
+				const relation = component[$relation]
+				if (component[$pairTarget] === eid) {
+					removeComponent(world, component, subject)
+					if (relation[$autoRemoveSubject]) {
+						removeEntity(world, subject)
+					}
+					if (relation[$onTargetRemoved]) {
+						relation[$onTargetRemoved](world, subject, eid)
+					}
+				}
+			}
+		}
+	}
 
 	// Remove entity from all queries
 	// TODO: archetype graph

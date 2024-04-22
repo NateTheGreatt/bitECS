@@ -19,6 +19,7 @@ import { $componentCount, $componentMap } from '../component/symbols';
 import { Query, QueryData } from '../query/types';
 import { Component, ComponentNode } from '../component/types';
 import { SparseSet } from '../utils/SparseSet';
+import { $relationTargetEntities } from '../relation/symbols';
 
 export interface World {
 	[$size]: number;
@@ -39,4 +40,5 @@ export interface World {
 	[$localEntityLookup]: Map<any, any>;
 	[$manualEntityRecycling]: boolean;
 	[$resizeThreshold]: number;
+	[$relationTargetEntities]: ReturnType<typeof SparseSet>;
 }

@@ -9,8 +9,9 @@ import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { QueryData } from '../query/types.js';
 import { Schema } from '../storage/types.js';
 import { createStore, resetStoreFor } from '../storage/Storage.js';
-import { getGlobalSize } from '../entity/Entity.js';
-import { $isPairComponent, $relation, Pair, Wildcard } from '../relation/Relation.js';
+import { getEntityComponents, getGlobalSize } from '../entity/Entity.js';
+import { Pair, Wildcard } from '../relation/Relation.js';
+import { $isPairComponent, $relation, $pairTarget, $relationTargetEntities } from '../relation/symbols.js';
 
 /**
  * Defines a new component store.
@@ -145,6 +146,9 @@ export const addComponent = (world: World, component: Component, eid: number, re
 	// Add wildcard relation if its a Pair component
 	if (component[$isPairComponent]) {
 		addComponent(world, Pair(component[$relation], Wildcard), eid);
+		const target = component[$pairTarget];
+		addComponent(world, Pair(Wildcard, target), eid);
+		world[$relationTargetEntities].add(target)
 	}
 };
 
@@ -202,6 +206,12 @@ export const removeComponent = (world: World, component: Component, eid: number,
 	// Add wildcard relation if its a Pair component
 	if (component[$isPairComponent]) {
 		removeComponent(world, Pair(component[$relation], Wildcard), eid);
+		const target = component[$pairTarget];
+		removeComponent(world, Pair(Wildcard, target), eid);
+		// check if eid is still a subject of any relation
+		if (!getEntityComponents(world, eid).some(component => component[$isPairComponent])) {
+			world[$relationTargetEntities].remove(eid)
+		}
 	}
 };
 
