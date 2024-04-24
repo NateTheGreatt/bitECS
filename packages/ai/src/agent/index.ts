@@ -13,8 +13,7 @@ const Agent = {
             llm,
             model,
             contexts: {},  // Key/value storage for state management
-            functions: {
-            }, // Callback functions for operations
+            functions: {}, // Callback functions for operations
             schemas: [],    // Function definitions for the SDK,
             systemPrompt
         };
@@ -49,10 +48,8 @@ const Agent = {
                     for (const toolCall of toolCalls) {
                         const functionName = toolCall.function.name;
                         const functionToCall = agent.functions[functionName];
-                        console.log(`calling function ${functionToCall}`)
                         const functionArgs = JSON.parse(toolCall.function.arguments);
                         const functionResponse = await functionToCall(functionArgs);
-                        console.log(`predicted val: ${JSON.stringify(functionResponse)}`)
                         const functionMessage = {
                             tool_call_id: toolCall.id,
                             role: "tool",
