@@ -1,9 +1,5 @@
-// Define the Agent API
-import OpenAI from "openai";
-
-
 interface Agent {
-    llm: OpenAI;
+    llm: any;
     systemPrompt?: string;
     model: string;
     contexts: Record<string, any>;
@@ -80,6 +76,7 @@ const Agent = {
 };
 
 // Example shared state/context Agent implementation
+// import OpenAI from "openai";
 // const llm = new OpenAI({
 //     apiKey: <YOUR API KEY>,
 //     organization: <YOUR ORG ID>,
