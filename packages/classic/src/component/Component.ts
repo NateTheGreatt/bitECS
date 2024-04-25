@@ -1,4 +1,4 @@
-import { queryAddEntity, queryRemoveEntity, queryCheckEntity } from '../query/Query.js';
+import { queryAddEntity, queryRemoveEntity, queryCheckEntity, query } from '../query/Query.js';
 import { $bitflag, $size } from '../world/symbols.js';
 import { $entityMasks, $entityComponents } from '../entity/symbols.js';
 import { Component, ComponentNode, ComponentType } from './types.js';
@@ -203,15 +203,15 @@ export const removeComponent = (world: World, component: Component, eid: number,
 	// Zero out each property value.
 	if (reset) resetStoreFor(component, eid);
 
-	// Add wildcard relation if its a Pair component
+	// Remove wildcard relations if its a Pair component
 	if (component[$isPairComponent]) {
+		// check if eid is still a subject of any relation or not
+		if (query(world, [Wildcard(eid)]).length === 0) {
+			world[$relationTargetEntities].remove(eid)
+		}
 		removeComponent(world, Pair(component[$relation], Wildcard), eid);
 		const target = component[$pairTarget];
 		removeComponent(world, Pair(Wildcard, target), eid);
-		// check if eid is still a subject of any relation
-		if (!getEntityComponents(world, eid).some(component => component[$isPairComponent])) {
-			world[$relationTargetEntities].remove(eid)
-		}
 	}
 };
 
