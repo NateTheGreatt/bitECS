@@ -1,18 +1,14 @@
 interface Agent {
     llm: any;
     systemPrompt?: string;
-    model: string;
-    contexts: Record<string, any>;
     functions: Record<string, Function>;
     schemas: Array<any>;
 }
 
 const Agent = {
-    create: (llm: any, systemPrompt: string, model = 'gpt-3.5-turbo-0125'): Agent => {
+    create: (llm: any, systemPrompt: string): Agent => {
         const agent = {
             llm,
-            model,
-            contexts: {},  // Key/value storage for state management
             functions: {}, // Callback functions for operations
             schemas: [],    // Function definitions for the SDK,
             systemPrompt
@@ -26,7 +22,7 @@ const Agent = {
     },
 
     // Running the agent with sequential function execution
-    run: async (agent: Agent, userMessage: string) => {
+    run: async (agent: Agent, userMessage: string, options: {model?:string, temperature?:number, seed?: number}) => {
         let messages = [{ role: "user", content: userMessage }];
         if (agent.systemPrompt && agent.systemPrompt.length) {
             messages.unshift({ role: "system", content: agent.systemPrompt });
@@ -34,11 +30,11 @@ const Agent = {
             let lastResponse;
             while (true) {
                 const response = await agent.llm.chat.completions.create({
-                    model: agent.model,
+                    model: (options && options.model) || 'gpt-4-turbo-preview',
                     messages: messages,
                     tools: agent.schemas,
-                    temperature: 0.7,
-                    seed: 42,
+                    temperature: (options && options.temperature) || 0.7,
+                    seed: (options && options.seed) || 42,
                 });
 
                 const responseMessage = response.choices[0].message;
@@ -58,7 +54,7 @@ const Agent = {
                         };
 
                         messages.push(functionMessage); // Add function response
-                        lastResponse = await functionResponse; // Store the last response
+                        lastResponse = functionResponse; // Store the last response
                     }
                 } else {
                     break; // Exit loop if no more tool calls
