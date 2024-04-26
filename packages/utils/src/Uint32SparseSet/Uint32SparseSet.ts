@@ -1,5 +1,5 @@
 import { isSabSupported } from '../isSabSupported';
-import { $buffer, $dense, $length } from './symbols';
+import { $buffer, $dense, $length, $lengthBuffer } from './symbols';
 
 export interface IUint32SparseSet {
 	sparse: number[];
@@ -7,6 +7,7 @@ export interface IUint32SparseSet {
 	[$dense]: Uint32Array;
 	[$length]: number;
 	[$buffer]: SharedArrayBuffer | ArrayBuffer;
+	[$lengthBuffer]: SharedArrayBuffer | ArrayBuffer;
 }
 
 // Length is stored at buffer index 0.
@@ -17,22 +18,28 @@ export function createUint32SparseSet(
 ): IUint32SparseSet {
 	const buffer = isSabSupported()
 		? // @ts-expect-error - TS Doesn't know buffers can grow
-		  new SharedArrayBuffer((initialCapacity + 1) * Uint32Array.BYTES_PER_ELEMENT, {
-				maxByteLength: (maxCapacity + 1) * Uint32Array.BYTES_PER_ELEMENT,
+		  new SharedArrayBuffer((initialCapacity) * Uint32Array.BYTES_PER_ELEMENT, {
+				maxByteLength: (maxCapacity) * Uint32Array.BYTES_PER_ELEMENT,
 		  })
 		: // @ts-expect-error - TS Doesn't know buffers can grow
-		  new ArrayBuffer((initialCapacity + 1) * Uint32Array.BYTES_PER_ELEMENT, {
-				maxByteLength: (maxCapacity + 1) * Uint32Array.BYTES_PER_ELEMENT,
+		  new ArrayBuffer((initialCapacity) * Uint32Array.BYTES_PER_ELEMENT, {
+				maxByteLength: (maxCapacity) * Uint32Array.BYTES_PER_ELEMENT,
 		  });
 
-	// Offset by 1 element to allow for a sentinel value.
-	const dense = new Uint32Array(buffer, Uint32Array.BYTES_PER_ELEMENT, initialCapacity);
+	const lengthBuffer = isSabSupported()
+		  ? // @ts-expect-error - TS Doesn't know buffers can grow
+			new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT)
+		  : // @ts-expect-error - TS Doesn't know buffers can grow
+			new ArrayBuffer(Uint32Array.BYTES_PER_ELEMENT);
+			
+	const dense = new Uint32Array(buffer);
 	const sparse = new Array(initialCapacity);
-	const length = new Uint32Array(buffer, 0, 1);
+	const length = new Uint32Array(lengthBuffer, 0, 1);
 
 	return {
 		[$dense]: dense,
 		[$buffer]: buffer,
+		[$lengthBuffer]: lengthBuffer,
 		get [$length]() {
 			return length[0];
 		},
@@ -78,8 +85,13 @@ export function sparseSetRemove(sparseSet: IUint32SparseSet, value: number): voi
 }
 
 export function sparseSetGrow(sparseSet: IUint32SparseSet, newCapacity: number): void {
-	// @ts-expect-error - TS Doesn't know SAB can grow
-	sparseSet[$buffer].grow(newCapacity * Uint32Array.BYTES_PER_ELEMENT);
+	if (sparseSet[$buffer].grow) {
+		// @ts-expect-error - TS Doesn't know SAB can grow
+		sparseSet[$buffer].grow(newCapacity * Uint32Array.BYTES_PER_ELEMENT);
+	} else if (sparseSet[$buffer].resize) {
+		// @ts-expect-error - TS Doesn't know SAB can grow
+		sparseSet[$buffer].resize(newCapacity * Uint32Array.BYTES_PER_ELEMENT);
+	}
 	sparseSet[$dense] = new Uint32Array(sparseSet[$buffer]);
 }
 
@@ -88,8 +100,7 @@ export function sparseSetGetLength(sparseSet: IUint32SparseSet): number {
 }
 
 export function sparseSetGetDense(sparseSet: IUint32SparseSet): Uint32Array {
-	// Offset by 1 element to allow for a sentinel value.
-	return new Uint32Array(sparseSet[$buffer], Uint32Array.BYTES_PER_ELEMENT, sparseSet[$length]);
+	return new Uint32Array(sparseSet[$buffer], 0, sparseSet[$length]);
 }
 
 export default {
