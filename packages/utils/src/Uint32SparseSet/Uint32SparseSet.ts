@@ -1,3 +1,4 @@
+import { growBuffer } from '../growBuffer';
 import { isSabSupported } from '../isSabSupported';
 import { $buffer, $dense, $length, $lengthBuffer } from './symbols';
 
@@ -85,13 +86,7 @@ export function sparseSetRemove(sparseSet: IUint32SparseSet, value: number): voi
 }
 
 export function sparseSetGrow(sparseSet: IUint32SparseSet, newCapacity: number): void {
-	if (sparseSet[$buffer].grow) {
-		// @ts-expect-error - TS Doesn't know SAB can grow
-		sparseSet[$buffer].grow(newCapacity * Uint32Array.BYTES_PER_ELEMENT);
-	} else if (sparseSet[$buffer].resize) {
-		// @ts-expect-error - TS Doesn't know SAB can grow
-		sparseSet[$buffer].resize(newCapacity * Uint32Array.BYTES_PER_ELEMENT);
-	}
+	growBuffer(sparseSet[$buffer], newCapacity)
 	sparseSet[$dense] = new Uint32Array(sparseSet[$buffer]);
 }
 
