@@ -81,7 +81,7 @@ export const registerQuery = (world: World, query: Query) => {
 	const mapComponents = (c: Component) => world[$componentMap].get(c)!;
 	const allComponents = components.concat(notComponents).map(mapComponents);
 
-	const sparseSet = Uint32SparseSet.create(world[$size]);
+	const sparseSet = Uint32SparseSet.create(1000, world[$size]);
 
 	const archetypes: TODO = [];
 	const changed: TODO = [];
