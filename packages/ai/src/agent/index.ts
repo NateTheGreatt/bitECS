@@ -20,10 +20,17 @@ const Agent = {
         agent.functions[schema.function.name] = fn;
         agent.schemas.push(schema);
     },
+type RunOptions = {
+    model?:string
+    temperature?:number
+    seed?: number
+    messages?: any
+}
 
     // Running the agent with sequential function execution
-    run: async (agent: Agent, userMessage: string, options: {model?:string, temperature?:number, seed?: number}) => {
-        let messages = [{ role: "user", content: userMessage }];
+    run: async (agent: Agent, prompt: string, options: RunOptions) => {
+        const message =  { role: "user", content: prompt }
+        const messages = options.messages ? [...options.messages, message] : [message]
         if (agent.systemPrompt && agent.systemPrompt.length) {
             messages.unshift({ role: "system", content: agent.systemPrompt });
         } try {
