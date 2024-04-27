@@ -9,9 +9,10 @@ import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { QueryData } from '../query/types.js';
 import { Schema } from '../storage/types.js';
 import { createStore, resetStoreFor } from '../storage/Storage.js';
-import { getEntityComponents, getGlobalSize } from '../entity/Entity.js';
-import { Pair, Wildcard } from '../relation/Relation.js';
+import { Prefab, getEntityComponents, getGlobalSize } from '../entity/Entity.js';
+import { IsA, Pair, Wildcard, getRelationTargets } from '../relation/Relation.js';
 import { $isPairComponent, $relation, $pairTarget, $relationTargetEntities } from '../relation/symbols.js';
+
 
 /**
  * Defines a new component store.
@@ -102,6 +103,30 @@ export const hasComponent = (world: World, component: Component, eid: number): b
 	return (mask & bitflag) === bitflag;
 };
 
+const recursivelyInherit = (world: World, baseEid: number, inheritedEid: number) => {
+	// inherit type
+	addComponent(world, IsA(inheritedEid), baseEid)
+
+	// inherit components
+	const components = getEntityComponents(world, inheritedEid)
+	for (const component of components) {
+		if (component === Prefab) {
+			continue
+		}
+		addComponent(world, component, baseEid)
+		// TODO: inherit values for structs other than SoA
+		const keys = Object.keys(component)
+		for (const key of keys) {
+			component[key][baseEid] = component[key][inheritedEid]
+		}
+	}
+
+	const inheritedTargets = getRelationTargets(world, IsA, inheritedEid)
+	for (const inheritedEid2 of inheritedTargets) {
+		recursivelyInherit(world, baseEid, inheritedEid2)
+	}
+}
+
 /**
  * Adds a component to an entity
  *
@@ -127,15 +152,17 @@ export const addComponent = (world: World, component: Component, eid: number, re
 	// Add bitflag to entity bitmask.
 	world[$entityMasks][generationId][eid] |= bitflag;
 
-	// Add entity to matching queries.
-	queries.forEach((queryNode: QueryData) => {
-		// Remove this entity from toRemove if it exists in this query.
-		queryNode.toRemove.remove(eid);
-		const match = queryCheckEntity(world, queryNode, eid);
-
-		if (match) queryAddEntity(queryNode, eid);
-		else queryRemoveEntity(world, queryNode, eid);
-	});
+	// Add entity to matching queries, except for prefabs
+	if (!hasComponent(world, Prefab, eid)) {
+		queries.forEach((queryNode: QueryData) => {
+			// Remove this entity from toRemove if it exists in this query.
+			queryNode.toRemove.remove(eid);
+			const match = queryCheckEntity(world, queryNode, eid);
+	
+			if (match) queryAddEntity(queryNode, eid);
+			else queryRemoveEntity(world, queryNode, eid);
+		});
+	}
 
 	// Add component to entity internally.
 	world[$entityComponents].get(eid)!.add(component);
@@ -145,10 +172,19 @@ export const addComponent = (world: World, component: Component, eid: number, re
 
 	// Add wildcard relation if its a Pair component
 	if (component[$isPairComponent]) {
-		addComponent(world, Pair(component[$relation], Wildcard), eid);
+		const relation = component[$relation];
+		addComponent(world, Pair(relation, Wildcard), eid);
 		const target = component[$pairTarget];
 		addComponent(world, Pair(Wildcard, target), eid);
 		world[$relationTargetEntities].add(target)
+		// if it's the IsA relation, add the inheritance chain of relations
+		if (relation === IsA) {
+			// recursively travel up the chain of relations
+			const inheritedTargets = getRelationTargets(world, IsA, eid)
+			for (const inherited of inheritedTargets) {
+				recursivelyInherit(world, eid, inherited)
+			}
+		}
 	}
 };
 
@@ -212,6 +248,7 @@ export const removeComponent = (world: World, component: Component, eid: number,
 		removeComponent(world, Pair(component[$relation], Wildcard), eid);
 		const target = component[$pairTarget];
 		removeComponent(world, Pair(Wildcard, target), eid);
+		// TODO: recursively disinherit
 	}
 };
 

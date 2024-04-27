@@ -11,7 +11,7 @@ import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from 
 import { TODO } from '../utils/types.js';
 import { $notQueries, $queries } from '../query/symbols.js';
 import { Pair, Wildcard } from '../relation/Relation.js';
-import { removeComponent } from '../component/Component.js';
+import { addComponent, defineComponent, removeComponent } from '../component/Component.js';
 import { $autoRemoveSubject, $isPairComponent, $onTargetRemoved, $pairTarget, $relation, $relationTargetEntities } from '../relation/symbols.js';
 
 let defaultSize = 100000;
@@ -81,6 +81,16 @@ export const flushRemovedEntities = (world: World) => {
 	removed.push(...recycled);
 	recycled.length = 0;
 };
+
+// TODO: definePrefab?
+export const Prefab = defineComponent()
+export const addPrefab = (world:World) => {
+	const eid = addEntity(world);
+
+	addComponent(world, Prefab, eid);
+
+	return eid;
+}
 
 /**
  * Adds a new entity to the specified world.

@@ -43,6 +43,7 @@ export const Pair = <T extends Schema>(relation: RelationType<T>, target: number
 };
 
 export const Wildcard: RelationType<any> | string = defineRelation()
+export const IsA: RelationType<any> = defineRelation()
 
 export const getRelationTargets = (world: World, relation:RelationType<any>, eid: number) => {
     const components = getEntityComponents(world, eid);

@@ -1,9 +1,9 @@
 import { SparseSet } from '../utils/SparseSet.js';
 import Uint32SparseSet from '@bitecs/utils/Uint32SparseSet';
-import { registerComponent } from '../component/Component.js';
+import { hasComponent, registerComponent } from '../component/Component.js';
 import { $componentMap } from '../component/symbols.js';
 import { $entityMasks, $entityArray, $entitySparseSet } from '../entity/symbols.js';
-import { getEntityCursor, getGlobalSize } from '../entity/Entity.js';
+import { Prefab, getEntityCursor } from '../entity/Entity.js';
 import { Component } from '../component/types.js';
 import { TODO } from '../utils/types.js';
 import {
@@ -155,6 +155,7 @@ export const registerQuery = (world: World, query: Query) => {
 
 	for (let eid = 0; eid < getEntityCursor(); eid++) {
 		if (!world[$entitySparseSet].has(eid)) continue;
+		if (hasComponent(world, Prefab, eid)) continue;
 		const match = queryCheckEntity(world, q, eid);
 		if (match) queryAddEntity(q, eid);
 	}

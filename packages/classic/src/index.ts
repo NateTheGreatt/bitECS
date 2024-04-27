@@ -8,6 +8,7 @@ export {
 	worlds,
 } from './world/World.js';
 export {
+	addPrefab,
 	addEntity,
 	removeEntity,
 	setDefaultSize,
