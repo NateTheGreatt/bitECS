@@ -61,6 +61,7 @@ describe('bitECS AI Agent Tests', async () => {
 
     test('add an entity to the world', async () => {
         const eid = await agent(world, 'add a new entity to the world called BigBadBoss')
+        assert(typeof eid === 'number')
         assert(entities['BigBadBoss'] === eid)
     })
 

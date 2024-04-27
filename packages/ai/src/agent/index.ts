@@ -1,12 +1,19 @@
-interface Agent {
+export interface Agent {
     llm: any;
     systemPrompt?: string;
     functions: Record<string, Function>;
     schemas: Array<any>;
 }
 
-const Agent = {
-    create: (llm: any, systemPrompt: string): Agent => {
+export type RunOptions = {
+    model?:string
+    temperature?:number
+    seed?: number
+    messages?: any
+}
+
+export const Agent = {
+    create: (llm: any, systemPrompt?: string): Agent => {
         const agent = {
             llm,
             functions: {}, // Callback functions for operations
@@ -20,28 +27,29 @@ const Agent = {
         agent.functions[schema.function.name] = fn;
         agent.schemas.push(schema);
     },
-type RunOptions = {
-    model?:string
-    temperature?:number
-    seed?: number
-    messages?: any
-}
 
     // Running the agent with sequential function execution
     run: async (agent: Agent, prompt: string, options: RunOptions) => {
-        const message =  { role: "user", content: prompt }
-        const messages = options.messages ? [...options.messages, message] : [message]
-        if (agent.systemPrompt && agent.systemPrompt.length) {
-            messages.unshift({ role: "system", content: agent.systemPrompt });
-        } try {
-            let lastResponse;
+        
+        // const message =  { role: "user", content: prompt }
+        // const messages = options.messages ? [...options.messages, message] : [message]
+        // if (agent.systemPrompt && agent.systemPrompt.length) {
+        //     messages.unshift({ role: "system", content: agent.systemPrompt });
+        // }
+
+        const messages = options.messages || []
+
+        messages.push({role:'user',content:prompt})
+
+        try {
+            // let lastResponse;
             while (true) {
                 const response = await agent.llm.chat.completions.create({
                     model: (options && options.model) || 'gpt-4-turbo-preview',
                     messages: messages,
                     tools: agent.schemas,
-                    temperature: (options && options.temperature) || 0.7,
-                    seed: (options && options.seed) || 42,
+                    temperature: options ? options.temperature : undefined,
+                    seed: options ? options.seed : undefined,
                 });
 
                 const responseMessage = response.choices[0].message;
@@ -57,17 +65,17 @@ type RunOptions = {
                             tool_call_id: toolCall.id,
                             role: "tool",
                             name: functionName,
-                            content: JSON.stringify(functionResponse),
+                            content: JSON.stringify(functionResponse || ''),
                         };
 
                         messages.push(functionMessage); // Add function response
-                        lastResponse = functionResponse; // Store the last response
+                        // lastResponse = functionResponse; // Store the last response
                     }
                 } else {
                     break; // Exit loop if no more tool calls
                 }
             }
-            return lastResponse;
+            return messages;
         } catch (error) {
             console.error("Failed to run conversation:", error);
             throw error;
@@ -227,5 +235,3 @@ type RunOptions = {
 // console.log(`task details: ${JSON.stringify(taskDetails)}`)
 // // adding a new task
 // Agent.run(myAgent, "Manage task with ID '456' to have status 'pending' and due date '2024-05-15'")
-
-export default Agent

@@ -213,11 +213,11 @@ const ecsQuery = (world: World, {components: componentMap, relations: relationMa
     const components = componentNames ? componentNames.map(name => componentMap[name]) : []
     const notComponents = notComponentNames ? notComponentNames.map(name => Not(componentMap[name])) : []
     const relationPairs = relations ? relations.map(({relationName, relationSubjectEntityId: entityId}) => {
-        const eid = parseInt(entityId) || entityMap[entityId]
+        const eid = typeof entityId === 'string' ? entityMap[entityId] : parseInt(entityId)
         return Pair(relationMap[relationName], eid)
     }) : []    
     const notRelationPairs = notRelations ? notRelations.map(({relationName, relationSubjectEntityId: entityId}) => {
-        const eid = parseInt(entityId) || entityMap[entityId]
+        const eid = typeof entityId === 'string' ? entityMap[entityId] : parseInt(entityId)
         return Not(Pair(relationMap[relationName], eid))
     }) : []
     
@@ -894,7 +894,7 @@ export const createAgent = (
                     const functionName = toolCall.function.name
                     const functionToCall = llmFunctions[functionName]
                     const functionArgs = JSON.parse(toolCall.function.arguments)
-                    const functionResponse = functionToCall(functionArgs)
+                    const functionResponse = functionToCall(functionArgs) || ''
 
                     const functionMessage: ChatCompletionMessageParam = {
                         tool_call_id: toolCall.id,
