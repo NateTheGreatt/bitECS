@@ -12,6 +12,8 @@ export interface ISpatialGrid {
 	cells: Cell[];
 	width: number;
 	height: number;
+	cellsWide: number;
+	cellsHigh: number;
 }
 
 type SpatialGridBase = {
@@ -32,7 +34,7 @@ type SpatialGridOptionsCell = {
 type SpatialGridOptions = SpatialGridBase & (SpatialGridOptionsCell | SpatialGridOptionsGrid);
 
 export function createSpatialGrid(options: SpatialGridOptions): ISpatialGrid {
-	const {
+	let {
 		cellsHigh,
 		cellsWide,
 		gridWidth,
@@ -41,36 +43,35 @@ export function createSpatialGrid(options: SpatialGridOptions): ISpatialGrid {
 		defaultCellLength = 10,
 	} = options as SpatialGridBase & SpatialGridOptionsCell & SpatialGridOptionsGrid;
 
-	let w: number;
-	let h: number;
-
 	if (cellsHigh !== undefined && cellsWide !== undefined) {
-		w = cellsWide;
-		h = cellsHigh;
+		gridWidth = cellsWide*cellSize;
+		gridHeight = cellsHigh*cellSize;
 	} else if (gridWidth !== undefined && gridHeight !== undefined) {
-		w = Math.ceil(gridWidth / cellSize);
-		h = Math.ceil(gridHeight / cellSize);
+		cellsWide = Math.ceil(gridWidth / cellSize);
+		cellsHigh = Math.ceil(gridHeight / cellSize);
 	} else {
 		throw new Error('Invalid spatial grid options');
 	}
 
-	const cells: Cell[] = Array(w * h)
+	const cells: Cell[] = Array(cellsWide * cellsHigh)
 		.fill(null)
 		.map(() => createUint32SparseSet(defaultCellLength));
 
 	return {
 		cellSize,
 		cells,
-		width: w,
-		height: h,
+		width:gridWidth,
+		height:gridHeight,
+		cellsWide,
+		cellsHigh,
 	};
 }
 export function spatialGridToCell(grid: ISpatialGrid, xOrY: number): number {
 	return Math.floor(xOrY / grid.cellSize);
 }
 
-export function spatialGridIndexOf(grid: ISpatialGrid, x: number, y: number): number {
-	return x + grid.width * y;
+export function spatialGridIndexOf(grid: ISpatialGrid, cellX: number, cellY: number): number {
+	return cellX + (grid.cellsHigh * cellY);
 }
 
 export function spatialGridGetCell(grid: ISpatialGrid, x: number, y: number): Cell {
@@ -78,11 +79,11 @@ export function spatialGridGetCell(grid: ISpatialGrid, x: number, y: number): Ce
 }
 
 export function spatialGridGetCellX(grid: ISpatialGrid, i: number): number {
-	return i % grid.width;
+	return i % grid.cellsWide;
 }
 
 export function spatialGridGetCellY(grid: ISpatialGrid, i: number): number {
-	return Math.floor(i / grid.width);
+	return Math.floor(i / grid.cellsWide);
 }
 
 export function spatialGridInBounds(grid: ISpatialGrid, x: number, y: number): boolean {
