@@ -1,6 +1,6 @@
 import { growBuffer } from '../growBuffer';
 import { isSabSupported } from '../isSabSupported';
-import { $buffer, $dense, $length, $lengthBuffer } from './symbols';
+import { $buffer, $dense, $length, $lengthBuffer, $maxCapacity } from './symbols';
 
 export interface IUint32SparseSet {
 	sparse: number[];
@@ -9,9 +9,8 @@ export interface IUint32SparseSet {
 	[$length]: number;
 	[$buffer]: SharedArrayBuffer | ArrayBuffer;
 	[$lengthBuffer]: SharedArrayBuffer | ArrayBuffer;
+	[$maxCapacity]: number;
 }
-
-// Length is stored at buffer index 0.
 
 export function createUint32SparseSet(
 	initialCapacity: number,
@@ -19,20 +18,18 @@ export function createUint32SparseSet(
 ): IUint32SparseSet {
 	const buffer = isSabSupported()
 		? // @ts-expect-error - TS Doesn't know buffers can grow
-		  new SharedArrayBuffer((initialCapacity) * Uint32Array.BYTES_PER_ELEMENT, {
-				maxByteLength: (maxCapacity) * Uint32Array.BYTES_PER_ELEMENT,
+		  new SharedArrayBuffer(initialCapacity * Uint32Array.BYTES_PER_ELEMENT, {
+				maxByteLength: maxCapacity * Uint32Array.BYTES_PER_ELEMENT,
 		  })
 		: // @ts-expect-error - TS Doesn't know buffers can grow
-		  new ArrayBuffer((initialCapacity) * Uint32Array.BYTES_PER_ELEMENT, {
-				maxByteLength: (maxCapacity) * Uint32Array.BYTES_PER_ELEMENT,
+		  new ArrayBuffer(initialCapacity * Uint32Array.BYTES_PER_ELEMENT, {
+				maxByteLength: maxCapacity * Uint32Array.BYTES_PER_ELEMENT,
 		  });
 
 	const lengthBuffer = isSabSupported()
-		  ? // @ts-expect-error - TS Doesn't know buffers can grow
-			new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT)
-		  : // @ts-expect-error - TS Doesn't know buffers can grow
-			new ArrayBuffer(Uint32Array.BYTES_PER_ELEMENT);
-			
+		? new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT)
+		: new ArrayBuffer(Uint32Array.BYTES_PER_ELEMENT);
+
 	const dense = new Uint32Array(buffer);
 	const sparse = new Array(initialCapacity);
 	const length = new Uint32Array(lengthBuffer, 0, 1);
@@ -41,6 +38,7 @@ export function createUint32SparseSet(
 		[$dense]: dense,
 		[$buffer]: buffer,
 		[$lengthBuffer]: lengthBuffer,
+		[$maxCapacity]: maxCapacity,
 		get [$length]() {
 			return length[0];
 		},
@@ -56,7 +54,10 @@ export function createUint32SparseSet(
 
 export function sparseSetAdd(sparseSet: IUint32SparseSet, value: number): void {
 	if (sparseSet[$length] + 1 > sparseSet[$dense].length) {
-		sparseSetGrow(sparseSet, Math.max(value, sparseSet[$length] * 2));
+		sparseSetGrow(
+			sparseSet,
+			Math.max(value, Math.min(sparseSet[$length] * 2, sparseSet[$maxCapacity]))
+		);
 	}
 
 	const denseIndex = sparseSet[$length];
@@ -86,7 +87,7 @@ export function sparseSetRemove(sparseSet: IUint32SparseSet, value: number): voi
 }
 
 export function sparseSetGrow(sparseSet: IUint32SparseSet, newCapacity: number): void {
-	growBuffer(sparseSet[$buffer], newCapacity)
+	growBuffer(sparseSet[$buffer], newCapacity);
 	sparseSet[$dense] = new Uint32Array(sparseSet[$buffer]);
 }
 

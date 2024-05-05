@@ -74,6 +74,14 @@ describe('Uint32SparseSet', () => {
 		assert.strictEqual(sparseSetHas(set, 2), true);
 	});
 
+	test('expands to max but not over', () => {
+		const set = createUint32SparseSet(10, 100);
+		for (let i = 0; i < 100; i++) {
+			sparseSetAdd(set, i);
+		}
+		assert.strictEqual(set.dense.length, 100);
+	});
+
 	test('add does not expand buffer unnecessarily', () => {
 		const initialLength = 10;
 		const set = createUint32SparseSet(initialLength, 100);
@@ -97,12 +105,5 @@ describe('Uint32SparseSet', () => {
 		sparseSetAdd(set, 1);
 		sparseSetAdd(set, 2);
 		assert.strictEqual(sparseSetGetLength(set), 2);
-	});
-
-	test('length is stored on the buffer at offset 0', () => {
-		const set = createUint32SparseSet(10, 100);
-		const view = new Uint32Array(set[$buffer]);
-		sparseSetAdd(set, 1);
-		assert.strictEqual(view[0], 1);
 	});
 });
