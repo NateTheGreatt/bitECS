@@ -1,0 +1,8 @@
+.stats {
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	color: white;
+	font-family: system-ui;
+	font-size: 18px;
+}

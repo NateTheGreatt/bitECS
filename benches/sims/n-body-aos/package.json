@@ -1,0 +1,16 @@
+{
+	"name": "@sim/n-body-aos",
+	"private": true,
+	"version": "0.0.1",
+	"description": "N-Body simulation using BitECS with AoS",
+	"type": "module",
+	"main": "index.ts",
+	"dependencies": {
+		"@bitecs/classic": "workspace:*",
+		"@sim/bench-tools": "workspace:*"
+	},
+	"devDependencies": {
+		"tsx": "latest",
+		"tsconfig": "workspace:*"
+	}
+}

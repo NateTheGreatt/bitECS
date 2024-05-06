@@ -1,0 +1,16 @@
+{
+	"name": "@sim/n-body-mt",
+	"private": true,
+	"version": "0.0.1",
+	"description": "N-Body simulation using BiteCS",
+	"type": "module",
+	"main": "index.ts",
+	"dependencies": {
+		"@bitecs/classic": "workspace:*",
+		"@sim/bench-tools": "workspace:*"
+	},
+	"devDependencies": {
+		"tsconfig": "workspace:*",
+		"tsx": "latest"
+	}
+}

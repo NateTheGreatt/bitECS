@@ -1,0 +1,14 @@
+{
+	"name": "@app/bench-tools",
+	"private": true,
+	"version": "0.0.1",
+	"description": "Benchmark tools",
+	"type": "module",
+	"main": "./src/index.ts",
+	"dependencies": {
+		"@sim/bench-tools": "workspace:*"
+	},
+	"devDependencies": {
+		"tsconfig": "workspace:*"
+	}
+}
