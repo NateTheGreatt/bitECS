@@ -1,5 +1,5 @@
-import { growBuffer } from '../growBuffer';
-import { isSabSupported } from '../isSabSupported';
+import { growBuffer, growBufferPolyfill } from '../growBuffer';
+import { isGrowResizeSupported, isSabSupported } from '../isSabSupported';
 import { $buffer, $dense, $length, $lengthBuffer, $maxCapacity } from './symbols';
 
 export interface IUint32SparseSet {
@@ -87,7 +87,12 @@ export function sparseSetRemove(sparseSet: IUint32SparseSet, value: number): voi
 }
 
 export function sparseSetGrow(sparseSet: IUint32SparseSet, newCapacity: number): void {
-	growBuffer(sparseSet[$buffer], newCapacity);
+	if (isGrowResizeSupported()) {
+		growBuffer(sparseSet[$buffer], newCapacity);
+	} else {
+		sparseSet[$buffer] = growBufferPolyfill(sparseSet[$buffer], newCapacity);
+	}
+
 	sparseSet[$dense] = new Uint32Array(sparseSet[$buffer]);
 }
 
