@@ -7,7 +7,7 @@ type OnGrowCallback = (params: {
 	newBuffer: SharedArrayBuffer | ArrayBuffer;
 	prevSize: number;
 	newSize: number;
-	wasGrownInPlace: boolean;
+	didGrowInPlace: boolean;
 }) => void;
 
 export interface IUint32SparseSet {
@@ -108,7 +108,7 @@ export function sparseSetGrow(sparseSet: IUint32SparseSet, newCapacity: number):
 		prevSize,
 		newBuffer: sparseSet[$buffer],
 		newSize: sparseSet[$buffer].byteLength,
-		wasGrownInPlace: prevBuffer === sparseSet[$buffer],
+		didGrowInPlace: prevBuffer === sparseSet[$buffer],
 	};
 
 	for (const cb of sparseSet[$onGrowCbs]) {
