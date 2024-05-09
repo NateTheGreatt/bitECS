@@ -1,6 +1,14 @@
 import { growBuffer } from '../growBuffer';
 import { isSabSupported } from '../isSabSupported';
-import { $buffer, $dense, $length, $lengthBuffer, $maxCapacity } from './symbols';
+import { $buffer, $dense, $length, $lengthBuffer, $maxCapacity, $onGrowCbs } from './symbols';
+
+type OnGrowCallback = (params: {
+	prevBuffer: SharedArrayBuffer | ArrayBuffer;
+	newBuffer: SharedArrayBuffer | ArrayBuffer;
+	prevSize: number;
+	newSize: number;
+	wasGrownInPlace: boolean;
+}) => void;
 
 export interface IUint32SparseSet {
 	sparse: number[];
@@ -10,6 +18,7 @@ export interface IUint32SparseSet {
 	[$buffer]: SharedArrayBuffer | ArrayBuffer;
 	[$lengthBuffer]: SharedArrayBuffer | ArrayBuffer;
 	[$maxCapacity]: number;
+	[$onGrowCbs]: Set<OnGrowCallback>;
 }
 
 export function createUint32SparseSet(
@@ -39,6 +48,7 @@ export function createUint32SparseSet(
 		[$buffer]: buffer,
 		[$lengthBuffer]: lengthBuffer,
 		[$maxCapacity]: maxCapacity,
+		[$onGrowCbs]: new Set(),
 		get [$length]() {
 			return length[0];
 		},
@@ -87,8 +97,23 @@ export function sparseSetRemove(sparseSet: IUint32SparseSet, value: number): voi
 }
 
 export function sparseSetGrow(sparseSet: IUint32SparseSet, newCapacity: number): void {
+	const prevBuffer = sparseSet[$buffer];
+	const prevSize = prevBuffer.byteLength;
+
 	sparseSet[$buffer] = growBuffer(sparseSet[$buffer], newCapacity);
 	sparseSet[$dense] = new Uint32Array(sparseSet[$buffer]);
+
+	const cbParams = {
+		prevBuffer,
+		prevSize,
+		newBuffer: sparseSet[$buffer],
+		newSize: sparseSet[$buffer].byteLength,
+		wasGrownInPlace: prevBuffer === sparseSet[$buffer],
+	};
+
+	for (const cb of sparseSet[$onGrowCbs]) {
+		cb(cbParams);
+	}
 }
 
 export function sparseSetGetLength(sparseSet: IUint32SparseSet): number {
@@ -99,6 +124,12 @@ export function sparseSetGetDense(sparseSet: IUint32SparseSet): Uint32Array {
 	return new Uint32Array(sparseSet[$buffer], 0, sparseSet[$length]);
 }
 
+export function sparseSetOnGrow(sparseSet: IUint32SparseSet, cb: OnGrowCallback) {
+	sparseSet[$onGrowCbs].add(cb);
+
+	return () => sparseSet[$onGrowCbs].delete(cb);
+}
+
 export default {
 	create: createUint32SparseSet,
 	add: sparseSetAdd,
@@ -107,4 +138,5 @@ export default {
 	grow: sparseSetGrow,
 	length: sparseSetGetLength,
 	dense: sparseSetGetDense,
+	onGrow: sparseSetOnGrow,
 };
