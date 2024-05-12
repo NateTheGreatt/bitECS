@@ -44,14 +44,9 @@ export const resizeWorlds = (size: number) => {
 	});
 };
 
-/**
- * Creates a new world.
- *
- * @returns {object}
- */
-export function createWorld<W extends object = {}>(world?: W, size?: number): W & World;
-export function createWorld<W extends World = World>(size?: number): W;
-export function createWorld(...args: any[]) {
+export function defineWorld<W extends object = {}>(world: W, size?: number): W & World;
+export function defineWorld<W extends World = World>(size?: number): W;
+export function defineWorld(...args: any[]) {
 	const world = typeof args[0] === 'object' ? args[0] : {};
 	const size =
 		typeof args[0] === 'number'
@@ -82,21 +77,35 @@ export function createWorld(...args: any[]) {
 		[$localEntityLookup]: new Map(),
 		[$manualEntityRecycling]: false,
 		[$resizeThreshold]: size - size / 5,
-		[$relationTargetEntities]: SparseSet()
+		[$relationTargetEntities]: SparseSet(),
 	});
 
-	// Register the world.
+	return world;
+}
+
+export function registerWorld(world: World) {
 	worlds.push(world);
 
 	// Register all queries with the world.
 	queries.forEach((query) => registerQuery(world, query));
-
-	return world;
 }
 
 export const enableManualEntityRecycling = (world: World) => {
 	world[$manualEntityRecycling] = true;
 };
+
+/**
+ * Creates a new world.
+ *
+ * @returns {object}
+ */
+export function createWorld<W extends object = {}>(world?: W, size?: number): W & World;
+export function createWorld<W extends World = World>(size?: number): W;
+export function createWorld(...args: any[]) {
+	const world = defineWorld(...args);
+	registerWorld(world);
+	return world;
+}
 
 /**
  * Resets a world.
