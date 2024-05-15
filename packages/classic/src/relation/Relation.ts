@@ -2,7 +2,7 @@ import { Schema, World, entityExists, getEntityComponents, removeEntity } from "
 import { ComponentType, defineComponent } from "..";
 import { $schema } from "../component/symbols";
 import { defineHiddenProperty } from "../utils/defineHiddenProperty";
-import { $pairsMap, $isPairComponent, $relation, $pairTarget, $onTargetRemoved, $autoRemoveSubject } from "./symbols";
+import { $pairsMap, $isPairComponent, $relation, $pairTarget, $onTargetRemoved, $autoRemoveSubject, $exclusiveRelation } from "./symbols";
 import { RelationOptions, RelationType } from "./types";
 
 function createOrGetRelationComponent<T extends Schema>(relation: (target: number | string) => ComponentType<T>, schema: T, pairsMap: Map<any, any>, target: string | number) {
@@ -26,8 +26,9 @@ export const defineRelation =
         }
         defineHiddenProperty(relation, $pairsMap, pairsMap)
         defineHiddenProperty(relation, $schema, schema)
-        defineHiddenProperty(relation, $onTargetRemoved, options ? options.onTargetRemoved : undefined)
+        defineHiddenProperty(relation, $exclusiveRelation, options && options.exclusive)
         defineHiddenProperty(relation, $autoRemoveSubject, options && options.autoRemoveSubject)
+        defineHiddenProperty(relation, $onTargetRemoved, options ? options.onTargetRemoved : undefined)
         return relation as RelationType<T>
     }
 
