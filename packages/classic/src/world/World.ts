@@ -154,12 +154,15 @@ export const deleteWorld = (world: World) => {
 	Object.getOwnPropertySymbols(world).forEach((symbol) => {
 		delete world[symbol as keyof World];
 	});
-	// Delete all string properties too, even though there shouldn't be any
+
+	// Delete all string properties too, in case a user added some
 	Object.keys(world).forEach((key) => {
 		delete world[key as unknown as keyof World];
 	});
+
 	// Remove the world from the worlds array
-	worlds.splice(worlds.indexOf(world), 1);
+	const index = worlds.indexOf(world);
+	if (index !== -1) worlds.splice(index, 1);
 };
 
 /**
