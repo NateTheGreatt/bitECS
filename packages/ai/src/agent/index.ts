@@ -10,6 +10,8 @@ export type RunOptions = {
     temperature?:number
     seed?: number
     messages?: any
+    iterations?: number
+    delay?: number
 }
 
 export const Agent = {
@@ -37,49 +39,63 @@ export const Agent = {
         //     messages.unshift({ role: "system", content: agent.systemPrompt });
         // }
 
-        const messages = options.messages || []
+        // const previousMessages = options && options.messages || []
+
+        // const messages = []
+        const messages = options && options.messages || []
+
+        if (!options.messages && agent.systemPrompt) {
+            messages.push({role:'system', content:agent.systemPrompt})
+        }
 
         messages.push({role:'user',content:prompt})
 
-        try {
-            // let lastResponse;
-            while (true) {
-                const response = await agent.llm.chat.completions.create({
-                    model: (options && options.model) || 'gpt-4-turbo-preview',
-                    messages: messages,
-                    tools: agent.schemas,
-                    temperature: options ? options.temperature : undefined,
-                    seed: options ? options.seed : undefined,
-                });
+        let i = options && options.iterations || 0
+        // let lastResponse;
+        while (true) {
+            const response = await agent.llm.chat.completions.create({
+                model: (options && options.model) || 'gpt-4-turbo-preview',
+                messages: messages,
+                tools: agent.schemas,
+                temperature: options ? options.temperature : undefined,
+                seed: options ? options.seed : undefined,
+            });
 
-                const responseMessage = response.choices[0].message;
-                const toolCalls = responseMessage.tool_calls;
-                if (toolCalls) {
-                    messages.push(responseMessage); // Include assistant's reply
-                    for (const toolCall of toolCalls) {
-                        const functionName = toolCall.function.name;
-                        const functionToCall = agent.functions[functionName];
-                        const functionArgs = JSON.parse(toolCall.function.arguments);
-                        const functionResponse = await functionToCall(functionArgs);
-                        const functionMessage = {
-                            tool_call_id: toolCall.id,
-                            role: "tool",
-                            name: functionName,
-                            content: JSON.stringify(functionResponse || ''),
-                        };
+            const responseMessage = response.choices[0].message;
+            const toolCalls = responseMessage.tool_calls;
+            if (toolCalls) {
+                messages.push(responseMessage); // Include assistant's reply
+                for (const toolCall of toolCalls) {
+                    const functionName = toolCall.function.name;
+                    const functionToCall = agent.functions[functionName];
+                    const functionArgs = JSON.parse(toolCall.function.arguments);
+                    const functionResponse = await functionToCall(functionArgs);
+                    const functionMessage: any = {
+                        tool_call_id: toolCall.id,
+                        role: "tool",
+                        name: functionName,
+                        content: JSON.stringify(functionResponse || ''),
+                    };
 
-                        messages.push(functionMessage); // Add function response
-                        // lastResponse = functionResponse; // Store the last response
-                    }
-                } else {
-                    break; // Exit loop if no more tool calls
+                    messages.push(functionMessage); // Add function response
+                    // lastResponse = functionResponse; // Store the last response
+                }
+            } else {
+                break; // Exit loop if no more tool calls
+            }
+
+            if (options && options.delay) {
+                await new Promise(resolve => setTimeout(resolve, options.delay))
+            }
+
+            if (options &&options.iterations) {
+                i--
+                if (i <= 0){
+                    break
                 }
             }
-            return messages;
-        } catch (error) {
-            console.error("Failed to run conversation:", error);
-            throw error;
         }
+        return messages;
     }
 };
 
