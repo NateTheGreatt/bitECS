@@ -150,15 +150,27 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
  * @param {World} world
  */
 export const deleteWorld = (world: World) => {
-	// Delete all symbol properties
-	Object.getOwnPropertySymbols(world).forEach((symbol) => {
-		delete world[symbol as keyof World];
-	});
-
-	// Delete all string properties too, in case a user added some
-	Object.keys(world).forEach((key) => {
-		delete world[key as unknown as keyof World];
-	});
+	// Delete all world properties
+	const deletedWorld = world as unknown as Record<symbol, any>;
+	delete deletedWorld[$size];
+	delete deletedWorld[$entityMasks];
+	delete deletedWorld[$entityComponents];
+	delete deletedWorld[$archetypes];
+	delete deletedWorld[$entitySparseSet];
+	delete deletedWorld[$entityArray];
+	delete deletedWorld[$bitflag];
+	delete deletedWorld[$componentMap];
+	delete deletedWorld[$componentCount];
+	delete deletedWorld[$queryDataMap];
+	delete deletedWorld[$queries];
+	delete deletedWorld[$queriesHashMap];
+	delete deletedWorld[$notQueries];
+	delete deletedWorld[$dirtyQueries];
+	delete deletedWorld[$localEntities];
+	delete deletedWorld[$localEntityLookup];
+	delete deletedWorld[$manualEntityRecycling];
+	delete deletedWorld[$resizeThreshold];
+	delete deletedWorld[$relationTargetEntities];
 
 	// Remove the world from the worlds array
 	const index = worlds.indexOf(world);
