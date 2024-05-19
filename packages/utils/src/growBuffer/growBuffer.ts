@@ -1,4 +1,4 @@
-import { isGrowResizeSupported } from './isSabSupported';
+import { isGrowResizeSupported } from '../is-supported/isGrowResizeSupported';
 
 export const growBuffer = (
 	buffer: ArrayBuffer | SharedArrayBuffer,

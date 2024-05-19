@@ -1,5 +1,5 @@
-import { growBuffer } from '../growBuffer';
-import { isSabSupported } from '../isSabSupported';
+import { growBuffer } from '../growBuffer/growBuffer';
+import { isSabSupported } from '../is-supported/isSabSupported';
 import { $buffer, $dense, $length, $lengthBuffer, $maxCapacity, $onGrowCbs } from './symbols';
 
 type OnGrowCallback = (params: {
