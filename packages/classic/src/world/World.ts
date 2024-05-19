@@ -44,14 +44,9 @@ export const resizeWorlds = (size: number) => {
 	});
 };
 
-/**
- * Creates a new world.
- *
- * @returns {object}
- */
-export function createWorld<W extends object = {}>(world?: W, size?: number): W & World;
-export function createWorld<W extends World = World>(size?: number): W;
-export function createWorld(...args: any[]) {
+export function defineWorld<W extends object = {}>(world: W, size?: number): W & World;
+export function defineWorld<W extends World = World>(size?: number): W;
+export function defineWorld(...args: any[]) {
 	const world = typeof args[0] === 'object' ? args[0] : {};
 	const size =
 		typeof args[0] === 'number'
@@ -82,21 +77,35 @@ export function createWorld(...args: any[]) {
 		[$localEntityLookup]: new Map(),
 		[$manualEntityRecycling]: false,
 		[$resizeThreshold]: size - size / 5,
-		[$relationTargetEntities]: SparseSet()
+		[$relationTargetEntities]: SparseSet(),
 	});
 
-	// Register the world.
+	return world;
+}
+
+export function registerWorld(world: World) {
 	worlds.push(world);
 
 	// Register all queries with the world.
 	queries.forEach((query) => registerQuery(world, query));
-
-	return world;
 }
 
 export const enableManualEntityRecycling = (world: World) => {
 	world[$manualEntityRecycling] = true;
 };
+
+/**
+ * Creates a new world.
+ *
+ * @returns {object}
+ */
+export function createWorld<W extends object = {}>(world?: W, size?: number): W & World;
+export function createWorld<W extends World = World>(size?: number): W;
+export function createWorld(...args: any[]) {
+	const world = defineWorld(...args);
+	registerWorld(world);
+	return world;
+}
 
 /**
  * Resets a world.
@@ -141,16 +150,31 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
  * @param {World} world
  */
 export const deleteWorld = (world: World) => {
-	// Delete all symbol properties
-	Object.getOwnPropertySymbols(world).forEach((symbol) => {
-		delete world[symbol as keyof World];
-	});
-	// Delete all string properties too, even though there shouldn't be any
-	Object.keys(world).forEach((key) => {
-		delete world[key as unknown as keyof World];
-	});
+	// Delete all world properties
+	const deletedWorld = world as unknown as Record<symbol, any>;
+	delete deletedWorld[$size];
+	delete deletedWorld[$entityMasks];
+	delete deletedWorld[$entityComponents];
+	delete deletedWorld[$archetypes];
+	delete deletedWorld[$entitySparseSet];
+	delete deletedWorld[$entityArray];
+	delete deletedWorld[$bitflag];
+	delete deletedWorld[$componentMap];
+	delete deletedWorld[$componentCount];
+	delete deletedWorld[$queryDataMap];
+	delete deletedWorld[$queries];
+	delete deletedWorld[$queriesHashMap];
+	delete deletedWorld[$notQueries];
+	delete deletedWorld[$dirtyQueries];
+	delete deletedWorld[$localEntities];
+	delete deletedWorld[$localEntityLookup];
+	delete deletedWorld[$manualEntityRecycling];
+	delete deletedWorld[$resizeThreshold];
+	delete deletedWorld[$relationTargetEntities];
+
 	// Remove the world from the worlds array
-	worlds.splice(worlds.indexOf(world), 1);
+	const index = worlds.indexOf(world);
+	if (index !== -1) worlds.splice(index, 1);
 };
 
 /**

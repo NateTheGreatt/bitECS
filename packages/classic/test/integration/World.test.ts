@@ -20,4 +20,19 @@ describe('World Integration Tests', () => {
 
 		expect(worlds.length).toBe(0);
 	});
+
+	it('can be created with any object', () => {
+		const world = createWorld({ customValue: 10 });
+		expect(world.customValue).toBe(10);
+	});
+
+	it('rectains custom values after deletion', () => {
+		const world = createWorld({ customValue: 10 });
+
+		expect(world.customValue).toBe(10);
+
+		deleteWorld(world);
+
+		expect(world.customValue).toBe(10);
+	});
 });

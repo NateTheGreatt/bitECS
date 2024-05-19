@@ -381,6 +381,8 @@ export const removeQuery = (world: World, query: Query) => {
 	const q = world[$queryDataMap].get(query)!;
 	world[$queries].delete(q);
 	world[$queryDataMap].delete(query);
+	const hash = archetypeHash(world, query[$queryComponents])
+	world[$queriesHashMap].delete(hash)
 };
 
 /**

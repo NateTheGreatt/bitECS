@@ -1,4 +1,4 @@
-import { queryAddEntity, queryRemoveEntity, queryCheckEntity, query } from '../query/Query.js';
+import { queryAddEntity, queryRemoveEntity, queryCheckEntity, query, removeQuery } from '../query/Query.js';
 import { $bitflag, $size } from '../world/symbols.js';
 import { $entityMasks, $entityComponents } from '../entity/symbols.js';
 import { Component, ComponentNode, ComponentType } from './types.js';
@@ -11,7 +11,7 @@ import { Schema } from '../storage/types.js';
 import { createStore, resetStoreFor } from '../storage/Storage.js';
 import { Prefab, getEntityComponents, getGlobalSize } from '../entity/Entity.js';
 import { IsA, Pair, Wildcard, getRelationTargets } from '../relation/Relation.js';
-import { $isPairComponent, $relation, $pairTarget, $relationTargetEntities } from '../relation/symbols.js';
+import { $isPairComponent, $relation, $pairTarget, $relationTargetEntities, $exclusiveRelation } from '../relation/symbols.js';
 
 
 /**
@@ -172,11 +172,21 @@ export const addComponent = (world: World, component: Component, eid: number, re
 
 	// Add wildcard relation if its a Pair component
 	if (component[$isPairComponent]) {
+		// add wildcard relation components
 		const relation = component[$relation];
 		addComponent(world, Pair(relation, Wildcard), eid);
 		const target = component[$pairTarget];
 		addComponent(world, Pair(Wildcard, target), eid);
+		
+		// if it's an exclusive relation, remove the old target
+		if (relation[$exclusiveRelation] === true) {
+			const oldTarget = getRelationTargets(world, relation, eid)[0];
+			removeComponent(world, relation(oldTarget), eid);
+		}
+
+		// mark entity as a relation target
 		world[$relationTargetEntities].add(target)
+
 		// if it's the IsA relation, add the inheritance chain of relations
 		if (relation === IsA) {
 			// recursively travel up the chain of relations
@@ -244,10 +254,21 @@ export const removeComponent = (world: World, component: Component, eid: number,
 		// check if eid is still a subject of any relation or not
 		if (query(world, [Wildcard(eid)]).length === 0) {
 			world[$relationTargetEntities].remove(eid)
+			// TODO: cleanup query by hash
+			// removeQueryByHash(world, [Wildcard(eid)])
 		}
-		removeComponent(world, Pair(component[$relation], Wildcard), eid);
+
+		// remove wildcard to this target for this eid
 		const target = component[$pairTarget];
 		removeComponent(world, Pair(Wildcard, target), eid);
+
+		// remove wildcard relation if eid has no other relations
+		const relation = component[$relation]
+		const otherTargets = getRelationTargets(world, relation, eid)
+		if (otherTargets.length === 0) {
+			removeComponent(world, Pair(relation, Wildcard), eid);
+		}
+
 		// TODO: recursively disinherit
 	}
 };
