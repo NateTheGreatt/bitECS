@@ -4,8 +4,9 @@ import {
 	sparseSetHas,
 	sparseSetRemove,
 	sparseSetGetLength,
+	sparseSetOnGrow,
 } from './Uint32SparseSet';
-import { test, describe } from 'vitest';
+import { test, describe, vi } from 'vitest';
 import assert from 'assert';
 import { $buffer, $length } from './symbols';
 
@@ -105,5 +106,23 @@ describe('Uint32SparseSet', () => {
 		sparseSetAdd(set, 1);
 		sparseSetAdd(set, 2);
 		assert.strictEqual(sparseSetGetLength(set), 2);
+	});
+
+	test('onGrow is called when necessary', () => {
+		const initialCapacity = 10;
+		const set = createUint32SparseSet(initialCapacity, 100);
+
+		const onGrowCb = vi.fn();
+		sparseSetOnGrow(set, onGrowCb);
+
+		for (let i = 0; i < initialCapacity + 1; i++) {
+			sparseSetAdd(set, i);
+		}
+
+		assert.strictEqual(onGrowCb.mock.calls.length, 1);
+		const [params] = onGrowCb.mock.calls[0];
+		assert.strictEqual(params.didGrowInPlace, true);
+		assert.strictEqual(params.prevSize, initialCapacity * Uint32Array.BYTES_PER_ELEMENT);
+		assert.strictEqual(params.newSize, params.newBuffer.byteLength);
 	});
 });
