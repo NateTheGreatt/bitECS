@@ -1,15 +1,29 @@
-# bitecs
+# bitECS
 
-To install dependencies:
+`bitECS` is a functional and minimal ECS written in TypeScript with low-opinionation.
+
+## Working with the monorepo
+
+This is a pnpm monorepo, so you know the drill.
 
 ```bash
 pnpm install
 ```
 
-To benchmark apps, there are two flavors. `sim` will run just the simulation with no view while `app` will run the simulation + web DOM renderer.
+### Benches
+
+To benchmark apps, there are two flavors. `sim` will run just the simulation in node with no view while `app` will run the simulation + web view. They are also a good way to test for performance regressions, but also double as code examples.
 
 ```bash
 pnpm sim n-body #name of the folder
 # or
-bun app n-body
+pnpm app n-body
+```
+
+### Testing
+
+All packages include tests to catch code regressions.
+
+```bash
+pnpm test --filter classic #name of folder
 ```
