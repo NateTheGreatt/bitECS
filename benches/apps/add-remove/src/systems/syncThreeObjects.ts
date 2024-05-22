@@ -1,35 +1,37 @@
 import { defineSystem, query } from '@bitecs/classic';
 import { Circle, Color, Position } from '@sim/add-remove';
 import { ThreeObject } from '../components/ThreeObject';
-import * as THREE from 'three';
 
 const normalize = (x: number, min: number, max: number) => (x - min) / (max - min);
 
-const dummy = new THREE.Object3D();
-const color = new THREE.Color();
-
 export const syncThreeObjects = defineSystem((world) => {
 	const eids = query(world, [Position, Circle, Color]);
-	const instancedMesh = ThreeObject[0];
+	const particles = ThreeObject[0];
+	const positions = particles.geometry.attributes.position.array;
+	const colors = particles.geometry.attributes.color.array;
+	const sizes = particles.geometry.attributes.size.array;
 
 	for (let i = 0; i < eids.length; i++) {
 		const eid = eids[i];
-		dummy.position.set(Position.x[eid], Position.y[eid], Position.z[eid]);
 
-		const radius = normalize(Circle.radius[eid], 0, 60);
-		dummy.scale.set(radius, radius, radius);
+		// Update positions
+		positions[eid * 3] = Position.x[eid];
+		positions[eid * 3 + 1] = Position.y[eid];
+		positions[eid * 3 + 2] = Position.z[eid];
 
-		dummy.updateMatrix();
+		// Update sizes
+		sizes[eid] = Circle.radius[eid] * 0.3;
 
-		instancedMesh.setMatrixAt(eid, dummy.matrix);
-
+		// Update colors
 		const r = normalize(Color.r[eid], 0, 255);
 		const g = normalize(Color.g[eid], 0, 255);
 		const b = normalize(Color.b[eid], 0, 255);
-		color.setRGB(r, g, b);
-		instancedMesh.setColorAt(eid, color);
+		colors[eid * 3] = r;
+		colors[eid * 3 + 1] = g;
+		colors[eid * 3 + 2] = b;
 	}
 
-	instancedMesh.instanceMatrix.needsUpdate = true;
-	instancedMesh.instanceColor!.needsUpdate = true;
+	particles.geometry.attributes.position.needsUpdate = true;
+	particles.geometry.attributes.color.needsUpdate = true;
+	particles.geometry.attributes.size.needsUpdate = true;
 });

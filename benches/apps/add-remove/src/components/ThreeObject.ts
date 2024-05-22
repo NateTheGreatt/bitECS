@@ -1,3 +1,3 @@
 import * as THREE from 'three';
 
-export const ThreeObject: THREE.InstancedMesh[] = [];
+export const ThreeObject: THREE.Points[] = [];
