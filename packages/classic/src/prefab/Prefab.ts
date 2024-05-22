@@ -1,4 +1,4 @@
-import { addComponent } from '../component/Component';
+import { addComponent, addComponents } from '../component/Component';
 import { Component } from '../component/types';
 import { defineHiddenProperties } from '../utils/defineHiddenProperty';
 import { World } from '../world/types';
@@ -30,6 +30,9 @@ export const registerPrefab = (world: World, prefab: PrefabToken) => {
 
 	return eid;
 };
+
+export const registerPrefabs = (world: World, prefabs: PrefabToken[]) =>
+	prefabs.map((prefab) => registerPrefab(world, prefab));
 
 export const addPrefab = (world: World) => {
 	const eid = addEntity(world);
