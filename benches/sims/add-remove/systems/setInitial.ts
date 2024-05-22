@@ -3,21 +3,16 @@ import { Position } from '../components/Position';
 import { Velocity } from '../components/Velocity';
 import { Mass } from '../components/Mass';
 import { Circle } from '../components/Circle';
-import {
-	addComponent,
-	defineEnterQueue,
-	defineSystem,
-	getEntityComponents,
-	query,
-} from '@bitecs/classic';
+import { addComponent, defineEnterQueue, getEntityComponents, query } from '@bitecs/classic';
 import { randInRange } from '../utils/randInRange';
 import { Color } from '../components/Color';
 import { DummyComponents } from '../components/Dummy';
+import { World } from '../world';
 
 const body = [Position, Velocity, Mass, Circle];
 const enterBody = defineEnterQueue(body);
 
-export const setInitial = defineSystem((world) => {
+export const setInitial = (world: World) => {
 	const eids = query(world, enterBody);
 
 	for (let i = 0; i < eids.length; i++) {
@@ -54,4 +49,4 @@ export const setInitial = defineSystem((world) => {
 		Color.g[eid] = randInRange(0, 255);
 		Color.b[eid] = randInRange(0, 255);
 	}
-});
+};

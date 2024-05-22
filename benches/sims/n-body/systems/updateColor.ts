@@ -1,9 +1,10 @@
-import { defineSystem, query } from '@bitecs/classic';
+import { query } from '@bitecs/classic';
 import { Velocity } from '../components/Velocity';
 import { Color } from '../components/Color';
 import { colorFromSpeed } from '../utils/colorFromSpeed';
+import { World } from '../world';
 
-export const updateColor = defineSystem((world) => {
+export const updateColor = (world: World) => {
 	const eids = query(world, [Velocity, Color]);
 
 	for (let i = 0; i < eids.length; i++) {
@@ -18,4 +19,4 @@ export const updateColor = defineSystem((world) => {
 	}
 
 	return world;
-});
+};

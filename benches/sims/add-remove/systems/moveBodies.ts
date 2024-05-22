@@ -1,9 +1,9 @@
-import { defineSystem, query } from '@bitecs/classic';
+import { query } from '@bitecs/classic';
 import { Position } from '../components/Position';
 import { Velocity } from '../components/Velocity';
 import { World } from '../world';
 
-export const moveBodies = defineSystem((world: World) => {
+export const moveBodies = (world: World) => {
 	const { delta } = world.time;
 	const eids = query(world, [Position, Velocity]);
 
@@ -16,4 +16,4 @@ export const moveBodies = defineSystem((world: World) => {
 	}
 
 	return world;
-});
+};
