@@ -1,4 +1,4 @@
-import { Schema, World, entityExists, getEntityComponents, removeEntity } from '..';
+import { Schema, World, entityExists, getEntityComponents, registerPrefab, removeEntity } from '..';
 import { ComponentType, defineComponent } from '..';
 import { $schema } from '../component/symbols';
 import { $worldToPrefab } from '../prefab/symbols';
@@ -71,7 +71,12 @@ export const getRelationTargets = (world: World, relation: RelationType<any>, ei
 	for (const c of components) {
 		if (c[$relation] === relation && c[$pairTarget] !== Wildcard) {
 			if (c[$pairTarget] instanceof Object) {
-				const eid = c[$pairTarget][$worldToPrefab].get(world);
+				// It's a prefab
+				let eid = c[$pairTarget][$worldToPrefab].get(world);
+				if (eid == null) {
+					// The prefab was not registered yet with this world
+					eid = registerPrefab(world, c[$pairTarget]);
+				}
 				targets.push(eid);
 			} else {
 				targets.push(c[$pairTarget]);

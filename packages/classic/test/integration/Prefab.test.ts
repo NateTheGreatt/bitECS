@@ -7,7 +7,9 @@ import {
 	createWorld,
 	defineComponent,
 	definePrefab,
+	getAllEntities,
 	hasComponent,
+	query,
 	registerPrefab,
 } from '../../src';
 import { describe, test } from 'vitest';
@@ -43,5 +45,26 @@ describe('Prefab Integration Tests', () => {
 		assert(Position.x[eid] === 10);
 		assert(Position.y[eid] === 10);
 		assert(Sprite.url[eid] === 'assets/player.png');
+	});
+
+	test('should automatically register prefabs', () => {
+		const world = createWorld();
+
+		const Human = definePrefab();
+		const Player = definePrefab([IsA(Human)]);
+		const Npc = definePrefab([IsA(Human)]);
+
+		{
+			const eid = addEntity(world);
+			addComponent(world, IsA(Player), eid);
+		}
+
+		{
+			const eid = addEntity(world);
+			addComponent(world, IsA(Npc), eid);
+		}
+
+		assert(query(world, [IsA(Human)]).length === 2);
+		assert(getAllEntities(world).length === 5);
 	});
 });
