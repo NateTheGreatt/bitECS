@@ -2,6 +2,7 @@ import './styles.css';
 import * as THREE from 'three';
 import {
 	CONSTANTS,
+	World,
 	moveBodies,
 	setInitial,
 	updateColor,
@@ -11,9 +12,9 @@ import {
 } from '@sim/n-body';
 import { initStats } from '@app/bench-tools';
 import { scene } from './scene';
-import { pipe } from '@bitecs/classic';
 import { syncThreeObjects } from './systems/syncThreeObjects';
 import { init } from './systems/init';
+
 // Configure the simulation
 CONSTANTS.NBODIES = 2000;
 
@@ -55,14 +56,15 @@ window.addEventListener('resize', onWindowResize);
 camera.position.set(0, 0, 100);
 camera.lookAt(0, 0, 0);
 
-const pipeline = pipe(
-	updateTime,
-	setInitial,
-	updateGravity,
-	moveBodies,
-	updateColor,
-	syncThreeObjects
-);
+const pipeline = (world: World) => {
+	updateTime(world);
+	setInitial(world);
+	updateGravity(world);
+	moveBodies(world);
+	updateColor(world);
+	syncThreeObjects(world);
+	return world;
+};
 
 // Init stats
 const { updateStats, measure } = initStats({ Bodies: () => CONSTANTS.NBODIES });

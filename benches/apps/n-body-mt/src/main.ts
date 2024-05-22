@@ -11,12 +11,12 @@ import {
 	Velocity,
 	Acceleration,
 	CONSTANTS,
+	updateTime,
+	World,
 } from '@sim/n-body-mt';
 import { initStats } from '@app/bench-tools';
 import { scene } from './scene';
 import { syncThreeObjects } from './systems/syncThreeObjects';
-import { World } from '@sim/n-body-mt/world';
-import { updateTime } from '@sim/n-body-mt/systems/time';
 import { init } from './systems/init';
 import { defineQuery } from '@bitecs/classic';
 
