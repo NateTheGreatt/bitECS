@@ -1,0 +1,16 @@
+{
+	"name": "@sim/add-remove",
+	"private": true,
+	"version": "0.0.1",
+	"description": "Particle simulator to stress test adding and removing entities",
+	"type": "module",
+	"main": "index.ts",
+	"dependencies": {
+		"@bitecs/classic": "workspace:*",
+		"@sim/bench-tools": "workspace:*"
+	},
+	"devDependencies": {
+		"tsx": "latest",
+		"tsconfig": "workspace:*"
+	}
+}
