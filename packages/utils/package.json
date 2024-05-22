@@ -10,6 +10,18 @@
 	"type": "module",
 	"main": "./src/index.ts",
 	"types": "./src/index.ts",
+	"author": {
+		"name": "Nathaniel Martin",
+		"email": "mrtn.nathaniel@gmail.com",
+		"url": "https://github.com/NateTheGreatt"
+	},
+	"contributors": [
+		{
+			"name": "Kris Baumgartner",
+			"email": "kjbaumgartner@gmail.com",
+			"url": "https://github.com/krispya"
+		}
+	],
 	"exports": {
 		".": {
 			"default": "./src/index.ts",

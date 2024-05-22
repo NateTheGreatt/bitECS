@@ -1,6 +1,6 @@
 {
 	"name": "@bitecs/classic",
-	"version": "0.3.40",
+	"version": "0.4.0",
 	"description": "Functional, minimal, data-oriented, ultra-high performance ECS library written in Javascript",
 	"license": "MPL-2.0",
 	"repository": {
@@ -20,6 +20,11 @@
 			"name": "Randy Lebeau",
 			"email": "randylebeau@gmail.com",
 			"url": "https://github.com/SupremeTechnopriest"
+		},
+		{
+			"name": "Kris Baumgartner",
+			"email": "kjbaumgartner@gmail.com",
+			"url": "https://github.com/krispya"
 		}
 	],
 	"scripts": {
