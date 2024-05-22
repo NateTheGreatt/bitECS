@@ -2,6 +2,8 @@
 
 `bitECS` is a functional and minimal ECS written in TypeScript with low-opinionation.
 
+`@bitecs/classic` maintains compatibility with the 0.3.x `bitECS` API and uses sprase arrays for a simplified memory layout. More detail below.
+
 ```bash
 npm install @bitecs/classic
 ```
@@ -223,3 +225,7 @@ const mainLoop = () => {
 
 mainLoop()
 ```
+
+## Classic memory layout
+
+`@bitecs/classic` uses sparse arrays for its memory layout, as opposed to [archetypes](https://ajmmertens.medium.com/building-an-ecs-2-archetypes-and-vectorization-fe21690805f9). This means that each entity ID corresponds directly to an array index without any indirection. This vastly simplifies memory layout and improves add/remove performance at the cost of a higher memory footprint and iteration speeds.
