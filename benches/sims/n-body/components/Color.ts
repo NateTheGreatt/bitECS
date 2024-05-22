@@ -1,8 +1,6 @@
-import { Types, defineComponent } from "@bitecs/classic";
-
-export const Color = defineComponent({
-  r: Types.ui8,
-  g: Types.ui8,
-  b: Types.ui8,
-  a: Types.ui8,
-});
+export const Color = {
+	r: [] as number[],
+	g: [] as number[],
+	b: [] as number[],
+	a: [] as number[],
+};

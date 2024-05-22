@@ -1,6 +1,4 @@
-import { Types, defineComponent } from "@bitecs/classic";
-
-export const Position = defineComponent({
-  x: Types.f64,
-  y: Types.f64,
-});
+export const Position = {
+	x: [] as number[],
+	y: [] as number[],
+};
