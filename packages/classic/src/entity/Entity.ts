@@ -1,4 +1,10 @@
-import { queries, query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
+import {
+	queries,
+	query,
+	queryAddEntity,
+	queryCheckEntity,
+	queryRemoveEntity,
+} from '../query/Query.js';
 import { resizeWorlds, worlds } from '../world/World.js';
 import {
 	$localEntities,
@@ -12,7 +18,14 @@ import { TODO } from '../utils/types.js';
 import { $notQueries, $queries } from '../query/symbols.js';
 import { Pair, Wildcard } from '../relation/Relation.js';
 import { addComponent, defineComponent, removeComponent } from '../component/Component.js';
-import { $autoRemoveSubject, $isPairComponent, $onTargetRemoved, $pairTarget, $relation, $relationTargetEntities } from '../relation/symbols.js';
+import {
+	$autoRemoveSubject,
+	$isPairComponent,
+	$onTargetRemoved,
+	$pairTarget,
+	$relation,
+	$relationTargetEntities,
+} from '../relation/symbols.js';
 
 let defaultSize = 100000;
 
@@ -82,16 +95,7 @@ export const flushRemovedEntities = (world: World) => {
 	recycled.length = 0;
 };
 
-// TODO: definePrefab?
-export const Prefab = defineComponent()
-export const addPrefab = (world:World) => {
-	const eid = addEntity(world);
-
-	addComponent(world, Prefab, eid);
-
-	return eid;
-}
-
+export const Prefab = defineComponent();
 /**
  * Adds a new entity to the specified world.
  *
@@ -140,32 +144,30 @@ export const removeEntity = (world: World, eid: number) => {
 
 	// check to see if this entity is a relation target at all
 	if (world[$relationTargetEntities].has(eid)) {
-
 		// if it is, iterate over all subjects with any relation to this eid
 		for (const subject of query(world, [Pair(Wildcard, eid)])) {
 			// TODO: can we avoid this check? (subject may have been removed already)
 			if (!entityExists(world, subject)) {
-				continue
+				continue;
 			}
 			// remove the wildcard association with the subject for this entity
-			removeComponent(world, Pair(Wildcard, eid), subject)
+			removeComponent(world, Pair(Wildcard, eid), subject);
 
 			// iterate all relations that the subject has to this entity
 			for (const component of world[$entityComponents].get(subject)!) {
-
 				// TODO: can we avoid this check? (subject may have been removed by this loop already)
 				if (!component[$isPairComponent] || !entityExists(world, subject)) {
-					continue
+					continue;
 				}
-				const relation = component[$relation]
+				const relation = component[$relation];
 
 				if (component[$pairTarget] === eid) {
-					removeComponent(world, component, subject)
+					removeComponent(world, component, subject);
 					if (relation[$autoRemoveSubject]) {
-						removeEntity(world, subject)
+						removeEntity(world, subject);
 					}
 					if (relation[$onTargetRemoved]) {
-						relation[$onTargetRemoved](world, subject, eid)
+						relation[$onTargetRemoved](world, subject, eid);
 					}
 				}
 			}
@@ -177,7 +179,6 @@ export const removeEntity = (world: World, eid: number) => {
 	world[$queries].forEach((q) => {
 		queryRemoveEntity(world, q, eid);
 	});
-
 
 	// Free the entity
 	if (world[$manualEntityRecycling]) recycled.push(eid);

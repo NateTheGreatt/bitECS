@@ -1,4 +1,10 @@
-import { queryAddEntity, queryRemoveEntity, queryCheckEntity, query, removeQuery } from '../query/Query.js';
+import {
+	queryAddEntity,
+	queryRemoveEntity,
+	queryCheckEntity,
+	query,
+	removeQuery,
+} from '../query/Query.js';
 import { $bitflag, $size } from '../world/symbols.js';
 import { $entityMasks, $entityComponents } from '../entity/symbols.js';
 import { Component, ComponentNode, ComponentType } from './types.js';
@@ -11,8 +17,15 @@ import { Schema } from '../storage/types.js';
 import { createStore, resetStoreFor } from '../storage/Storage.js';
 import { Prefab, getEntityComponents, getGlobalSize } from '../entity/Entity.js';
 import { IsA, Pair, Wildcard, getRelationTargets } from '../relation/Relation.js';
-import { $isPairComponent, $relation, $pairTarget, $relationTargetEntities, $exclusiveRelation } from '../relation/symbols.js';
-
+import {
+	$isPairComponent,
+	$relation,
+	$pairTarget,
+	$relationTargetEntities,
+	$exclusiveRelation,
+} from '../relation/symbols.js';
+import { PrefabToken } from '../prefab/types.js';
+import { $worldToPrefab } from '../prefab/symbols.js';
 
 /**
  * Defines a new component store.
@@ -103,29 +116,32 @@ export const hasComponent = (world: World, component: Component, eid: number): b
 	return (mask & bitflag) === bitflag;
 };
 
-const recursivelyInherit = (world: World, baseEid: number, inheritedEid: number) => {
-	// inherit type
-	addComponent(world, IsA(inheritedEid), baseEid)
+const recursivelyInherit = (world: World, baseEid: number, inheritedEid: number | PrefabToken) => {
+	if (inheritedEid instanceof Object) {
+		inheritedEid = inheritedEid[$worldToPrefab].get(world)!;
+	}
 
+	// inherit type
+	addComponent(world, IsA(inheritedEid), baseEid);
 	// inherit components
-	const components = getEntityComponents(world, inheritedEid)
+	const components = getEntityComponents(world, inheritedEid);
 	for (const component of components) {
 		if (component === Prefab) {
-			continue
+			continue;
 		}
-		addComponent(world, component, baseEid)
+		addComponent(world, component, baseEid);
 		// TODO: inherit values for structs other than SoA
-		const keys = Object.keys(component)
+		const keys = Object.keys(component);
 		for (const key of keys) {
-			component[key][baseEid] = component[key][inheritedEid]
+			component[key][baseEid] = component[key][inheritedEid];
 		}
 	}
 
-	const inheritedTargets = getRelationTargets(world, IsA, inheritedEid)
+	const inheritedTargets = getRelationTargets(world, IsA, inheritedEid);
 	for (const inheritedEid2 of inheritedTargets) {
-		recursivelyInherit(world, baseEid, inheritedEid2)
+		recursivelyInherit(world, baseEid, inheritedEid2);
 	}
-}
+};
 
 /**
  * Adds a component to an entity
@@ -158,7 +174,7 @@ export const addComponent = (world: World, component: Component, eid: number, re
 			// Remove this entity from toRemove if it exists in this query.
 			queryNode.toRemove.remove(eid);
 			const match = queryCheckEntity(world, queryNode, eid);
-	
+
 			if (match) queryAddEntity(queryNode, eid);
 			else queryRemoveEntity(world, queryNode, eid);
 		});
@@ -177,7 +193,7 @@ export const addComponent = (world: World, component: Component, eid: number, re
 		addComponent(world, Pair(relation, Wildcard), eid);
 		const target = component[$pairTarget];
 		addComponent(world, Pair(Wildcard, target), eid);
-		
+
 		// if it's an exclusive relation, remove the old target
 		if (relation[$exclusiveRelation] === true) {
 			const oldTarget = getRelationTargets(world, relation, eid)[0];
@@ -185,14 +201,14 @@ export const addComponent = (world: World, component: Component, eid: number, re
 		}
 
 		// mark entity as a relation target
-		world[$relationTargetEntities].add(target)
+		world[$relationTargetEntities].add(target);
 
 		// if it's the IsA relation, add the inheritance chain of relations
 		if (relation === IsA) {
 			// recursively travel up the chain of relations
-			const inheritedTargets = getRelationTargets(world, IsA, eid)
+			const inheritedTargets = getRelationTargets(world, IsA, eid);
 			for (const inherited of inheritedTargets) {
-				recursivelyInherit(world, eid, inherited)
+				recursivelyInherit(world, eid, inherited);
 			}
 		}
 	}
@@ -253,7 +269,7 @@ export const removeComponent = (world: World, component: Component, eid: number,
 	if (component[$isPairComponent]) {
 		// check if eid is still a subject of any relation or not
 		if (query(world, [Wildcard(eid)]).length === 0) {
-			world[$relationTargetEntities].remove(eid)
+			world[$relationTargetEntities].remove(eid);
 			// TODO: cleanup query by hash
 			// removeQueryByHash(world, [Wildcard(eid)])
 		}
@@ -263,8 +279,8 @@ export const removeComponent = (world: World, component: Component, eid: number,
 		removeComponent(world, Pair(Wildcard, target), eid);
 
 		// remove wildcard relation if eid has no other relations
-		const relation = component[$relation]
-		const otherTargets = getRelationTargets(world, relation, eid)
+		const relation = component[$relation];
+		const otherTargets = getRelationTargets(world, relation, eid);
 		if (otherTargets.length === 0) {
 			removeComponent(world, Pair(relation, Wildcard), eid);
 		}
