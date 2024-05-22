@@ -6,7 +6,7 @@ import { Prefab, addEntity } from '../entity/Entity';
 import { $prefabComponents, $worldToPrefab } from './symbols';
 import { PrefabToken } from './types';
 
-export const definePrefab = (components: Component[]) => {
+export const definePrefab = (components: Component[] = []) => {
 	const prefab = {};
 
 	defineHiddenProperties(prefab, {
