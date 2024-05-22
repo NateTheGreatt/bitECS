@@ -18,11 +18,13 @@ export const definePrefab = (components: Component[] = []) => {
 };
 
 export const registerPrefab = (world: World, prefab: PrefabToken) => {
+	if (prefab[$worldToPrefab].has(world)) {
+		return prefab[$worldToPrefab].get(world)!;
+	}
+
 	const eid = addPrefab(world);
 
-	for (const component of prefab[$prefabComponents]) {
-		addComponent(world, component, eid);
-	}
+	addComponents(world, prefab[$prefabComponents], eid);
 
 	prefab[$worldToPrefab].set(world, eid);
 
