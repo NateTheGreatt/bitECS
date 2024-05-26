@@ -1,25 +1,15 @@
-import './styles.css';
-import * as THREE from 'three';
-import {
-	CONSTANTS,
-	World,
-	moveBodies,
-	setInitial,
-	updateColor,
-	updateGravity,
-	updateTime,
-	world,
-} from '@sim/n-body';
 import { initStats } from '@app/bench-tools';
-import { scene } from './scene';
-import { syncThreeObjects } from './systems/syncThreeObjects';
+import { CONSTANTS, world } from '@sim/n-body';
+import * as THREE from 'three';
+import './styles.css';
 import { init } from './systems/init';
+import { pipeline } from './systems/pipeline';
 
 // Configure the simulation
 CONSTANTS.NBODIES = 2000;
 
 // Renderer
-const renderer = new THREE.WebGLRenderer({
+export const renderer = new THREE.WebGLRenderer({
 	antialias: true,
 	powerPreference: 'high-performance',
 });
@@ -29,7 +19,7 @@ document.body.appendChild(renderer.domElement);
 // Camera
 const frustumSize = 8000;
 const aspect = window.innerWidth / window.innerHeight;
-const camera = new THREE.OrthographicCamera(
+export const camera = new THREE.OrthographicCamera(
 	(-frustumSize * aspect) / 2,
 	(frustumSize * aspect) / 2,
 	frustumSize / 2,
@@ -56,16 +46,6 @@ window.addEventListener('resize', onWindowResize);
 camera.position.set(0, 0, 100);
 camera.lookAt(0, 0, 0);
 
-const pipeline = (world: World) => {
-	updateTime(world);
-	setInitial(world);
-	updateGravity(world);
-	moveBodies(world);
-	updateColor(world);
-	syncThreeObjects(world);
-	return world;
-};
-
 // Init stats
 const { updateStats, measure } = initStats({ Bodies: () => CONSTANTS.NBODIES });
 
@@ -73,7 +53,6 @@ const { updateStats, measure } = initStats({ Bodies: () => CONSTANTS.NBODIES });
 const main = () => {
 	measure(() => {
 		pipeline(world);
-		renderer.render(scene, camera);
 		updateStats();
 	});
 	requestAnimationFrame(main);
