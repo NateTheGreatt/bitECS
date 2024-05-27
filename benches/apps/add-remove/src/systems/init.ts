@@ -50,6 +50,10 @@ function fragmentShader() {
 	return `
 		varying vec4 vColor;
 		void main() {
+			float distanceFromCenter = length(gl_PointCoord - vec2(0.5, 0.5));
+			if (distanceFromCenter > 0.5) {
+				discard;
+			}
 			gl_FragColor = vec4( vColor );
 		}
 	`;

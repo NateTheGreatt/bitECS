@@ -1,30 +1,15 @@
-import './styles.css';
-import * as THREE from 'three';
-import {
-	moveBodies,
-	setInitial,
-	updateColor,
-	updateGravityMain,
-	world,
-	Position,
-	Mass,
-	Velocity,
-	Acceleration,
-	CONSTANTS,
-	updateTime,
-	World,
-} from '@sim/n-body-mt';
 import { initStats } from '@app/bench-tools';
-import { scene } from './scene';
-import { syncThreeObjects } from './systems/syncThreeObjects';
+import { CONSTANTS, world } from '@sim/n-body-mt';
+import * as THREE from 'three';
+import './styles.css';
 import { init } from './systems/init';
-import { defineQuery } from '@bitecs/classic';
+import { pipeline } from './systems/pipeline';
 
 // Configure the simulation
 // CONSTANTS.NBODIES = 2000;
 
 // Renderer
-const renderer = new THREE.WebGLRenderer({
+export const renderer = new THREE.WebGLRenderer({
 	antialias: true,
 	powerPreference: 'high-performance',
 });
@@ -34,7 +19,7 @@ document.body.appendChild(renderer.domElement);
 // Camera
 const frustumSize = 8000;
 const aspect = window.innerWidth / window.innerHeight;
-const camera = new THREE.OrthographicCamera(
+export const camera = new THREE.OrthographicCamera(
 	(-frustumSize * aspect) / 2,
 	(frustumSize * aspect) / 2,
 	frustumSize / 2,
@@ -61,26 +46,6 @@ window.addEventListener('resize', onWindowResize);
 camera.position.set(0, 0, 100);
 camera.lookAt(0, 0, 0);
 
-const bodyQuery = defineQuery([Position, Mass, Velocity, Acceleration]);
-
-const updateGravity = updateGravityMain({
-	queries: { bodyQuery },
-	partitionQuery: bodyQuery,
-	components: {
-		read: { Position, Mass },
-		write: { Velocity, Acceleration },
-	},
-});
-
-const pipeline = async (world: World) => {
-	updateTime(world);
-	setInitial(world);
-	await updateGravity(world);
-	moveBodies(world);
-	updateColor(world);
-	syncThreeObjects(world);
-};
-
 const { updateStats, measure } = initStats({
 	Bodies: () => CONSTANTS.NBODIES,
 	Threads: () => window.navigator.hardwareConcurrency,
@@ -90,7 +55,6 @@ const { updateStats, measure } = initStats({
 const main = async () => {
 	await measure(async () => {
 		await pipeline(world);
-		renderer.render(scene, camera);
 		updateStats();
 	});
 	requestAnimationFrame(main);

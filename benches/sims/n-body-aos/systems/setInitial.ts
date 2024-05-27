@@ -4,14 +4,15 @@ import { Velocity } from '../components/Velocity';
 import { Mass } from '../components/Mass';
 import { Circle } from '../components/Circle';
 import { randInRange } from '../utils/randInRange';
-import { defineEnterQueue, defineSystem, query } from '@bitecs/classic';
+import { defineEnterQueue, query } from '@bitecs/classic';
 import { IsCentralMass } from '../components/IsCentralMass';
+import { World } from '../world';
 
 const body = [Position, Velocity, Mass, Circle];
 const enterBody = defineEnterQueue(body);
 const enterCentralMass = defineEnterQueue([...body, IsCentralMass]);
 
-export const setInitial = defineSystem((world) => {
+export const setInitial = (world: World) => {
 	const eids = query(world, enterBody);
 	// We only allow there to be one central mass.
 	const centralMassIds = query(world, enterCentralMass);
@@ -58,4 +59,4 @@ export const setInitial = defineSystem((world) => {
 
 		Circle[eid].radius = CONSTANTS.MAX_RADIUS / 1.5;
 	}
-});
+};

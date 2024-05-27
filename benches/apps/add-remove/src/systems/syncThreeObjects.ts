@@ -1,10 +1,10 @@
-import { defineSystem, query } from '@bitecs/classic';
-import { Circle, Color, Position } from '@sim/add-remove';
+import { query } from '@bitecs/classic';
+import { Circle, Color, Position, World } from '@sim/add-remove';
 import { ThreeObject } from '../components/ThreeObject';
 
 const normalize = (x: number, min: number, max: number) => (x - min) / (max - min);
 
-export const syncThreeObjects = defineSystem((world) => {
+export const syncThreeObjects = (world: World) => {
 	const eids = query(world, [Position, Circle, Color]);
 	const particles = ThreeObject[0];
 	const positions = particles.geometry.attributes.position.array;
@@ -34,4 +34,4 @@ export const syncThreeObjects = defineSystem((world) => {
 	particles.geometry.attributes.position.needsUpdate = true;
 	particles.geometry.attributes.color.needsUpdate = true;
 	particles.geometry.attributes.size.needsUpdate = true;
-});
+};

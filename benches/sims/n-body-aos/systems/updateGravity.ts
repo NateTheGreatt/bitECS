@@ -1,4 +1,4 @@
-import { defineSystem, query } from '@bitecs/classic';
+import { query } from '@bitecs/classic';
 import { Velocity } from '../components/Velocity';
 import { Mass } from '../components/Mass';
 import { World } from '../world';
@@ -6,7 +6,7 @@ import { Acceleration } from '../components/Acceleration';
 import { Position } from '../components/Position';
 import { CONSTANTS } from '../constants';
 
-export const updateGravity = defineSystem((world: World) => {
+export const updateGravity = (world: World) => {
 	const eids = query(world, [Position, Mass, Velocity]);
 
 	for (let j = 0; j < eids.length; j++) {
@@ -35,4 +35,4 @@ export const updateGravity = defineSystem((world: World) => {
 		Velocity[meId].x += (Acceleration[meId].x * world.time.delta) / Mass[meId].value;
 		Velocity[meId].y += (Acceleration[meId].y * world.time.delta) / Mass[meId].value;
 	}
-});
+};
