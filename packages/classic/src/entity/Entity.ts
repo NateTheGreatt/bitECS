@@ -95,15 +95,7 @@ export const flushRemovedEntities = (world: World) => {
 	recycled.length = 0;
 };
 
-// TODO: definePrefab?
 export const Prefab = defineComponent();
-export const addPrefab = (world: World) => {
-	const eid = addEntity(world);
-
-	addComponent(world, Prefab, eid);
-
-	return eid;
-};
 
 /**
  * Adds a new entity to the specified world.
