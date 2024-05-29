@@ -2,7 +2,7 @@
 
 `bitECS` is a functional and minimal ECS written in TypeScript with low-opinionation.
 
-`@bitecs/classic` maintains compatibility with the 0.3.x `bitECS` API and uses sprase arrays for a simplified memory layout. More detail below.
+`@bitecs/classic` maintains compatibility with the 0.3.x `bitECS` API and uses sparse arrays for a simplified memory layout. More detail below.
 
 ```bash
 npm install @bitecs/classic
@@ -263,7 +263,7 @@ Unlike queries, queues collect changes over time, flushing when read. They canno
 `bitECS` supports enter queues, tracking entities being matching a given component shape after `addComponent` is called.
 
 ```js
-const enterBodyQueue = defineEnterQueue([Position, Mass]);
+const enterBodyQueue = defineEnterQueue([Positioon, Mass]);
 
 addComponent(world, Position, eid); // enterBodyQueue(world).length = 0
 addComponent(world, Mass, eid); // enterBodyQueue(world).length = 1
@@ -289,12 +289,14 @@ Systems are what give entities behavior. By querying specific shapes, a system c
 
 ```js
 const moveBody = (world) => {
+const moveBody = (world) => {
     const entities = query(world, [Position])
 
     for (const entity of entities) {
         Position.x[entity] += 1
         Position.y[entity] += 1
     }
+}
 }
 
 const applyGravity = (world) => {
