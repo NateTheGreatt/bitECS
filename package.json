@@ -1,19 +1,19 @@
 {
 	"name": "bitecs",
 	"private": true,
-	"main": "./packages/classic/dist/index.umd.cjs",
+	"main": "./packages/classic/dist/index.cjs",
 	"module": "./packages/classic/dist/index.js",
 	"types": "./packages/classic/dist/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./packages/classic/dist/index.d.ts",
-			"require": "./packages/classic/dist/index.umd.cjs",
+			"require": "./packages/classic/dist/index.cjs",
 			"import": "./packages/classic/dist/index.js",
 			"default": "./packages/classic/dist/index.js"
 		},
 		"./utils": {
 			"types": "./packages/utils/dist/index.d.ts",
-			"require": "./packages/utils/dist/index.umd.cjs",
+			"require": "./packages/utils/dist/index.cjs",
 			"import": "./packages/utils/dist/index.js",
 			"default": "./packages/utils/dist/index.js"
 		}
