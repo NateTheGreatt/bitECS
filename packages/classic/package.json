@@ -28,7 +28,8 @@
 		}
 	],
 	"scripts": {
-		"test": "vitest"
+		"test": "vitest",
+		"build": "tsup src/index.ts --minify --dts --format cjs,esm --out-dir dist"
 	},
 	"dependencies": {
 		"@bitecs/utils": "workspace:*"
@@ -36,6 +37,7 @@
 	"devDependencies": {
 		"@types/assert": "^1.5.10",
 		"tsconfig": "workspace:*",
+		"tsup": "^8.0.2",
 		"vitest": "^1.4.0"
 	}
 }

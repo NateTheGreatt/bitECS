@@ -1,10 +1,27 @@
 {
 	"name": "bitecs",
 	"private": true,
+	"main": "./packages/classic/dist/index.umd.cjs",
+	"module": "./packages/classic/dist/index.js",
+	"types": "./packages/classic/dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./packages/classic/dist/index.d.ts",
+			"require": "./packages/classic/dist/index.umd.cjs",
+			"import": "./packages/classic/dist/index.js",
+			"default": "./packages/classic/dist/index.js"
+		},
+		"./utils": {
+			"types": "./packages/utils/dist/index.d.ts",
+			"require": "./packages/utils/dist/index.umd.cjs",
+			"import": "./packages/utils/dist/index.js",
+			"default": "./packages/utils/dist/index.js"
+		}
+	},
 	"scripts": {
 		"app": "npx tsx ./scripts/app.ts",
-		"build": "npx tsx ./scripts/build.ts",
-		"sim": "npx tsx ./scripts/sim.ts"
+		"sim": "npx tsx ./scripts/sim.ts",
+		"build": "pnpm --filter ./packages/**  -r build"
 	},
 	"dependencies": {
 		"@types/node": "latest",
