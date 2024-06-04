@@ -278,32 +278,24 @@ export function query(world: World, args: Component[] | Queue): Uint32Array {
 	}
 }
 
-export const queryCheckEntity = (world: World, q: TODO, eid: number) => {
+export const queryCheckEntity = (world: World, q: QueryData, eid: number) => {
 	const { masks, notMasks, generations } = q;
-	let or = 0;
+
 	for (let i = 0; i < generations.length; i++) {
 		const generationId = generations[i];
 		const qMask = masks[generationId];
 		const qNotMask = notMasks[generationId];
-		// const qOrMask = orMasks[generationId]
 		const eMask = world[$entityMasks][generationId][eid];
 
-		// any
-		// if (qOrMask && (eMask & qOrMask) !== qOrMask) {
-		//   continue
-		// }
-		// not all
-		// if (qNotMask && (eMask & qNotMask) === qNotMask) {
-		// }
-		// not any
 		if (qNotMask && (eMask & qNotMask) !== 0) {
 			return false;
 		}
-		// all
+
 		if (qMask && (eMask & qMask) !== qMask) {
 			return false;
 		}
 	}
+
 	return true;
 };
 
@@ -381,8 +373,8 @@ export const removeQuery = (world: World, query: Query) => {
 	const q = world[$queryDataMap].get(query)!;
 	world[$queries].delete(q);
 	world[$queryDataMap].delete(query);
-	const hash = archetypeHash(world, query[$queryComponents])
-	world[$queriesHashMap].delete(hash)
+	const hash = archetypeHash(world, query[$queryComponents]);
+	world[$queriesHashMap].delete(hash);
 };
 
 /**
