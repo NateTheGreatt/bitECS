@@ -1,21 +1,21 @@
 {
 	"name": "bitecs",
 	"private": true,
-	"main": "./packages/classic/dist/index.cjs",
-	"module": "./packages/classic/dist/index.js",
-	"types": "./packages/classic/dist/index.d.ts",
+	"main": "./packages/classic/src/index.ts",
+	"module": "./packages/classic/src/index.ts",
+	"types": "./packages/classic/src/index.ts",
 	"exports": {
 		".": {
-			"types": "./packages/classic/dist/index.d.ts",
-			"require": "./packages/classic/dist/index.cjs",
-			"import": "./packages/classic/dist/index.js",
-			"default": "./packages/classic/dist/index.js"
+			"types": "./packages/classic/src/index.ts",
+			"require": "./packages/classic/src/index.ts",
+			"import": "./packages/classic/src/index.ts",
+			"default": "./packages/classic/src/index.ts"
 		},
 		"./utils": {
-			"types": "./packages/utils/dist/index.d.ts",
-			"require": "./packages/utils/dist/index.cjs",
-			"import": "./packages/utils/dist/index.js",
-			"default": "./packages/utils/dist/index.js"
+			"types": "./packages/utils/src/index.ts",
+			"require": "./packages/utils/src/index.ts",
+			"import": "./packages/utils/src/index.ts",
+			"default": "./packages/utils/src/index.ts"
 		}
 	},
 	"scripts": {
