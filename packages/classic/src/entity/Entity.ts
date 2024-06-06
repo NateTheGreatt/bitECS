@@ -104,13 +104,17 @@ export const Prefab = defineComponent();
  * @returns {number} eid
  */
 export const addEntity = (world: World): number => {
-	const eid: number = world[$manualEntityRecycling]
-		? removed.length
-			? removed.shift()!
-			: globalEntityCursor++
-		: removed.length > Math.round(globalSize * removedReuseThreshold)
-		? removed.shift()!
-		: globalEntityCursor++;
+	let eid: number;
+
+	if (
+		(world[$manualEntityRecycling] && removed.length > 0) ||
+		(!world[$manualEntityRecycling] &&
+			removed.length > Math.round(globalSize * removedReuseThreshold))
+	) {
+		eid = removed.pop()!;
+	} else {
+		eid = globalEntityCursor++;
+	}
 
 	if (world[$entitySparseSet].dense.length >= world[$size]) {
 		throw new Error('bitECS - max entities reached');
@@ -177,9 +181,9 @@ export const removeEntity = (world: World, eid: number) => {
 
 	// Remove entity from all queries
 	// TODO: archetype graph
-	world[$queries].forEach((q) => {
-		queryRemoveEntity(world, q, eid);
-	});
+	for (const query of world[$queries]) {
+		queryRemoveEntity(world, query, eid);
+	}
 
 	// Free the entity
 	if (world[$manualEntityRecycling]) recycled.push(eid);
