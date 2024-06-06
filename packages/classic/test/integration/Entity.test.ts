@@ -41,6 +41,7 @@ describe('Entity Integration Tests', () => {
 		strictEqual(removed[1], 1);
 		strictEqual(removed[2], 2);
 	});
+
 	it('should recycle entity IDs after 1% have been removed by default', () => {
 		const world = createWorld();
 		const ents: number[] = [];
@@ -76,6 +77,7 @@ describe('Entity Integration Tests', () => {
 		eid = addEntity(world);
 		strictEqual(eid, 0);
 	});
+
 	it('should flush entity IDs', () => {
 		const world = createWorld();
 		enableManualEntityRecycling(world);
@@ -121,6 +123,7 @@ describe('Entity Integration Tests', () => {
 		eid = addEntity(world);
 		strictEqual(eid, 5);
 	});
+
 	it('should be able to configure % of removed entity IDs before recycle', () => {
 		const world = createWorld();
 
