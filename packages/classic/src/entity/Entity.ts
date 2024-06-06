@@ -38,7 +38,22 @@ export const getGlobalSize = () => globalSize;
 
 // removed eids should also be global to prevent memory leaks
 const removed: number[] = [];
+const removedOut: number[] = [];
 const recycled: number[] = [];
+
+const dequeuFromRemoved = () => {
+	if (removedOut.length === 0) {
+		while (removed.length > 0) {
+			removedOut.push(removed.pop()!);
+		}
+	}
+	if (removedOut.length === 0) {
+		throw new Error('Queue is empty');
+	}
+	return removedOut.pop()!;
+};
+
+const getRemovedLength = () => removed.length + removedOut.length;
 
 const defaultRemovedReuseThreshold = 0.01;
 let removedReuseThreshold = defaultRemovedReuseThreshold;
@@ -48,6 +63,7 @@ export const resetGlobals = () => {
 	globalEntityCursor = 0;
 	removedReuseThreshold = defaultRemovedReuseThreshold;
 	removed.length = 0;
+	removedOut.length = 0;
 	recycled.length = 0;
 	queries.length = 0;
 	worlds.length = 0;
@@ -107,11 +123,11 @@ export const addEntity = (world: World): number => {
 	let eid: number;
 
 	if (
-		(world[$manualEntityRecycling] && removed.length > 0) ||
+		(world[$manualEntityRecycling] && getRemovedLength() > 0) ||
 		(!world[$manualEntityRecycling] &&
-			removed.length > Math.round(globalSize * removedReuseThreshold))
+			getRemovedLength() > Math.round(globalSize * removedReuseThreshold))
 	) {
-		eid = removed.pop()!;
+		eid = dequeuFromRemoved();
 	} else {
 		eid = globalEntityCursor++;
 	}
