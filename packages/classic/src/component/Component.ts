@@ -195,9 +195,11 @@ export const addComponent = (world: World, component: Component, eid: number, re
 		addComponent(world, Pair(Wildcard, target), eid);
 
 		// if it's an exclusive relation, remove the old target
-		if (relation[$exclusiveRelation] === true) {
+		if (relation[$exclusiveRelation] === true && target !== Wildcard) {
 			const oldTarget = getRelationTargets(world, relation, eid)[0];
-			removeComponent(world, relation(oldTarget), eid);
+			if (oldTarget && oldTarget !== target) {
+				removeComponent(world, relation(oldTarget), eid);
+			}
 		}
 
 		// mark entity as a relation target
