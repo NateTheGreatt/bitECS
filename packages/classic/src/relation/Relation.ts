@@ -1,5 +1,4 @@
 import { World, getEntityComponents, registerPrefab } from '..';
-import { $schema } from '../component/symbols';
 import { $worldToPrefab } from '../prefab/symbols';
 import { defineHiddenProperty } from '../utils/defineHiddenProperty';
 import {
@@ -10,6 +9,7 @@ import {
 	$onTargetRemoved,
 	$autoRemoveSubject,
 	$exclusiveRelation,
+	$initStore,
 } from './symbols';
 import { OnTargetRemovedCallback, RelationTarget, RelationType } from './types';
 
@@ -44,7 +44,7 @@ export const defineRelation = <T>(options?: {
 		return createOrGetRelationComponent<T>(relation, initStore, pairsMap, target);
 	};
 	defineHiddenProperty(relation, $pairsMap, pairsMap);
-	defineHiddenProperty(relation, $schema, initStore);
+	defineHiddenProperty(relation, $initStore, initStore);
 	defineHiddenProperty(relation, $exclusiveRelation, options && options.exclusive);
 	defineHiddenProperty(relation, $autoRemoveSubject, options && options.autoRemoveSubject);
 	defineHiddenProperty(relation, $onTargetRemoved, options ? options.onTargetRemoved : undefined);
@@ -57,9 +57,9 @@ export const Pair = <T>(relation: RelationType<T>, target: RelationTarget): T =>
 	if (target === '*') target = Wildcard;
 
 	const pairsMap = relation[$pairsMap];
-	const schema = relation[$schema];
+	const initStore = relation[$initStore];
 
-	return createOrGetRelationComponent<T>(relation, schema, pairsMap, target);
+	return createOrGetRelationComponent<T>(relation, initStore, pairsMap, target);
 };
 
 export const Wildcard: RelationType<any> | string = defineRelation();
