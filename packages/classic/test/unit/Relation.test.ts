@@ -1,5 +1,6 @@
 import assert from 'assert';
 import {
+	Pair,
 	addComponent,
 	addEntity,
 	createWorld,
@@ -48,6 +49,8 @@ describe('Relation Unit Tests', () => {
 		assert(Contains(gold) !== Contains(silver));
 		assert(Contains(gold).amount[inventory] === 5);
 		assert(Contains(silver).amount[inventory] === 12);
+		assert(Pair(Contains, gold).amount[inventory] === 5);
+		assert(Pair(Contains, silver).amount[inventory] === 12);
 	});
 
 	test('should auto remove all descendants of subject', () => {
