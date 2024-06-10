@@ -1,5 +1,4 @@
-import { Schema, World, entityExists, getEntityComponents, registerPrefab, removeEntity } from '..';
-import { ComponentType, defineComponent } from '..';
+import { World, getEntityComponents, registerPrefab } from '..';
 import { $schema } from '../component/symbols';
 import { $worldToPrefab } from '../prefab/symbols';
 import { defineHiddenProperty } from '../utils/defineHiddenProperty';
@@ -12,52 +11,53 @@ import {
 	$autoRemoveSubject,
 	$exclusiveRelation,
 } from './symbols';
-import { RelationOptions, RelationTarget, RelationType } from './types';
+import { OnTargetRemovedCallback, RelationTarget, RelationType } from './types';
 
-function createOrGetRelationComponent<T extends Schema>(
-	relation: (target: RelationTarget) => ComponentType<T>,
-	schema: T,
-	pairsMap: Map<any, any>,
+function createOrGetRelationComponent<T>(
+	relation: (target: RelationTarget) => T,
+	initStore: () => T,
+	pairsMap: Map<any, T>,
 	target: RelationTarget
 ) {
 	if (!pairsMap.has(target)) {
-		const component = defineComponent(schema) as any;
+		const component = initStore();
 		defineHiddenProperty(component, $isPairComponent, true);
 		defineHiddenProperty(component, $relation, relation);
 		defineHiddenProperty(component, $pairTarget, target);
 		pairsMap.set(target, component);
 	}
-	return pairsMap.get(target) as ComponentType<T>;
+
+	return pairsMap.get(target)!;
 }
 
-export const defineRelation = <T extends Schema>(
-	schema: T = {} as T,
-	options?: RelationOptions
-): RelationType<T> => {
+export const defineRelation = <T>(options?: {
+	initStore?: () => T;
+	exclusive?: boolean;
+	autoRemoveSubject?: boolean;
+	onTargetRemoved?: OnTargetRemovedCallback;
+}): RelationType<T> => {
+	const initStore = options?.initStore || ((() => ({})) as () => T);
 	const pairsMap = new Map();
 	const relation = function (target: RelationTarget) {
 		if (target === undefined) throw Error('Relation target is undefined');
 		if (target === '*') target = Wildcard;
-		return createOrGetRelationComponent<T>(relation, schema, pairsMap, target);
+		return createOrGetRelationComponent<T>(relation, initStore, pairsMap, target);
 	};
 	defineHiddenProperty(relation, $pairsMap, pairsMap);
-	defineHiddenProperty(relation, $schema, schema);
+	defineHiddenProperty(relation, $schema, initStore);
 	defineHiddenProperty(relation, $exclusiveRelation, options && options.exclusive);
 	defineHiddenProperty(relation, $autoRemoveSubject, options && options.autoRemoveSubject);
 	defineHiddenProperty(relation, $onTargetRemoved, options ? options.onTargetRemoved : undefined);
 	return relation as RelationType<T>;
 };
 
-export const Pair = <T extends Schema>(
-	relation: RelationType<T>,
-	target: RelationTarget
-): ComponentType<T> => {
+export const Pair = <T>(relation: RelationType<T>, target: RelationTarget): T => {
 	if (relation === undefined) throw Error('Relation is undefined');
 	if (target === undefined) throw Error('Relation target is undefined');
 	if (target === '*') target = Wildcard;
 
-	const pairsMap = (relation as RelationType<T>)[$pairsMap];
-	const schema = (relation as RelationType<T>)[$schema] as T;
+	const pairsMap = relation[$pairsMap];
+	const schema = relation[$schema];
 
 	return createOrGetRelationComponent<T>(relation, schema, pairsMap, target);
 };
@@ -70,7 +70,7 @@ export const getRelationTargets = (world: World, relation: RelationType<any>, ei
 	const targets = [];
 	for (const c of components) {
 		if (c[$relation] === relation && c[$pairTarget] !== Wildcard) {
-			if (c[$pairTarget] instanceof Object) {
+			if (c[$pairTarget][$worldToPrefab]) {
 				// It's a prefab
 				let eid = c[$pairTarget][$worldToPrefab].get(world);
 				if (eid == null) {
