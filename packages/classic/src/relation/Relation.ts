@@ -70,7 +70,7 @@ export const getRelationTargets = (world: World, relation: RelationType<any>, ei
 	const targets = [];
 	for (const c of components) {
 		if (c[$relation] === relation && c[$pairTarget] !== Wildcard) {
-			if (c[$pairTarget][$worldToPrefab]) {
+			if (typeof c[$pairTarget] === 'object' && c[$pairTarget][$worldToPrefab]) {
 				// It's a prefab
 				let eid = c[$pairTarget][$worldToPrefab].get(world);
 				if (eid == null) {
