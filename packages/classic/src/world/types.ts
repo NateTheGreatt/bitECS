@@ -12,7 +12,6 @@ import {
 	$localEntities,
 	$localEntityLookup,
 	$manualEntityRecycling,
-	$resizeThreshold,
 	$size,
 } from './symbols';
 import { $componentCount, $componentMap } from '../component/symbols';
@@ -24,7 +23,7 @@ import { $relationTargetEntities } from '../relation/symbols';
 export interface World {
 	[$size]: number;
 	[$entityArray]: number[];
-	[$entityMasks]: Uint32Array[];
+	[$entityMasks]: Array<number>[];
 	[$entityComponents]: Map<number, Set<Component>>;
 	[$archetypes]: any[];
 	[$entitySparseSet]: ReturnType<typeof SparseSet>;
@@ -39,6 +38,5 @@ export interface World {
 	[$localEntities]: Map<any, any>;
 	[$localEntityLookup]: Map<any, any>;
 	[$manualEntityRecycling]: boolean;
-	[$resizeThreshold]: number;
 	[$relationTargetEntities]: ReturnType<typeof SparseSet>;
 }

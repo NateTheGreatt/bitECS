@@ -118,7 +118,7 @@ describe('Component Integration Tests', () => {
 			});
 	});
 
-	it.fails('should add components to entities after recycling', () => {
+	it('should add components to entities after recycling', () => {
 		const world = createWorld(10);
 		let eid = 0;
 

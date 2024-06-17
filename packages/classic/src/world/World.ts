@@ -14,7 +14,6 @@ import {
 	$localEntities,
 	$localEntityLookup,
 	$manualEntityRecycling,
-	$resizeThreshold,
 	$size,
 } from './symbols.js';
 import { SparseSet } from '../utils/SparseSet.js';
@@ -24,25 +23,11 @@ import {
 	$entityMasks,
 	$entitySparseSet,
 } from '../entity/symbols.js';
-import { resize } from '../storage/Storage.js';
 import { queries, registerQuery } from '../query/Query.js';
 import { defineHiddenProperties } from '../utils/defineHiddenProperty.js';
 import { $relationTargetEntities } from '../relation/symbols.js';
 
 export const worlds: World[] = [];
-
-export const resizeWorlds = (size: number) => {
-	worlds.forEach((world) => {
-		world[$size] = size;
-
-		for (let i = 0; i < world[$entityMasks].length; i++) {
-			const masks = world[$entityMasks][i];
-			world[$entityMasks][i] = resize(masks, size);
-		}
-
-		world[$resizeThreshold] = world[$size] - world[$size] / 5;
-	});
-};
 
 export function defineWorld<W extends object = {}>(world: W, size?: number): W & World;
 export function defineWorld<W extends World = World>(size?: number): W;
@@ -60,7 +45,7 @@ export function defineWorld(...args: any[]) {
 	// Define world properties as non-enumerable symbols so they are internal secrets.
 	defineHiddenProperties(world, {
 		[$size]: size,
-		[$entityMasks]: [new Uint32Array(size)],
+		[$entityMasks]: [new Array(size)],
 		[$entityComponents]: new Map(),
 		[$archetypes]: [],
 		[$entitySparseSet]: entitySparseSet,
@@ -76,7 +61,6 @@ export function defineWorld(...args: any[]) {
 		[$localEntities]: new Map(),
 		[$localEntityLookup]: new Map(),
 		[$manualEntityRecycling]: false,
-		[$resizeThreshold]: size - size / 5,
 		[$relationTargetEntities]: SparseSet(),
 	});
 
@@ -118,7 +102,7 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
 
 	if (world[$entityArray]) world[$entityArray].forEach((eid) => removeEntity(world, eid));
 
-	world[$entityMasks] = [new Uint32Array(size)];
+	world[$entityMasks] = [new Array(size)];
 	world[$entityComponents] = new Map();
 	world[$archetypes] = [];
 
@@ -169,7 +153,6 @@ export const deleteWorld = (world: World) => {
 	delete deletedWorld[$localEntities];
 	delete deletedWorld[$localEntityLookup];
 	delete deletedWorld[$manualEntityRecycling];
-	delete deletedWorld[$resizeThreshold];
 	delete deletedWorld[$relationTargetEntities];
 
 	// Remove the world from the worlds array
@@ -197,7 +180,7 @@ export const incrementWorldBitflag = (world: World) => {
 	world[$bitflag] *= 2;
 	if (world[$bitflag] >= 2 ** 31) {
 		world[$bitflag] = 1;
-		world[$entityMasks].push(new Uint32Array(world[$size]));
+		world[$entityMasks].push(new Array(world[$size]));
 	}
 };
 

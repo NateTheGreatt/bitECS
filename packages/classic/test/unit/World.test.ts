@@ -22,7 +22,7 @@ describe('World Unit Tests', () => {
 
 		assert(Array.isArray(world[$entityMasks]));
 
-		strictEqual(world[$entityMasks][0].constructor.name, 'Uint32Array');
+		strictEqual(world[$entityMasks][0].constructor.name, 'Array');
 		strictEqual(world[$entityMasks][0].length, defaultSize);
 
 		strictEqual(world[$bitflag], 1);
