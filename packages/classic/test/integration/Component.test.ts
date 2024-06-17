@@ -8,10 +8,12 @@ import {
 	hasComponent,
 	registerComponent,
 	removeComponent,
+	removeEntity,
 } from '../../src/index.js';
 import { createWorld } from '../../src/world/World.js';
 import { describe, it, afterEach } from 'vitest';
 import { $componentMap } from '../../src/component/symbols.js';
+import { getEntityCursor } from '../../src/entity/Entity.js';
 
 const componentTypes = {
 	SoA: defineComponent({ value: Types.f32 }),
@@ -114,5 +116,27 @@ describe('Component Integration Tests', () => {
 				addComponent(world, c, eid);
 				assert(hasComponent(world, c, eid));
 			});
+	});
+
+	it.fails('should add components to entities after recycling', () => {
+		const world = createWorld(10);
+		let eid = 0;
+
+		for (let i = 0; i < 10; i++) {
+			addEntity(world);
+		}
+
+		for (let i = 0; i < 10; i++) {
+			removeEntity(world, i);
+		}
+
+		for (let i = 0; i < 10; i++) {
+			eid = addEntity(world);
+		}
+
+		const component = defineComponent({ value: Types.f32 });
+		addComponent(world, component, eid);
+
+		assert(hasComponent(world, component, eid));
 	});
 });
