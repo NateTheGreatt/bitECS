@@ -1,31 +1,25 @@
-import {
-	queryAddEntity,
-	queryRemoveEntity,
-	queryCheckEntity,
-	query,
-	removeQuery,
-} from '../query/Query.js';
-import { $bitflag, $size } from '../world/symbols.js';
-import { $entityMasks, $entityComponents } from '../entity/symbols.js';
-import { Component, ComponentNode, ComponentType } from './types.js';
-import { World } from '../world/types.js';
-import { $componentCount, $componentMap, $schema } from './symbols.js';
-import { $queries } from '../query/symbols.js';
-import { entityExists, incrementWorldBitflag } from '../world/World.js';
-import { QueryData } from '../query/types.js';
-import { Schema } from '../storage/types.js';
-import { createStore, resetStoreFor } from '../storage/Storage.js';
 import { Prefab, getEntityComponents, getGlobalSize } from '../entity/Entity.js';
+import { $entityComponents, $entityMasks } from '../entity/symbols.js';
+import { $worldToPrefab } from '../prefab/symbols.js';
+import { PrefabToken } from '../prefab/types.js';
+import { query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
+import { $queries } from '../query/symbols.js';
+import { QueryData } from '../query/types.js';
 import { IsA, Pair, Wildcard, getRelationTargets } from '../relation/Relation.js';
 import {
-	$isPairComponent,
-	$relation,
-	$pairTarget,
-	$relationTargetEntities,
 	$exclusiveRelation,
+	$isPairComponent,
+	$pairTarget,
+	$relation,
+	$relationTargetEntities,
 } from '../relation/symbols.js';
-import { PrefabToken } from '../prefab/types.js';
-import { $worldToPrefab } from '../prefab/symbols.js';
+import { createStore, resetStoreFor } from '../storage/Storage.js';
+import { Schema } from '../storage/types.js';
+import { entityExists, incrementWorldBitflag } from '../world/World.js';
+import { $bitflag } from '../world/symbols.js';
+import { World } from '../world/types.js';
+import { $componentCount, $componentMap, $schema } from './symbols.js';
+import { Component, ComponentNode, ComponentType } from './types.js';
 
 /**
  * Defines a new component store.
@@ -40,14 +34,6 @@ export const defineComponent = <T extends Schema>(
 	const component = createStore(schema, size || getGlobalSize());
 	if (schema && Object.keys(schema).length) component[$schema] = schema;
 	return component;
-};
-
-export const incrementBitflag = (world: World) => {
-	world[$bitflag] *= 2;
-	if (world[$bitflag] >= 2 ** 31) {
-		world[$bitflag] = 1;
-		world[$entityMasks].push(new Uint32Array(world[$size]));
-	}
 };
 
 /**

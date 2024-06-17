@@ -1,3 +1,4 @@
+import { defineComponent, removeComponent } from '../component/Component.js';
 import {
 	queries,
 	query,
@@ -5,19 +6,8 @@ import {
 	queryCheckEntity,
 	queryRemoveEntity,
 } from '../query/Query.js';
-import { resizeWorlds, worlds } from '../world/World.js';
-import {
-	$localEntities,
-	$localEntityLookup,
-	$manualEntityRecycling,
-	$size,
-} from '../world/symbols.js';
-import { World } from '../world/types.js';
-import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
-import { TODO } from '../utils/types.js';
 import { $notQueries, $queries } from '../query/symbols.js';
 import { Pair, Wildcard } from '../relation/Relation.js';
-import { addComponent, defineComponent, removeComponent } from '../component/Component.js';
 import {
 	$autoRemoveSubject,
 	$isPairComponent,
@@ -26,6 +16,16 @@ import {
 	$relation,
 	$relationTargetEntities,
 } from '../relation/symbols.js';
+import { TODO } from '../utils/types.js';
+import { worlds } from '../world/World.js';
+import {
+	$localEntities,
+	$localEntityLookup,
+	$manualEntityRecycling,
+	$size,
+} from '../world/symbols.js';
+import { World } from '../world/types.js';
+import { $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
 
 let defaultSize = 100000;
 
@@ -77,13 +77,10 @@ export const getDefaultSize = () => defaultSize;
  * @param {number} newSize
  */
 export const setDefaultSize = (newSize: number) => {
-	const oldSize = globalSize;
-
 	defaultSize = newSize;
 	resetGlobals();
 
 	globalSize = newSize;
-	resizeWorlds(newSize);
 };
 
 /**

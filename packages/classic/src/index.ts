@@ -71,7 +71,6 @@ import * as querySymbols from './query/symbols.js';
 import * as storageSymbols from './storage/symbols.js';
 import * as relationSymbols from './relation/symbols.js';
 import * as prefabSymbols from './prefab/symbols.js';
-import { archetypeHash } from './query/utils.js';
 
 export const SYMBOLS = {
 	...worldSymbols,
