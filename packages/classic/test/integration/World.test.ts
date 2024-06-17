@@ -6,7 +6,7 @@ describe('World Integration Tests', () => {
 		resetGlobals();
 	});
 
-	it('can be created with a sized', () => {
+	it('can be created with a size', () => {
 		const world = createWorld(10);
 		expect(world[SYMBOLS.$size]).toBe(10);
 	});
