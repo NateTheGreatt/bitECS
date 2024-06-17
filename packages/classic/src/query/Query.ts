@@ -81,7 +81,8 @@ export const registerQuery = (world: World, query: Query) => {
 	const mapComponents = (c: Component) => world[$componentMap].get(c)!;
 	const allComponents = components.concat(notComponents).map(mapComponents);
 
-	const sparseSet = Uint32SparseSet.create(1024, world[$size] > 1024 ? world[$size] : 1024);
+	// `world[$size] * 2` is the maximum size our buffer can grow with recycling.
+	const sparseSet = Uint32SparseSet.create(1024, world[$size] * 2 > 1024 ? world[$size] * 2 : 1024);
 
 	const archetypes: TODO = [];
 	const changed: TODO = [];
