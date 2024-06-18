@@ -5,6 +5,7 @@ export {
 	getWorldComponents,
 	getAllEntities,
 	enableManualEntityRecycling,
+	enableBufferedQueries,
 	defineWorld,
 	registerWorld,
 	worlds,

@@ -1,5 +1,5 @@
 import { SparseSet } from '../utils/SparseSet.js';
-import Uint32SparseSet from '@bitecs/utils/Uint32SparseSet';
+import Uint32SparseSet, { type IUint32SparseSet } from '@bitecs/utils/Uint32SparseSet';
 import { hasComponent, registerComponent } from '../component/Component.js';
 import { $componentMap } from '../component/symbols.js';
 import { $entityMasks, $entityArray, $entitySparseSet } from '../entity/symbols.js';
@@ -16,14 +16,14 @@ import {
 	$queryDataMap,
 	$queueRegisters,
 } from './symbols.js';
-import { Query, QueryModifier, QueryData, Queue } from './types.js';
-import { World } from '../world/types.js';
+import { Query, QueryModifier, QueryData, Queue, QueryResult } from './types.js';
+import { HasBufferQueries, World } from '../world/types.js';
 import { createShadow } from '../storage/Storage.js';
 import { $storeFlattened, $tagStore } from '../storage/symbols.js';
 import { EMPTY } from '../constants/Constants.js';
 import { worlds } from '../world/World.js';
 import { archetypeHash } from './utils.js';
-import { $size } from '../world/symbols.js';
+import { $bufferQueries, $size } from '../world/symbols.js';
 
 export const queries: Query[] = [];
 
@@ -53,7 +53,7 @@ export function None(...comps: Component[]) {
 	};
 }
 
-export const registerQuery = (world: World, query: Query) => {
+export const registerQuery = <W extends World>(world: W, query: Query) => {
 	// Early exit if query is already registered.
 	if (world[$queryDataMap].has(query)) return;
 
@@ -81,8 +81,15 @@ export const registerQuery = (world: World, query: Query) => {
 	const mapComponents = (c: Component) => world[$componentMap].get(c)!;
 	const allComponents = components.concat(notComponents).map(mapComponents);
 
-	// `world[$size] * 2` is the maximum size our buffer can grow with recycling.
-	const sparseSet = Uint32SparseSet.create(1024, world[$size] * 2 > 1024 ? world[$size] * 2 : 1024);
+	let sparseSet: IUint32SparseSet | ReturnType<typeof SparseSet>;
+
+	if (world[$bufferQueries]) {
+		// `world[$size] * 2` is the maximum size our buffer can grow with recycling.
+		const size = world[$size] === -1 ? 100_000 : world[$size] * 2;
+		sparseSet = Uint32SparseSet.create(1024, size > 1024 ? size : 1024);
+	} else {
+		sparseSet = SparseSet();
+	}
 
 	const archetypes: TODO = [];
 	const changed: TODO = [];
@@ -137,7 +144,7 @@ export const registerQuery = (world: World, query: Query) => {
 		exitQueues,
 		shadows,
 		query,
-	});
+	}) as unknown as QueryData<HasBufferQueries<W>>;
 
 	world[$queryDataMap].set(query, q);
 	world[$queries].add(q);
@@ -230,15 +237,15 @@ const getNoneComponents = aggregateComponentsFor(None);
 
 export const defineQuery = (components: Component[]): Query => {
 	if (components === undefined) {
-		const query = (world: World, clearDiff = false): Uint32Array =>
-			Uint32Array.from(world[$entityArray]);
+		const query = (world: World, clearDiff = false): readonly number[] =>
+			Array.from(world[$entityArray]);
 		query[$queryComponents] = components;
 		query[$queueRegisters] = [] as Queue[];
 
 		return query;
 	}
 
-	const query = function (world: World, clearDiff = true): Uint32Array {
+	const query: Query = function (world: World, clearDiff = true) {
 		const data = world[$queryDataMap].get(query)!;
 
 		commitRemovals(world);
@@ -246,7 +253,7 @@ export const defineQuery = (components: Component[]): Query => {
 		if (data.changedComponents.length) return diff(data, clearDiff);
 		if (data.changedComponents.length) return data.changed.dense;
 
-		return data.dense;
+		return world[$bufferQueries] ? data.dense : Array.from(data.dense);
 	};
 
 	query[$queryComponents] = components;
@@ -261,9 +268,9 @@ export const defineQuery = (components: Component[]): Query => {
 	return query;
 };
 
-export function query(world: World, components: Component[]): Uint32Array;
-export function query(world: World, queue: Queue): Uint32Array;
-export function query(world: World, args: Component[] | Queue): Uint32Array {
+export function query<W extends World>(world: W, components: Component[]): QueryResult<W>;
+export function query<W extends World>(world: W, queue: Queue): QueryResult<W>;
+export function query<W extends World>(world: W, args: Component[] | Queue) {
 	if (Array.isArray(args)) {
 		const components = args;
 		const hash = archetypeHash(world, components);
@@ -275,11 +282,15 @@ export function query(world: World, args: Component[] | Queue): Uint32Array {
 		}
 	} else {
 		const queue = args;
-		return new Uint32Array(queue(world));
+		return world[$bufferQueries] ? new Uint32Array(queue(world)) : Array.from(queue(world));
 	}
 }
 
-export const queryCheckEntity = (world: World, q: QueryData, eid: number) => {
+export const queryCheckEntity = <W extends World>(
+	world: W,
+	q: QueryData<HasBufferQueries<W>>,
+	eid: number
+) => {
 	const { masks, notMasks, generations } = q;
 
 	for (let i = 0; i < generations.length; i++) {
@@ -320,14 +331,17 @@ export const queryAddEntity = (q: QueryData, eid: number) => {
 		q.exitQueues[i].remove(eid);
 	}
 
-	Uint32SparseSet.add(q, eid);
+	if (q.dense instanceof Uint32Array) Uint32SparseSet.add(q as QueryData<true>, eid);
+	else (q as QueryData<false>).add(eid);
 };
 
 const queryCommitRemovals = (q: QueryData) => {
 	for (let i = q.toRemove.dense.length - 1; i >= 0; i--) {
 		const eid = q.toRemove.dense[i];
 		q.toRemove.remove(eid);
-		Uint32SparseSet.remove(q, eid);
+
+		if (q.dense instanceof Uint32Array) Uint32SparseSet.remove(q as QueryData<true>, eid);
+		else (q as QueryData<false>).remove(eid);
 	}
 };
 
@@ -337,8 +351,9 @@ export const commitRemovals = (world: World) => {
 	world[$dirtyQueries].clear();
 };
 
-export const queryRemoveEntity = (world: World, q: QueryData, eid: number) => {
-	if (!Uint32SparseSet.has(q, eid) || q.toRemove.has(eid)) return;
+export const queryRemoveEntity = <W extends World>(world: W, q: QueryData, eid: number) => {
+	const has = world[$bufferQueries] ? Uint32SparseSet.has(q as QueryData<true>, eid) : (q as QueryData<false>).has(eid); //prettier-ignore
+	if (!has || q.toRemove.has(eid)) return;
 	q.toRemove.add(eid);
 	world[$dirtyQueries].add(q);
 

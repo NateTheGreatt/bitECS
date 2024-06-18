@@ -129,7 +129,7 @@ export const addEntity = (world: World): number => {
 		eid = globalEntityCursor++;
 	}
 
-	if (world[$entitySparseSet].dense.length >= world[$size]) {
+	if (world[$size] !== -1 && world[$entitySparseSet].dense.length >= world[$size]) {
 		throw new Error('bitECS - max entities reached');
 	}
 

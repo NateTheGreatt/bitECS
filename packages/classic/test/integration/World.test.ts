@@ -1,5 +1,5 @@
-import { SYMBOLS, createWorld, resetGlobals, deleteWorld, worlds } from '../../src/index.js';
-import { describe, it, afterEach, expect } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { SYMBOLS, createWorld, deleteWorld, resetGlobals, worlds } from '../../src/index.js';
 
 describe('World Integration Tests', () => {
 	afterEach(() => {

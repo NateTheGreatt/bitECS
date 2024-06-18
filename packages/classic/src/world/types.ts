@@ -1,3 +1,6 @@
+import { $componentCount, $componentMap } from '../component/symbols';
+import { Component, ComponentNode } from '../component/types';
+import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from '../entity/symbols';
 import {
 	$dirtyQueries,
 	$notQueries,
@@ -5,22 +8,20 @@ import {
 	$queriesHashMap,
 	$queryDataMap,
 } from '../query/symbols';
-import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from '../entity/symbols';
+import { Query, QueryData } from '../query/types';
+import { $relationTargetEntities } from '../relation/symbols';
+import { SparseSet } from '../utils/SparseSet';
 import {
 	$archetypes,
 	$bitflag,
+	$bufferQueries,
 	$localEntities,
 	$localEntityLookup,
 	$manualEntityRecycling,
 	$size,
 } from './symbols';
-import { $componentCount, $componentMap } from '../component/symbols';
-import { Query, QueryData } from '../query/types';
-import { Component, ComponentNode } from '../component/types';
-import { SparseSet } from '../utils/SparseSet';
-import { $relationTargetEntities } from '../relation/symbols';
 
-export interface World {
+export interface World<TBufferQueries extends boolean = false | true> {
 	[$size]: number;
 	[$entityArray]: number[];
 	[$entityMasks]: Array<number>[];
@@ -30,13 +31,19 @@ export interface World {
 	[$bitflag]: number;
 	[$componentMap]: Map<Component, ComponentNode>;
 	[$componentCount]: number;
-	[$queryDataMap]: Map<Query, QueryData>;
-	[$queries]: Set<QueryData>;
-	[$queriesHashMap]: Map<string, QueryData>;
+	[$queryDataMap]: Map<Query, QueryData<TBufferQueries>>;
+	[$queries]: Set<QueryData<TBufferQueries>>;
+	[$queriesHashMap]: Map<string, QueryData<TBufferQueries>>;
 	[$notQueries]: Set<any>;
 	[$dirtyQueries]: Set<any>;
 	[$localEntities]: Map<any, any>;
 	[$localEntityLookup]: Map<any, any>;
-	[$manualEntityRecycling]: boolean;
 	[$relationTargetEntities]: ReturnType<typeof SparseSet>;
+	[$manualEntityRecycling]: boolean;
+	[$bufferQueries]: boolean;
+
+	// Internal flag
+	_bufferQueries: TBufferQueries;
 }
+
+export type HasBufferQueries<W extends World> = W extends { _bufferQueries: true } ? true : false;

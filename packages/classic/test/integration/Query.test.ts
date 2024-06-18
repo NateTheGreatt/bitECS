@@ -1,25 +1,25 @@
 import { strictEqual } from 'assert';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
-	exitQuery,
-	Types,
-	createWorld,
-	addEntity,
-	removeEntity,
-	resetGlobals,
-	addComponent,
-	removeComponent,
-	defineComponent,
 	Changed,
-	defineQuery,
-	enterQuery,
 	Not,
+	SYMBOLS,
+	Types,
+	addComponent,
+	addEntity,
+	createWorld,
+	defineComponent,
 	defineEnterQueue,
 	defineExitQueue,
-	registerQuery,
+	defineQuery,
+	enableBufferedQueries,
+	enterQuery,
+	exitQuery,
 	query,
-	SYMBOLS,
+	removeComponent,
+	removeEntity,
+	resetGlobals,
 } from '../../src/index.js';
-import { describe, it, afterEach, expect } from 'vitest';
 
 describe('Query Integration Tests', () => {
 	afterEach(() => {
@@ -330,5 +330,17 @@ describe('Query Integration Tests', () => {
 
 		let exited = exitedQuery(world);
 		strictEqual(exited.length, 1);
+	});
+
+	it('can use buffered queries', () => {
+		const world = enableBufferedQueries(createWorld());
+		const TestComponent = defineComponent({ value: Types.f32 });
+
+		const eid = addEntity(world);
+		addComponent(world, TestComponent, eid);
+
+		const ents = query(world, [TestComponent]);
+		expect(ents.length).toBe(1);
+		expect(ents).toBeInstanceOf(Uint32Array);
 	});
 });
