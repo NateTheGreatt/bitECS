@@ -343,4 +343,58 @@ describe('Query Integration Tests', () => {
 		expect(ents.length).toBe(1);
 		expect(ents).toBeInstanceOf(Uint32Array);
 	});
+
+	it('should not alter query results when removing entities', () => {
+		const world = createWorld();
+		const TestComponent = defineComponent({ value: Types.f32 });
+
+		for (let i = 0; i < 10; i += 1) {
+			const eid = addEntity(world);
+			addComponent(world, TestComponent, eid);
+		}
+
+		const results = query(world, [TestComponent]);
+		const length = results.length;
+		for (const eid of results) {
+			removeEntity(world, eid);
+		}
+
+		expect(length).toBe(results.length);
+	});
+
+	it('should not alter query results when removing a query component', () => {
+		const world = createWorld();
+		const TestComponent = defineComponent({ value: Types.f32 });
+
+		for (let i = 0; i < 10; i += 1) {
+			const eid = addEntity(world);
+			addComponent(world, TestComponent, eid);
+		}
+
+		const results = query(world, [TestComponent]);
+		const length = results.length;
+		for (const eid of results) {
+			removeComponent(world, TestComponent, eid);
+		}
+
+		expect(length).toBe(results.length);
+	});
+
+	it('should not alter query results when buffered', () => {
+		const world = enableBufferedQueries(createWorld());
+		const TestComponent = defineComponent({ value: Types.f32 });
+
+		for (let i = 0; i < 10; i += 1) {
+			const eid = addEntity(world);
+			addComponent(world, TestComponent, eid);
+		}
+
+		const results = query(world, [TestComponent]);
+		const length = results.length;
+		for (const eid of results) {
+			removeEntity(world, eid);
+		}
+
+		expect(length).toBe(results.length);
+	});
 });
