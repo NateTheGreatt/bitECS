@@ -21,7 +21,7 @@ import {
 	$size,
 } from './symbols';
 
-export interface World<TBufferQueries extends boolean = false | true> {
+export interface World {
 	[$size]: number;
 	[$entityArray]: number[];
 	[$entityMasks]: Array<number>[];
@@ -31,9 +31,9 @@ export interface World<TBufferQueries extends boolean = false | true> {
 	[$bitflag]: number;
 	[$componentMap]: Map<Component, ComponentNode>;
 	[$componentCount]: number;
-	[$queryDataMap]: Map<Query, QueryData<TBufferQueries>>;
-	[$queries]: Set<QueryData<TBufferQueries>>;
-	[$queriesHashMap]: Map<string, QueryData<TBufferQueries>>;
+	[$queryDataMap]: Map<Query, QueryData>;
+	[$queries]: Set<QueryData>;
+	[$queriesHashMap]: Map<string, QueryData>;
 	[$notQueries]: Set<any>;
 	[$dirtyQueries]: Set<any>;
 	[$localEntities]: Map<any, any>;
@@ -43,7 +43,7 @@ export interface World<TBufferQueries extends boolean = false | true> {
 	[$bufferQueries]: boolean;
 
 	// Internal flag
-	_bufferQueries: TBufferQueries;
+	_bufferQueries: boolean;
 }
 
 export type HasBufferQueries<W extends World> = W extends { _bufferQueries: true } ? true : false;

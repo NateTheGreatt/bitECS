@@ -188,7 +188,7 @@ export const enableManualEntityRecycling = <W extends World>(world: W): W => {
 	return world;
 };
 
-export const enableBufferedQueries = <W extends World>(world: W): W & World<true> => {
+export const enableBufferedQueries = <W extends World>(world: W): W & { _bufferQueries: true } => {
 	world[$bufferQueries] = true;
-	return world as W & World<true>;
+	return world as W & { _bufferQueries: true };
 };
