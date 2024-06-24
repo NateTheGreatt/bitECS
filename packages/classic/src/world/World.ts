@@ -76,7 +76,7 @@ export function registerWorld(world: World) {
  * @returns {object}
  */
 export function createWorld<W extends object = {}>(world?: W, size?: number): W & World;
-export function createWorld<W extends World = World>(size?: number): W;
+export function createWorld(size?: number): World;
 export function createWorld(...args: any[]) {
 	const world = defineWorld(...args);
 	registerWorld(world);
@@ -183,12 +183,12 @@ export const entityExists = (world: World, eid: number) => {
 	return world[$entitySparseSet].has(eid);
 };
 
-export const enableManualEntityRecycling = (world: World): World => {
+export const enableManualEntityRecycling = <W extends World>(world: W): W => {
 	world[$manualEntityRecycling] = true;
 	return world;
 };
 
-export const enableBufferedQueries = (world: World): World<true> => {
+export const enableBufferedQueries = <W extends World>(world: W): W & World<true> => {
 	world[$bufferQueries] = true;
-	return world as unknown as World<true>;
+	return world as W & World<true>;
 };

@@ -12,7 +12,7 @@ export type QueryResult<W extends World = World> = HasBufferQueries<W> extends t
 	? Uint32Array
 	: readonly number[];
 
-export type Query<W extends World = World> = ((world: W, clearDiff?: boolean) => QueryResult<W>) & {
+export type Query = (<W extends World = World>(world: W, clearDiff?: boolean) => QueryResult<W>) & {
 	[$queryComponents]: Component[];
 	[$queueRegisters]: ((world: World) => void)[];
 };

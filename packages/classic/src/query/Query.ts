@@ -237,15 +237,21 @@ const getNoneComponents = aggregateComponentsFor(None);
 
 export const defineQuery = (components: Component[]): Query => {
 	if (components === undefined) {
-		const query = (world: World, clearDiff = false): readonly number[] =>
-			Array.from(world[$entityArray]);
+		const query: Query = function <W extends World>(world: W) {
+			return (
+				world[$bufferQueries]
+					? new Uint32Array(world[$entityArray])
+					: Array.from(world[$entityArray])
+			) as QueryResult<W>;
+		};
+
 		query[$queryComponents] = components;
 		query[$queueRegisters] = [] as Queue[];
 
 		return query;
 	}
 
-	const query: Query = function (world: World, clearDiff = true) {
+	const query: Query = function (world, clearDiff = true) {
 		const data = world[$queryDataMap].get(query)!;
 
 		commitRemovals(world);
