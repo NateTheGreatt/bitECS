@@ -100,10 +100,10 @@ Any object can be passed in to create the world allowing for extending its shape
 
 ```js
 const world = createWorld({
-    time: {
-        then: 0,
-        delta: 0,
-    },
+	time: {
+		then: 0,
+		delta: 0,
+	},
 });
 
 world.then; // 0
@@ -416,6 +416,9 @@ query(world, [IsA(Animal)]); // => [sheep, wolf]
 ```
 
 ## Ranges
+
+> [!WARNING]
+> Ranges are not implemented yet. This API demonstrates the design we intend.
 
 Ranges in `bitECS` allow you to define unique or shared Entity ID (EID) spaces for different worlds or for specific types of entities within a world. This can help manage EID allocation and avoid collisions across different worlds or categories.
 
