@@ -100,10 +100,10 @@ Any object can be passed in to create the world allowing for extending its shape
 
 ```js
 const world = createWorld({
-	time: {
-		then: 0,
-		delta: 0,
-	},
+    time: {
+        then: 0,
+        delta: 0,
+    },
 });
 
 world.then; // 0
