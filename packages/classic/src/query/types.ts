@@ -8,7 +8,7 @@ export type QueryModifier<W extends World = World> = (
 	c: Component[]
 ) => (world: W) => Component | QueryModifier<W>;
 
-export type QueryResult<W extends World = World> = HasBufferQueries<W> extends true
+export type QueryResult<W extends World = World, TTest = HasBufferQueries<W>> = TTest extends true
 	? Uint32Array
 	: readonly number[];
 
