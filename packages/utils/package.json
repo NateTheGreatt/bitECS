@@ -38,7 +38,7 @@
 	},
 	"scripts": {
 		"test": "vitest",
-		"build": "tsup src/index.ts --minify --dts --format cjs,esm --out-dir dist"
+		"build": "tsup"
 	},
 	"devDependencies": {
 		"@types/assert": "^1.5.10",
