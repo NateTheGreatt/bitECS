@@ -1,27 +1,28 @@
 {
 	"name": "bitecs",
 	"private": true,
-	"main": "./packages/classic/src/index.ts",
-	"module": "./packages/classic/src/index.ts",
-	"types": "./packages/classic/src/index.ts",
+	"main": "./packages/classic/dist/index.cjs",
+	"module": "./packages/classic/dist/index.js",
+	"types": "./packages/classic/dist/index.js",
 	"exports": {
 		".": {
-			"types": "./packages/classic/src/index.ts",
-			"require": "./packages/classic/src/index.ts",
-			"import": "./packages/classic/src/index.ts",
-			"default": "./packages/classic/src/index.ts"
+			"types": "./packages/classic/dist/index.js",
+			"require": "./packages/classic/dist/index.cjs",
+			"import": "./packages/classic/dist/index.js",
+			"default": "./packages/classic/dist/index.js"
 		},
 		"./utils": {
-			"types": "./packages/utils/src/index.ts",
-			"require": "./packages/utils/src/index.ts",
-			"import": "./packages/utils/src/index.ts",
-			"default": "./packages/utils/src/index.ts"
+			"types": "./packages/utils/dist/index.js",
+			"require": "./packages/utils/dist/index.cjs",
+			"import": "./packages/utils/dist/index.js",
+			"default": "./packages/utils/dist/index.js"
 		}
 	},
 	"scripts": {
 		"app": "npx tsx ./scripts/app.ts",
 		"sim": "npx tsx ./scripts/sim.ts",
-		"build": "pnpm --filter ./packages/**  -r build"
+		"build": "pnpm --filter ./packages/**  -r build",
+		"postinstall": "pnpm build"
 	},
 	"dependencies": {
 		"@types/node": "latest",
