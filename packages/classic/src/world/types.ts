@@ -46,4 +46,6 @@ export interface World {
 	_bufferQueries: boolean;
 }
 
+export type IWorld = World;
+
 export type HasBufferQueries<W extends World> = W extends { _bufferQueries: true } ? true : false;
