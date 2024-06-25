@@ -24,7 +24,6 @@
 		"build": "pnpm --filter ./packages/**  -r build"
 	},
 	"dependencies": {
-		"@bitecs/utils": "workspace:*",
 		"@types/node": "latest",
 		"tsx": "^4.15.7",
 		"typescript": "latest"
