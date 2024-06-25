@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@bitecs/utils':
+        specifier: workspace:*
+        version: link:packages/utils
       '@types/node':
         specifier: latest
         version: 20.14.8
