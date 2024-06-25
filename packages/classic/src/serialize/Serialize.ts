@@ -199,7 +199,9 @@ export const defineSerializer = (target: TODO, maxBytes = 20000000): Serializer 
 				// if property is an array
 				if (ArrayBuffer.isView(prop[eid])) {
 					const type = prop[eid].constructor.name.replace('Array', '');
+					// @ts-expect-error
 					const indexType = prop[eid][$indexType];
+					// @ts-expect-error
 					const indexBytes = prop[eid][$indexBytes];
 
 					// save space for count of dirty array elements
@@ -209,11 +211,14 @@ export const defineSerializer = (target: TODO, maxBytes = 20000000): Serializer 
 					let arrayWriteCount = 0;
 
 					// write index,value
+					// @ts-expect-error
 					for (let i = 0; i < prop[eid].length; i++) {
 						if (shadow) {
+							// @ts-expect-error
 							const changed = shadow[eid][i] !== prop[eid][i];
 
 							// sync shadow
+							// @ts-expect-error
 							shadow[eid][i] = prop[eid][i];
 
 							// if state has not changed since the last call
@@ -229,8 +234,10 @@ export const defineSerializer = (target: TODO, maxBytes = 20000000): Serializer 
 						where += indexBytes;
 
 						// write value at that index
+						// @ts-expect-error
 						const value = prop[eid][i];
 						view[`set${type}`](where, value);
+						// @ts-expect-error
 						where += prop[eid].BYTES_PER_ELEMENT;
 						arrayWriteCount++;
 					}

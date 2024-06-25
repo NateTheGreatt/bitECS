@@ -177,7 +177,7 @@ const generateShadow = (q: TODO, pid: number) => {
 	return prop[$];
 };
 
-const diff = (q: TODO, clearDiff: boolean) => {
+const diff = (q: QueryData, clearDiff: boolean) => {
 	if (clearDiff) q.changed = [];
 	const { flatProps, shadows } = q;
 	for (let i = 0; i < q.dense.length; i++) {
@@ -187,7 +187,9 @@ const diff = (q: TODO, clearDiff: boolean) => {
 			const prop = flatProps[pid];
 			const shadow = shadows[pid] || generateShadow(q, pid);
 			if (ArrayBuffer.isView(prop[eid])) {
+				// @ts-expect-error
 				for (let i = 0; i < prop[eid].length; i++) {
+					// @ts-expect-error
 					if (prop[eid][i] !== shadow[eid][i]) {
 						dirty = true;
 						break;
@@ -292,11 +294,7 @@ export function query<W extends World>(world: W, args: Component[] | Queue) {
 	}
 }
 
-export const queryCheckEntity = <W extends World>(
-	world: W,
-	q: QueryData<HasBufferQueries<W>>,
-	eid: number
-) => {
+export const queryCheckEntity = <W extends World>(world: W, q: QueryData, eid: number) => {
 	const { masks, notMasks, generations } = q;
 
 	for (let i = 0; i < generations.length; i++) {

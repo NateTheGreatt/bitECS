@@ -244,6 +244,7 @@ export const createStore = (schema: Schema, size: number) => {
 	if (schema instanceof Object && Object.keys(schema).length) {
 		const recursiveTransform = (a: TODO, key: TODO) => {
 			if (typeof a[key] === 'string') {
+				// @ts-expect-error
 				a[key] = createTypeStore(a[key], size);
 				a[key][$storeBase] = () => stores[$store];
 				metadata[$storeFlattened].push(a[key]);
