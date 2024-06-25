@@ -183,10 +183,24 @@ export const entityExists = (world: World, eid: number) => {
 	return world[$entitySparseSet].has(eid);
 };
 
+/**
+ * Enables manual entity recycling for a world.
+ *
+ * @param world
+ * @returns world
+ */
+
 export const enableManualEntityRecycling = <W extends World>(world: W): W => {
 	world[$manualEntityRecycling] = true;
 	return world;
 };
+
+/**
+ * Makes queries become array buffers instead of native arrays. Useful for threading.
+ *
+ * @param world
+ * @returns world
+ */
 
 export const enableBufferedQueries = <W extends World>(world: W): W & { _bufferQueries: true } => {
 	world[$bufferQueries] = true;

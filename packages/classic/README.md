@@ -94,6 +94,33 @@ A world is a container for ECS data. Entities are created in a world and data is
 const world = createWorld();
 ```
 
+### Extending world
+
+Any object can be passed in to create the world allowing for extending its shape functionally. This can be used to add world dependent resources, for example.
+
+```js
+const world = createWorld({
+	time: {
+		then: 0,
+		delta: 0,
+	},
+});
+
+world.then; // 0
+```
+
+### Options
+
+Options can be set per world by using option functions.
+
+```js
+// This world has manual entity recycling enabled.
+const world = enableManualEntityRecycling(createWorld());
+```
+
+-   `enableManualEntityRecycling` Enables manual entity recycling for a world.
+-   `enableBufferedQueries` Makes queries become array buffers instead of native arrays. Useful for threading.
+
 ## Entity
 
 Entities are unique numerical indentifiers, sometimes called entity IDs or eids for short. Entities are unique across all worlds.
@@ -109,11 +136,9 @@ removeEntity(world, eidA); // World has 1 entity
 Entity IDs are recycled after a certain number of removals. This behavior can be customized in a number of ways.
 
 ```ts
-setRemovedRecycleThreshold
-enableManualEntityRecycling
-flushRemovedEntities
+setRemovedRecycleThreshold;
+flushRemovedEntities;
 ```
-
 
 ## Component
 
@@ -173,13 +198,13 @@ You can define a relation with or without properties. Here's an example of defin
 
 ```ts
 const Contains = defineRelation({
-    initStore: () => ({ amount: [] as number[] })
+	initStore: () => ({ amount: [] as number[] }),
 });
 ```
 
 ### Adding Relationships
 
-To add a relationship between entities, you use addComponent with the relation and the target entity. 
+To add a relationship between entities, you use addComponent with the relation and the target entity.
 
 ```ts
 const inventory = addEntity(world);
@@ -195,7 +220,7 @@ Contains(silver).amount[inventory] = 12;
 
 ### Auto Remove Subject
 
-Some relations can automatically remove the subject entity if the target entity is removed. This is useful for maintaining hierarchies where the existence of a child entity depends on its parent entity. 
+Some relations can automatically remove the subject entity if the target entity is removed. This is useful for maintaining hierarchies where the existence of a child entity depends on its parent entity.
 
 ```ts
 const ChildOf = defineRelation({ autoRemoveSubject: true });
@@ -214,7 +239,7 @@ In this example, when the parent entity is removed, the child entity is also aut
 
 ### Exclusive Relationships
 
-Exclusive relationships ensure that each subject entity can only be related to a single target entity at a time. 
+Exclusive relationships ensure that each subject entity can only be related to a single target entity at a time.
 
 ```ts
 const Targeting = defineRelation({ exclusive: true });
@@ -253,7 +278,7 @@ const eids = bodyQuery(world);
 Relations can be queried just like components:
 
 ```ts
-const children = query(world, [ChildOf(parent)])
+const children = query(world, [ChildOf(parent)]);
 ```
 
 ## Queue
@@ -289,33 +314,33 @@ Systems are what give entities behavior. By querying specific shapes, a system c
 
 ```js
 const moveBody = (world) => {
-const moveBody = (world) => {
-    const entities = query(world, [Position])
+	const moveBody = (world) => {
+		const entities = query(world, [Position]);
 
-    for (const entity of entities) {
-        Position.x[entity] += 1
-        Position.y[entity] += 1
-    }
-}
-}
+		for (const entity of entities) {
+			Position.x[entity] += 1;
+			Position.y[entity] += 1;
+		}
+	};
+};
 
 const applyGravity = (world) => {
-    const entities = query(world, [Position, Mass])
-    const gravity = 9.81
+	const entities = query(world, [Position, Mass]);
+	const gravity = 9.81;
 
-    for (const entity of entities) {
-        Position.y[entity] -= gravity * Mass.value[eid]
-    }
-}
+	for (const entity of entities) {
+		Position.y[entity] -= gravity * Mass.value[eid];
+	}
+};
 
 // Run systems in a loop
 const mainLoop = () => {
-    moveBodies(world)
-    applyGravity(world)
-    requestAnimationFrame(mainLoop)
-}
+	moveBodies(world);
+	applyGravity(world);
+	requestAnimationFrame(mainLoop);
+};
 
-mainLoop()
+mainLoop();
 ```
 
 ## Prefabs
@@ -339,7 +364,7 @@ Prefabs can also be dynamically added to a world during runtime:
 const Gold = addPrefab(world);
 // or add the built-in Prefab component to any entity
 const Silver = addEntity(world);
-addComponent(world, Prefab, Silver)
+addComponent(world, Prefab, Silver);
 ```
 
 ### Adding Components to Prefabs
@@ -349,9 +374,9 @@ Components can be added to declaratively defined prefabs, allowing you to define
 ```ts
 const Vitals = { health: [] };
 const Animal = definePrefab([Vitals], {
-    initStore: (world, eid) => {
-        Vitals.health[eid] = 100
-    }
+	initStore: (world, eid) => {
+		Vitals.health[eid] = 100;
+	},
 });
 ```
 
@@ -378,7 +403,6 @@ query(world, [Animal]).length === 0;
 However, entities instantiated from prefabs can be queried using the IsA relationship:
 
 ```ts
-
 const sheep = addEntity(world);
 addComponent(world, IsA(Sheep), sheep);
 hasComponent(world, Contains(Wool), sheep); // => true
@@ -426,7 +450,6 @@ In this example, worldA and worldB have separate EID spaces defined by rangeA an
 If you want multiple worlds to share the same EID space, you can assign the same range to those worlds. This can be useful when you need to manage a global EID space across different worlds.
 
 ```ts
-
 const range = defineRange(1, 2000);
 
 const worldA = createWorld({}, { range });
@@ -456,4 +479,3 @@ In this example, playerRange and itemRange are used to allocate EIDs for players
 ## Classic memory layout
 
 `@bitecs/classic` uses sparse arrays for its memory layout, as opposed to [archetypes](https://ajmmertens.medium.com/building-an-ecs-2-archetypes-and-vectorization-fe21690805f9). This means that each entity ID corresponds directly to an array index without any indirection. This vastly simplifies memory layout and improves add/remove performance at the cost of a higher memory footprint and iteration speeds.
-
