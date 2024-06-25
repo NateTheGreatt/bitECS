@@ -118,7 +118,8 @@ out
 # Nuxt.js build / generate output
 
 .nuxt
-dist
+# We commit dist folders until we get out of pre-release.
+# dist 
 
 # Gatsby files
 
@@ -173,3 +174,4 @@ dist
 
 # Finder (MacOS) folder config
 .DS_Store
+.vscode/settings.json

@@ -21,8 +21,7 @@
 	"scripts": {
 		"app": "npx tsx ./scripts/app.ts",
 		"sim": "npx tsx ./scripts/sim.ts",
-		"build": "pnpm --filter ./packages/**  -r build",
-		"postinstall": "pnpm build"
+		"build": "pnpm --filter ./packages/**  -r build"
 	},
 	"dependencies": {
 		"@types/node": "latest",
