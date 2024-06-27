@@ -1,3 +1,4 @@
+import { defineComponent, removeComponent } from '../component/Component.js';
 import {
 	queries,
 	query,
@@ -5,19 +6,8 @@ import {
 	queryCheckEntity,
 	queryRemoveEntity,
 } from '../query/Query.js';
-import { resizeWorlds, worlds } from '../world/World.js';
-import {
-	$localEntities,
-	$localEntityLookup,
-	$manualEntityRecycling,
-	$size,
-} from '../world/symbols.js';
-import { World } from '../world/types.js';
-import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
-import { TODO } from '../utils/types.js';
 import { $notQueries, $queries } from '../query/symbols.js';
 import { Pair, Wildcard } from '../relation/Relation.js';
-import { addComponent, defineComponent, removeComponent } from '../component/Component.js';
 import {
 	$autoRemoveSubject,
 	$isPairComponent,
@@ -26,6 +16,16 @@ import {
 	$relation,
 	$relationTargetEntities,
 } from '../relation/symbols.js';
+import { TODO } from '../utils/types.js';
+import { worlds } from '../world/World.js';
+import {
+	$localEntities,
+	$localEntityLookup,
+	$manualEntityRecycling,
+	$size,
+} from '../world/symbols.js';
+import { World } from '../world/types.js';
+import { $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
 
 let defaultSize = 100000;
 
@@ -38,7 +38,22 @@ export const getGlobalSize = () => globalSize;
 
 // removed eids should also be global to prevent memory leaks
 const removed: number[] = [];
+const removedOut: number[] = [];
 const recycled: number[] = [];
+
+const dequeuFromRemoved = () => {
+	if (removedOut.length === 0) {
+		while (removed.length > 0) {
+			removedOut.push(removed.pop()!);
+		}
+	}
+	if (removedOut.length === 0) {
+		throw new Error('Queue is empty');
+	}
+	return removedOut.pop()!;
+};
+
+const getRemovedLength = () => removed.length + removedOut.length;
 
 const defaultRemovedReuseThreshold = 0.01;
 let removedReuseThreshold = defaultRemovedReuseThreshold;
@@ -48,6 +63,7 @@ export const resetGlobals = () => {
 	globalEntityCursor = 0;
 	removedReuseThreshold = defaultRemovedReuseThreshold;
 	removed.length = 0;
+	removedOut.length = 0;
 	recycled.length = 0;
 	queries.length = 0;
 	worlds.length = 0;
@@ -61,13 +77,10 @@ export const getDefaultSize = () => defaultSize;
  * @param {number} newSize
  */
 export const setDefaultSize = (newSize: number) => {
-	const oldSize = globalSize;
-
 	defaultSize = newSize;
 	resetGlobals();
 
 	globalSize = newSize;
-	resizeWorlds(newSize);
 };
 
 /**
@@ -104,15 +117,19 @@ export const Prefab = defineComponent();
  * @returns {number} eid
  */
 export const addEntity = (world: World): number => {
-	const eid: number = world[$manualEntityRecycling]
-		? removed.length
-			? removed.shift()!
-			: globalEntityCursor++
-		: removed.length > Math.round(globalSize * removedReuseThreshold)
-		? removed.shift()!
-		: globalEntityCursor++;
+	let eid: number;
 
-	if (world[$entitySparseSet].dense.length >= world[$size]) {
+	if (
+		(world[$manualEntityRecycling] && getRemovedLength() > 0) ||
+		(!world[$manualEntityRecycling] &&
+			getRemovedLength() > Math.round(globalSize * removedReuseThreshold))
+	) {
+		eid = dequeuFromRemoved();
+	} else {
+		eid = globalEntityCursor++;
+	}
+
+	if (world[$size] !== -1 && world[$entitySparseSet].dense.length >= world[$size]) {
 		throw new Error('bitECS - max entities reached');
 	}
 
@@ -177,9 +194,9 @@ export const removeEntity = (world: World, eid: number) => {
 
 	// Remove entity from all queries
 	// TODO: archetype graph
-	world[$queries].forEach((q) => {
-		queryRemoveEntity(world, q, eid);
-	});
+	for (const query of world[$queries]) {
+		queryRemoveEntity(world, query, eid);
+	}
 
 	// Free the entity
 	if (world[$manualEntityRecycling]) recycled.push(eid);

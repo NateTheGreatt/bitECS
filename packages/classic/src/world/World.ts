@@ -11,10 +11,10 @@ import { World } from './types.js';
 import {
 	$archetypes,
 	$bitflag,
+	$bufferQueries,
 	$localEntities,
 	$localEntityLookup,
 	$manualEntityRecycling,
-	$resizeThreshold,
 	$size,
 } from './symbols.js';
 import { SparseSet } from '../utils/SparseSet.js';
@@ -24,43 +24,24 @@ import {
 	$entityMasks,
 	$entitySparseSet,
 } from '../entity/symbols.js';
-import { resize } from '../storage/Storage.js';
 import { queries, registerQuery } from '../query/Query.js';
 import { defineHiddenProperties } from '../utils/defineHiddenProperty.js';
 import { $relationTargetEntities } from '../relation/symbols.js';
 
 export const worlds: World[] = [];
 
-export const resizeWorlds = (size: number) => {
-	worlds.forEach((world) => {
-		world[$size] = size;
-
-		for (let i = 0; i < world[$entityMasks].length; i++) {
-			const masks = world[$entityMasks][i];
-			world[$entityMasks][i] = resize(masks, size);
-		}
-
-		world[$resizeThreshold] = world[$size] - world[$size] / 5;
-	});
-};
-
 export function defineWorld<W extends object = {}>(world: W, size?: number): W & World;
 export function defineWorld<W extends World = World>(size?: number): W;
 export function defineWorld(...args: any[]) {
 	const world = typeof args[0] === 'object' ? args[0] : {};
-	const size =
-		typeof args[0] === 'number'
-			? args[0]
-			: typeof args[1] === 'number'
-			? args[1]
-			: getGlobalSize();
+	const size = typeof args[0] === 'number' ? args[0] : typeof args[1] === 'number' ? args[1] : -1;
 
 	const entitySparseSet = SparseSet();
 
 	// Define world properties as non-enumerable symbols so they are internal secrets.
 	defineHiddenProperties(world, {
 		[$size]: size,
-		[$entityMasks]: [new Uint32Array(size)],
+		[$entityMasks]: [size === -1 ? new Array() : new Array(size)],
 		[$entityComponents]: new Map(),
 		[$archetypes]: [],
 		[$entitySparseSet]: entitySparseSet,
@@ -76,7 +57,6 @@ export function defineWorld(...args: any[]) {
 		[$localEntities]: new Map(),
 		[$localEntityLookup]: new Map(),
 		[$manualEntityRecycling]: false,
-		[$resizeThreshold]: size - size / 5,
 		[$relationTargetEntities]: SparseSet(),
 	});
 
@@ -90,17 +70,13 @@ export function registerWorld(world: World) {
 	queries.forEach((query) => registerQuery(world, query));
 }
 
-export const enableManualEntityRecycling = (world: World) => {
-	world[$manualEntityRecycling] = true;
-};
-
 /**
  * Creates a new world.
  *
  * @returns {object}
  */
 export function createWorld<W extends object = {}>(world?: W, size?: number): W & World;
-export function createWorld<W extends World = World>(size?: number): W;
+export function createWorld(size?: number): World;
 export function createWorld(...args: any[]) {
 	const world = defineWorld(...args);
 	registerWorld(world);
@@ -118,7 +94,7 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
 
 	if (world[$entityArray]) world[$entityArray].forEach((eid) => removeEntity(world, eid));
 
-	world[$entityMasks] = [new Uint32Array(size)];
+	world[$entityMasks] = [size === -1 ? new Array() : new Array(size)];
 	world[$entityComponents] = new Map();
 	world[$archetypes] = [];
 
@@ -140,6 +116,7 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
 	world[$localEntityLookup] = new Map();
 
 	world[$manualEntityRecycling] = false;
+	world[$bufferQueries] = false;
 
 	return world;
 };
@@ -168,9 +145,9 @@ export const deleteWorld = (world: World) => {
 	delete deletedWorld[$dirtyQueries];
 	delete deletedWorld[$localEntities];
 	delete deletedWorld[$localEntityLookup];
-	delete deletedWorld[$manualEntityRecycling];
-	delete deletedWorld[$resizeThreshold];
 	delete deletedWorld[$relationTargetEntities];
+	delete deletedWorld[$manualEntityRecycling];
+	delete deletedWorld[$bufferQueries];
 
 	// Remove the world from the worlds array
 	const index = worlds.indexOf(world);
@@ -194,13 +171,38 @@ export const getWorldComponents = (world: World) => Array.from(world[$componentM
 export const getAllEntities = (world: World) => world[$entitySparseSet].dense.slice(0);
 
 export const incrementWorldBitflag = (world: World) => {
+	const size = world[$size];
 	world[$bitflag] *= 2;
 	if (world[$bitflag] >= 2 ** 31) {
 		world[$bitflag] = 1;
-		world[$entityMasks].push(new Uint32Array(world[$size]));
+		world[$entityMasks].push(size === -1 ? new Array() : new Array(size));
 	}
 };
 
 export const entityExists = (world: World, eid: number) => {
 	return world[$entitySparseSet].has(eid);
+};
+
+/**
+ * Enables manual entity recycling for a world.
+ *
+ * @param world
+ * @returns world
+ */
+
+export const enableManualEntityRecycling = <W extends World>(world: W): W => {
+	world[$manualEntityRecycling] = true;
+	return world;
+};
+
+/**
+ * Makes queries become array buffers instead of native arrays. Useful for threading.
+ *
+ * @param world
+ * @returns world
+ */
+
+export const enableBufferedQueries = <W extends World>(world: W): W & { _bufferQueries: true } => {
+	world[$bufferQueries] = true;
+	return world as W & { _bufferQueries: true };
 };

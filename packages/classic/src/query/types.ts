@@ -1,6 +1,6 @@
 import { Component } from '../component/types';
 import { SparseSet } from '../utils/SparseSet';
-import { World } from '../world/types';
+import { HasBufferQueries, World } from '../world/types';
 import { type IUint32SparseSet } from '@bitecs/utils/Uint32SparseSet';
 import { $queryComponents, $queueRegisters } from './symbols';
 
@@ -8,12 +8,18 @@ export type QueryModifier<W extends World = World> = (
 	c: Component[]
 ) => (world: W) => Component | QueryModifier<W>;
 
-export type Query<W extends World = World> = ((world: W, clearDiff?: boolean) => Uint32Array) & {
+export type QueryResult<W extends World = World, TTest = HasBufferQueries<W>> = TTest extends true
+	? Uint32Array
+	: readonly number[];
+
+export type Query = (<W extends World = World>(world: W, clearDiff?: boolean) => QueryResult<W>) & {
 	[$queryComponents]: Component[];
 	[$queueRegisters]: ((world: World) => void)[];
 };
 
-export type QueryData = IUint32SparseSet & {
+export type QueryData<TBufferQueries extends boolean = false | true> = (TBufferQueries extends true
+	? IUint32SparseSet
+	: ReturnType<typeof SparseSet>) & {
 	archetypes: any;
 	changed: any;
 	notComponents: any;

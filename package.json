@@ -3,16 +3,16 @@
 	"private": true,
 	"main": "./packages/classic/dist/index.cjs",
 	"module": "./packages/classic/dist/index.js",
-	"types": "./packages/classic/dist/index.d.ts",
+	"types": "./packages/classic/dist/index.js",
 	"exports": {
 		".": {
-			"types": "./packages/classic/dist/index.d.ts",
+			"types": "./packages/classic/dist/index.js",
 			"require": "./packages/classic/dist/index.cjs",
 			"import": "./packages/classic/dist/index.js",
 			"default": "./packages/classic/dist/index.js"
 		},
 		"./utils": {
-			"types": "./packages/utils/dist/index.d.ts",
+			"types": "./packages/utils/dist/index.js",
 			"require": "./packages/utils/dist/index.cjs",
 			"import": "./packages/utils/dist/index.js",
 			"default": "./packages/utils/dist/index.js"
@@ -25,7 +25,7 @@
 	},
 	"dependencies": {
 		"@types/node": "latest",
-		"tsx": "^4.7.1",
+		"tsx": "^4.15.7",
 		"typescript": "latest"
 	}
 }

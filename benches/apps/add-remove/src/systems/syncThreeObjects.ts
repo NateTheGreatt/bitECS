@@ -1,11 +1,15 @@
-import { query } from '@bitecs/classic';
+import { defineExitQueue, query } from '@bitecs/classic';
 import { Circle, Color, Position, World } from '@sim/add-remove';
 import { ThreeObject } from '../components/ThreeObject';
 
 const normalize = (x: number, min: number, max: number) => (x - min) / (max - min);
 
+const exitQueue = defineExitQueue([Position, Circle, Color]);
+
 export const syncThreeObjects = (world: World) => {
 	const eids = query(world, [Position, Circle, Color]);
+	const exitEids = exitQueue(world);
+
 	const particles = ThreeObject[0];
 	const positions = particles.geometry.attributes.position.array;
 	const colors = particles.geometry.attributes.color.array;
@@ -29,6 +33,11 @@ export const syncThreeObjects = (world: World) => {
 		colors[eid * 3] = r;
 		colors[eid * 3 + 1] = g;
 		colors[eid * 3 + 2] = b;
+	}
+
+	for (let i = 0; i < exitEids.length; i++) {
+		const eid = exitEids[i];
+		sizes[eid] = 0;
 	}
 
 	particles.geometry.attributes.position.needsUpdate = true;

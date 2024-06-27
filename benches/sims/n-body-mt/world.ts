@@ -1,17 +1,13 @@
-import { createWorld, World as IWorld } from '@bitecs/classic';
+import { createWorld, enableBufferedQueries } from '@bitecs/classic';
 
-export type World = IWorld & {
-	workers: Record<string, Worker[]>;
-	time: {
-		then: number;
-		delta: number;
-	};
-};
+export type World = typeof world;
 
-export const world = createWorld({
-	workers: {},
-	time: {
-		then: performance.now(),
-		delta: 0,
-	},
-});
+export const world = enableBufferedQueries(
+	createWorld({
+		workers: {} as Record<string, Worker[]>,
+		time: {
+			then: performance.now(),
+			delta: 0,
+		},
+	})
+);

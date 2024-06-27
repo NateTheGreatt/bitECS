@@ -1,11 +1,11 @@
-import { setInitial } from './setInitial';
-import { moveBodies } from './moveBodies';
-import { updateColor } from './updateColor';
-import { Acceleration, Mass, Position, Velocity } from '../components';
-import { updateGravityMain } from './updateGravity.main';
-import { World } from '../world';
-import { updateTime } from './updateTime';
 import { defineQuery } from '@bitecs/classic';
+import { Acceleration, Mass, Position, Velocity } from '../components';
+import { World } from '../world';
+import { moveBodies } from './moveBodies';
+import { setInitial } from './setInitial';
+import { updateColor } from './updateColor';
+import { updateGravityMain } from './updateGravity.main';
+import { updateTime } from './updateTime';
 
 const bodyQuery = defineQuery([Position, Mass]);
 
