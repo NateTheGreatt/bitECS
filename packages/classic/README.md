@@ -192,6 +192,8 @@ removeComponent(world, Mass, eid);
 
 Relationships in `bitECS` allow you to define how entities are related to each other. This can be useful for scenarios like inventory systems, parent-child hierarchies, exclusive targeting mechanics, and much more. Relations are defined using `defineRelation` and can have optional properties for additional behavior.
 
+Relationships in bitECS offer a flexible way to manage complex interactions between entities while maintaining a clean and efficient codebase.
+
 ### Defining a Relation
 
 You can define a relation with or without properties. Here's an example of defining a relation with data:
@@ -257,7 +259,18 @@ assert(hasComponent(world, Targeting(goblin), hero) === true);
 
 In this example, the hero can only target one entity at a time. When the hero starts targeting the goblin, it stops targeting the rat.
 
-Relationships in bitECS offer a flexible way to manage complex interactions between entities while maintaining a clean and efficient codebase.
+### Get targets of a Relationship for entity
+
+```ts
+const inventory = addEntity(world);
+const gold = addEntity(world);
+const silver = addEntity(world);
+
+addComponent(world, Contains(gold), inventory);
+addComponent(world, Contains(silver), inventory);
+
+const targets = getRelationTargets(world, Contains, inventory); // gold, silver
+```
 
 ## Query
 
