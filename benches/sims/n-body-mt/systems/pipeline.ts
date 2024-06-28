@@ -19,9 +19,10 @@ const updateGravity = updateGravityMain({
 });
 
 export const pipeline = async (world: World) => {
-	updateTime(world);
+	await updateGravity.init(world);
 	setInitial(world);
-	await updateGravity(world);
+	updateTime(world);
+	await updateGravity.main(world);
 	moveBodies(world);
 	updateColor(world);
 };

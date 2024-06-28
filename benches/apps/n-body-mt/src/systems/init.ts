@@ -2,6 +2,7 @@ import { CONSTANTS, World, init as initSim } from '@sim/n-body-mt';
 import { ThreeObject } from '../components/ThreeObject';
 import * as THREE from 'three';
 import { scene } from '../scene';
+import { camera, renderer } from '../main';
 
 export function init(world: World) {
 	// I'm not sure why it matters, but you can't set iniitial radius to 1 or everything is invisible.
@@ -12,6 +13,9 @@ export function init(world: World) {
 	scene.add(instancedMesh);
 
 	ThreeObject[0] = instancedMesh;
+
+	// Precompile Three shaders.
+	renderer.compile(scene, camera);
 
 	initSim(world);
 }
