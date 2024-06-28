@@ -188,11 +188,56 @@ addComponent(world, Mass, eid);
 removeComponent(world, Mass, eid);
 ```
 
+## Query
+
+A world is like a live database and we use queries to get information about it anytime, anywhere. Anything that can be added to an entity can be used to query for entities such as components, relationships and hierarchies and will return a snapshot of all entities matching that shape. Queries can be called inline.
+
+```js
+const eids = query(world, [Position, Mass]); // Returns number[]
+```
+
+Or can be defined globally.
+
+```js
+export const bodyQuery = defineQuery([Position, Mass]);
+
+const eids = bodyQuery(world);
+```
+
+Relations can be queried just like components:
+
+```ts
+const children = query(world, [ChildOf(parent)]);
+```
+
+## Queue
+
+Unlike queries, queues collect changes over time, flushing when read. They cannot be called inline and must be defined globally. Each queue tracks changes independently.
+
+`bitECS` supports enter queues, tracking entities being matching a given component shape after `addComponent` is called.
+
+```js
+const enterBodyQueue = defineEnterQueue([Position, Mass]);
+
+addComponent(world, Position, eid); // enterBodyQueue(world).length = 0
+addComponent(world, Mass, eid); // enterBodyQueue(world).length = 1
+
+const eids = enterBodyQueue(world); // Returns [eid] and then optionally flushes
+```
+
+And exit queues, tracking entities that stop matching a given component shape after `removeComponent` is called.
+
+```js
+const exitBodyQueue = defineExitQueue([Position, Mass]);
+
+removeComponent(world, Mass, eid); // exitBodyQueue(world).length = 1
+
+const eids = exitBodyQueue(world, false); // Returns [eid] but does not flush
+```
+
 ## Relationships
 
 Relationships in `bitECS` allow you to define how entities are related to each other. This can be useful for scenarios like inventory systems, parent-child hierarchies, exclusive targeting mechanics, and much more. Relations are defined using `defineRelation` and can have optional properties for additional behavior.
-
-Relationships in bitECS offer a flexible way to manage complex interactions between entities while maintaining a clean and efficient codebase.
 
 ### Defining a Relation
 
@@ -269,54 +314,27 @@ const silver = addEntity(world);
 addComponent(world, Contains(gold), inventory);
 addComponent(world, Contains(silver), inventory);
 
-const targets = getRelationTargets(world, Contains, inventory); // gold, silver
+const targets = getRelationTargets(world, Contains, inventory); // [gold, silver]
 ```
 
-## Query
+### Relationship wildcards
 
-A world is like a live database and we use queries to get information about it anytime, anywhere. Anything that can be added to an entity can be used to query for entities such as components, relationships and hierarchies and will return a snapshot of all entities matching that shape. Queries can be called inline.
-
-```js
-const eids = query(world, [Position, Mass]); // Returns number[]
-```
-
-Or can be defined globally.
-
-```js
-export const bodyQuery = defineQuery([Position, Mass]);
-
-const eids = bodyQuery(world);
-```
-
-Relations can be queried just like components:
+When querying for relationship pairs, it is often useful to be able to find all instances for a given relationship or target. To accomplish this, you can use wildcard expressions:
 
 ```ts
-const children = query(world, [ChildOf(parent)]);
-```
+const gold = addEntity(world);
+const clothes = addEntity(world);
+const arrow = addEntity(world);
 
-## Queue
+const chest = addEntity(world);
+const backpack = addEntity(world);
+const quiver = addEntity(world);
 
-Unlike queries, queues collect changes over time, flushing when read. They cannot be called inilne and must be define globally. Each queue tracks changes independently.
+addComponent(world, Contains(gold), chest);
+addComponent(world, Contains(clothes), backpack);
+addComponent(world, Contains(arrow), quiver);
 
-`bitECS` supports enter queues, tracking entities being matching a given component shape after `addComponent` is called.
-
-```js
-const enterBodyQueue = defineEnterQueue([Positioon, Mass]);
-
-addComponent(world, Position, eid); // enterBodyQueue(world).length = 0
-addComponent(world, Mass, eid); // enterBodyQueue(world).length = 1
-
-const eids = enterBodyQueue(world); // Returns [eid] and then optionally flushes
-```
-
-And exit queues, tracking entities that stop matching a given component shape after `removeComponent` is called.
-
-```js
-const exitBodyQueue = defineExitQueue([Position, Mass]);
-
-removeComponent(world, Mass, eid); // exitBodyQueue(world).length = 1
-
-const eids = exitBodyQueue(world, false); // Returns [eid] but does not flush
+const containers = query(world, [Contains('*')]); // [chest, backpack, quiver]
 ```
 
 ## System
