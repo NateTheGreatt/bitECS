@@ -6,12 +6,31 @@ import {
 	createWorld,
 	defineRelation,
 	entityExists,
+	getRelationTargets,
 	hasComponent,
 	removeEntity,
 } from '../../src';
 import { describe, test } from 'vitest';
 
 describe('Relation Unit Tests', () => {
+	// this test only works if the player eid is 0, so it needs to be first
+	test('should maintain exclusive relations for eid 0', () => {
+		const world = createWorld();
+
+		const player = addEntity(world); // 0
+		const guard = addEntity(world); // 1
+		const goblin = addEntity(world); // 2
+
+		const Targeting = defineRelation({ exclusive: true });
+
+		addComponent(world, Targeting(player), goblin);
+		addComponent(world, Targeting(guard), goblin);
+
+		assert(getRelationTargets(world, Targeting, goblin).length === 1); 
+		assert(hasComponent(world, Targeting(player), goblin) === false);
+		assert(hasComponent(world, Targeting(guard), goblin) === true);
+	});
+
 	test('should auto remove subject', () => {
 		const world = createWorld();
 
@@ -93,7 +112,6 @@ describe('Relation Unit Tests', () => {
 		const rat = addEntity(world);
 		const goblin = addEntity(world);
 
-		addComponent(world, Targeting(rat), hero);
 		addComponent(world, Targeting(goblin), hero);
 
 		assert(hasComponent(world, Targeting(rat), hero) === false);
