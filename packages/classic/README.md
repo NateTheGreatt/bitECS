@@ -53,12 +53,12 @@ addComponent(world, Mass, entityA);
 // Entity B gets a shape of [Position]
 addComponent(world, Position, entityB);
 
-// Set the initial values for Entity A's [Position] and [Mass] components
+// Set the initial values for Entity A's Position and Mass components
 Position.x[entityA] = 400;
 Position.y[entityA] = 200;
 Mass.value[entityA] = 1;
 
-// Set the initial values for Entity B's [Position] component
+// Set the initial values for Entity B's Position component
 Position.x[entityB] = 600;
 Position.y[entityB] = 300;
 
@@ -153,7 +153,7 @@ flushRemovedEntities;
 
 Components are composable stores of data that describe an attribute. For example, position and mass might all be separate components. An entity's shape is defined by the components it has.
 
-`bitECS` is unopinionated about the shape a component store can have. Components can be any valid JS object. Note that `bitECS` uses reference to determine component identity. A [structure of array (SoA) format](https://en.wikipedia.org/wiki/AoS_and_SoA) is recommended for performance.
+`bitECS` is unopinionated about what storage type is used. Components can be any valid JS object. Reference is used to determine component identity. A [structure of array (SoA) format](https://en.wikipedia.org/wiki/AoS_and_SoA) is recommended for performance.
 
 ```ts
 // A SoA component (recommended for minimal memory footprint)
@@ -169,7 +169,7 @@ const Position = {
 };
 
 // An AoS component (objects are actually really fast as long as the number of properties is small enough)
-const Position = [] as { x: number, y: number }[];
+const Position = [] as { x: number; y: number }[];
 ```
 
 Mutations are then handled manually based on the storage format after adding a component.
