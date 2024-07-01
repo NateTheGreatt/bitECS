@@ -183,7 +183,7 @@ export const addComponent = (world: World, component: Component, eid: number, re
 		// if it's an exclusive relation, remove the old target
 		if (relation[$exclusiveRelation] === true && target !== Wildcard) {
 			const oldTarget = getRelationTargets(world, relation, eid)[0];
-			if (oldTarget >= 0 && oldTarget !== target) {
+			if (oldTarget !== undefined && oldTarget !== null && oldTarget !== target) {
 				removeComponent(world, relation(oldTarget), eid);
 			}
 		}
