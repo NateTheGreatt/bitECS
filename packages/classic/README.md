@@ -24,63 +24,72 @@ For in-depth resources check out:
 
 As best practices, we encourage components to be a [structure of array (SoA) format](https://en.wikipedia.org/wiki/AoS_and_SoA) and systems to be a pipe of functions.
 
-```js
-import { createWorld, addEntity, addComponent, query } from 'bitecs'
+```ts
+import { createWorld, addEntity, addComponent, query } from 'bitecs';
 
 // Define components
 // Components can be any storage you want, here it is an SoA
 const Position = {
-    x: [] as number[],
-    y: [] as number[]
-}
+	x: [] as number[],
+	y: [] as number[],
+};
 
 const Mass = {
-    value: [] as number[]
-}
+	value: [] as number[],
+};
 
 // Create a world
-const world = createWorld()
+const world = createWorld();
 
 // Add entities to the world
-const entityA = addEntity(world)
-const entityB = addEntity(world)
+const entityA = addEntity(world);
+const entityB = addEntity(world);
 
 // Add components to entities
 // Entity A gets a shape of [Position, Mass]
-addComponent(world, Position, entityA)
-addComponent(world, Mass, entityA)
+addComponent(world, Position, entityA);
+addComponent(world, Mass, entityA);
 
 // Entity B gets a shape of [Position]
-addComponent(world, Position, entityB)
+addComponent(world, Position, entityB);
+
+// Set the initial values for Entity A's Position and Mass components
+Position.x[entityA] = 400;
+Position.y[entityA] = 200;
+Mass.value[entityA] = 1;
+
+// Set the initial values for Entity B's Position component
+Position.x[entityB] = 600;
+Position.y[entityB] = 300;
 
 // Define a system that moves entities with a Position component
 const moveBody = (world) => {
-    const entities = query(world, [Position]) // Returns [entityA, entityB]
+	const entities = query(world, [Position]); // Returns [entityA, entityB]
 
-    for (const entity of entities) {
-        Position.x[entity] += 1
-        Position.y[entity] += 1
-    }
-}
+	for (const entity of entities) {
+		Position.x[entity] += 1;
+		Position.y[entity] += 1;
+	}
+};
 
 // Define a system that applies gravity to entities with Position and Mass components
 const applyGravity = (world) => {
-    const entities = query(world, [Position, Mass]) // Returns [entityA]
-    const gravity = 9.81
+	const entities = query(world, [Position, Mass]); // Returns [entityA]
+	const gravity = 9.81;
 
-    for (const entity of entities) {
-        Position.y[entity] -= gravity * Mass.value[eid]
-    }
-}
+	for (const entity of entities) {
+		Position.y[entity] -= gravity * Mass.value[eid];
+	}
+};
 
 // Run systems in a loop
 const mainLoop = () => {
-    moveBodies(world)
-    applyGravity(world)
-    requestAnimationFrame(mainLoop)
-}
+	moveBody(world);
+	applyGravity(world);
+	requestAnimationFrame(mainLoop);
+};
 
-mainLoop()
+mainLoop();
 
 // You now have a data-oriented app
 // ᕕ(⌐■_■)ᕗ ♪♬
@@ -90,7 +99,7 @@ mainLoop()
 
 A world is a container for ECS data. Entities are created in a world and data is queried based on the existence and shape of entities in a world. Each world is independent of all others.
 
-```js
+```ts
 const world = createWorld();
 ```
 
@@ -98,7 +107,7 @@ const world = createWorld();
 
 Any object can be passed in to create the world allowing for extending its shape functionally. This can be used to add world dependent resources, for example.
 
-```js
+```ts
 const world = createWorld({
 	time: {
 		then: 0,
@@ -106,14 +115,14 @@ const world = createWorld({
 	},
 });
 
-world.then; // 0
+world.time.then; // 0
 ```
 
 ### Options
 
 Options can be set per world by using option functions.
 
-```js
+```ts
 // This world has manual entity recycling enabled.
 const world = enableManualEntityRecycling(createWorld());
 ```
@@ -123,9 +132,9 @@ const world = enableManualEntityRecycling(createWorld());
 
 ## Entity
 
-Entities are unique numerical indentifiers, sometimes called entity IDs or eids for short. Entities are unique across all worlds.
+Entities are unique numerical identifiers, sometimes called entity IDs or eids for short. Entities are unique across all worlds.
 
-```js
+```ts
 const eidA = addEntity(world); // World has 1 entity
 const eidB = addEntity(world); // World has 2 entities
 removeEntity(world, eidA); // World has 1 entity
@@ -144,33 +153,33 @@ flushRemovedEntities;
 
 Components are composable stores of data that describe an attribute. For example, position and mass might all be separate components. An entity's shape is defined by the components it has.
 
-`bitECS` is unopinionated about the shape a component store can have. Components can be any valid JS object. Note that `bitECS` uses reference to determine component identity. A [structure of array (SoA) format](https://en.wikipedia.org/wiki/AoS_and_SoA) is recommended for performance.
+`bitECS` is unopinionated about what storage type is used. Components can be any valid JS object. Reference is used to determine component identity. A [structure of array (SoA) format](https://en.wikipedia.org/wiki/AoS_and_SoA) is recommended for performance.
 
-```js
+```ts
 // A SoA component (recommended for minimal memory footprint)
 const Position = {
-    x: [] as number[],
-    y: [] as number[]
-}
+	x: [] as number[],
+	y: [] as number[],
+};
 
 // A typed SoA component (recommended for threading and eliminating memory thrash)
 const Position = {
-    x: new Float64Array(10000),
-    y: new Float64Array(10000)
-}
+	x: new Float64Array(10000),
+	y: new Float64Array(10000),
+};
 
-// An AoS component
-const Position = [] as { x: number, y: number }[]
+// An AoS component (objects are actually really fast as long as the number of properties is small enough)
+const Position = [] as { x: number; y: number }[];
 ```
 
 Mutations are then handled manually based on the storage format after adding a component.
 
-```js
+```ts
 addComponent(world, Position, eid);
 
 // SoA
-(Position[eid].x = 0), (Position[eid].y = 0);
-Position[eid].x += 1; // Update value
+(Position.x[eid] = 0), (Position.y[eid] = 0);
+Position.x[eid] += 1; // Update value
 
 // AoS
 Position[eid] = { x: 0, y: 0 };
@@ -179,7 +188,7 @@ Position[eid].x += 1; // Update value
 
 Removing a component updates the shape immediately.
 
-```js
+```ts
 // eid gets a shape of [Position, Mass]
 addComponent(world, Position, eid);
 addComponent(world, Mass, eid);
@@ -192,16 +201,16 @@ removeComponent(world, Mass, eid);
 
 A world is like a live database and we use queries to get information about it anytime, anywhere. Anything that can be added to an entity can be used to query for entities such as components, relationships and hierarchies and will return a snapshot of all entities matching that shape. Queries can be called inline.
 
-```js
-const eids = query(world, [Position, Mass]); // Returns number[]
+```ts
+const entities = query(world, [Position, Mass]); // Returns number[]
 ```
 
 Or can be defined globally.
 
-```js
+```ts
 export const bodyQuery = defineQuery([Position, Mass]);
 
-const eids = bodyQuery(world);
+const entities = bodyQuery(world);
 ```
 
 Relations can be queried just like components:
@@ -216,23 +225,23 @@ Unlike queries, queues collect changes over time, flushing when read. They canno
 
 `bitECS` supports enter queues, tracking entities being matching a given component shape after `addComponent` is called.
 
-```js
+```ts
 const enterBodyQueue = defineEnterQueue([Position, Mass]);
 
 addComponent(world, Position, eid); // enterBodyQueue(world).length = 0
 addComponent(world, Mass, eid); // enterBodyQueue(world).length = 1
 
-const eids = enterBodyQueue(world); // Returns [eid] and then optionally flushes
+const entities = enterBodyQueue(world); // Returns [eid] and then optionally flushes
 ```
 
 And exit queues, tracking entities that stop matching a given component shape after `removeComponent` is called.
 
-```js
+```ts
 const exitBodyQueue = defineExitQueue([Position, Mass]);
 
 removeComponent(world, Mass, eid); // exitBodyQueue(world).length = 1
 
-const eids = exitBodyQueue(world, false); // Returns [eid] but does not flush
+const entities = exitBodyQueue(world, false); // Returns [eid] but does not flush
 ```
 
 ## Relationships
@@ -314,7 +323,7 @@ const silver = addEntity(world);
 addComponent(world, Contains(gold), inventory);
 addComponent(world, Contains(silver), inventory);
 
-const targets = getRelationTargets(world, Contains, inventory); // [gold, silver]
+const targets = getRelationTargets(world, Contains, inventory); // Returns [gold, silver]
 ```
 
 ### Relationship wildcards
@@ -341,18 +350,16 @@ const containers = query(world, [Contains('*')]); // [chest, backpack, quiver]
 
 Systems are what give entities behavior. By querying specific shapes, a system can compose behavior in a pipe. That is, we can know what behavior to apply to an entity by knowing what components it has, describing its traits. This separation of behavior from data is what makes data-oriented programming so flexible.
 
-`bitECS` is unopinionated about systems, but we encourage them to be plain functions that can be called in a pipe. For exmaple:
+`bitECS` is unopinionated about systems, but we encourage them to be plain functions that can be called in a pipe. For example:
 
-```js
+```ts
 const moveBody = (world) => {
-	const moveBody = (world) => {
-		const entities = query(world, [Position]);
+	const entities = query(world, [Position]);
 
-		for (const entity of entities) {
-			Position.x[entity] += 1;
-			Position.y[entity] += 1;
-		}
-	};
+	for (const entity of entities) {
+		Position.x[entity] += 1;
+		Position.y[entity] += 1;
+	}
 };
 
 const applyGravity = (world) => {
@@ -360,13 +367,13 @@ const applyGravity = (world) => {
 	const gravity = 9.81;
 
 	for (const entity of entities) {
-		Position.y[entity] -= gravity * Mass.value[eid];
+		Position.y[entity] -= gravity * Mass.value[entity];
 	}
 };
 
 // Run systems in a loop
 const mainLoop = () => {
-	moveBodies(world);
+	moveBody(world);
 	applyGravity(world);
 	requestAnimationFrame(mainLoop);
 };
@@ -393,9 +400,6 @@ Prefabs can also be dynamically added to a world during runtime:
 
 ```ts
 const Gold = addPrefab(world);
-// or add the built-in Prefab component to any entity
-const Silver = addEntity(world);
-addComponent(world, Prefab, Silver);
 ```
 
 ### Adding Components to Prefabs
@@ -404,22 +408,14 @@ Components can be added to declaratively defined prefabs, allowing you to define
 
 ```ts
 const Vitals = { health: [] };
-const Animal = definePrefab([Vitals], {
-	initStore: (world, eid) => {
-		Vitals.health[eid] = 100;
-	},
-});
+const Animal = definePrefab([Vitals]);
 ```
 
 ### Inheriting from Other Prefabs
 
 bitECS includes a built-in relationship called `IsA` which is used to indicate that an entity is an instance of a prefab. This relationship helps manage prefab inheritance and component composition effectively.
 
-Prefabs can also inherit from other prefabs, allowing for hierarchical prefab structures. This is useful for creating variations of a base entity type:
-
 ```ts
-const Wolf = inheritPrefab(Animal, [Contains(Hide)]);
-//  the above is sugar for adding the IsA relation
 const Sheep = definePrefab([IsA(Animal), Contains(Wool)]);
 ```
 
@@ -436,14 +432,14 @@ However, entities instantiated from prefabs can be queried using the IsA relatio
 ```ts
 const sheep = addEntity(world);
 addComponent(world, IsA(Sheep), sheep);
-hasComponent(world, Contains(Wool), sheep); // => true
+hasComponent(world, Contains(Wool), sheep); // Returns true
 
 const wolf = addEntity(world);
 addComponent(world, IsA(Wolf), wolf);
-hasComponent(world, Contains(Hide), wolf); // => true
+hasComponent(world, Contains(Hide), wolf); // Returns true
 
 // Query instantiated prefabs
-query(world, [IsA(Animal)]); // => [sheep, wolf]
+query(world, [IsA(Animal)]); // Returns [sheep, wolf]
 ```
 
 ## Ranges
