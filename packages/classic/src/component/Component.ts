@@ -92,7 +92,7 @@ export const registerComponents = (world: World, components: Component[]) => {
  * @param {number} eid
  * @returns {boolean}
  */
-export const hasComponent = (world: World, component: Component, eid: number): boolean => {
+export const hasComponent = (world: World, eid: number, component: Component): boolean => {
 	const registeredComponent = world[$componentMap].get(component);
 	if (!registeredComponent) return false;
 
@@ -108,14 +108,14 @@ const recursivelyInherit = (world: World, baseEid: number, inheritedEid: number 
 	}
 
 	// inherit type
-	addComponent(world, IsA(inheritedEid), baseEid);
+	addComponent(world, baseEid, IsA(inheritedEid));
 	// inherit components
 	const components = getEntityComponents(world, inheritedEid);
 	for (const component of components) {
 		if (component === Prefab) {
 			continue;
 		}
-		addComponent(world, component, baseEid);
+		addComponent(world, baseEid, component);
 		// TODO: inherit values for structs other than SoA
 		const keys = Object.keys(component);
 		for (const key of keys) {
@@ -137,16 +137,42 @@ const recursivelyInherit = (world: World, baseEid: number, inheritedEid: number 
  * @param {number} eid
  * @param {boolean} [reset=false]
  */
-export const addComponent = (world: World, component: Component, eid: number, reset = false) => {
+export const addComponent = (world: World, eid: number, component: Component, reset = false) => {
 	if (!entityExists(world, eid)) {
 		throw new Error('bitECS - entity does not exist in the world.');
 	}
 
+	addComponentInternal(world, component, eid, reset);
+};
+
+/**
+ * Adds multiple components to an entity.
+ *
+ * @param {World} world
+ * @param {Component[]} components
+ * @param {number} eid
+ */
+export function addComponents(world: World, eid: number, ...components: Component[]) {
+	if (!entityExists(world, eid)) {
+		throw new Error('bitECS - entity does not exist in the world.');
+	}
+
+	for (const component of components) {
+		addComponentInternal(world, component, eid, false);
+	}
+}
+
+export const addComponentInternal = (
+	world: World,
+	component: Component,
+	eid: number,
+	reset: boolean
+) => {
+	// Exit early if the entity already has the component.
+	if (hasComponent(world, eid, component)) return;
+
 	// Register the component with the world if it isn't already.
 	if (!world[$componentMap].has(component)) registerComponent(world, component);
-
-	// Exit early if the entity already has the component.
-	if (hasComponent(world, component, eid)) return;
 
 	const componentNode = world[$componentMap].get(component)!;
 	const { generationId, bitflag, queries } = componentNode;
@@ -155,7 +181,7 @@ export const addComponent = (world: World, component: Component, eid: number, re
 	world[$entityMasks][generationId][eid] |= bitflag;
 
 	// Add entity to matching queries, except for prefabs
-	if (!hasComponent(world, Prefab, eid)) {
+	if (!hasComponent(world, eid, Prefab)) {
 		queries.forEach((queryNode: QueryData) => {
 			// Remove this entity from toRemove if it exists in this query.
 			queryNode.toRemove.remove(eid);
@@ -176,15 +202,15 @@ export const addComponent = (world: World, component: Component, eid: number, re
 	if (component[$isPairComponent]) {
 		// add wildcard relation components
 		const relation = component[$relation];
-		addComponent(world, Pair(relation, Wildcard), eid);
+		addComponent(world, eid, Pair(relation, Wildcard));
 		const target = component[$pairTarget];
-		addComponent(world, Pair(Wildcard, target), eid);
+		addComponent(world, eid, Pair(Wildcard, target));
 
 		// if it's an exclusive relation, remove the old target
 		if (relation[$exclusiveRelation] === true && target !== Wildcard) {
 			const oldTarget = getRelationTargets(world, relation, eid)[0];
 			if (oldTarget && oldTarget !== target) {
-				removeComponent(world, relation(oldTarget), eid);
+				removeComponent(world, eid, relation(oldTarget));
 			}
 		}
 
@@ -203,18 +229,6 @@ export const addComponent = (world: World, component: Component, eid: number, re
 };
 
 /**
- * Adds multiple components to an entity.
- *
- * @param {World} world
- * @param {Component[]} components
- * @param {number} eid
- * @param {boolean} [reset=false]
- */
-export const addComponents = (world: World, components: Component[], eid: number, reset = false) => {
-	components.forEach((component) => addComponent(world, component, eid, reset));
-};
-
-/**
  * Removes a component from an entity.
  *
  * @param {World} world
@@ -222,13 +236,13 @@ export const addComponents = (world: World, components: Component[], eid: number
  * @param {number} eid
  * @param {boolean} [reset=true]
  */
-export const removeComponent = (world: World, component: Component, eid: number, reset = true) => {
+export const removeComponent = (world: World, eid: number, component: Component, reset = true) => {
 	if (!entityExists(world, eid)) {
 		throw new Error('bitECS - entity does not exist in the world.');
 	}
 
 	// Exit early if the entity does not have the component.
-	if (!hasComponent(world, component, eid)) return;
+	if (!hasComponent(world, eid, component)) return;
 
 	const componentNode = world[$componentMap].get(component)!;
 	const { generationId, bitflag, queries } = componentNode;
@@ -264,13 +278,13 @@ export const removeComponent = (world: World, component: Component, eid: number,
 
 		// remove wildcard to this target for this eid
 		const target = component[$pairTarget];
-		removeComponent(world, Pair(Wildcard, target), eid);
+		removeComponent(world, eid, Pair(Wildcard, target));
 
 		// remove wildcard relation if eid has no other relations
 		const relation = component[$relation];
 		const otherTargets = getRelationTargets(world, relation, eid);
 		if (otherTargets.length === 0) {
-			removeComponent(world, Pair(relation, Wildcard), eid);
+			removeComponent(world, eid, Pair(relation, Wildcard));
 		}
 
 		// TODO: recursively disinherit
@@ -287,9 +301,9 @@ export const removeComponent = (world: World, component: Component, eid: number,
  */
 export const removeComponents = (
 	world: World,
-	components: Component[],
 	eid: number,
+	components: Component[],
 	reset = true
 ) => {
-	components.forEach((component) => removeComponent(world, component, eid, reset));
+	components.forEach((component) => removeComponent(world, eid, component, reset));
 };

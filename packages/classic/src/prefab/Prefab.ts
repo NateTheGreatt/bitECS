@@ -24,7 +24,7 @@ export const registerPrefab = (world: World, prefab: PrefabToken) => {
 
 	const eid = addPrefab(world);
 
-	addComponents(world, prefab[$prefabComponents], eid);
+	addComponents(world, eid, ...prefab[$prefabComponents]);
 
 	prefab[$worldToPrefab].set(world, eid);
 
@@ -35,9 +35,7 @@ export const registerPrefabs = (world: World, prefabs: PrefabToken[]) =>
 	prefabs.map((prefab) => registerPrefab(world, prefab));
 
 export const addPrefab = (world: World) => {
-	const eid = addEntity(world);
-
-	addComponent(world, Prefab, eid);
+	const eid = addEntity(world, Prefab);
 
 	return eid;
 };

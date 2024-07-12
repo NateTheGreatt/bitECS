@@ -1,4 +1,5 @@
-import { defineComponent, removeComponent } from '../component/Component.js';
+import { addComponents, defineComponent, removeComponent } from '../component/Component.js';
+import { Component } from '../component/types.js';
 import {
 	queries,
 	query,
@@ -116,7 +117,7 @@ export const Prefab = defineComponent();
  * @param {World} world
  * @returns {number} eid
  */
-export const addEntity = (world: World): number => {
+export const addEntity = (world: World, ...components: Component[]): number => {
 	let eid: number;
 
 	if (
@@ -142,6 +143,8 @@ export const addEntity = (world: World): number => {
 	});
 
 	world[$entityComponents].set(eid, new Set());
+
+	addComponents(world, eid, ...components);
 
 	return eid;
 };
@@ -169,7 +172,7 @@ export const removeEntity = (world: World, eid: number) => {
 				continue;
 			}
 			// remove the wildcard association with the subject for this entity
-			removeComponent(world, Pair(Wildcard, eid), subject);
+			removeComponent(world, subject, Pair(Wildcard, eid));
 
 			// iterate all relations that the subject has to this entity
 			for (const component of world[$entityComponents].get(subject)!) {
@@ -180,7 +183,7 @@ export const removeEntity = (world: World, eid: number) => {
 				const relation = component[$relation];
 
 				if (component[$pairTarget] === eid) {
-					removeComponent(world, component, subject);
+					removeComponent(world, subject, component);
 					if (relation[$autoRemoveSubject]) {
 						removeEntity(world, subject);
 					}

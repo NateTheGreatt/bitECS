@@ -163,7 +163,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 
 	for (let eid = 0; eid < getEntityCursor(); eid++) {
 		if (!world[$entitySparseSet].has(eid)) continue;
-		if (hasComponent(world, Prefab, eid)) continue;
+		if (hasComponent(world, eid, Prefab)) continue;
 		const match = queryCheckEntity(world, q, eid);
 		if (match) queryAddEntity(q, eid);
 	}
