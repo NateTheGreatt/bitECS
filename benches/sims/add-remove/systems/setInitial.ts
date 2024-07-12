@@ -35,8 +35,8 @@ export const setInitial = (world: World) => {
 		for (let j = 0; j < numComponents; j++) {
 			addComponent(
 				world,
-				DummyComponents[Math.floor(Math.random() * DummyComponents.length)],
-				eid
+				eid,
+				DummyComponents[Math.floor(Math.random() * DummyComponents.length)]
 			);
 		}
 
