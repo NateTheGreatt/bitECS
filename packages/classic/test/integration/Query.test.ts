@@ -31,7 +31,7 @@ describe('Query Integration Tests', () => {
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const query = defineQuery([TestComponent]);
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		let ents = query(world);
 
@@ -55,7 +55,7 @@ describe('Query Integration Tests', () => {
 		strictEqual(ents.length, 1);
 		strictEqual(ents[0], eid0);
 
-		addComponent(world, Foo, eid0);
+		addComponent(world, eid0, Foo);
 
 		ents = notFooQuery(world);
 		strictEqual(ents.length, 0);
@@ -103,12 +103,12 @@ describe('Query Integration Tests', () => {
 
 		/* add components */
 
-		addComponent(world, Foo, eid0);
+		addComponent(world, eid0, Foo);
 
-		addComponent(world, Bar, eid1);
+		addComponent(world, eid1, Bar);
 
-		addComponent(world, Foo, eid2);
-		addComponent(world, Bar, eid2);
+		addComponent(world, eid2, Foo);
+		addComponent(world, eid2, Bar);
 
 		// now fooQuery should have eid 0 & 2
 		ents = fooQuery(world);
@@ -132,7 +132,7 @@ describe('Query Integration Tests', () => {
 
 		/* remove components */
 
-		removeComponent(world, Foo, eid0);
+		removeComponent(world, eid0, Foo);
 
 		// now fooQuery should only have eid 2
 		ents = fooQuery(world);
@@ -157,8 +157,8 @@ describe('Query Integration Tests', () => {
 
 		/* remove more components */
 
-		removeComponent(world, Foo, eid2);
-		removeComponent(world, Bar, eid2);
+		removeComponent(world, eid2, Foo);
+		removeComponent(world, eid2, Bar);
 
 		// notFooBarQuery should have eid 0 & 2
 		ents = notFooBarQuery(world);
@@ -180,8 +180,8 @@ describe('Query Integration Tests', () => {
 		const query = defineQuery([Changed(TestComponent)]);
 		const eid1 = addEntity(world);
 		const eid2 = addEntity(world);
-		addComponent(world, TestComponent, eid1);
-		addComponent(world, TestComponent, eid2);
+		addComponent(world, eid1, TestComponent);
+		addComponent(world, eid2, TestComponent);
 
 		let ents = query(world);
 		strictEqual(ents.length, 0);
@@ -200,8 +200,8 @@ describe('Query Integration Tests', () => {
 		const query = defineQuery([Changed(ArrayComponent)]);
 		const eid1 = addEntity(world);
 		const eid2 = addEntity(world);
-		addComponent(world, ArrayComponent, eid1);
-		addComponent(world, ArrayComponent, eid2);
+		addComponent(world, eid1, ArrayComponent);
+		addComponent(world, eid2, ArrayComponent);
 
 		let ents = query(world);
 		strictEqual(ents.length, 0);
@@ -222,7 +222,7 @@ describe('Query Integration Tests', () => {
 		const exitedQuery = exitQuery(query);
 
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const entered = enteredQuery(world);
 		strictEqual(entered.length, 1);
@@ -249,12 +249,12 @@ describe('Query Integration Tests', () => {
 		const enteredQuery = enterQuery(query);
 
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const entered = enteredQuery(world);
 		strictEqual(entered.length, 1);
 
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const entered2 = enteredQuery(world);
 		strictEqual(entered2.length, 0);
@@ -271,9 +271,9 @@ describe('Query Integration Tests', () => {
 		let eids = query(world, [TestComponent, FooComponent, BarComponent]);
 		strictEqual(eids.length, 0);
 
-		addComponent(world, TestComponent, eid);
-		addComponent(world, FooComponent, eid);
-		addComponent(world, BarComponent, eid);
+		addComponent(world, eid, TestComponent);
+		addComponent(world, eid, FooComponent);
+		addComponent(world, eid, BarComponent);
 
 		eids = query(world, [TestComponent, BarComponent, FooComponent]);
 
@@ -296,11 +296,11 @@ describe('Query Integration Tests', () => {
 		const eid0 = addEntity(world);
 		const eid1 = addEntity(world);
 
-		addComponent(world, TestComponent, eid0);
-		addComponent(world, BarComponent, eid0);
+		addComponent(world, eid0, TestComponent);
+		addComponent(world, eid0, BarComponent);
 
-		addComponent(world, FooComponent, eid1);
-		addComponent(world, BarComponent, eid1);
+		addComponent(world, eid1, FooComponent);
+		addComponent(world, eid1, BarComponent);
 
 		let eids = query(world, [Not(TestComponent)]);
 		strictEqual(eids.length, 1);
@@ -321,12 +321,12 @@ describe('Query Integration Tests', () => {
 		const exitedQuery = defineExitQueue([TestComponent]);
 
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		let entered = query(world, enteredQuery);
 		strictEqual(entered.length, 1);
 
-		removeComponent(world, TestComponent, eid);
+		removeComponent(world, eid, TestComponent);
 
 		let exited = exitedQuery(world);
 		strictEqual(exited.length, 1);
@@ -337,7 +337,7 @@ describe('Query Integration Tests', () => {
 		const TestComponent = defineComponent({ value: Types.f32 });
 
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const ents = query(world, [TestComponent]);
 		expect(ents.length).toBe(1);
@@ -350,7 +350,7 @@ describe('Query Integration Tests', () => {
 
 		for (let i = 0; i < 10; i += 1) {
 			const eid = addEntity(world);
-			addComponent(world, TestComponent, eid);
+			addComponent(world, eid, TestComponent);
 		}
 
 		const results = query(world, [TestComponent]);
@@ -368,13 +368,13 @@ describe('Query Integration Tests', () => {
 
 		for (let i = 0; i < 10; i += 1) {
 			const eid = addEntity(world);
-			addComponent(world, TestComponent, eid);
+			addComponent(world, eid, TestComponent);
 		}
 
 		const results = query(world, [TestComponent]);
 		const length = results.length;
 		for (const eid of results) {
-			removeComponent(world, TestComponent, eid);
+			removeComponent(world, eid, TestComponent);
 		}
 
 		expect(length).toBe(results.length);
@@ -386,7 +386,7 @@ describe('Query Integration Tests', () => {
 
 		for (let i = 0; i < 10; i += 1) {
 			const eid = addEntity(world);
-			addComponent(world, TestComponent, eid);
+			addComponent(world, eid, TestComponent);
 		}
 
 		const results = query(world, [TestComponent]);

@@ -1,4 +1,4 @@
-import { strictEqual } from 'assert';
+import assert, { strictEqual } from 'assert';
 import {
 	flushRemovedEntities,
 	getEntityCursor,
@@ -6,7 +6,7 @@ import {
 	resetGlobals,
 	setRemovedRecycleThreshold,
 } from '../../src/entity/Entity.js';
-import { createWorld, addEntity, removeEntity } from '../../src/index.js';
+import { createWorld, addEntity, removeEntity, hasComponent } from '../../src/index.js';
 import { enableManualEntityRecycling } from '../../src/world/World.js';
 import { describe, it, afterEach } from 'vitest';
 
@@ -173,5 +173,18 @@ describe('Entity Integration Tests', () => {
 		}
 
 		// Expect no errors thrown
+	});
+
+	it('should add components to the created entity', () => {
+		const world = createWorld();
+		const A = {};
+		const B = {};
+		const C = {};
+
+		const eid = addEntity(world, A, B, C);
+
+		assert(hasComponent(world, eid, A));
+		assert(hasComponent(world, eid, B));
+		assert(hasComponent(world, eid, C));
 	});
 });
