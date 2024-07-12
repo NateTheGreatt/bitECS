@@ -112,9 +112,10 @@ export const flushRemovedEntities = (world: World) => {
 export const Prefab = defineComponent();
 
 /**
- * Adds a new entity to the specified world.
+ * Adds a new entity to the specified world, adding any provided component to the entity.
  *
  * @param {World} world
+ * @param {...Component} components
  * @returns {number} eid
  */
 export const addEntity = (world: World, ...components: Component[]): number => {

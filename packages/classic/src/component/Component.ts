@@ -88,8 +88,8 @@ export const registerComponents = (world: World, components: Component[]) => {
  * Checks if an entity has a component.
  *
  * @param {World} world
- * @param {Component} component
  * @param {number} eid
+ * @param {Component} component
  * @returns {boolean}
  */
 export const hasComponent = (world: World, eid: number, component: Component): boolean => {
@@ -149,8 +149,8 @@ export const addComponent = (world: World, eid: number, component: Component, re
  * Adds multiple components to an entity.
  *
  * @param {World} world
- * @param {Component[]} components
  * @param {number} eid
+ * @param {...Component} components
  */
 export function addComponents(world: World, eid: number, ...components: Component[]) {
 	if (!entityExists(world, eid)) {
@@ -232,8 +232,8 @@ export const addComponentInternal = (
  * Removes a component from an entity.
  *
  * @param {World} world
- * @param {Component} component
  * @param {number} eid
+ * @param {Component} component
  * @param {boolean} [reset=true]
  */
 export const removeComponent = (world: World, eid: number, component: Component, reset = true) => {
@@ -295,8 +295,8 @@ export const removeComponent = (world: World, eid: number, component: Component,
  * Removes multiple components from an entity.
  *
  * @param {World} world
- * @param {Component[]} components
  * @param {number} eid
+ * @param {Component[]} components
  * @param {boolean} [reset=true]
  */
 export const removeComponents = (
