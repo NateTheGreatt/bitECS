@@ -11,17 +11,11 @@ import { Acceleration } from '../components/Acceleration';
 
 export const init = (world: World) => {
 	for (let i = 0; i < CONSTANTS.NBODIES; i++) {
-		const eid = addEntity(world);
-		addComponent(world, Position, eid);
-		addComponent(world, Velocity, eid);
-		addComponent(world, Mass, eid);
-		addComponent(world, Circle, eid);
-		addComponent(world, Color, eid);
-		addComponent(world, Acceleration, eid);
+		const eid = addEntity(world, Position, Velocity, Mass, Circle, Color, Acceleration);
 
 		if (i === 0) {
 			// Make the first entity the central mass.
-			addComponent(world, IsCentralMass, eid);
+			addComponent(world, eid, IsCentralMass);
 		}
 	}
 };
