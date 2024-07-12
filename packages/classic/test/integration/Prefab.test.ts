@@ -37,10 +37,10 @@ describe('Prefab Integration Tests', () => {
 		}
 
 		const eid = addEntity(world);
-		addComponent(world, IsA(Player), eid);
+		addComponent(world, eid, IsA(Player));
 
-		assert(hasComponent(world, Position, eid));
-		assert(hasComponent(world, Sprite, eid));
+		assert(hasComponent(world, eid, Position));
+		assert(hasComponent(world, eid, Sprite));
 
 		assert(Position.x[eid] === 10);
 		assert(Position.y[eid] === 10);
@@ -56,12 +56,12 @@ describe('Prefab Integration Tests', () => {
 
 		{
 			const eid = addEntity(world);
-			addComponent(world, IsA(Player), eid);
+			addComponent(world, eid, IsA(Player));
 		}
 
 		{
 			const eid = addEntity(world);
-			addComponent(world, IsA(Npc), eid);
+			addComponent(world, eid, IsA(Npc));
 		}
 
 		assert(query(world, [IsA(Human)]).length === 2);

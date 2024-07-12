@@ -21,7 +21,7 @@ describe('System Integration Tests', () => {
 
 		const query = defineQuery([TestComponent]);
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const system = defineSystem((world) =>
 			query(world).forEach((eid) => {

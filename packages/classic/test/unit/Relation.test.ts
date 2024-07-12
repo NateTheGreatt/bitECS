@@ -6,12 +6,31 @@ import {
 	createWorld,
 	defineRelation,
 	entityExists,
+	getRelationTargets,
 	hasComponent,
 	removeEntity,
 } from '../../src';
 import { describe, test } from 'vitest';
 
 describe('Relation Unit Tests', () => {
+	// this test only works if the player eid is 0, so it needs to be first
+	test('should maintain exclusive relations for eid 0', () => {
+		const world = createWorld();
+
+		const player = addEntity(world); // 0
+		const guard = addEntity(world); // 1
+		const goblin = addEntity(world); // 2
+
+		const Targeting = defineRelation({ exclusive: true });
+
+		addComponent(world, goblin, Targeting(player));
+		addComponent(world, goblin, Targeting(guard));
+
+		assert(getRelationTargets(world, Targeting, goblin).length === 1);
+		assert(hasComponent(world, goblin, Targeting(player)) === false);
+		assert(hasComponent(world, goblin, Targeting(guard)) === true);
+	});
+
 	test('should auto remove subject', () => {
 		const world = createWorld();
 
@@ -20,7 +39,7 @@ describe('Relation Unit Tests', () => {
 		const parent = addEntity(world);
 		const child = addEntity(world);
 
-		addComponent(world, ChildOf(parent), child);
+		addComponent(world, child, ChildOf(parent));
 
 		removeEntity(world, parent);
 
@@ -40,10 +59,10 @@ describe('Relation Unit Tests', () => {
 		const gold = addEntity(world);
 		const silver = addEntity(world);
 
-		addComponent(world, Contains(gold), inventory);
+		addComponent(world, inventory, Contains(gold));
 		Contains(gold).amount[inventory] = 5;
 
-		addComponent(world, Contains(silver), inventory);
+		addComponent(world, inventory, Contains(silver));
 		Contains(silver).amount[inventory] = 12;
 
 		assert(Contains(gold) !== Contains(silver));
@@ -68,12 +87,12 @@ describe('Relation Unit Tests', () => {
 
 		const childChildChild1 = addEntity(world);
 
-		addComponent(world, ChildOf(parent), child);
-		addComponent(world, ChildOf(child), childChild1);
-		addComponent(world, ChildOf(child), childChild2);
-		addComponent(world, ChildOf(child), childChild3);
+		addComponent(world, child, ChildOf(parent));
+		addComponent(world, childChild1, ChildOf(child));
+		addComponent(world, childChild2, ChildOf(child));
+		addComponent(world, childChild3, ChildOf(child));
 
-		addComponent(world, ChildOf(childChild2), childChildChild1);
+		addComponent(world, childChildChild1, ChildOf(childChild2));
 
 		removeEntity(world, parent);
 
@@ -93,10 +112,10 @@ describe('Relation Unit Tests', () => {
 		const rat = addEntity(world);
 		const goblin = addEntity(world);
 
-		addComponent(world, Targeting(rat), hero);
-		addComponent(world, Targeting(goblin), hero);
+		addComponent(world, hero, Targeting(rat));
+		addComponent(world, hero, Targeting(goblin));
 
-		assert(hasComponent(world, Targeting(rat), hero) === false);
-		assert(hasComponent(world, Targeting(goblin), hero) === true);
+		assert(hasComponent(world, hero, Targeting(rat)) === false);
+		assert(hasComponent(world, hero, Targeting(goblin)) === true);
 	});
 });
