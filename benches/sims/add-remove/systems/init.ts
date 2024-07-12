@@ -1,6 +1,6 @@
 import { World } from '@bitecs/classic';
 import { CONSTANTS } from '../constants';
-import { addComponent, addEntity } from '@bitecs/classic';
+import { addEntity } from '@bitecs/classic';
 import { Position } from '../components/Position';
 import { Velocity } from '../components/Velocity';
 import { Mass } from '../components/Mass';
@@ -14,10 +14,5 @@ export const init = (world: World) => {
 };
 
 export const addBody = (world: World) => {
-	const eid = addEntity(world);
-	addComponent(world, Position, eid);
-	addComponent(world, Velocity, eid);
-	addComponent(world, Mass, eid);
-	addComponent(world, Circle, eid);
-	addComponent(world, Color, eid);
+	addEntity(world, Position, Velocity, Mass, Circle, Color);
 };
