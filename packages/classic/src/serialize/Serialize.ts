@@ -172,13 +172,13 @@ export const defineSerializer = (target: TODO, maxBytes = 20000000): Serializer 
 					// or if entity did not have component last call
 					(!componentCache.has(component) &&
 						// and entity has component this call
-						hasComponent(world, component, eid));
+						hasComponent(world, eid, component));
 
 				cache.get(component).set(eid, newlyAddedComponent);
 
 				if (newlyAddedComponent) {
 					componentCache.add(component);
-				} else if (!hasComponent(world, component, eid)) {
+				} else if (!hasComponent(world, eid, component)) {
 					// skip if entity doesn't have this component
 					componentCache.delete(component);
 					continue;
@@ -366,8 +366,8 @@ export const defineDeserializer = (target: TODO): Deserializer => {
 				}
 
 				const component = prop[$storeBase]();
-				if (!hasComponent(world, component, eid)) {
-					addComponent(world, component, eid);
+				if (!hasComponent(world, eid, component)) {
+					addComponent(world, eid, component);
 				}
 
 				// add eid to deserialized ents after it has been transformed by MAP mode
