@@ -28,7 +28,7 @@ describe('Serialize Integration Tests', () => {
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const eid = addEntity(world);
 
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 		const serialize = defineSerializer(world);
 		const deserialize = defineDeserializer(world);
 
@@ -47,7 +47,7 @@ describe('Serialize Integration Tests', () => {
 		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const serialize = defineSerializer([TestComponent]);
 		const deserialize = defineDeserializer([TestComponent]);
@@ -68,7 +68,7 @@ describe('Serialize Integration Tests', () => {
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const query = defineQuery([TestComponent]);
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const serialize = defineSerializer([TestComponent]);
 		const deserialize = defineDeserializer([TestComponent]);
@@ -96,8 +96,8 @@ describe('Serialize Integration Tests', () => {
 		const deserialize = defineDeserializer([ArrayComponent, TestComponent]);
 
 		const eid = addEntity(world1);
-		addComponent(world1, TestComponent, eid);
-		addComponent(world1, ArrayComponent, eid);
+		addComponent(world1, eid, TestComponent);
+		addComponent(world1, eid, ArrayComponent);
 
 		TestComponent.value[eid] = 1;
 		ArrayComponent.array[eid].set([1, 2, 3, 4]);
@@ -121,7 +121,7 @@ describe('Serialize Integration Tests', () => {
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const query = defineQuery([TestComponent]);
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const serialize = defineSerializer([TestComponent]);
 		const deserialize = defineDeserializer(world);
@@ -145,7 +145,7 @@ describe('Serialize Integration Tests', () => {
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const query = defineQuery([TestComponent]);
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const serialize = defineSerializer([TestComponent]);
 		const deserialize = defineDeserializer(world);
@@ -180,8 +180,8 @@ describe('Serialize Integration Tests', () => {
 		const ArrayComponent = defineComponent({ values: [Types.f32, 3] });
 
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
-		addComponent(world, ArrayComponent, eid);
+		addComponent(world, eid, TestComponent);
+		addComponent(world, eid, ArrayComponent);
 
 		const serialize = defineSerializer([Changed(TestComponent.value), ArrayComponent]);
 		const deserialize = defineDeserializer([TestComponent.value, ArrayComponent]);
@@ -218,7 +218,7 @@ describe('Serialize Integration Tests', () => {
 		const ArrayComponent = defineComponent({ values: [Types.f32, 3] });
 
 		const eid = addEntity(world);
-		addComponent(world, ArrayComponent, eid);
+		addComponent(world, eid, ArrayComponent);
 
 		const serialize = defineSerializer([Changed(ArrayComponent)]);
 		const deserialize = defineDeserializer([ArrayComponent]);
@@ -259,7 +259,7 @@ describe('Serialize Integration Tests', () => {
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const eid = addEntity(world);
 
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 		TestComponent.value[eid] = 1;
 
 		const serialize = defineSerializer([Changed(TestComponent)]);
@@ -274,7 +274,7 @@ describe('Serialize Integration Tests', () => {
 		const ArrayComponent = defineComponent({ value: [Types.f32, 3] });
 		const eid = addEntity(world);
 
-		addComponent(world, ArrayComponent, eid);
+		addComponent(world, eid, ArrayComponent);
 		ArrayComponent.value[eid][1] = 1;
 
 		const serialize = defineSerializer([Changed(ArrayComponent)]);
@@ -294,9 +294,9 @@ describe('Serialize Integration Tests', () => {
 		const deserialize = defineDeserializer([TestComponent, ArrayComponent, TagComponent]);
 
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
-		addComponent(world, ArrayComponent, eid);
-		addComponent(world, TagComponent, eid);
+		addComponent(world, eid, TestComponent);
+		addComponent(world, eid, ArrayComponent);
+		addComponent(world, eid, TagComponent);
 
 		let packet = serialize([eid]);
 		assert(packet.byteLength > 0);
@@ -306,28 +306,28 @@ describe('Serialize Integration Tests', () => {
 		const eids = [eid];
 
 		const eid2 = addEntity(world);
-		addComponent(world, TestComponent, eid2);
+		addComponent(world, eid2, TestComponent);
 		TestComponent.value[eid2] = 8;
 		eids.push(eid2);
 
 		const eid3 = addEntity(world);
-		addComponent(world, TagComponent, eid3);
+		addComponent(world, eid3, TagComponent);
 		eids.push(eid3);
 
 		const eid4 = addEntity(world);
-		addComponent(world, ArrayComponent, eid4);
+		addComponent(world, eid4, ArrayComponent);
 		ArrayComponent.value[eid4][1] = 5;
 		eids.push(eid4);
 
 		const eid5 = addEntity(world);
-		addComponent(world, TagComponent, eid5);
-		addComponent(world, ArrayComponent, eid5);
+		addComponent(world, eid5, TagComponent);
+		addComponent(world, eid5, ArrayComponent);
 		ArrayComponent.value[eid5][0] = 3;
 		eids.push(eid5);
 
 		const eid6 = addEntity(world);
-		addComponent(world, TagComponent, eid6);
-		addComponent(world, TestComponent, eid6);
+		addComponent(world, eid6, TagComponent);
+		addComponent(world, eid6, TestComponent);
 		TestComponent.value[eid6] = 3;
 		eids.push(eid6);
 
@@ -353,7 +353,7 @@ describe('Serialize Integration Tests', () => {
 		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const query = defineQuery([TestComponent]);
 		const serialize = defineSerializer([TestComponent]);
@@ -369,7 +369,7 @@ describe('Serialize Integration Tests', () => {
 		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		const serialize = defineSerializer([Changed(TestComponent)]);
 
@@ -387,9 +387,9 @@ describe('Serialize Integration Tests', () => {
 			value1: Types.f32,
 		});
 		const eid0 = addEntity(world);
-		addComponent(world, TestComponent, eid0);
+		addComponent(world, eid0, TestComponent);
 		const eid1 = addEntity(world);
-		addComponent(world, TestComponent, eid1);
+		addComponent(world, eid1, TestComponent);
 
 		const serialize = defineSerializer([TestComponent]);
 		const deserialize = defineDeserializer([TestComponent]);
@@ -407,7 +407,7 @@ describe('Serialize Integration Tests', () => {
 		const EIDComponent = defineComponent({ eid: Types.eid });
 		const eid1 = addEntity(world);
 		const eid2 = addEntity(world);
-		addComponent(world, EIDComponent, eid1);
+		addComponent(world, eid1, EIDComponent);
 		EIDComponent.eid[eid1] = eid2;
 		const serialize = defineSerializer([EIDComponent]);
 		const deserialize = defineDeserializer([EIDComponent]);

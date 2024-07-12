@@ -9,11 +9,11 @@ import {
 	registerComponent,
 	removeComponent,
 	removeEntity,
+	addComponents,
 } from '../../src/index.js';
 import { createWorld } from '../../src/world/World.js';
 import { describe, it, afterEach } from 'vitest';
 import { $componentMap } from '../../src/component/symbols.js';
-import { getEntityCursor } from '../../src/entity/Entity.js';
 
 const componentTypes = {
 	SoA: defineComponent({ value: Types.f32 }),
@@ -45,7 +45,7 @@ describe('Component Integration Tests', () => {
 
 		const eid = addEntity(world);
 
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 		assert(world[$componentMap].has(TestComponent));
 	});
 
@@ -55,11 +55,11 @@ describe('Component Integration Tests', () => {
 
 		const eid = addEntity(world);
 
-		addComponent(world, TestComponent, eid);
-		assert(hasComponent(world, TestComponent, eid));
+		addComponent(world, eid, TestComponent);
+		assert(hasComponent(world, eid, TestComponent));
 
-		removeComponent(world, TestComponent, eid);
-		assert(hasComponent(world, TestComponent, eid) === false);
+		removeComponent(world, eid, TestComponent);
+		assert(hasComponent(world, eid, TestComponent) === false);
 	});
 
 	(Object.keys(componentTypes) as (keyof typeof componentTypes)[]).forEach((type) => {
@@ -68,8 +68,8 @@ describe('Component Integration Tests', () => {
 
 			const eid = addEntity(world);
 
-			addComponent(world, componentTypes[type], eid);
-			assert(hasComponent(world, componentTypes[type], eid));
+			addComponent(world, eid, componentTypes[type]);
+			assert(hasComponent(world, eid, componentTypes[type]));
 		});
 	});
 
@@ -80,14 +80,14 @@ describe('Component Integration Tests', () => {
 
 		const eid = addEntity(world);
 
-		addComponent(world, TestComponent, eid);
-		addComponent(world, TestComponent2, eid);
-		assert(hasComponent(world, TestComponent, eid));
-		assert(hasComponent(world, TestComponent2, eid));
+		addComponent(world, eid, TestComponent);
+		addComponent(world, eid, TestComponent2);
+		assert(hasComponent(world, eid, TestComponent));
+		assert(hasComponent(world, eid, TestComponent2));
 
-		removeComponent(world, TestComponent, eid);
-		assert(hasComponent(world, TestComponent, eid) === false);
-		assert(hasComponent(world, TestComponent2, eid) === true);
+		removeComponent(world, eid, TestComponent);
+		assert(hasComponent(world, eid, TestComponent) === false);
+		assert(hasComponent(world, eid, TestComponent2) === true);
 	});
 
 	it('should create tag components', () => {
@@ -96,11 +96,11 @@ describe('Component Integration Tests', () => {
 
 		const eid = addEntity(world);
 
-		addComponent(world, TestComponent, eid);
-		assert(hasComponent(world, TestComponent, eid));
+		addComponent(world, eid, TestComponent);
+		assert(hasComponent(world, eid, TestComponent));
 
-		removeComponent(world, TestComponent, eid);
-		assert(hasComponent(world, TestComponent, eid) === false);
+		removeComponent(world, eid, TestComponent);
+		assert(hasComponent(world, eid, TestComponent) === false);
 	});
 
 	it('should correctly register more than 32 components', () => {
@@ -113,8 +113,8 @@ describe('Component Integration Tests', () => {
 
 			.map((_) => defineComponent())
 			.forEach((c) => {
-				addComponent(world, c, eid);
-				assert(hasComponent(world, c, eid));
+				addComponent(world, eid, c);
+				assert(hasComponent(world, eid, c));
 			});
 	});
 
@@ -135,8 +135,22 @@ describe('Component Integration Tests', () => {
 		}
 
 		const component = defineComponent({ value: Types.f32 });
-		addComponent(world, component, eid);
+		addComponent(world, eid, component);
 
-		assert(hasComponent(world, component, eid));
+		assert(hasComponent(world, eid, component));
+	});
+
+	it('should add multiple components at once', () => {
+		const world = createWorld();
+		const A = {};
+		const B = {};
+		const C = {};
+
+		const eid = addEntity(world);
+		addComponents(world, eid, A, B, C);
+
+		assert(hasComponent(world, eid, A));
+		assert(hasComponent(world, eid, B));
+		assert(hasComponent(world, eid, C));
 	});
 });

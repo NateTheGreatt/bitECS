@@ -30,13 +30,13 @@ describe('Queue Integration Tests', () => {
 
 		const eidA = addEntity(world);
 		const eidB = addEntity(world);
-		addComponent(world, TestComponent, eidA);
+		addComponent(world, eidA, TestComponent);
 
 		let enteredA = enteredQueryA(world);
 
 		strictEqual(enteredA.length, 1);
 
-		addComponent(world, TestComponent, eidB);
+		addComponent(world, eidB, TestComponent);
 
 		enteredA = enteredQueryA(world);
 		let enteredB = enteredQueryB(world);
@@ -55,14 +55,14 @@ describe('Queue Integration Tests', () => {
 
 		const eidA = addEntity(world);
 		const eidB = addEntity(world);
-		addComponent(world, TestComponent, eidA);
-		addComponent(world, TestComponent, eidB);
+		addComponent(world, eidA, TestComponent);
+		addComponent(world, eidB, TestComponent);
 
 		let exitedA = exitedQueryA(world);
 
 		strictEqual(exitedA.length, 0);
 
-		removeComponent(world, TestComponent, eidA);
+		removeComponent(world, eidA, TestComponent);
 
 		exitedA = exitedQueryA(world);
 		let exitedB = exitedQueryB(world);
@@ -79,7 +79,7 @@ describe('Queue Integration Tests', () => {
 		const enteredQuery = defineEnterQueue(query);
 
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		let entered = enteredQuery(world, false);
 		strictEqual(entered.length, 1);
@@ -104,13 +104,13 @@ describe('Queue Integration Tests', () => {
 		const world = createWorld();
 
 		const eid = addEntity(world);
-		addComponent(world, TestComponent, eid);
+		addComponent(world, eid, TestComponent);
 
 		let entered = enteredQuery(world);
 		strictEqual(entered.length, 1);
 		strictEqual(entered[0], 0);
 
-		removeComponent(world, TestComponent, eid);
+		removeComponent(world, eid, TestComponent);
 
 		let exited = exitedQuery(world);
 		strictEqual(exited.length, 1);
