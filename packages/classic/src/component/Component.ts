@@ -142,7 +142,7 @@ export const addComponent = (world: World, eid: number, component: Component, re
 		throw new Error('bitECS - entity does not exist in the world.');
 	}
 
-	addComponentInternal(world, component, eid, reset);
+	addComponentInternal(world, eid, component, reset);
 };
 
 /**
@@ -158,14 +158,14 @@ export function addComponents(world: World, eid: number, ...components: Componen
 	}
 
 	for (const component of components) {
-		addComponentInternal(world, component, eid, false);
+		addComponentInternal(world, eid, component, false);
 	}
 }
 
 export const addComponentInternal = (
 	world: World,
-	component: Component,
 	eid: number,
+	component: Component,
 	reset: boolean
 ) => {
 	// Exit early if the entity already has the component.
