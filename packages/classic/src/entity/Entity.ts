@@ -1,4 +1,4 @@
-import { addComponents, defineComponent, removeComponent } from '../component/Component.js';
+import { addComponentInternal, defineComponent, removeComponent } from '../component/Component.js';
 import { Component } from '../component/types.js';
 import {
 	queries,
@@ -145,7 +145,9 @@ export const addEntity = (world: World, ...components: Component[]): number => {
 
 	world[$entityComponents].set(eid, new Set());
 
-	addComponents(world, eid, ...components);
+	for (const component of components) {
+		addComponentInternal(world, eid, component, false);
+	}
 
 	return eid;
 };
