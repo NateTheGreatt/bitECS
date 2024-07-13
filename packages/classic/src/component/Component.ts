@@ -174,9 +174,9 @@ export const addComponentInternal = (world: World, eid: number, component: Compo
 	if (component[$isPairComponent]) {
 		// add wildcard relation components
 		const relation = component[$relation];
-		addComponent(world, eid, Pair(relation, Wildcard));
+		addComponentInternal(world, eid, Pair(relation, Wildcard));
 		const target = component[$pairTarget];
-		addComponent(world, eid, Pair(Wildcard, target));
+		addComponentInternal(world, eid, Pair(Wildcard, target));
 
 		// if it's an exclusive relation, remove the old target
 		if (relation[$exclusiveRelation] === true && target !== Wildcard) {
