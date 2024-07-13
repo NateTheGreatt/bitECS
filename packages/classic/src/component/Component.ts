@@ -49,7 +49,6 @@ export const registerComponent = (world: World, component: Component) => {
 
 	const queries = new Set<QueryData>();
 	const notQueries = new Set<QueryData>();
-	const changedQueries = new Set<QueryData>();
 
 	// Collect all queries that match this component.
 	world[$queries].forEach((queryNode) => {
@@ -66,7 +65,6 @@ export const registerComponent = (world: World, component: Component) => {
 		ref: component,
 		queries,
 		notQueries,
-		changedQueries,
 	};
 
 	world[$componentMap].set(component, componentNode);

@@ -1,7 +1,6 @@
 import { strictEqual } from 'assert';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-	Changed,
 	Not,
 	SYMBOLS,
 	Types,
@@ -172,46 +171,6 @@ describe('Query Integration Tests', () => {
 		strictEqual(ents[0], 1);
 		strictEqual(ents[1], 0);
 		strictEqual(ents[2], 2);
-	});
-
-	it('should define a query with Changed and return matching eids whose component state has changed', () => {
-		const world = createWorld();
-		const TestComponent = defineComponent({ value: Types.f32 });
-		const query = defineQuery([Changed(TestComponent)]);
-		const eid1 = addEntity(world);
-		const eid2 = addEntity(world);
-		addComponent(world, eid1, TestComponent);
-		addComponent(world, eid2, TestComponent);
-
-		let ents = query(world);
-		strictEqual(ents.length, 0);
-
-		TestComponent.value[eid1]++;
-
-		ents = query(world);
-
-		strictEqual(ents.length, 1);
-		strictEqual(ents[0], eid1);
-	});
-
-	it('should define a query for an array component with Changed and return matching eids whose component state has changed', () => {
-		const world = createWorld();
-		const ArrayComponent = defineComponent({ value: [Types.f32, 3] });
-		const query = defineQuery([Changed(ArrayComponent)]);
-		const eid1 = addEntity(world);
-		const eid2 = addEntity(world);
-		addComponent(world, eid1, ArrayComponent);
-		addComponent(world, eid2, ArrayComponent);
-
-		let ents = query(world);
-		strictEqual(ents.length, 0);
-
-		ArrayComponent.value[eid1][1]++;
-
-		ents = query(world);
-
-		strictEqual(ents.length, 1);
-		strictEqual(ents[0], eid1);
 	});
 
 	it('should return entities from enter/exitQuery who entered/exited the query', () => {

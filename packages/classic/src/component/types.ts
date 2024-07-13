@@ -12,7 +12,6 @@ export interface ComponentNode {
 	ref: Component;
 	queries: Set<QueryData>;
 	notQueries: Set<QueryData>;
-	changedQueries: Set<QueryData>;
 }
 
 type Types = keyof typeof TYPES;

@@ -18,7 +18,6 @@ import {
 } from './symbols.js';
 import { Query, QueryModifier, QueryData, Queue, QueryResult } from './types.js';
 import { HasBufferQueries, World } from '../world/types.js';
-import { createShadow } from '../storage/Storage.js';
 import { $storeFlattened, $tagStore } from '../storage/symbols.js';
 import { EMPTY } from '../constants/Constants.js';
 import { worlds } from '../world/World.js';
@@ -35,7 +34,6 @@ function modifier(c: Component, mod: string): QueryModifier {
 
 export const Not = (c: Component) => modifier(c, 'not');
 export const Or = (c: Component) => modifier(c, 'or');
-export const Changed = (c: Component) => modifier(c, 'changed');
 
 export function Any(...comps: Component[]) {
 	return function QueryAny() {
@@ -59,7 +57,6 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 
 	const components: TODO = [];
 	const notComponents: TODO = [];
-	const changedComponents: TODO = [];
 
 	query[$queryComponents].forEach((c: TODO) => {
 		if (typeof c === 'function' && c[$modifier]) {
@@ -67,10 +64,6 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 			if (!world[$componentMap].has(comp)) registerComponent(world, comp);
 			if (mod === 'not') {
 				notComponents.push(comp);
-			}
-			if (mod === 'changed') {
-				changedComponents.push(comp);
-				components.push(comp);
 			}
 		} else {
 			if (!world[$componentMap].has(c)) registerComponent(world, c);
@@ -92,7 +85,6 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 	}
 
 	const archetypes: TODO = [];
-	const changed: TODO = [];
 	const toRemove = SparseSet();
 
 	// A default queue is created and index 0 to be used for enterQuery and exitQuery.
@@ -124,14 +116,10 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 		)
 		.reduce((a: TODO, v: TODO) => a.concat(v), []);
 
-	const shadows: TODO = [];
-
 	const q = Object.assign(sparseSet, {
 		archetypes,
-		changed,
 		components,
 		notComponents,
-		changedComponents,
 		allComponents,
 		masks,
 		notMasks,
@@ -142,7 +130,6 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 		toRemove,
 		enterQueues,
 		exitQueues,
-		shadows,
 		query,
 	}) as unknown as QueryData<HasBufferQueries<W>>;
 
@@ -169,67 +156,6 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 	}
 };
 
-const generateShadow = (q: TODO, pid: number) => {
-	const $ = Symbol();
-	const prop = q.flatProps[pid];
-	createShadow(prop, $);
-	q.shadows[pid] = prop[$];
-	return prop[$];
-};
-
-const diff = (q: QueryData, clearDiff: boolean) => {
-	if (clearDiff) q.changed = [];
-	const { flatProps, shadows } = q;
-	for (let i = 0; i < q.dense.length; i++) {
-		const eid = q.dense[i];
-		let dirty = false;
-		for (let pid = 0; pid < flatProps.length; pid++) {
-			const prop = flatProps[pid];
-			const shadow = shadows[pid] || generateShadow(q, pid);
-			if (ArrayBuffer.isView(prop[eid])) {
-				// @ts-expect-error
-				for (let i = 0; i < prop[eid].length; i++) {
-					// @ts-expect-error
-					if (prop[eid][i] !== shadow[eid][i]) {
-						dirty = true;
-						break;
-					}
-				}
-				shadow[eid].set(prop[eid]);
-			} else {
-				if (prop[eid] !== shadow[eid]) {
-					dirty = true;
-					shadow[eid] = prop[eid];
-				}
-			}
-		}
-		if (dirty) q.changed.push(eid);
-	}
-	return q.changed;
-};
-
-// const queryEntityChanged = (q, eid) => {
-//   if (q.changed.has(eid)) return
-//   q.changed.add(eid)
-// }
-
-// export const entityChanged = (world, component, eid) => {
-//   const { changedQueries } = world[$componentMap].get(component)
-//   changedQueries.forEach(q => {
-//     const match = queryCheckEntity(world, q, eid)
-//     if (match) queryEntityChanged(q, eid)
-//   })
-// }
-
-const flatten = (a: Array<number>, v: Array<number>) => a.concat(v);
-
-const aggregateComponentsFor = (mod: TODO) => (x: TODO) =>
-	x.filter((f: TODO) => f.name === mod().constructor.name).reduce(flatten);
-
-const getAnyComponents = aggregateComponentsFor(Any);
-const getAllComponents = aggregateComponentsFor(All);
-const getNoneComponents = aggregateComponentsFor(None);
-
 /**
  * Defines a query function which returns a matching set of entities when called on a world.
  *
@@ -253,15 +179,12 @@ export const defineQuery = (components: Component[]): Query => {
 		return query;
 	}
 
-	const query: Query = function (world, clearDiff = true) {
+	const query: Query = function <W extends World>(world: W) {
 		const data = world[$queryDataMap].get(query)!;
 
 		commitRemovals(world);
 
-		if (data.changedComponents.length) return diff(data, clearDiff);
-		if (data.changedComponents.length) return data.changed.dense;
-
-		return world[$bufferQueries] ? data.dense : Array.from(data.dense);
+		return (world[$bufferQueries] ? data.dense : Array.from(data.dense)) as QueryResult<W>;
 	};
 
 	query[$queryComponents] = components;
@@ -370,17 +293,6 @@ export const queryRemoveEntity = <W extends World>(world: W, q: QueryData, eid: 
 	for (let i = 0; i < q.enterQueues.length; i++) {
 		q.enterQueues[i].remove(eid);
 	}
-};
-
-/**
- * Resets a Changed-based query, clearing the underlying list of changed entities.
- *
- * @param {World} world
- * @param {function} query
- */
-export const resetChangedQuery = (world: World, query: TODO) => {
-	const q = world[$queryDataMap].get(query)!;
-	q.changed = [];
 };
 
 /**

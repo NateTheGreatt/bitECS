@@ -36,17 +36,14 @@ export {
 	defineQuery,
 	enterQuery,
 	exitQuery,
-	Changed,
 	Not,
 	commitRemovals,
-	resetChangedQuery,
 	removeQuery,
 	registerQuery,
 	query,
 } from './query/Query.js';
 export { archetypeHash } from './query/utils.js';
 export { defineEnterQueue, defineExitQueue } from './query/Queue.js';
-export { defineSerializer, defineDeserializer, DESERIALIZE_MODE } from './serialize/Serialize.js';
 export { parentArray } from './storage/Storage.js';
 export { TYPES_ENUM as Types } from './constants/Constants.js';
 export { pipe } from './utils/pipe.js';
@@ -56,7 +53,6 @@ export * from './prefab/Prefab.js';
 // Types
 export * from './component/types.js';
 export * from './query/types.js';
-export * from './serialize/types.js';
 export * from './storage/types.js';
 export * from './system/types.js';
 export * from './world/types.js';

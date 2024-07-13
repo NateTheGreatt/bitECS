@@ -12,7 +12,7 @@ export type QueryResult<W extends World = World, TTest = HasBufferQueries<W>> = 
 	? Uint32Array
 	: readonly number[];
 
-export type Query = (<W extends World = World>(world: W, clearDiff?: boolean) => QueryResult<W>) & {
+export type Query = (<W extends World = World>(world: W) => QueryResult<W>) & {
 	[$queryComponents]: Component[];
 	[$queueRegisters]: ((world: World) => void)[];
 };
@@ -21,9 +21,7 @@ export type QueryData<TBufferQueries extends boolean = false | true> = (TBufferQ
 	? IUint32SparseSet
 	: ReturnType<typeof SparseSet>) & {
 	archetypes: any;
-	changed: any;
 	notComponents: any;
-	changedComponents: any;
 	allComponents: Component[];
 	masks: any;
 	notMasks: any;
