@@ -5,7 +5,7 @@ import { $entityMasks } from '../../src/entity/symbols.js';
 import { resetGlobals } from '../../src/index.js';
 import { $dirtyQueries, $queries, $queryDataMap } from '../../src/query/symbols.js';
 import { createWorld, enableBufferedQueries } from '../../src/world/World.js';
-import { $bitflag, $bufferQueries, $size } from '../../src/world/symbols.js';
+import { $bitflag, $bufferQueries } from '../../src/world/symbols.js';
 
 describe('World Unit Tests', () => {
 	afterEach(() => {
@@ -16,8 +16,6 @@ describe('World Unit Tests', () => {
 		const world = createWorld();
 
 		strictEqual(Object.keys(world).length, 0);
-
-		strictEqual(world[$size], -1);
 
 		assert(Array.isArray(world[$entityMasks]));
 
@@ -30,13 +28,6 @@ describe('World Unit Tests', () => {
 		strictEqual(world[$queryDataMap].constructor.name, 'Map');
 		strictEqual(world[$queries].constructor.name, 'Set');
 		strictEqual(world[$dirtyQueries].constructor.name, 'Set');
-	});
-
-	it('should initialize with a size if provided', () => {
-		const world = createWorld(100);
-
-		strictEqual(world[$size], 100);
-		strictEqual(world[$entityMasks][0].length, 100);
 	});
 
 	it('enables bufferes queries', () => {

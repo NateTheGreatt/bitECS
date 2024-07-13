@@ -18,11 +18,10 @@ import {
 } from './symbols.js';
 import { Query, QueryModifier, QueryData, Queue, QueryResult } from './types.js';
 import { HasBufferQueries, World } from '../world/types.js';
-import { $storeFlattened, $tagStore } from '../storage/symbols.js';
 import { EMPTY } from '../constants/Constants.js';
 import { worlds } from '../world/World.js';
 import { archetypeHash } from './utils.js';
-import { $bufferQueries, $size } from '../world/symbols.js';
+import { $bufferQueries } from '../world/symbols.js';
 
 export const queries: Query[] = [];
 
@@ -77,8 +76,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 	let sparseSet: IUint32SparseSet | ReturnType<typeof SparseSet>;
 
 	if (world[$bufferQueries]) {
-		// `world[$size] * 2` is the maximum size our buffer can grow with recycling.
-		const size = world[$size] === -1 ? 100_000 : world[$size] * 2;
+		const size = 100_000;
 		sparseSet = Uint32SparseSet.create(1024, size > 1024 ? size : 1024);
 	} else {
 		sparseSet = SparseSet();
@@ -109,13 +107,6 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 	const notMasks = notComponents.map(mapComponents).reduce(reduceBitflags, {});
 	const hasMasks = allComponents.reduce(reduceBitflags, {});
 
-	const flatProps = components
-		.filter((c: TODO) => !c[$tagStore])
-		.map((c: TODO) =>
-			Object.getOwnPropertySymbols(c).includes($storeFlattened) ? c[$storeFlattened] : [c]
-		)
-		.reduce((a: TODO, v: TODO) => a.concat(v), []);
-
 	const q = Object.assign(sparseSet, {
 		archetypes,
 		components,
@@ -126,7 +117,6 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 		// orMasks,
 		hasMasks,
 		generations,
-		flatProps,
 		toRemove,
 		enterQueues,
 		exitQueues,

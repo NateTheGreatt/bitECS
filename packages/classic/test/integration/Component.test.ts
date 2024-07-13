@@ -4,19 +4,19 @@ import {
 	addEntity,
 	resetGlobals,
 	addComponent,
-	defineComponent,
 	hasComponent,
 	registerComponent,
 	removeComponent,
 	removeEntity,
 	addComponents,
+	flushRemovedEntities,
 } from '../../src/index.js';
 import { createWorld } from '../../src/world/World.js';
 import { describe, it, afterEach } from 'vitest';
 import { $componentMap } from '../../src/component/symbols.js';
 
 const componentTypes = {
-	SoA: defineComponent({ value: Types.f32 }),
+	SoA: { value: [] as number[] },
 	object: {},
 	array: [],
 	buffer: new ArrayBuffer(8),
@@ -33,7 +33,7 @@ describe('Component Integration Tests', () => {
 
 	it('should register components on-demand', () => {
 		const world = createWorld();
-		const TestComponent = defineComponent({ value: Types.f32 });
+		const TestComponent = { value: [] as number[] };
 
 		registerComponent(world, TestComponent);
 		assert(world[$componentMap].has(TestComponent));
@@ -41,7 +41,7 @@ describe('Component Integration Tests', () => {
 
 	it('should register components automatically upon adding to an entity', () => {
 		const world = createWorld();
-		const TestComponent = defineComponent({ value: Types.f32 });
+		const TestComponent = { value: [] as number[] };
 
 		const eid = addEntity(world);
 
@@ -51,7 +51,7 @@ describe('Component Integration Tests', () => {
 
 	it('should add and remove components from an entity', () => {
 		const world = createWorld();
-		const TestComponent = defineComponent({ value: Types.f32 });
+		const TestComponent = { value: [] as number[] };
 
 		const eid = addEntity(world);
 
@@ -75,8 +75,8 @@ describe('Component Integration Tests', () => {
 
 	it('should only remove the component specified', () => {
 		const world = createWorld();
-		const TestComponent = defineComponent({ value: Types.f32 });
-		const TestComponent2 = defineComponent({ value: Types.f32 });
+		const TestComponent = { value: [] as number[] };
+		const TestComponent2 = { value: [] as number[] };
 
 		const eid = addEntity(world);
 
@@ -92,7 +92,7 @@ describe('Component Integration Tests', () => {
 
 	it('should create tag components', () => {
 		const world = createWorld();
-		const TestComponent = defineComponent();
+		const TestComponent = {};
 
 		const eid = addEntity(world);
 
@@ -111,7 +111,7 @@ describe('Component Integration Tests', () => {
 		Array(1024)
 			.fill(null)
 
-			.map((_) => defineComponent())
+			.map((_) => ({}))
 			.forEach((c) => {
 				addComponent(world, eid, c);
 				assert(hasComponent(world, eid, c));
@@ -119,7 +119,7 @@ describe('Component Integration Tests', () => {
 	});
 
 	it('should add components to entities after recycling', () => {
-		const world = createWorld(10);
+		const world = createWorld();
 		let eid = 0;
 
 		for (let i = 0; i < 10; i++) {
@@ -130,11 +130,13 @@ describe('Component Integration Tests', () => {
 			removeEntity(world, i);
 		}
 
+		flushRemovedEntities();
+
 		for (let i = 0; i < 10; i++) {
 			eid = addEntity(world);
 		}
 
-		const component = defineComponent({ value: Types.f32 });
+		const component = { value: [] as number[] };
 		addComponent(world, eid, component);
 
 		assert(hasComponent(world, eid, component));

@@ -27,7 +27,6 @@ export type QueryData<TBufferQueries extends boolean = false | true> = (TBufferQ
 	notMasks: any;
 	hasMasks: any;
 	generations: any;
-	flatProps: any;
 	toRemove: ReturnType<typeof SparseSet>;
 	enterQueues: ReturnType<typeof SparseSet>[];
 	exitQueues: ReturnType<typeof SparseSet>[];

@@ -11,18 +11,9 @@ import {
 import { Query, QueryData } from '../query/types';
 import { $relationTargetEntities } from '../relation/symbols';
 import { SparseSet } from '../utils/SparseSet';
-import {
-	$archetypes,
-	$bitflag,
-	$bufferQueries,
-	$localEntities,
-	$localEntityLookup,
-	$manualEntityRecycling,
-	$size,
-} from './symbols';
+import { $archetypes, $bitflag, $bufferQueries, $localEntities, $localEntityLookup } from './symbols';
 
 export interface World {
-	[$size]: number;
 	[$entityArray]: number[];
 	[$entityMasks]: Array<number>[];
 	[$entityComponents]: Map<number, Set<Component>>;
@@ -39,7 +30,6 @@ export interface World {
 	[$localEntities]: Map<any, any>;
 	[$localEntityLookup]: Map<any, any>;
 	[$relationTargetEntities]: ReturnType<typeof SparseSet>;
-	[$manualEntityRecycling]: boolean;
 	[$bufferQueries]: boolean;
 
 	// Internal flag

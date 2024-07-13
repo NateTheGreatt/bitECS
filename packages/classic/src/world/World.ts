@@ -6,7 +6,7 @@ import {
 	$notQueries,
 	$queriesHashMap,
 } from '../query/symbols.js';
-import { getGlobalSize, removeEntity } from '../entity/Entity.js';
+import { removeEntity } from '../entity/Entity.js';
 import { World } from './types.js';
 import {
 	$archetypes,
@@ -14,8 +14,6 @@ import {
 	$bufferQueries,
 	$localEntities,
 	$localEntityLookup,
-	$manualEntityRecycling,
-	$size,
 } from './symbols.js';
 import { SparseSet } from '../utils/SparseSet.js';
 import {
@@ -30,18 +28,12 @@ import { $relationTargetEntities } from '../relation/symbols.js';
 
 export const worlds: World[] = [];
 
-export function defineWorld<W extends object = {}>(world: W, size?: number): W & World;
-export function defineWorld<W extends World = World>(size?: number): W;
-export function defineWorld(...args: any[]) {
-	const world = typeof args[0] === 'object' ? args[0] : {};
-	const size = typeof args[0] === 'number' ? args[0] : typeof args[1] === 'number' ? args[1] : -1;
-
+export function defineWorld<W extends object = {}>(world?: W): W & World {
 	const entitySparseSet = SparseSet();
 
 	// Define world properties as non-enumerable symbols so they are internal secrets.
 	defineHiddenProperties(world, {
-		[$size]: size,
-		[$entityMasks]: [size === -1 ? new Array() : new Array(size)],
+		[$entityMasks]: [new Array()],
 		[$entityComponents]: new Map(),
 		[$archetypes]: [],
 		[$entitySparseSet]: entitySparseSet,
@@ -56,11 +48,10 @@ export function defineWorld(...args: any[]) {
 		[$dirtyQueries]: new Set(),
 		[$localEntities]: new Map(),
 		[$localEntityLookup]: new Map(),
-		[$manualEntityRecycling]: false,
 		[$relationTargetEntities]: SparseSet(),
 	});
 
-	return world;
+	return world as W & World;
 }
 
 export function registerWorld(world: World) {
@@ -75,12 +66,10 @@ export function registerWorld(world: World) {
  *
  * @returns {object}
  */
-export function createWorld<W extends object = {}>(world?: W, size?: number): W & World;
-export function createWorld(size?: number): World;
-export function createWorld(...args: any[]) {
-	const world = defineWorld(...args);
+export function createWorld<W extends object = {}>(w?: W): W & World {
+	const world = defineWorld(w ?? {});
 	registerWorld(world);
-	return world;
+	return world as W & World;
 }
 
 /**
@@ -89,12 +78,10 @@ export function createWorld(...args: any[]) {
  * @param {World} world
  * @returns {object}
  */
-export const resetWorld = (world: World, size = getGlobalSize()) => {
-	world[$size] = size;
-
+export const resetWorld = (world: World) => {
 	if (world[$entityArray]) world[$entityArray].forEach((eid) => removeEntity(world, eid));
 
-	world[$entityMasks] = [size === -1 ? new Array() : new Array(size)];
+	world[$entityMasks] = [new Array()];
 	world[$entityComponents] = new Map();
 	world[$archetypes] = [];
 
@@ -115,7 +102,6 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
 	world[$localEntities] = new Map();
 	world[$localEntityLookup] = new Map();
 
-	world[$manualEntityRecycling] = false;
 	world[$bufferQueries] = false;
 
 	return world;
@@ -129,7 +115,6 @@ export const resetWorld = (world: World, size = getGlobalSize()) => {
 export const deleteWorld = (world: World) => {
 	// Delete all world properties
 	const deletedWorld = world as unknown as Record<symbol, any>;
-	delete deletedWorld[$size];
 	delete deletedWorld[$entityMasks];
 	delete deletedWorld[$entityComponents];
 	delete deletedWorld[$archetypes];
@@ -146,7 +131,6 @@ export const deleteWorld = (world: World) => {
 	delete deletedWorld[$localEntities];
 	delete deletedWorld[$localEntityLookup];
 	delete deletedWorld[$relationTargetEntities];
-	delete deletedWorld[$manualEntityRecycling];
 	delete deletedWorld[$bufferQueries];
 
 	// Remove the world from the worlds array
@@ -171,28 +155,15 @@ export const getWorldComponents = (world: World) => Array.from(world[$componentM
 export const getAllEntities = (world: World) => world[$entitySparseSet].dense.slice(0);
 
 export const incrementWorldBitflag = (world: World) => {
-	const size = world[$size];
 	world[$bitflag] *= 2;
 	if (world[$bitflag] >= 2 ** 31) {
 		world[$bitflag] = 1;
-		world[$entityMasks].push(size === -1 ? new Array() : new Array(size));
+		world[$entityMasks].push(new Array());
 	}
 };
 
 export const entityExists = (world: World, eid: number) => {
 	return world[$entitySparseSet].has(eid);
-};
-
-/**
- * Enables manual entity recycling for a world.
- *
- * @param world
- * @returns world
- */
-
-export const enableManualEntityRecycling = <W extends World>(world: W): W => {
-	world[$manualEntityRecycling] = true;
-	return world;
 };
 
 /**

@@ -1,14 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { SYMBOLS, createWorld, deleteWorld, resetGlobals, worlds } from '../../src/index.js';
+import { createWorld, deleteWorld, resetGlobals, worlds } from '../../src/index.js';
 
 describe('World Integration Tests', () => {
 	afterEach(() => {
 		resetGlobals();
-	});
-
-	it('can be created with a size', () => {
-		const world = createWorld(10);
-		expect(world[SYMBOLS.$size]).toBe(10);
 	});
 
 	it('can be deleted', () => {

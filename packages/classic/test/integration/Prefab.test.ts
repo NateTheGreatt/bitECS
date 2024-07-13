@@ -5,7 +5,6 @@ import {
 	addComponent,
 	addEntity,
 	createWorld,
-	defineComponent,
 	definePrefab,
 	getAllEntities,
 	hasComponent,
@@ -18,10 +17,10 @@ describe('Prefab Integration Tests', () => {
 	test('should reference a prefab and inherit from it', () => {
 		const world = createWorld();
 
-		const Position = defineComponent({
-			x: Types.f32,
-			y: Types.f32,
-		});
+		const Position = {
+			x: [] as number[],
+			y: [] as number[],
+		};
 
 		const Sprite = {
 			url: {} as Record<number, string>,

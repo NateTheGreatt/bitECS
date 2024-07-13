@@ -4,7 +4,6 @@ import {
 	addComponent,
 	addEntity,
 	createWorld,
-	defineComponent,
 	defineEnterQueue,
 	defineExitQueue,
 	defineQuery,
@@ -19,7 +18,7 @@ describe('Queue Integration Tests', () => {
 	});
 
 	it('should define independent enter queues', () => {
-		const TestComponent = defineComponent({ value: Types.f32 });
+		const TestComponent = { value: [] as number[] };
 		const query = defineQuery([TestComponent]);
 
 		const enteredQueryA = defineEnterQueue(query);
@@ -47,7 +46,7 @@ describe('Queue Integration Tests', () => {
 
 	it('should define independent exit queues', () => {
 		const world = createWorld();
-		const TestComponent = defineComponent({ value: Types.f32 });
+		const TestComponent = { value: [] as number[] };
 		const query = defineQuery([TestComponent]);
 
 		const exitedQueryA = defineExitQueue(query);
@@ -73,7 +72,7 @@ describe('Queue Integration Tests', () => {
 
 	it('should optionally not drain queues when read', () => {
 		const world = createWorld();
-		const TestComponent = defineComponent({ value: Types.f32 });
+		const TestComponent = { value: [] as number[] };
 
 		const query = defineQuery([TestComponent]);
 		const enteredQuery = defineEnterQueue(query);
@@ -95,7 +94,7 @@ describe('Queue Integration Tests', () => {
 	});
 
 	it('should define enter/exit queues inline', () => {
-		const TestComponent = defineComponent({ value: Types.f32 });
+		const TestComponent = { value: [] as number[] };
 
 		const enteredQuery = defineEnterQueue([TestComponent]);
 		const exitedQuery = defineExitQueue([TestComponent]);

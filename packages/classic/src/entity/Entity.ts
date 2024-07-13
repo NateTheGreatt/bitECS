@@ -1,4 +1,4 @@
-import { addComponentInternal, defineComponent, removeComponent } from '../component/Component.js';
+import { addComponentInternal, removeComponent } from '../component/Component.js';
 import { Component } from '../component/types.js';
 import {
 	queries,
@@ -19,23 +19,13 @@ import {
 } from '../relation/symbols.js';
 import { TODO } from '../utils/types.js';
 import { worlds } from '../world/World.js';
-import {
-	$localEntities,
-	$localEntityLookup,
-	$manualEntityRecycling,
-	$size,
-} from '../world/symbols.js';
+import { $localEntities, $localEntityLookup } from '../world/symbols.js';
 import { World } from '../world/types.js';
 import { $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
-
-let defaultSize = 100000;
 
 // need a global EID cursor which all worlds and all components know about
 // so that world entities can posess entire rows spanning all component tables
 let globalEntityCursor = 0;
-let globalSize = defaultSize;
-
-export const getGlobalSize = () => globalSize;
 
 // removed eids should also be global to prevent memory leaks
 const removed: number[] = [];
@@ -56,13 +46,8 @@ const dequeuFromRemoved = () => {
 
 const getRemovedLength = () => removed.length + removedOut.length;
 
-const defaultRemovedReuseThreshold = 0.01;
-let removedReuseThreshold = defaultRemovedReuseThreshold;
-
 export const resetGlobals = () => {
-	globalSize = defaultSize;
 	globalEntityCursor = 0;
-	removedReuseThreshold = defaultRemovedReuseThreshold;
 	removed.length = 0;
 	removedOut.length = 0;
 	recycled.length = 0;
@@ -70,46 +55,17 @@ export const resetGlobals = () => {
 	worlds.length = 0;
 };
 
-export const getDefaultSize = () => defaultSize;
-
-/**
- * Sets the default maximum number of entities for worlds and component stores.
- *
- * @param {number} newSize
- */
-export const setDefaultSize = (newSize: number) => {
-	defaultSize = newSize;
-	resetGlobals();
-
-	globalSize = newSize;
-};
-
-/**
- * Sets the number of entities that must be removed before removed entity ids begin to be recycled.
- * This should be set to as a % (0-1) of `defaultSize` that you would never likely remove/add on a single frame.
- *
- * @param {number} newThreshold
- */
-export const setRemovedRecycleThreshold = (newThreshold: number) => {
-	removedReuseThreshold = newThreshold;
-};
-
 export const getEntityCursor = () => globalEntityCursor;
 export const getRemovedEntities = () => [...recycled, ...removed];
 
 export const eidToWorld = new Map<number, World>();
 
-export const flushRemovedEntities = (world: World) => {
-	if (!world[$manualEntityRecycling]) {
-		throw new Error(
-			'bitECS - cannot flush removed entities, enable feature with the enableManualEntityRecycling function'
-		);
-	}
+export const flushRemovedEntities = () => {
 	removed.push(...recycled);
 	recycled.length = 0;
 };
 
-export const Prefab = defineComponent();
+export const Prefab = {};
 
 /**
  * Adds a new entity to the specified world, adding any provided component to the entity.
@@ -121,18 +77,10 @@ export const Prefab = defineComponent();
 export const addEntity = (world: World, ...components: Component[]): number => {
 	let eid: number;
 
-	if (
-		(world[$manualEntityRecycling] && getRemovedLength() > 0) ||
-		(!world[$manualEntityRecycling] &&
-			getRemovedLength() > Math.round(globalSize * removedReuseThreshold))
-	) {
+	if (getRemovedLength() > 0) {
 		eid = dequeuFromRemoved();
 	} else {
 		eid = globalEntityCursor++;
-	}
-
-	if (world[$size] !== -1 && world[$entitySparseSet].dense.length >= world[$size]) {
-		throw new Error('bitECS - max entities reached');
 	}
 
 	world[$entitySparseSet].add(eid);
@@ -146,7 +94,7 @@ export const addEntity = (world: World, ...components: Component[]): number => {
 	world[$entityComponents].set(eid, new Set());
 
 	for (const component of components) {
-		addComponentInternal(world, eid, component, false);
+		addComponentInternal(world, eid, component);
 	}
 
 	return eid;
@@ -205,8 +153,7 @@ export const removeEntity = (world: World, eid: number) => {
 	}
 
 	// Free the entity
-	if (world[$manualEntityRecycling]) recycled.push(eid);
-	else removed.push(eid);
+	recycled.push(eid);
 
 	// remove all eid state from world
 	world[$entitySparseSet].remove(eid);
