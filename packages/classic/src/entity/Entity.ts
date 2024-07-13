@@ -58,8 +58,6 @@ export const resetGlobals = () => {
 export const getEntityCursor = () => globalEntityCursor;
 export const getRemovedEntities = () => [...recycled, ...removed];
 
-export const eidToWorld = new Map<number, World>();
-
 export const flushRemovedEntities = () => {
 	removed.push(...recycled);
 	recycled.length = 0;
@@ -84,7 +82,6 @@ export const addEntity = (world: World, ...components: Component[]): number => {
 	}
 
 	world[$entitySparseSet].add(eid);
-	eidToWorld.set(eid, world);
 
 	world[$notQueries].forEach((q) => {
 		const match = queryCheckEntity(world, q, eid);
