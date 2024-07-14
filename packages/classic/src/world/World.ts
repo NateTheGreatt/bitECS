@@ -8,13 +8,7 @@ import {
 } from '../query/symbols.js';
 import { removeEntity } from '../entity/Entity.js';
 import { World } from './types.js';
-import {
-	$archetypes,
-	$bitflag,
-	$bufferQueries,
-	$localEntities,
-	$localEntityLookup,
-} from './symbols.js';
+import { $archetypes, $bitflag, $localEntities, $localEntityLookup } from './symbols.js';
 import { SparseSet } from '../utils/SparseSet.js';
 import {
 	$entityArray,
@@ -102,8 +96,6 @@ export const resetWorld = (world: World) => {
 	world[$localEntities] = new Map();
 	world[$localEntityLookup] = new Map();
 
-	world[$bufferQueries] = false;
-
 	return world;
 };
 
@@ -131,7 +123,6 @@ export const deleteWorld = (world: World) => {
 	delete deletedWorld[$localEntities];
 	delete deletedWorld[$localEntityLookup];
 	delete deletedWorld[$relationTargetEntities];
-	delete deletedWorld[$bufferQueries];
 
 	// Remove the world from the worlds array
 	const index = worlds.indexOf(world);
@@ -164,16 +155,4 @@ export const incrementWorldBitflag = (world: World) => {
 
 export const entityExists = (world: World, eid: number) => {
 	return world[$entitySparseSet].has(eid);
-};
-
-/**
- * Makes queries become array buffers instead of native arrays. Useful for threading.
- *
- * @param world
- * @returns world
- */
-
-export const enableBufferedQueries = <W extends World>(world: W): W & { _bufferQueries: true } => {
-	world[$bufferQueries] = true;
-	return world as W & { _bufferQueries: true };
 };

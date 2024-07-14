@@ -1,6 +1,5 @@
 import { afterEach, describe, it } from 'vitest';
 import {
-	Types,
 	addComponent,
 	addEntity,
 	createWorld,

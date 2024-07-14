@@ -4,7 +4,6 @@ export {
 	deleteWorld,
 	getWorldComponents,
 	getAllEntities,
-	enableBufferedQueries,
 	defineWorld,
 	registerWorld,
 	worlds,

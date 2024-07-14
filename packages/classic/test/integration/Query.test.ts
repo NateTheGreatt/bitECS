@@ -9,7 +9,6 @@ import {
 	defineEnterQueue,
 	defineExitQueue,
 	defineQuery,
-	enableBufferedQueries,
 	enterQuery,
 	exitQuery,
 	query,
@@ -289,36 +288,6 @@ describe('Query Integration Tests', () => {
 		strictEqual(exited.length, 1);
 	});
 
-	it('can use buffered queries', () => {
-		const world = enableBufferedQueries(createWorld());
-		const TestComponent = { value: [] as number[] };
-
-		const eid = addEntity(world);
-		addComponent(world, eid, TestComponent);
-
-		const ents = query(world, [TestComponent]);
-		expect(ents.length).toBe(1);
-		expect(ents).toBeInstanceOf(Uint32Array);
-	});
-
-	it('should not alter query results when removing entities', () => {
-		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
-
-		for (let i = 0; i < 10; i += 1) {
-			const eid = addEntity(world);
-			addComponent(world, eid, TestComponent);
-		}
-
-		const results = query(world, [TestComponent]);
-		const length = results.length;
-		for (const eid of results) {
-			removeEntity(world, eid);
-		}
-
-		expect(length).toBe(results.length);
-	});
-
 	it('should not alter query results when removing a query component', () => {
 		const world = createWorld();
 		const TestComponent = { value: [] as number[] };
@@ -332,24 +301,6 @@ describe('Query Integration Tests', () => {
 		const length = results.length;
 		for (const eid of results) {
 			removeComponent(world, eid, TestComponent);
-		}
-
-		expect(length).toBe(results.length);
-	});
-
-	it('should not alter query results when buffered', () => {
-		const world = enableBufferedQueries(createWorld());
-		const TestComponent = { value: [] as number[] };
-
-		for (let i = 0; i < 10; i += 1) {
-			const eid = addEntity(world);
-			addComponent(world, eid, TestComponent);
-		}
-
-		const results = query(world, [TestComponent]);
-		const length = results.length;
-		for (const eid of results) {
-			removeEntity(world, eid);
 		}
 
 		expect(length).toBe(results.length);

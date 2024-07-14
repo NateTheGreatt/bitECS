@@ -11,7 +11,7 @@ import {
 import { Query, QueryData } from '../query/types';
 import { $relationTargetEntities } from '../relation/symbols';
 import { SparseSet } from '../utils/SparseSet';
-import { $archetypes, $bitflag, $bufferQueries, $localEntities, $localEntityLookup } from './symbols';
+import { $archetypes, $bitflag, $localEntities, $localEntityLookup } from './symbols';
 
 export interface World {
 	[$entityArray]: number[];
@@ -30,12 +30,6 @@ export interface World {
 	[$localEntities]: Map<any, any>;
 	[$localEntityLookup]: Map<any, any>;
 	[$relationTargetEntities]: ReturnType<typeof SparseSet>;
-	[$bufferQueries]: boolean;
-
-	// Internal flag
-	_bufferQueries: boolean;
 }
 
 export type IWorld = World;
-
-export type HasBufferQueries<W extends World> = W extends { _bufferQueries: true } ? true : false;

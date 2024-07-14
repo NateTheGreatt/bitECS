@@ -1,5 +1,4 @@
 import { SparseSet } from '../utils/SparseSet.js';
-import Uint32SparseSet, { type IUint32SparseSet } from '@bitecs/utils/Uint32SparseSet';
 import { hasComponent, registerComponent } from '../component/Component.js';
 import { $componentMap } from '../component/symbols.js';
 import { $entityMasks, $entityArray, $entitySparseSet } from '../entity/symbols.js';
@@ -17,11 +16,10 @@ import {
 	$queueRegisters,
 } from './symbols.js';
 import { Query, QueryModifier, QueryData, Queue, QueryResult } from './types.js';
-import { HasBufferQueries, World } from '../world/types.js';
+import { World } from '../world/types.js';
 import { EMPTY } from '../constants/Constants.js';
 import { worlds } from '../world/World.js';
 import { archetypeHash } from './utils.js';
-import { $bufferQueries } from '../world/symbols.js';
 
 export const queries: Query[] = [];
 
@@ -73,14 +71,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 	const mapComponents = (c: Component) => world[$componentMap].get(c)!;
 	const allComponents = components.concat(notComponents).map(mapComponents);
 
-	let sparseSet: IUint32SparseSet | ReturnType<typeof SparseSet>;
-
-	if (world[$bufferQueries]) {
-		const size = 100_000;
-		sparseSet = Uint32SparseSet.create(1024, size > 1024 ? size : 1024);
-	} else {
-		sparseSet = SparseSet();
-	}
+	const sparseSet = SparseSet();
 
 	const archetypes: TODO = [];
 	const toRemove = SparseSet();
@@ -121,7 +112,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 		enterQueues,
 		exitQueues,
 		query,
-	}) as unknown as QueryData<HasBufferQueries<W>>;
+	}) as unknown as QueryData;
 
 	world[$queryDataMap].set(query, q);
 	world[$queries].add(q);
@@ -156,11 +147,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 export const defineQuery = (components: Component[]): Query => {
 	if (components === undefined) {
 		const query: Query = function <W extends World>(world: W) {
-			return (
-				world[$bufferQueries]
-					? new Uint32Array(world[$entityArray])
-					: Array.from(world[$entityArray])
-			) as QueryResult<W>;
+			return world[$entityArray].slice();
 		};
 
 		query[$queryComponents] = components;
@@ -174,7 +161,7 @@ export const defineQuery = (components: Component[]): Query => {
 
 		commitRemovals(world);
 
-		return (world[$bufferQueries] ? data.dense : Array.from(data.dense)) as QueryResult<W>;
+		return data.dense.slice();
 	};
 
 	query[$queryComponents] = components;
@@ -203,7 +190,7 @@ export function query<W extends World>(world: W, args: Component[] | Queue) {
 		}
 	} else {
 		const queue = args;
-		return world[$bufferQueries] ? new Uint32Array(queue(world)) : Array.from(queue(world));
+		return queue(world).slice();
 	}
 }
 
@@ -248,8 +235,7 @@ export const queryAddEntity = (q: QueryData, eid: number) => {
 		q.exitQueues[i].remove(eid);
 	}
 
-	if (q.dense instanceof Uint32Array) Uint32SparseSet.add(q as QueryData<true>, eid);
-	else (q as QueryData<false>).add(eid);
+	q.add(eid);
 };
 
 const queryCommitRemovals = (q: QueryData) => {
@@ -257,8 +243,7 @@ const queryCommitRemovals = (q: QueryData) => {
 		const eid = q.toRemove.dense[i];
 		q.toRemove.remove(eid);
 
-		if (q.dense instanceof Uint32Array) Uint32SparseSet.remove(q as QueryData<true>, eid);
-		else (q as QueryData<false>).remove(eid);
+		q.remove(eid);
 	}
 };
 
@@ -269,7 +254,7 @@ export const commitRemovals = (world: World) => {
 };
 
 export const queryRemoveEntity = <W extends World>(world: W, q: QueryData, eid: number) => {
-	const has = world[$bufferQueries] ? Uint32SparseSet.has(q as QueryData<true>, eid) : (q as QueryData<false>).has(eid); //prettier-ignore
+	const has = q.has(eid); //prettier-ignore
 	if (!has || q.toRemove.has(eid)) return;
 	q.toRemove.add(eid);
 	world[$dirtyQueries].add(q);
