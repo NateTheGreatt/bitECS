@@ -14,6 +14,7 @@ import { initStats } from '@app/bench-tools';
 import { scene } from './scene';
 import { syncThreeObjects } from './systems/syncThreeObjects';
 import { init } from './systems/init';
+import { flushRemovedEntities } from '@bitecs/classic';
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({
@@ -63,6 +64,7 @@ const pipeline = (world: World) => {
 	updateGravity(world);
 	moveBodies(world);
 	syncThreeObjects(world);
+	flushRemovedEntities(world);
 	return world;
 };
 

@@ -7,10 +7,10 @@ export type QueryModifier<W extends World = World> = (
 	c: Component[]
 ) => (world: W) => Component | QueryModifier<W>;
 
-export type QueryResult<W extends World = World> = readonly number[];
+export type QueryResult = readonly number[];
 
-export type Query = (<W extends World = World>(world: W) => QueryResult<W>) & {
-	[$queryComponents]: Component[];
+export type Query = (<W extends World = World>(world: W) => QueryResult) & {
+	[$queryComponents]: (Component | QueryModifier)[];
 	[$queueRegisters]: ((world: World) => void)[];
 };
 

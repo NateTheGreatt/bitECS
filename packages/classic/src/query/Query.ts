@@ -2,7 +2,7 @@ import { SparseSet } from '../utils/SparseSet.js';
 import { hasComponent, registerComponent } from '../component/Component.js';
 import { $componentMap } from '../component/symbols.js';
 import { $entityMasks, $entityArray, $entitySparseSet } from '../entity/symbols.js';
-import { Prefab, getEntityCursor } from '../entity/Entity.js';
+import { Prefab } from '../entity/Entity.js';
 import { Component } from '../component/types.js';
 import { TODO } from '../utils/types.js';
 import {
@@ -18,7 +18,7 @@ import {
 import { Query, QueryModifier, QueryData, Queue, QueryResult } from './types.js';
 import { World } from '../world/types.js';
 import { EMPTY } from '../constants/Constants.js';
-import { worlds } from '../world/World.js';
+import { getEntityCursor, worlds } from '../world/World.js';
 import { archetypeHash } from './utils.js';
 
 export const queries: Query[] = [];
@@ -129,7 +129,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 	// Register and create queues.
 	query[$queueRegisters].forEach((register) => register(world));
 
-	for (let eid = 0; eid < getEntityCursor(); eid++) {
+	for (let eid = 0; eid < getEntityCursor(world); eid++) {
 		if (!world[$entitySparseSet].has(eid)) continue;
 		if (hasComponent(world, eid, Prefab)) continue;
 		const match = queryCheckEntity(world, q, eid);
@@ -144,7 +144,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
  * @returns {function} query
  */
 
-export const defineQuery = (components: Component[]): Query => {
+export const defineQuery = (components: (Component | QueryModifier)[]): Query => {
 	if (components === undefined) {
 		const query: Query = function <W extends World>(world: W) {
 			return world[$entityArray].slice();
@@ -176,9 +176,12 @@ export const defineQuery = (components: Component[]): Query => {
 	return query;
 };
 
-export function query<W extends World>(world: W, components: Component[]): QueryResult<W>;
-export function query<W extends World>(world: W, queue: Queue): QueryResult<W>;
-export function query<W extends World>(world: W, args: Component[] | Queue) {
+export function query<W extends World>(
+	world: W,
+	components: (Component | QueryModifier)[]
+): QueryResult;
+export function query<W extends World>(world: W, queue: Queue): QueryResult;
+export function query<W extends World>(world: W, args: (Component | QueryModifier)[] | Queue) {
 	if (Array.isArray(args)) {
 		const components = args;
 		const hash = archetypeHash(world, components);

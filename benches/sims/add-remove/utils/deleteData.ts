@@ -1,19 +1,27 @@
+import { getStore } from '@bitecs/classic';
 import { Circle } from '../components/Circle';
 import { Color } from '../components/Color';
 import { Mass } from '../components/Mass';
 import { Position } from '../components/Position';
 import { Velocity } from '../components/Velocity';
+import { World } from '../world';
 
-export function deleteData(eid: number) {
-	delete Position.x[eid];
-	delete Position.y[eid];
-	delete Position.z[eid];
-	delete Circle.radius[eid];
-	delete Mass.value[eid];
-	delete Velocity.x[eid];
-	delete Velocity.y[eid];
-	delete Color.r[eid];
-	delete Color.g[eid];
-	delete Color.b[eid];
-	delete Color.a[eid];
+export function deleteData(world: World, eid: number) {
+	const position = getStore(world, Position);
+	const velocity = getStore(world, Velocity);
+	const circle = getStore(world, Circle);
+	const mass = getStore(world, Mass);
+	const color = getStore(world, Color);
+
+	delete position.x[eid];
+	delete position.y[eid];
+	delete position.z[eid];
+	delete circle.radius[eid];
+	delete mass.value[eid];
+	delete velocity.x[eid];
+	delete velocity.y[eid];
+	delete color.r[eid];
+	delete color.g[eid];
+	delete color.b[eid];
+	delete color.a[eid];
 }

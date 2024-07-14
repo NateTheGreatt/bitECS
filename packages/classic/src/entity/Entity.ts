@@ -1,12 +1,6 @@
 import { addComponentInternal, removeComponent } from '../component/Component.js';
 import { Component } from '../component/types.js';
-import {
-	queries,
-	query,
-	queryAddEntity,
-	queryCheckEntity,
-	queryRemoveEntity,
-} from '../query/Query.js';
+import { query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
 import { $notQueries, $queries } from '../query/symbols.js';
 import { Pair, Wildcard } from '../relation/Relation.js';
 import {
@@ -18,50 +12,10 @@ import {
 	$relationTargetEntities,
 } from '../relation/symbols.js';
 import { TODO } from '../utils/types.js';
-import { worlds } from '../world/World.js';
-import { $localEntities, $localEntityLookup } from '../world/symbols.js';
+import { $entityCursor, $localEntities, $localEntityLookup, $recycled } from '../world/symbols.js';
 import { World } from '../world/types.js';
+import { getRemovedLength, dequeueFromRemoved } from '../world/World.js';
 import { $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
-
-// need a global EID cursor which all worlds and all components know about
-// so that world entities can posess entire rows spanning all component tables
-let globalEntityCursor = 0;
-
-// removed eids should also be global to prevent memory leaks
-const removed: number[] = [];
-const removedOut: number[] = [];
-const recycled: number[] = [];
-
-const dequeuFromRemoved = () => {
-	if (removedOut.length === 0) {
-		while (removed.length > 0) {
-			removedOut.push(removed.pop()!);
-		}
-	}
-	if (removedOut.length === 0) {
-		throw new Error('Queue is empty');
-	}
-	return removedOut.pop()!;
-};
-
-const getRemovedLength = () => removed.length + removedOut.length;
-
-export const resetGlobals = () => {
-	globalEntityCursor = 0;
-	removed.length = 0;
-	removedOut.length = 0;
-	recycled.length = 0;
-	queries.length = 0;
-	worlds.length = 0;
-};
-
-export const getEntityCursor = () => globalEntityCursor;
-export const getRemovedEntities = () => [...recycled, ...removed];
-
-export const flushRemovedEntities = () => {
-	removed.push(...recycled);
-	recycled.length = 0;
-};
 
 export const Prefab = {};
 
@@ -75,10 +29,10 @@ export const Prefab = {};
 export const addEntity = (world: World, ...components: Component[]): number => {
 	let eid: number;
 
-	if (getRemovedLength() > 0) {
-		eid = dequeuFromRemoved();
+	if (getRemovedLength(world) > 0) {
+		eid = dequeueFromRemoved(world);
 	} else {
-		eid = globalEntityCursor++;
+		eid = world[$entityCursor]++;
 	}
 
 	world[$entitySparseSet].add(eid);
@@ -128,7 +82,7 @@ export const removeEntity = (world: World, eid: number) => {
 				if (!component[$isPairComponent] || !entityExists(world, subject)) {
 					continue;
 				}
-				const relation = component[$relation];
+				const relation = component[$relation]!;
 
 				if (component[$pairTarget] === eid) {
 					removeComponent(world, subject, component);
@@ -150,7 +104,7 @@ export const removeEntity = (world: World, eid: number) => {
 	}
 
 	// Free the entity
-	recycled.push(eid);
+	world[$recycled].push(eid);
 
 	// remove all eid state from world
 	world[$entitySparseSet].remove(eid);
@@ -171,7 +125,6 @@ export const removeEntity = (world: World, eid: number) => {
  * @param {*} eid
  */
 export const getEntityComponents = (world: World, eid: number): TODO[] => {
-	if (eid === undefined) throw new Error('bitECS - entity is undefined.');
 	if (!world[$entitySparseSet].has(eid))
 		throw new Error('bitECS - entity does not exist in the world.');
 	return Array.from(world[$entityComponents].get(eid)!);

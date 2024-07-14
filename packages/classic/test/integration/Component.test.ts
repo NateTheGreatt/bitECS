@@ -1,8 +1,6 @@
 import assert from 'assert';
 import {
-	Types,
 	addEntity,
-	resetGlobals,
 	addComponent,
 	hasComponent,
 	registerComponent,
@@ -10,30 +8,27 @@ import {
 	removeEntity,
 	addComponents,
 	flushRemovedEntities,
+	defineComponent,
 } from '../../src/index.js';
 import { createWorld } from '../../src/world/World.js';
-import { describe, it, afterEach } from 'vitest';
+import { describe, it } from 'vitest';
 import { $componentMap } from '../../src/component/symbols.js';
 
 const componentTypes = {
-	SoA: { value: [] as number[] },
-	object: {},
-	array: [],
-	buffer: new ArrayBuffer(8),
-	string: 'test',
-	number: 1,
-	Map: new Map(),
-	Set: new Set(),
+	SoA: defineComponent(() => ({ value: [] as number[] })),
+	object: defineComponent(() => ({})),
+	array: defineComponent(() => []),
+	buffer: defineComponent(() => new ArrayBuffer(8)),
+	string: defineComponent(() => 'test'),
+	number: defineComponent(() => 1),
+	Map: defineComponent(() => new Map()),
+	Set: defineComponent(() => new Set()),
 };
 
 describe('Component Integration Tests', () => {
-	afterEach(() => {
-		resetGlobals();
-	});
-
 	it('should register components on-demand', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 
 		registerComponent(world, TestComponent);
 		assert(world[$componentMap].has(TestComponent));
@@ -41,7 +36,7 @@ describe('Component Integration Tests', () => {
 
 	it('should register components automatically upon adding to an entity', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = defineComponent(() => [] as number[]);
 
 		const eid = addEntity(world);
 
@@ -51,7 +46,7 @@ describe('Component Integration Tests', () => {
 
 	it('should add and remove components from an entity', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 
 		const eid = addEntity(world);
 
@@ -75,8 +70,8 @@ describe('Component Integration Tests', () => {
 
 	it('should only remove the component specified', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
-		const TestComponent2 = { value: [] as number[] };
+		const TestComponent = {};
+		const TestComponent2 = {};
 
 		const eid = addEntity(world);
 
@@ -130,13 +125,13 @@ describe('Component Integration Tests', () => {
 			removeEntity(world, i);
 		}
 
-		flushRemovedEntities();
+		flushRemovedEntities(world);
 
 		for (let i = 0; i < 10; i++) {
 			eid = addEntity(world);
 		}
 
-		const component = { value: [] as number[] };
+		const component = {};
 		addComponent(world, eid, component);
 
 		assert(hasComponent(world, eid, component));

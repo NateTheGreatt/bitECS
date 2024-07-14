@@ -12,6 +12,6 @@ export const pipeline = (world: World) => {
 	setInitial(world);
 	updateGravity(world);
 	moveBodies(world);
-	flushRemovedEntities();
+	flushRemovedEntities(world);
 	return world;
 };

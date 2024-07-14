@@ -13,11 +13,36 @@ import {
 	$relation,
 	$relationTargetEntities,
 } from '../relation/symbols.js';
+import { defineHiddenProperties } from '../utils/defineHiddenProperty.js';
 import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { $bitflag } from '../world/symbols.js';
 import { World } from '../world/types.js';
-import { $componentCount, $componentMap } from './symbols.js';
+import { $componentCount, $componentMap, $store } from './symbols.js';
 import { Component, ComponentNode } from './types.js';
+
+export const getStore = <Store>(world: World, component: Component<Store>) => {
+	if (!world[$componentMap].has(component)) registerComponent(world, component);
+
+	return world[$componentMap].get(component as any)?.store as Store;
+};
+
+/**
+ * Defines a new component store.
+ *
+ * @param {object} schema
+ *
+ * @returns {object}
+ */
+export function defineComponent<Store>(store: () => Store): Component<Store> {
+	const component = {} as Component<Store>;
+
+	defineHiddenProperties(component, {
+		[$store]: store ?? (() => ({})),
+	});
+
+	return component;
+}
+
 /**
  * Registers a component with a world.
  *
@@ -45,6 +70,7 @@ export const registerComponent = (world: World, component: Component) => {
 		generationId: world[$entityMasks].length - 1,
 		bitflag: world[$bitflag],
 		ref: component,
+		store: component[$store]?.() ?? {},
 		queries,
 		notQueries,
 	};
@@ -173,9 +199,9 @@ export const addComponentInternal = (world: World, eid: number, component: Compo
 	// Add wildcard relation if its a Pair component
 	if (component[$isPairComponent]) {
 		// add wildcard relation components
-		const relation = component[$relation];
+		const relation = component[$relation]!;
 		addComponentInternal(world, eid, Pair(relation, Wildcard));
-		const target = component[$pairTarget];
+		const target = component[$pairTarget]!;
 		addComponentInternal(world, eid, Pair(Wildcard, target));
 
 		// if it's an exclusive relation, remove the old target
@@ -240,17 +266,17 @@ export const removeComponent = (world: World, eid: number, component: Component)
 	if (component[$isPairComponent]) {
 		// check if eid is still a subject of any relation or not
 		if (query(world, [Wildcard(eid)]).length === 0) {
-			world[$relationTargetEntities].remove(eid);
+			world[$relationTargetEntities].delete(eid);
 			// TODO: cleanup query by hash
 			// removeQueryByHash(world, [Wildcard(eid)])
 		}
 
 		// remove wildcard to this target for this eid
-		const target = component[$pairTarget];
+		const target = component[$pairTarget]!;
 		removeComponent(world, eid, Pair(Wildcard, target));
 
 		// remove wildcard relation if eid has no other relations
-		const relation = component[$relation];
+		const relation = component[$relation]!;
 		const otherTargets = getRelationTargets(world, relation, eid);
 		if (otherTargets.length === 0) {
 			removeComponent(world, eid, Pair(relation, Wildcard));

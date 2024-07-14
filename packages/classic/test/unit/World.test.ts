@@ -1,17 +1,12 @@
 import assert, { strictEqual } from 'assert';
-import { afterEach, describe, it } from 'vitest';
+import { describe, it } from 'vitest';
 import { $componentMap } from '../../src/component/symbols.js';
 import { $entityMasks } from '../../src/entity/symbols.js';
-import { resetGlobals } from '../../src/index.js';
 import { $dirtyQueries, $queries, $queryDataMap } from '../../src/query/symbols.js';
 import { createWorld } from '../../src/world/World.js';
 import { $bitflag } from '../../src/world/symbols.js';
 
 describe('World Unit Tests', () => {
-	afterEach(() => {
-		resetGlobals();
-	});
-
 	it('should initialize all private state', () => {
 		const world = createWorld();
 

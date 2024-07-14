@@ -1,3 +1,4 @@
+import { Component } from '../component/types';
 import { PrefabToken } from '../prefab/types';
 import { World } from '../world/types';
 import {

@@ -1,28 +1,27 @@
 import assert, { strictEqual } from 'assert';
 import {
+	createWorld,
+	addEntity,
+	removeEntity,
+	hasComponent,
 	flushRemovedEntities,
 	getEntityCursor,
-	getRemovedEntities,
-	resetGlobals,
-} from '../../src/entity/Entity.js';
-import { createWorld, addEntity, removeEntity, hasComponent } from '../../src/index.js';
-import { describe, it, afterEach } from 'vitest';
+	getRecycledEntities,
+} from '../../src/index.js';
+import { describe, it } from 'vitest';
 
 describe('Entity Integration Tests', () => {
-	afterEach(() => {
-		resetGlobals();
-	});
 	it('should add and remove entities', () => {
 		const world = createWorld();
 
 		const eid1 = addEntity(world);
-		strictEqual(getEntityCursor(), 1);
+		strictEqual(getEntityCursor(world), 1);
 
 		const eid2 = addEntity(world);
-		strictEqual(getEntityCursor(), 2);
+		strictEqual(getEntityCursor(world), 2);
 
 		const eid3 = addEntity(world);
-		strictEqual(getEntityCursor(), 3);
+		strictEqual(getEntityCursor(world), 3);
 
 		strictEqual(eid1, 0);
 		strictEqual(eid2, 1);
@@ -32,7 +31,7 @@ describe('Entity Integration Tests', () => {
 		removeEntity(world, eid2);
 		removeEntity(world, eid3);
 
-		const removed = getRemovedEntities();
+		const removed = getRecycledEntities(world);
 
 		strictEqual(removed.length, 3);
 		strictEqual(removed[0], 0);
@@ -47,11 +46,11 @@ describe('Entity Integration Tests', () => {
 		for (let i = 0; i < 1500; i++) {
 			const eid = addEntity(world);
 			ents.push(eid);
-			strictEqual(getEntityCursor(), eid + 1);
+			strictEqual(getEntityCursor(world), eid + 1);
 			strictEqual(eid, i);
 		}
 
-		strictEqual(getEntityCursor(), 1500);
+		strictEqual(getEntityCursor(world), 1500);
 
 		// remove more than 1%
 		for (let i = 0; i < 1500; i++) {
@@ -60,7 +59,7 @@ describe('Entity Integration Tests', () => {
 		}
 
 		// flush removed ents, making them available again
-		flushRemovedEntities();
+		flushRemovedEntities(world);
 
 		let eid = addEntity(world);
 		strictEqual(eid, 0);

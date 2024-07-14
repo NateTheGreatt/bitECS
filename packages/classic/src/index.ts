@@ -7,16 +7,14 @@ export {
 	defineWorld,
 	registerWorld,
 	worlds,
-} from './world/World.js';
-export {
-	addEntity,
-	removeEntity,
-	getEntityComponents,
-	entityExists,
 	flushRemovedEntities,
-	resetGlobals,
-} from './entity/Entity.js';
+	getEntityCursor,
+	getRecycledEntities,
+} from './world/World.js';
+export { addEntity, removeEntity, getEntityComponents, entityExists } from './entity/Entity.js';
 export {
+	getStore,
+	defineComponent,
 	registerComponent,
 	registerComponents,
 	hasComponent,

@@ -1,11 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { createWorld, deleteWorld, resetGlobals, worlds } from '../../src/index.js';
+import { describe, expect, it } from 'vitest';
+import { createWorld, deleteWorld, worlds } from '../../src/index.js';
 
 describe('World Integration Tests', () => {
-	afterEach(() => {
-		resetGlobals();
-	});
-
 	it('can be deleted', () => {
 		const world = createWorld();
 

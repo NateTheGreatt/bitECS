@@ -1,5 +1,5 @@
 import { strictEqual } from 'assert';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
 	Not,
 	SYMBOLS,
@@ -14,17 +14,13 @@ import {
 	query,
 	removeComponent,
 	removeEntity,
-	resetGlobals,
+	resetWorld,
 } from '../../src/index.js';
 
 describe('Query Integration Tests', () => {
-	afterEach(() => {
-		resetGlobals();
-	});
-
 	it('should define a query and return matching eids', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 		const query = defineQuery([TestComponent]);
 		const eid = addEntity(world);
 		addComponent(world, eid, TestComponent);
@@ -42,8 +38,8 @@ describe('Query Integration Tests', () => {
 
 	it('should define a query with Not and return matching eids', () => {
 		const world = createWorld();
-		const Foo = { value: [] as number[] };
-		const notFooQuery = defineQuery([Not(Foo)]);
+		const TestComponent = {};
+		const notFooQuery = defineQuery([Not(TestComponent)]);
 
 		const eid0 = addEntity(world);
 
@@ -51,7 +47,7 @@ describe('Query Integration Tests', () => {
 		strictEqual(ents.length, 1);
 		strictEqual(ents[0], eid0);
 
-		addComponent(world, eid0, Foo);
+		addComponent(world, eid0, TestComponent);
 
 		ents = notFooQuery(world);
 		strictEqual(ents.length, 0);
@@ -172,7 +168,7 @@ describe('Query Integration Tests', () => {
 
 	it('should return entities from enter/exitQuery who entered/exited the query', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 		const query = defineQuery([TestComponent]);
 		const enteredQuery = enterQuery(query);
 		const exitedQuery = exitQuery(query);
@@ -200,7 +196,7 @@ describe('Query Integration Tests', () => {
 
 	it("shouldn't pick up entities in enterQuery after adding a component a second time", () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 		const query = defineQuery([TestComponent]);
 		const enteredQuery = enterQuery(query);
 
@@ -218,9 +214,12 @@ describe('Query Integration Tests', () => {
 
 	it('should work inline independent of component order', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
-		const FooComponent = { value: [] as number[] };
-		const BarComponent = { value: [] as number[] };
+		// We need to reset the world[$queriesHashMap] in this case as we're testing
+		// for it to contain only the hash of the queries of this test
+		resetWorld(world);
+		const TestComponent = {};
+		const FooComponent = {};
+		const BarComponent = {};
 
 		const eid = addEntity(world);
 
@@ -245,9 +244,9 @@ describe('Query Integration Tests', () => {
 
 	it('should work inline with Not', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
-		const FooComponent = { value: [] as number[] };
-		const BarComponent = { value: [] as number[] };
+		const TestComponent = {};
+		const FooComponent = {};
+		const BarComponent = {};
 
 		const eid0 = addEntity(world);
 		const eid1 = addEntity(world);
@@ -272,7 +271,7 @@ describe('Query Integration Tests', () => {
 
 	it('can use queues inline', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 		const enteredQuery = defineEnterQueue([TestComponent]);
 		const exitedQuery = defineExitQueue([TestComponent]);
 
@@ -290,7 +289,7 @@ describe('Query Integration Tests', () => {
 
 	it('should not alter query results when removing a query component', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 
 		for (let i = 0; i < 10; i += 1) {
 			const eid = addEntity(world);

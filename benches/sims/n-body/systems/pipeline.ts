@@ -11,5 +11,7 @@ export const pipeline = (world: World) => {
 	updateGravity(world);
 	moveBodies(world);
 	updateColor(world);
+	// No need for this bench as we're not removing entities
+	// flushRemovedEntities(world)
 	return world;
 };

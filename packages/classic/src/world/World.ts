@@ -8,7 +8,16 @@ import {
 } from '../query/symbols.js';
 import { removeEntity } from '../entity/Entity.js';
 import { World } from './types.js';
-import { $archetypes, $bitflag, $localEntities, $localEntityLookup } from './symbols.js';
+import {
+	$archetypes,
+	$bitflag,
+	$entityCursor,
+	$localEntities,
+	$localEntityLookup,
+	$recycled,
+	$removed,
+	$removedOut,
+} from './symbols.js';
 import { SparseSet } from '../utils/SparseSet.js';
 import {
 	$entityArray,
@@ -19,8 +28,32 @@ import {
 import { queries, registerQuery } from '../query/Query.js';
 import { defineHiddenProperties } from '../utils/defineHiddenProperty.js';
 import { $relationTargetEntities } from '../relation/symbols.js';
+import { RelationTarget } from '../relation/types.js';
 
 export const worlds: World[] = [];
+
+export const dequeueFromRemoved = (world: World) => {
+	if (world[$removedOut].length === 0) {
+		while (world[$removed].length > 0) {
+			world[$removedOut].push(world[$removed].pop()!);
+		}
+	}
+	if (world[$removedOut].length === 0) {
+		throw new Error('Queue is empty');
+	}
+	return world[$removedOut].pop()!;
+};
+
+export const getRemovedLength = (world: World) => world[$removed].length + world[$removedOut].length;
+
+export const flushRemovedEntities = (world: World) => {
+	world[$removed].push(...world[$recycled]);
+	world[$recycled].length = 0;
+};
+
+export const getEntityCursor = (world: World) => world[$entityCursor];
+
+export const getRecycledEntities = (world: World) => world[$recycled];
 
 export function defineWorld<W extends object = {}>(world?: W): W & World {
 	const entitySparseSet = SparseSet();
@@ -42,7 +75,11 @@ export function defineWorld<W extends object = {}>(world?: W): W & World {
 		[$dirtyQueries]: new Set(),
 		[$localEntities]: new Map(),
 		[$localEntityLookup]: new Map(),
-		[$relationTargetEntities]: SparseSet(),
+		[$relationTargetEntities]: new Set<RelationTarget>(),
+		[$entityCursor]: 0,
+		[$removed]: [],
+		[$removedOut]: [],
+		[$recycled]: [],
 	});
 
 	return world as W & World;
@@ -123,6 +160,10 @@ export const deleteWorld = (world: World) => {
 	delete deletedWorld[$localEntities];
 	delete deletedWorld[$localEntityLookup];
 	delete deletedWorld[$relationTargetEntities];
+	delete deletedWorld[$entityCursor];
+	delete deletedWorld[$removed];
+	delete deletedWorld[$removedOut];
+	delete deletedWorld[$recycled];
 
 	// Remove the world from the worlds array
 	const index = worlds.indexOf(world);
@@ -155,4 +196,9 @@ export const incrementWorldBitflag = (world: World) => {
 
 export const entityExists = (world: World, eid: number) => {
 	return world[$entitySparseSet].has(eid);
+};
+
+export const resetGlobals = () => {
+	queries.length = 0;
+	worlds.length = 0;
 };

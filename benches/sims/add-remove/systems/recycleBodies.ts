@@ -1,4 +1,4 @@
-import { query, removeEntity } from '@bitecs/classic';
+import { getStore, query, removeEntity } from '@bitecs/classic';
 import { World } from '../world';
 import { Position } from '../components/Position';
 import { addBody } from './init';
@@ -13,6 +13,7 @@ let draining = true;
 
 export const recycleBodies = (world: World) => {
 	const eids = query(world, [Position, Circle, Mass, Velocity, Color]);
+	const position = getStore(world, Position);
 
 	if (eids.length === 0) draining = false;
 	if (eids.length > CONSTANTS.BODIES * 0.95) draining = true;
@@ -20,9 +21,9 @@ export const recycleBodies = (world: World) => {
 	for (let i = 0; i < eids.length; i++) {
 		const eid = eids[i];
 
-		if (Position.y[eid] < CONSTANTS.FLOOR) {
+		if (position.y[eid] < CONSTANTS.FLOOR) {
 			// Delete all data
-			if (CONSTANTS.DELETE_DATA) deleteData(eid);
+			if (CONSTANTS.DELETE_DATA) deleteData(world, eid);
 
 			// Remove entity
 			removeEntity(world, eid);

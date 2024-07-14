@@ -7,17 +7,12 @@ import {
 	defineExitQueue,
 	defineQuery,
 	removeComponent,
-	resetGlobals,
 } from '../../src';
 import { strictEqual } from 'assert';
 
 describe('Queue Integration Tests', () => {
-	afterEach(() => {
-		resetGlobals();
-	});
-
 	it('should define independent enter queues', () => {
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 		const query = defineQuery([TestComponent]);
 
 		const enteredQueryA = defineEnterQueue(query);
@@ -45,7 +40,7 @@ describe('Queue Integration Tests', () => {
 
 	it('should define independent exit queues', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 		const query = defineQuery([TestComponent]);
 
 		const exitedQueryA = defineExitQueue(query);
@@ -71,7 +66,7 @@ describe('Queue Integration Tests', () => {
 
 	it('should optionally not drain queues when read', () => {
 		const world = createWorld();
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 
 		const query = defineQuery([TestComponent]);
 		const enteredQuery = defineEnterQueue(query);
@@ -93,7 +88,7 @@ describe('Queue Integration Tests', () => {
 	});
 
 	it('should define enter/exit queues inline', () => {
-		const TestComponent = { value: [] as number[] };
+		const TestComponent = {};
 
 		const enteredQuery = defineEnterQueue([TestComponent]);
 		const exitedQuery = defineExitQueue([TestComponent]);

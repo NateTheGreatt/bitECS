@@ -10,8 +10,18 @@ import {
 } from '../query/symbols';
 import { Query, QueryData } from '../query/types';
 import { $relationTargetEntities } from '../relation/symbols';
+import { RelationTarget } from '../relation/types';
 import { SparseSet } from '../utils/SparseSet';
-import { $archetypes, $bitflag, $localEntities, $localEntityLookup } from './symbols';
+import {
+	$archetypes,
+	$bitflag,
+	$entityCursor,
+	$localEntities,
+	$localEntityLookup,
+	$recycled,
+	$removed,
+	$removedOut,
+} from './symbols';
 
 export interface World {
 	[$entityArray]: number[];
@@ -29,7 +39,11 @@ export interface World {
 	[$dirtyQueries]: Set<any>;
 	[$localEntities]: Map<any, any>;
 	[$localEntityLookup]: Map<any, any>;
-	[$relationTargetEntities]: ReturnType<typeof SparseSet>;
+	[$relationTargetEntities]: Set<RelationTarget>;
+	[$recycled]: number[];
+	[$removed]: number[];
+	[$removedOut]: number[];
+	[$entityCursor]: number;
 }
 
 export type IWorld = World;
