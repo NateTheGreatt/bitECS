@@ -1,12 +1,13 @@
+import { $onAdd, $onRemove } from '../hooks/symbols';
 import { QueryData } from '../query/types';
 import { $isPairComponent, $relation, $pairTarget } from '../relation/symbols';
 import { RelationTarget, RelationType } from '../relation/types';
 import { $store } from './symbols';
 
-export type Component<Store = any> = {
+export type Component<Store = any, Params = any> = {
 	name?: string;
-	// [$onAdd]?: (world: any, store: Store, eid: number, params: Params) => void;
-	// [$onRemove]?: (world: any, store: Store, eid: number, reset: boolean) => void;
+	[$onAdd]?: (world: any, store: Store, eid: number, params: Params) => void;
+	[$onRemove]?: (world: any, store: Store, eid: number, reset: boolean) => void;
 	[$store]?: () => Store;
 	[$isPairComponent]?: boolean;
 	[$relation]?: RelationType<Component<Store>>;

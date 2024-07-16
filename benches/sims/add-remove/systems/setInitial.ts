@@ -52,7 +52,7 @@ export const setInitial = (world: World) => {
 		}
 
 		// Set mass and radius based on the number of components
-		mass.value[eid] = getEntityComponents(world, eid).length;
+		mass.value[eid] = getEntityComponents(world, eid).size;
 		circle.radius[eid] = mass.value[eid];
 
 		// Random colors

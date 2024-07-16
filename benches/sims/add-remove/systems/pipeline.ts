@@ -8,10 +8,10 @@ import { flushRemovedEntities } from '@bitecs/classic';
 
 export const pipeline = (world: World) => {
 	updateTime(world);
-	recycleBodies(world);
 	setInitial(world);
 	updateGravity(world);
 	moveBodies(world);
+	recycleBodies(world);
 	flushRemovedEntities(world);
 	return world;
 };

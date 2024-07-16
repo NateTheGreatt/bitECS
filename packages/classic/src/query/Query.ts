@@ -1,8 +1,7 @@
 import { SparseSet } from '../utils/SparseSet.js';
-import { hasComponent, registerComponent } from '../component/Component.js';
+import { registerComponent } from '../component/Component.js';
 import { $componentMap } from '../component/symbols.js';
 import { $entityMasks, $entityArray, $entitySparseSet } from '../entity/symbols.js';
-import { Prefab } from '../entity/Entity.js';
 import { Component } from '../component/types.js';
 import { TODO } from '../utils/types.js';
 import {
@@ -131,7 +130,6 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 
 	for (let eid = 0; eid < getEntityCursor(world); eid++) {
 		if (!world[$entitySparseSet].has(eid)) continue;
-		if (hasComponent(world, eid, Prefab)) continue;
 		const match = queryCheckEntity(world, q, eid);
 		if (match) queryAddEntity(q, eid);
 	}

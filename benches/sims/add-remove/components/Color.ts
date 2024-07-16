@@ -1,4 +1,4 @@
-import { defineComponent } from '@bitecs/classic';
+import { defineComponent, onRemove } from '@bitecs/classic';
 
 export const Color = defineComponent(() => ({
 	r: [] as number[],
@@ -6,3 +6,12 @@ export const Color = defineComponent(() => ({
 	b: [] as number[],
 	a: [] as number[],
 }));
+
+onRemove(Color, (world, store, eid, reset) => {
+	if (reset) {
+		delete store.r[eid];
+		delete store.g[eid];
+		delete store.b[eid];
+		delete store.a[eid];
+	}
+});

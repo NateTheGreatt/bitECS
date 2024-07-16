@@ -1,13 +1,16 @@
 import assert from 'assert';
 import {
-	Pair,
 	addComponent,
 	addEntity,
 	createWorld,
+	defineComponent,
 	defineRelation,
 	entityExists,
 	getRelationTargets,
+	getStore,
 	hasComponent,
+	onAdd,
+	Pair,
 	removeEntity,
 } from '../../src';
 import { describe, test } from 'vitest';
@@ -17,18 +20,20 @@ describe('Relation Unit Tests', () => {
 	test('should maintain exclusive relations for eid 0', () => {
 		const world = createWorld();
 
-		const player = addEntity(world); // 0
-		const guard = addEntity(world); // 1
-		const goblin = addEntity(world); // 2
-
 		const Targeting = defineRelation({ exclusive: true });
 
-		addComponent(world, goblin, Targeting(player));
-		addComponent(world, goblin, Targeting(guard));
+		const player = addEntity(world); // 0
+		const guard = addEntity(world); // 1
+		const goblin = addEntity(world, Targeting(player), Targeting(guard)); // 2
 
 		assert(getRelationTargets(world, Targeting, goblin).length === 1);
 		assert(hasComponent(world, goblin, Targeting(player)) === false);
 		assert(hasComponent(world, goblin, Targeting(guard)) === true);
+
+		addComponent(world, goblin, Targeting(player));
+		assert(getRelationTargets(world, Targeting, goblin).length === 1);
+		assert(hasComponent(world, goblin, Targeting(player)) === true);
+		assert(hasComponent(world, goblin, Targeting(guard)) === false);
 	});
 
 	test('should auto remove subject', () => {
@@ -50,9 +55,10 @@ describe('Relation Unit Tests', () => {
 		const world = createWorld();
 
 		const Contains = defineRelation({
-			initStore: () => ({
-				amount: [] as number[],
-			}),
+			component: () =>
+				defineComponent<{ amount: number[] }, number>(() => ({
+					amount: [],
+				})),
 		});
 
 		const inventory = addEntity(world);
@@ -60,16 +66,18 @@ describe('Relation Unit Tests', () => {
 		const silver = addEntity(world);
 
 		addComponent(world, inventory, Contains(gold));
-		Contains(gold).amount[inventory] = 5;
+		const goldStore = getStore(world, Contains(gold));
+		const silverStore = getStore(world, Contains(silver));
+		goldStore.amount[inventory] = 5;
 
 		addComponent(world, inventory, Contains(silver));
-		Contains(silver).amount[inventory] = 12;
+		silverStore.amount[inventory] = 12;
 
 		assert(Contains(gold) !== Contains(silver));
-		assert(Contains(gold).amount[inventory] === 5);
-		assert(Contains(silver).amount[inventory] === 12);
-		assert(Pair(Contains, gold).amount[inventory] === 5);
-		assert(Pair(Contains, silver).amount[inventory] === 12);
+		assert(goldStore.amount[inventory] === 5);
+		assert(silverStore.amount[inventory] === 12);
+		assert(getStore(world, Pair(Contains, gold)).amount[inventory] === 5);
+		assert(getStore(world, Pair(Contains, silver)).amount[inventory] === 12);
 	});
 
 	test('should auto remove all descendants of subject', () => {
@@ -86,7 +94,6 @@ describe('Relation Unit Tests', () => {
 		const childChild3 = addEntity(world);
 
 		const childChildChild1 = addEntity(world);
-
 		addComponent(world, child, ChildOf(parent));
 		addComponent(world, childChild1, ChildOf(child));
 		addComponent(world, childChild2, ChildOf(child));

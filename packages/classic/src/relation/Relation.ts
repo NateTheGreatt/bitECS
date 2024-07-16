@@ -1,26 +1,24 @@
-import { World, getEntityComponents, registerPrefab } from '..';
-import { $worldToPrefab } from '../prefab/symbols';
+import { Component, World, getEntityComponents } from '..';
 import { defineHiddenProperty } from '../utils/defineHiddenProperty';
 import {
 	$pairsMap,
 	$isPairComponent,
 	$relation,
 	$pairTarget,
-	$onTargetRemoved,
 	$autoRemoveSubject,
 	$exclusiveRelation,
-	$initStore,
+	$component,
 } from './symbols';
-import { OnTargetRemovedCallback, RelationTarget, RelationType } from './types';
+import { RelationTarget, RelationType } from './types';
 
-function createOrGetRelationComponent<T>(
+function createOrGetRelationComponent<T extends Component>(
 	relation: (target: RelationTarget) => T,
-	initStore: () => T,
+	componentFactory: () => T,
 	pairsMap: Map<any, T>,
 	target: RelationTarget
 ) {
 	if (!pairsMap.has(target)) {
-		const component = initStore();
+		const component = componentFactory();
 		defineHiddenProperty(component, $isPairComponent, true);
 		defineHiddenProperty(component, $relation, relation);
 		defineHiddenProperty(component, $pairTarget, target);
@@ -30,57 +28,49 @@ function createOrGetRelationComponent<T>(
 	return pairsMap.get(target)!;
 }
 
-export const defineRelation = <T>(options?: {
-	initStore?: () => T;
+export const defineRelation = <T extends Component>(options?: {
+	component?: () => T;
 	exclusive?: boolean;
 	autoRemoveSubject?: boolean;
-	onTargetRemoved?: OnTargetRemovedCallback;
 }): RelationType<T> => {
-	const initStore = options?.initStore || ((() => ({})) as () => T);
+	const componentFactory = options?.component || ((() => ({})) as () => T);
+
 	const pairsMap = new Map();
 	const relation = function (target: RelationTarget) {
 		if (target === undefined) throw Error('Relation target is undefined');
 		if (target === '*') target = Wildcard;
-		return createOrGetRelationComponent<T>(relation, initStore, pairsMap, target);
+		return createOrGetRelationComponent<T>(relation, componentFactory, pairsMap, target);
 	};
 	defineHiddenProperty(relation, $pairsMap, pairsMap);
-	defineHiddenProperty(relation, $initStore, initStore);
+	defineHiddenProperty(relation, $component, componentFactory);
 	defineHiddenProperty(relation, $exclusiveRelation, options && options.exclusive);
 	defineHiddenProperty(relation, $autoRemoveSubject, options && options.autoRemoveSubject);
-	defineHiddenProperty(relation, $onTargetRemoved, options ? options.onTargetRemoved : undefined);
 	return relation as RelationType<T>;
 };
 
-export const Pair = <T>(relation: RelationType<T>, target: RelationTarget): T => {
+export const Pair = <T extends Component>(relation: RelationType<T>, target: RelationTarget): T => {
 	if (relation === undefined) throw Error('Relation is undefined');
 	if (target === undefined) throw Error('Relation target is undefined');
 	if (target === '*') target = Wildcard;
 
 	const pairsMap = relation[$pairsMap];
-	const initStore = relation[$initStore];
+	const componentFactory = relation[$component];
 
-	return createOrGetRelationComponent<T>(relation, initStore, pairsMap, target);
+	return createOrGetRelationComponent<T>(relation, componentFactory, pairsMap, target);
 };
 
 export const Wildcard: RelationType<any> | string = defineRelation();
 export const IsA: RelationType<any> = defineRelation();
+export const ChildOf = defineRelation({
+	autoRemoveSubject: true,
+});
 
 export const getRelationTargets = (world: World, relation: RelationType<any>, eid: number) => {
 	const components = getEntityComponents(world, eid);
 	const targets = [];
 	for (const c of components) {
 		if (c[$relation] === relation && c[$pairTarget] !== Wildcard) {
-			if (typeof c[$pairTarget] === 'object' && c[$pairTarget][$worldToPrefab]) {
-				// It's a prefab
-				let eid = c[$pairTarget][$worldToPrefab].get(world);
-				if (eid == null) {
-					// The prefab was not registered yet with this world
-					eid = registerPrefab(world, c[$pairTarget]);
-				}
-				targets.push(eid);
-			} else {
-				targets.push(c[$pairTarget]);
-			}
+			targets.push(c[$pairTarget]);
 		}
 	}
 	return targets;

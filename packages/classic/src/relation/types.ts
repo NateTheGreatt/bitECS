@@ -1,22 +1,22 @@
-import { Component } from '../component/types';
-import { PrefabToken } from '../prefab/types';
+import { $onAdd, $onRemove } from '../hooks/symbols';
+import { Prefab } from '../prefab/types';
 import { World } from '../world/types';
 import {
 	$autoRemoveSubject,
 	$exclusiveRelation,
-	$initStore,
+	$component,
 	$onTargetRemoved,
 	$pairsMap,
 } from './symbols';
 
-export type OnTargetRemovedCallback = (world: World, subject: number, target: number) => void;
-
-export type RelationTarget = number | string | PrefabToken;
+export type RelationTarget = number | string | Prefab;
 
 export type RelationType<T> = T & {
 	[$pairsMap]: Map<number | string, T>;
-	[$initStore]: () => T;
+	[$component]: () => T;
 	[$exclusiveRelation]: boolean;
 	[$autoRemoveSubject]: boolean;
-	[$onTargetRemoved]: OnTargetRemovedCallback;
+	[$onAdd]: (world: World, eid: number, params: any) => void;
+	[$onRemove]: (world: World, eid: number, reset: boolean) => void;
+	[$onTargetRemoved]: (world: World, subject: number, target: number) => void;
 } & ((target: RelationTarget) => T);

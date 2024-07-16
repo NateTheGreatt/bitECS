@@ -22,11 +22,8 @@ export const recycleBodies = (world: World) => {
 		const eid = eids[i];
 
 		if (position.y[eid] < CONSTANTS.FLOOR) {
-			// Delete all data
-			if (CONSTANTS.DELETE_DATA) deleteData(world, eid);
-
 			// Remove entity
-			removeEntity(world, eid);
+			removeEntity(world, eid, CONSTANTS.DELETE_DATA);
 
 			if (!CONSTANTS.DRAIN) addBody(world);
 		}

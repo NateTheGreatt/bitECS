@@ -1,7 +1,8 @@
-import { Prefab, getEntityComponents } from '../entity/Entity.js';
 import { $entityComponents, $entityMasks } from '../entity/symbols.js';
-import { $worldToPrefab } from '../prefab/symbols.js';
-import { PrefabToken } from '../prefab/types.js';
+import { $onAdd, $onRemove } from '../hooks/symbols.js';
+import { ComponentOrWithParams } from '../hooks/types.js';
+import { $children, $hierarchy, $prefabComponents, $worldToPrefab } from '../prefab/symbols.js';
+import { Prefab } from '../prefab/types.js';
 import { query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
 import { $queries } from '../query/symbols.js';
 import { QueryData } from '../query/types.js';
@@ -33,8 +34,8 @@ export const getStore = <Store>(world: World, component: Component<Store>) => {
  *
  * @returns {object}
  */
-export function defineComponent<Store>(store: () => Store): Component<Store> {
-	const component = {} as Component<Store>;
+export function defineComponent<Store, Params = void>(store: () => Store): Component<Store, Params> {
+	const component = {} as Component<Store, Params>;
 
 	defineHiddenProperties(component, {
 		[$store]: store ?? (() => ({})),
@@ -108,33 +109,6 @@ export const hasComponent = (world: World, eid: number, component: Component): b
 	return (mask & bitflag) === bitflag;
 };
 
-const recursivelyInherit = (world: World, baseEid: number, inheritedEid: number | PrefabToken) => {
-	if (inheritedEid instanceof Object) {
-		inheritedEid = inheritedEid[$worldToPrefab].get(world)!;
-	}
-
-	// inherit type
-	addComponent(world, baseEid, IsA(inheritedEid));
-	// inherit components
-	const components = getEntityComponents(world, inheritedEid);
-	for (const component of components) {
-		if (component === Prefab) {
-			continue;
-		}
-		addComponent(world, baseEid, component);
-		// TODO: inherit values for structs other than SoA
-		const keys = Object.keys(component);
-		for (const key of keys) {
-			component[key][baseEid] = component[key][inheritedEid];
-		}
-	}
-
-	const inheritedTargets = getRelationTargets(world, IsA, inheritedEid);
-	for (const inheritedEid2 of inheritedTargets) {
-		recursivelyInherit(world, baseEid, inheritedEid2);
-	}
-};
-
 /**
  * Adds a component to an entity
  *
@@ -143,12 +117,12 @@ const recursivelyInherit = (world: World, baseEid: number, inheritedEid: number 
  * @param {number} eid
  * @param {boolean} [reset=false]
  */
-export const addComponent = (world: World, eid: number, component: Component) => {
+export const addComponent = (world: World, eid: number, arg: ComponentOrWithParams) => {
 	if (!entityExists(world, eid)) {
 		throw new Error('bitECS - entity does not exist in the world.');
 	}
 
-	addComponentInternal(world, eid, component);
+	addComponentsInternal(world, eid, [arg]);
 };
 
 /**
@@ -156,17 +130,100 @@ export const addComponent = (world: World, eid: number, component: Component) =>
  *
  * @param {World} world
  * @param {number} eid
- * @param {...Component} components
+ * @param {...ComponentOrWithParams} components
  */
-export function addComponents(world: World, eid: number, ...components: Component[]) {
+export function addComponents(world: World, eid: number, ...args: ComponentOrWithParams[]) {
 	if (!entityExists(world, eid)) {
 		throw new Error('bitECS - entity does not exist in the world.');
 	}
 
-	for (const component of components) {
-		addComponentInternal(world, eid, component);
-	}
+	addComponentsInternal(world, eid, args);
 }
+
+export const addComponentsInternal = (world: World, eid: number, args: ComponentOrWithParams[]) => {
+	const components = new Map<Component | Prefab, any>();
+	const children: Prefab[] = [];
+
+	/*
+	 * Build a component/params map to avoid adding components
+	 * repeatedly and to allow params overriding
+	 */
+	for (const arg of args) {
+		let component: Component;
+		let params: any;
+		// Check if it's a component/params tuple or not
+		if (Array.isArray(arg)) {
+			component = arg[0];
+			params = arg[1];
+		} else {
+			component = arg;
+		}
+
+		if (!component[$isPairComponent]) {
+			components.set(component, params);
+			continue;
+		}
+
+		const relation = component[$relation]!;
+		components.set(Pair(relation, Wildcard), null);
+		const target = component[$pairTarget]!;
+		components.set(Pair(Wildcard, target), null);
+
+		// If inheriting a prefab, go through its hierarchy to resolve
+		// component params and children to be added
+		if (component[$relation] === IsA) {
+			let prefab = component[$pairTarget] as Prefab;
+
+			// Set the prefab instead of the relation so that we can call its onAdd hook
+			components.set(prefab, params);
+
+			if (prefab[$children]) {
+				children.push(...prefab[$children]);
+			}
+			const hierarchy = prefab[$hierarchy];
+
+			// Go trough each component higher in the hierarchy
+			// Add its components and params
+			for (const hierarchyPrefab of hierarchy) {
+				components.set(hierarchyPrefab, null);
+				const prefabComponents = hierarchyPrefab[
+					$prefabComponents
+				] as ComponentOrWithParams[];
+
+				for (const prefabComponent of prefabComponents) {
+					if (Array.isArray(prefabComponent)) {
+						const component = prefabComponent[0];
+						const params = prefabComponent[1];
+
+						components.set(component, params);
+					} else {
+						// check because only non-null parameters should override
+						if (!components.has(prefabComponent)) {
+							components.set(prefabComponent, null);
+						}
+					}
+				}
+			}
+		} else {
+			components.set(component, null);
+		}
+	}
+
+	for (const tuple of components.entries()) {
+		if ($worldToPrefab in tuple[0]) {
+			// prefab
+			addComponentInternal(world, eid, IsA(tuple[0]));
+			tuple[0][$onAdd]?.(world, eid, tuple[1]);
+		} else {
+			addComponentInternal(world, eid, tuple[0]);
+			if (tuple[0][$relation] && tuple[0][$pairTarget] !== Wildcard) {
+				tuple[0][$relation][$onAdd]?.(world, getStore(world, tuple[0]), eid, tuple[1]);
+			} else {
+				tuple[0][$onAdd]?.(world, getStore(world, tuple[0]), eid, tuple[1]);
+			}
+		}
+	}
+};
 
 export const addComponentInternal = (world: World, eid: number, component: Component) => {
 	// Exit early if the entity already has the component.
@@ -181,46 +238,26 @@ export const addComponentInternal = (world: World, eid: number, component: Compo
 	// Add bitflag to entity bitmask.
 	world[$entityMasks][generationId][eid] |= bitflag;
 
-	// Add entity to matching queries, except for prefabs
-	if (!hasComponent(world, eid, Prefab)) {
-		queries.forEach((queryNode: QueryData) => {
-			// Remove this entity from toRemove if it exists in this query.
-			queryNode.toRemove.remove(eid);
-			const match = queryCheckEntity(world, queryNode, eid);
+	queries.forEach((queryNode: QueryData) => {
+		// Remove this entity from toRemove if it exists in this query.
+		queryNode.toRemove.remove(eid);
+		const match = queryCheckEntity(world, queryNode, eid);
 
-			if (match) queryAddEntity(queryNode, eid);
-			else queryRemoveEntity(world, queryNode, eid);
-		});
-	}
+		if (match) queryAddEntity(queryNode, eid);
+		else queryRemoveEntity(world, queryNode, eid);
+	});
 
 	// Add component to entity internally.
 	world[$entityComponents].get(eid)!.add(component);
 
-	// Add wildcard relation if its a Pair component
 	if (component[$isPairComponent]) {
-		// add wildcard relation components
 		const relation = component[$relation]!;
-		addComponentInternal(world, eid, Pair(relation, Wildcard));
 		const target = component[$pairTarget]!;
-		addComponentInternal(world, eid, Pair(Wildcard, target));
-
-		// if it's an exclusive relation, remove the old target
+		world[$relationTargetEntities].add(target);
 		if (relation[$exclusiveRelation] === true && target !== Wildcard) {
 			const oldTarget = getRelationTargets(world, relation, eid)[0];
-			if (oldTarget !== undefined && oldTarget !== null && oldTarget !== target) {
+			if (oldTarget !== null && oldTarget !== undefined && oldTarget !== target) {
 				removeComponent(world, eid, relation(oldTarget));
-			}
-		}
-
-		// mark entity as a relation target
-		world[$relationTargetEntities].add(target);
-
-		// if it's the IsA relation, add the inheritance chain of relations
-		if (relation === IsA) {
-			// recursively travel up the chain of relations
-			const inheritedTargets = getRelationTargets(world, IsA, eid);
-			for (const inherited of inheritedTargets) {
-				recursivelyInherit(world, eid, inherited);
 			}
 		}
 	}
@@ -234,7 +271,7 @@ export const addComponentInternal = (world: World, eid: number, component: Compo
  * @param {Component} component
  * @param {boolean} [reset=true]
  */
-export const removeComponent = (world: World, eid: number, component: Component) => {
+export const removeComponent = (world: World, eid: number, component: Component, reset = true) => {
 	if (!entityExists(world, eid)) {
 		throw new Error('bitECS - entity does not exist in the world.');
 	}
@@ -282,7 +319,15 @@ export const removeComponent = (world: World, eid: number, component: Component)
 			removeComponent(world, eid, Pair(relation, Wildcard));
 		}
 
+		if (component[$relation] === IsA) {
+			(component[$pairTarget] as Prefab)[$onRemove]?.(world, eid, reset);
+		} else if (component[$pairTarget] !== Wildcard) {
+			component[$relation]![$onRemove]?.(world, getStore(world, component), eid, reset);
+		}
+
 		// TODO: recursively disinherit
+	} else {
+		component[$onRemove]?.(world, getStore(world, component), eid, reset);
 	}
 };
 

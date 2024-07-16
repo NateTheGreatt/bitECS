@@ -1,8 +1,10 @@
-import { addComponentInternal, removeComponent } from '../component/Component.js';
-import { Component } from '../component/types.js';
+import { addComponentsInternal, getStore, removeComponent } from '../component/Component.js';
+import { $onRemove } from '../hooks/symbols.js';
+import { ComponentOrWithParams } from '../hooks/types.js';
+import { Prefab } from '../prefab/types.js';
 import { query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
 import { $notQueries, $queries } from '../query/symbols.js';
-import { Pair, Wildcard } from '../relation/Relation.js';
+import { IsA, Pair, Wildcard } from '../relation/Relation.js';
 import {
 	$autoRemoveSubject,
 	$isPairComponent,
@@ -17,8 +19,6 @@ import { World } from '../world/types.js';
 import { getRemovedLength, dequeueFromRemoved } from '../world/World.js';
 import { $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
 
-export const Prefab = {};
-
 /**
  * Adds a new entity to the specified world, adding any provided component to the entity.
  *
@@ -26,7 +26,7 @@ export const Prefab = {};
  * @param {...Component} components
  * @returns {number} eid
  */
-export const addEntity = (world: World, ...components: Component[]): number => {
+export const addEntity = (world: World, ...args: ComponentOrWithParams[]): number => {
 	let eid: number;
 
 	if (getRemovedLength(world) > 0) {
@@ -44,9 +44,7 @@ export const addEntity = (world: World, ...components: Component[]): number => {
 
 	world[$entityComponents].set(eid, new Set());
 
-	for (const component of components) {
-		addComponentInternal(world, eid, component);
-	}
+	addComponentsInternal(world, eid, args);
 
 	return eid;
 };
@@ -57,9 +55,21 @@ export const addEntity = (world: World, ...components: Component[]): number => {
  * @param {World} world
  * @param {number} eid
  */
-export const removeEntity = (world: World, eid: number) => {
+export const removeEntity = (world: World, eid: number, reset: boolean = false) => {
 	// Check if entity is already removed
 	if (!world[$entitySparseSet].has(eid)) return;
+
+	for (const component of world[$entityComponents].get(eid)!) {
+		if (component[$isPairComponent]) {
+			if (component[$relation] === IsA) {
+				(component[$pairTarget] as Prefab)[$onRemove]?.(world, eid, reset);
+			} else if (component[$pairTarget] !== Wildcard) {
+				component[$relation]![$onRemove]?.(world, getStore(world, component), eid, reset);
+			}
+		} else {
+			component[$onRemove]?.(world, getStore(world, component), eid, reset);
+		}
+	}
 
 	// Remove relation components from entities that have a relation to this one
 	// e.g. addComponent(world, Pair(ChildOf, parent), child)
@@ -74,7 +84,7 @@ export const removeEntity = (world: World, eid: number) => {
 				continue;
 			}
 			// remove the wildcard association with the subject for this entity
-			removeComponent(world, subject, Pair(Wildcard, eid));
+			removeComponent(world, subject, Pair(Wildcard, eid), reset);
 
 			// iterate all relations that the subject has to this entity
 			for (const component of world[$entityComponents].get(subject)!) {
@@ -85,9 +95,10 @@ export const removeEntity = (world: World, eid: number) => {
 				const relation = component[$relation]!;
 
 				if (component[$pairTarget] === eid) {
-					removeComponent(world, subject, component);
 					if (relation[$autoRemoveSubject]) {
-						removeEntity(world, subject);
+						removeEntity(world, subject, reset);
+					} else {
+						removeComponent(world, subject, component, reset);
 					}
 					if (relation[$onTargetRemoved]) {
 						relation[$onTargetRemoved](world, subject, eid);
@@ -124,10 +135,10 @@ export const removeEntity = (world: World, eid: number) => {
  * @param {*} world
  * @param {*} eid
  */
-export const getEntityComponents = (world: World, eid: number): TODO[] => {
+export const getEntityComponents = (world: World, eid: number): TODO => {
 	if (!world[$entitySparseSet].has(eid))
 		throw new Error('bitECS - entity does not exist in the world.');
-	return Array.from(world[$entityComponents].get(eid)!);
+	return world[$entityComponents].get(eid)!;
 };
 
 /**

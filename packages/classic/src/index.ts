@@ -40,6 +40,8 @@ export { TYPES_ENUM as Types } from './constants/Constants.js';
 export { pipe } from './utils/pipe.js';
 export * from './relation/Relation.js';
 export * from './prefab/Prefab.js';
+export * from './hooks/hooks.js';
+export * from './hooks/utils.js';
 
 // Types
 export * from './component/types.js';

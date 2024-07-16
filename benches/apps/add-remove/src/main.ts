@@ -59,11 +59,11 @@ camera.lookAt(0, 0, 0);
 
 const pipeline = (world: World) => {
 	updateTime(world);
-	recycleBodies(world);
 	setInitial(world);
 	updateGravity(world);
 	moveBodies(world);
 	syncThreeObjects(world);
+	recycleBodies(world);
 	flushRemovedEntities(world);
 	return world;
 };
