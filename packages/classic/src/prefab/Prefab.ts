@@ -3,14 +3,14 @@ import { ComponentOrWithParams } from '../hooks/types';
 import { ChildOf, IsA } from '../relation/Relation';
 import { $isPairComponent, $relation, $pairTarget } from '../relation/symbols';
 import { defineHiddenProperties } from '../utils/defineHiddenProperty';
-import { $children, $hierarchy, $prefabComponents, $worldToPrefab } from './symbols';
+import { $children, $ancestors, $prefabComponents, $worldToPrefab } from './symbols';
 import { Prefab } from './types';
 
 export const definePrefab = <Params = void>(...args: ComponentOrWithParams[]) => {
 	const prefab = {} as Prefab;
 
 	// Arrange prefabs and components separately
-	// prefabs will be used to build the hierarchy
+	// prefabs will be used to build the ancestors list
 	const prefabs: Prefab[] = [];
 	const components: ComponentOrWithParams[] = [];
 	for (const arg of args) {
@@ -40,17 +40,17 @@ export const definePrefab = <Params = void>(...args: ComponentOrWithParams[]) =>
 		}
 	}
 
-	const hierarchy = [] as Prefab[];
+	const ancestors = [] as Prefab[];
 	for (const p of prefabs) {
-		hierarchy.push(...p[$hierarchy]);
+		ancestors.push(...p[$ancestors]);
 	}
 
-	hierarchy.push(prefab);
+	ancestors.push(prefab);
 
 	defineHiddenProperties(prefab, {
 		[$prefabComponents]: components,
 		[$worldToPrefab]: new Map(),
-		[$hierarchy]: hierarchy,
+		[$ancestors]: ancestors,
 		[$children]: [],
 	});
 

@@ -1,13 +1,13 @@
-import { addChildren, addEntity } from '../entity/Entity.js';
+import { addChildren } from '../entity/Entity.js';
 import { $entityComponents, $entityMasks } from '../entity/symbols.js';
 import { $onAdd, $onRemove } from '../hooks/symbols.js';
 import { ComponentOrWithParams } from '../hooks/types.js';
-import { $children, $hierarchy, $prefabComponents, $worldToPrefab } from '../prefab/symbols.js';
+import { $children, $ancestors, $prefabComponents, $worldToPrefab } from '../prefab/symbols.js';
 import { Prefab } from '../prefab/types.js';
 import { query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
 import { $queries } from '../query/symbols.js';
 import { QueryData } from '../query/types.js';
-import { ChildOf, IsA, Pair, Wildcard, getRelationTargets } from '../relation/Relation.js';
+import { IsA, Pair, Wildcard, getRelationTargets } from '../relation/Relation.js';
 import {
 	$exclusiveRelation,
 	$isPairComponent,
@@ -114,8 +114,8 @@ export const hasComponent = (world: World, eid: number, component: Component): b
  * Adds a component to an entity
  *
  * @param {World} world
- * @param {Component} component
  * @param {number} eid
+ * @param {Component} component
  * @param {boolean} [reset=false]
  */
 export const addComponent = (world: World, eid: number, arg: ComponentOrWithParams) => {
@@ -171,7 +171,7 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 		const target = component[$pairTarget]!;
 		components.set(Pair(Wildcard, target), null);
 
-		// If inheriting a prefab, go through its hierarchy to resolve
+		// If inheriting a prefab, go through its ancestors to resolve
 		// component params and children to be added
 		if (component[$relation] === IsA) {
 			let prefab = component[$pairTarget] as Prefab;
@@ -182,17 +182,14 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 			if (prefab[$children]) {
 				children.push(...prefab[$children]);
 			}
-			const hierarchy = prefab[$hierarchy];
+			const ancestors = prefab[$ancestors];
 
-			// Go trough each component higher in the hierarchy
+			// Go trough each ancestor
 			// Add its components and params
-			for (const hierarchyPrefab of hierarchy) {
-				prefabs.set(hierarchyPrefab, null);
-				const prefabComponents = hierarchyPrefab[
-					$prefabComponents
-				] as ComponentOrWithParams[];
+			for (const ancestor of ancestors) {
+				prefabs.set(ancestor, null);
 
-				for (const prefabComponent of prefabComponents) {
+				for (const prefabComponent of ancestor[$prefabComponents]) {
 					if (Array.isArray(prefabComponent)) {
 						const component = prefabComponent[0];
 						const params = prefabComponent[1];
