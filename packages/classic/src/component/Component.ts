@@ -1,3 +1,4 @@
+import { addChildren, addEntity } from '../entity/Entity.js';
 import { $entityComponents, $entityMasks } from '../entity/symbols.js';
 import { $onAdd, $onRemove } from '../hooks/symbols.js';
 import { ComponentOrWithParams } from '../hooks/types.js';
@@ -6,7 +7,7 @@ import { Prefab } from '../prefab/types.js';
 import { query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
 import { $queries } from '../query/symbols.js';
 import { QueryData } from '../query/types.js';
-import { IsA, Pair, Wildcard, getRelationTargets } from '../relation/Relation.js';
+import { ChildOf, IsA, Pair, Wildcard, getRelationTargets } from '../relation/Relation.js';
 import {
 	$exclusiveRelation,
 	$isPairComponent,
@@ -141,7 +142,8 @@ export function addComponents(world: World, eid: number, ...args: ComponentOrWit
 }
 
 export const addComponentsInternal = (world: World, eid: number, args: ComponentOrWithParams[]) => {
-	const components = new Map<Component | Prefab, any>();
+	const prefabs = new Map<Prefab, any>();
+	const components = new Map<Component, any>();
 	const children: Prefab[] = [];
 
 	/*
@@ -175,7 +177,7 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 			let prefab = component[$pairTarget] as Prefab;
 
 			// Set the prefab instead of the relation so that we can call its onAdd hook
-			components.set(prefab, params);
+			prefabs.set(prefab, params);
 
 			if (prefab[$children]) {
 				children.push(...prefab[$children]);
@@ -185,7 +187,7 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 			// Go trough each component higher in the hierarchy
 			// Add its components and params
 			for (const hierarchyPrefab of hierarchy) {
-				components.set(hierarchyPrefab, null);
+				prefabs.set(hierarchyPrefab, null);
 				const prefabComponents = hierarchyPrefab[
 					$prefabComponents
 				] as ComponentOrWithParams[];
@@ -196,11 +198,9 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 						const params = prefabComponent[1];
 
 						components.set(component, params);
-					} else {
+					} else if (!components.has(prefabComponent)) {
 						// check because only non-null parameters should override
-						if (!components.has(prefabComponent)) {
-							components.set(prefabComponent, null);
-						}
+						components.set(prefabComponent, null);
 					}
 				}
 			}
@@ -209,20 +209,31 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 		}
 	}
 
+	// prefabs onAdd is called after all components onAdd
 	for (const tuple of components.entries()) {
-		if ($worldToPrefab in tuple[0]) {
-			// prefab
-			addComponentInternal(world, eid, IsA(tuple[0]));
-			tuple[0][$onAdd]?.(world, eid, tuple[1]);
+		const component = tuple[0];
+		const params = tuple[1];
+
+		addComponentInternal(world, eid, component);
+		if (component[$relation] && component[$pairTarget] !== Wildcard) {
+			component[$relation][$onAdd]?.(world, getStore(world, component), eid, params);
 		} else {
-			addComponentInternal(world, eid, tuple[0]);
-			if (tuple[0][$relation] && tuple[0][$pairTarget] !== Wildcard) {
-				tuple[0][$relation][$onAdd]?.(world, getStore(world, tuple[0]), eid, tuple[1]);
-			} else {
-				tuple[0][$onAdd]?.(world, getStore(world, tuple[0]), eid, tuple[1]);
-			}
+			component[$onAdd]?.(world, getStore(world, component), eid, params);
 		}
 	}
+
+	for (const tuple of prefabs.entries()) {
+		const prefab = tuple[0];
+		const params = tuple[1];
+
+		if ($worldToPrefab in prefab) {
+			// prefab
+			addComponentInternal(world, eid, IsA(prefab));
+			prefab[$onAdd]?.(world, eid, params);
+		}
+	}
+
+	addChildren(world, eid, children);
 };
 
 export const addComponentInternal = (world: World, eid: number, component: Component) => {

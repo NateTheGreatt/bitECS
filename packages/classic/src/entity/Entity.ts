@@ -1,10 +1,11 @@
 import { addComponentsInternal, getStore, removeComponent } from '../component/Component.js';
 import { $onRemove } from '../hooks/symbols.js';
 import { ComponentOrWithParams } from '../hooks/types.js';
+import { $children } from '../prefab/symbols.js';
 import { Prefab } from '../prefab/types.js';
 import { query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
 import { $notQueries, $queries } from '../query/symbols.js';
-import { IsA, Pair, Wildcard } from '../relation/Relation.js';
+import { ChildOf, IsA, Pair, Wildcard } from '../relation/Relation.js';
 import {
 	$autoRemoveSubject,
 	$isPairComponent,
@@ -148,3 +149,12 @@ export const getEntityComponents = (world: World, eid: number): TODO => {
  * @param {number} eid
  */
 export const entityExists = (world: World, eid: number) => world[$entitySparseSet].has(eid);
+
+export const addChildren = (world: World, eid: number, children: Prefab[]) => {
+	for (const child of children) {
+		const childEid = addEntity(world, IsA(child), ChildOf(eid));
+		if (child[$children].length) {
+			addChildren(world, childEid, child[$children]);
+		}
+	}
+};
