@@ -11,6 +11,7 @@ import { World } from './types.js';
 import {
 	$archetypes,
 	$bitflag,
+	$eidToPrefab,
 	$entityCursor,
 	$localEntities,
 	$localEntityLookup,
@@ -80,6 +81,7 @@ export function defineWorld<W extends object = {}>(world?: W): W & World {
 		[$removed]: [],
 		[$removedOut]: [],
 		[$recycled]: [],
+		[$eidToPrefab]: new Map(),
 	});
 
 	return world as W & World;
@@ -133,6 +135,8 @@ export const resetWorld = (world: World) => {
 	world[$localEntities] = new Map();
 	world[$localEntityLookup] = new Map();
 
+	world[$eidToPrefab] = new Map();
+
 	return world;
 };
 
@@ -164,6 +168,7 @@ export const deleteWorld = (world: World) => {
 	delete deletedWorld[$removed];
 	delete deletedWorld[$removedOut];
 	delete deletedWorld[$recycled];
+	delete deletedWorld[$eidToPrefab];
 
 	// Remove the world from the worlds array
 	const index = worlds.indexOf(world);

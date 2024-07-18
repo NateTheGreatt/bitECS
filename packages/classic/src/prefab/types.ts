@@ -1,13 +1,13 @@
 import { Component } from '../component/types';
 import { $onAdd, $onRemove } from '../hooks/symbols';
 import { World } from '../world/types';
-import { $children, $ancestors, $prefabComponents, $worldToPrefab } from './symbols';
+import { $children, $ancestors, $prefabComponents, $worldToEid } from './symbols';
 
-export type Prefab<Params = void> = {
+export type PrefabNode<Params = void> = {
 	[$prefabComponents]: Component[];
-	[$worldToPrefab]: Map<World, number>;
+	[$worldToEid]: Map<World, number>;
 	[$onAdd]: (world: any, eid: number, params?: Params) => void;
 	[$onRemove]: (world: any, eid: number, reset?: boolean) => void;
-	[$children]: Prefab[];
-	[$ancestors]: Prefab[];
+	[$children]: PrefabNode[];
+	[$ancestors]: PrefabNode[];
 };

@@ -6,3 +6,4 @@ export const $entityCursor = Symbol('entityCursor');
 export const $removed = Symbol('removed');
 export const $removedOut = Symbol('removedOut');
 export const $recycled = Symbol('recycled');
+export const $eidToPrefab = Symbol('eidToPrefab');

@@ -1,16 +1,20 @@
 import { strictEqual } from 'assert';
 import { describe, expect, it } from 'vitest';
 import {
+	IsA,
 	Not,
+	Prefab,
 	SYMBOLS,
 	addComponent,
 	addEntity,
 	createWorld,
 	defineEnterQueue,
 	defineExitQueue,
+	definePrefab,
 	defineQuery,
 	enterQuery,
 	exitQuery,
+	getPrefab,
 	query,
 	removeComponent,
 	removeEntity,
@@ -303,5 +307,23 @@ describe('Query Integration Tests', () => {
 		}
 
 		expect(length).toBe(results.length);
+	});
+
+	it('should query prefab entities when given the Prefab component', () => {
+		const world = createWorld();
+		const Tag = {};
+		const A = definePrefab(Tag);
+		const B = definePrefab(Tag);
+
+		const eidA = addEntity(world, IsA(A));
+		const eidB = addEntity(world, IsA(B));
+
+		const prefabs = query(world, [Prefab, Tag]);
+		const entities = query(world, [Tag]);
+		strictEqual(prefabs.length, 2);
+		strictEqual(entities.length, 2);
+		strictEqual(entities[0], eidA);
+		strictEqual(entities[1], eidB);
+		strictEqual(getPrefab(world, prefabs[0]), A);
 	});
 });

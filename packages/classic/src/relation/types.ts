@@ -1,5 +1,5 @@
 import { $onAdd, $onRemove } from '../hooks/symbols';
-import { Prefab } from '../prefab/types';
+import { PrefabNode } from '../prefab/types';
 import { World } from '../world/types';
 import {
 	$autoRemoveSubject,
@@ -9,7 +9,7 @@ import {
 	$pairsMap,
 } from './symbols';
 
-export type RelationTarget = number | string | Prefab;
+export type RelationTarget = number | string | PrefabNode;
 
 export type RelationType<T> = T & {
 	[$pairsMap]: Map<number | string, T>;

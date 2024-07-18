@@ -1,8 +1,14 @@
-import { addComponentsInternal, getStore, removeComponent } from '../component/Component.js';
+import {
+	addComponentsInternal,
+	getStore,
+	hasComponent,
+	removeComponent,
+} from '../component/Component.js';
 import { $onRemove } from '../hooks/symbols.js';
 import { ComponentOrWithParams } from '../hooks/types.js';
+import { Prefab } from '../prefab/Prefab.js';
 import { $children } from '../prefab/symbols.js';
-import { Prefab } from '../prefab/types.js';
+import { PrefabNode } from '../prefab/types.js';
 import { query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
 import { $notQueries, $queries } from '../query/symbols.js';
 import { ChildOf, IsA, Pair, Wildcard } from '../relation/Relation.js';
@@ -15,7 +21,13 @@ import {
 	$relationTargetEntities,
 } from '../relation/symbols.js';
 import { TODO } from '../utils/types.js';
-import { $entityCursor, $localEntities, $localEntityLookup, $recycled } from '../world/symbols.js';
+import {
+	$eidToPrefab,
+	$entityCursor,
+	$localEntities,
+	$localEntityLookup,
+	$recycled,
+} from '../world/symbols.js';
 import { World } from '../world/types.js';
 import { getRemovedLength, dequeueFromRemoved } from '../world/World.js';
 import { $entityComponents, $entityMasks, $entitySparseSet } from './symbols.js';
@@ -60,10 +72,14 @@ export const removeEntity = (world: World, eid: number, reset: boolean = false) 
 	// Check if entity is already removed
 	if (!world[$entitySparseSet].has(eid)) return;
 
+	if (hasComponent(world, eid, Prefab)) {
+		world[$eidToPrefab].delete(eid);
+	}
+
 	for (const component of world[$entityComponents].get(eid)!) {
 		if (component[$isPairComponent]) {
 			if (component[$relation] === IsA) {
-				(component[$pairTarget] as Prefab)[$onRemove]?.(world, eid, reset);
+				(component[$pairTarget] as PrefabNode)[$onRemove]?.(world, eid, reset);
 			} else if (component[$pairTarget] !== Wildcard) {
 				component[$relation]![$onRemove]?.(world, getStore(world, component), eid, reset);
 			}
@@ -150,7 +166,7 @@ export const getEntityComponents = (world: World, eid: number): TODO => {
  */
 export const entityExists = (world: World, eid: number) => world[$entitySparseSet].has(eid);
 
-export const addChildren = (world: World, eid: number, children: Prefab[]) => {
+export const addChildren = (world: World, eid: number, children: PrefabNode[]) => {
 	for (const child of children) {
 		const childEid = addEntity(world, IsA(child), ChildOf(eid));
 		if (child[$children].length) {

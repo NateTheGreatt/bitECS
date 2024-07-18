@@ -1,12 +1,12 @@
 import { Component } from '../component/types';
-import { Prefab } from '../prefab/types';
+import { PrefabNode } from '../prefab/types';
 import { $onTargetRemoved } from '../relation/symbols';
 import { RelationType } from '../relation/types';
 import { World } from '../world/types';
 import { $onAdd, $onRemove } from './symbols';
 
 export function onAdd<Params>(
-	prefab: Prefab<Params>,
+	prefab: PrefabNode<Params>,
 	cb: (world: World, eid: number, params: Params) => void
 ): void;
 export function onAdd<Store, Params>(
@@ -22,7 +22,7 @@ export function onAdd(subject: any, cb: any) {
 }
 
 export function onRemove<Params>(
-	prefab: Prefab<Params>,
+	prefab: PrefabNode<Params>,
 	cb: (world: World, eid: number) => void
 ): void;
 export function onRemove<Store, Params>(

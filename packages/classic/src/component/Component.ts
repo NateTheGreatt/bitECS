@@ -2,8 +2,9 @@ import { addChildren } from '../entity/Entity.js';
 import { $entityComponents, $entityMasks } from '../entity/symbols.js';
 import { $onAdd, $onRemove } from '../hooks/symbols.js';
 import { ComponentOrWithParams } from '../hooks/types.js';
-import { $children, $ancestors, $prefabComponents, $worldToPrefab } from '../prefab/symbols.js';
-import { Prefab } from '../prefab/types.js';
+import { Prefab, registerPrefab } from '../prefab/Prefab.js';
+import { $children, $ancestors, $prefabComponents, $worldToEid } from '../prefab/symbols.js';
+import { PrefabNode } from '../prefab/types.js';
 import { query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
 import { $queries } from '../query/symbols.js';
 import { QueryData } from '../query/types.js';
@@ -149,9 +150,9 @@ export function addComponents(world: World, eid: number, ...args: ComponentOrWit
 }
 
 export const addComponentsInternal = (world: World, eid: number, args: ComponentOrWithParams[]) => {
-	const prefabs = new Map<Prefab, any>();
+	const prefabs = new Map<PrefabNode, any>();
 	const components = new Map<Component, any>();
-	const children: Prefab[] = [];
+	const children: PrefabNode[] = [];
 
 	/*
 	 * Build a component/params map to avoid adding components
@@ -181,7 +182,7 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 		// If inheriting a prefab, go through its ancestors to resolve
 		// component params and children to be added
 		if (component[$relation] === IsA) {
-			let prefab = component[$pairTarget] as Prefab;
+			let prefab = component[$pairTarget] as PrefabNode;
 
 			// Set the prefab instead of the relation so that we can call its onAdd hook
 			prefabs.set(prefab, params);
@@ -229,12 +230,10 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 	for (const tuple of prefabs.entries()) {
 		const prefab = tuple[0];
 		const params = tuple[1];
+		registerPrefab(world, prefab);
 
-		if ($worldToPrefab in prefab) {
-			// prefab
-			addComponentInternal(world, eid, IsA(prefab));
-			prefab[$onAdd]?.(world, eid, params);
-		}
+		addComponentInternal(world, eid, IsA(prefab));
+		prefab[$onAdd]?.(world, eid, params);
 	}
 
 	addChildren(world, eid, children);
@@ -253,14 +252,16 @@ export const addComponentInternal = (world: World, eid: number, component: Compo
 	// Add bitflag to entity bitmask.
 	world[$entityMasks][generationId][eid] |= bitflag;
 
-	queries.forEach((queryNode: QueryData) => {
-		// Remove this entity from toRemove if it exists in this query.
-		queryNode.toRemove.remove(eid);
-		const match = queryCheckEntity(world, queryNode, eid);
+	if (!hasComponent(world, eid, Prefab)) {
+		queries.forEach((queryNode: QueryData) => {
+			// Remove this entity from toRemove if it exists in this query.
+			queryNode.toRemove.remove(eid);
+			const match = queryCheckEntity(world, queryNode, eid);
 
-		if (match) queryAddEntity(queryNode, eid);
-		else queryRemoveEntity(world, queryNode, eid);
-	});
+			if (match) queryAddEntity(queryNode, eid);
+			else queryRemoveEntity(world, queryNode, eid);
+		});
+	}
 
 	// Add component to entity internally.
 	world[$entityComponents].get(eid)!.add(component);
@@ -335,7 +336,7 @@ export const removeComponent = (world: World, eid: number, component: Component,
 		}
 
 		if (component[$relation] === IsA) {
-			(component[$pairTarget] as Prefab)[$onRemove]?.(world, eid, reset);
+			(component[$pairTarget] as PrefabNode)[$onRemove]?.(world, eid, reset);
 		} else if (component[$pairTarget] !== Wildcard) {
 			component[$relation]![$onRemove]?.(world, getStore(world, component), eid, reset);
 		}

@@ -1,4 +1,4 @@
 export const $prefabComponents = Symbol('prefabComponents');
-export const $worldToPrefab = Symbol('worldToPrefab');
+export const $worldToEid = Symbol('worldToEid');
 export const $children = Symbol('children');
 export const $ancestors = Symbol('ancestors');

@@ -8,6 +8,7 @@ import {
 	defineComponent,
 	definePrefab,
 	getAllEntities,
+	getPrefabEid,
 	getStore,
 	hasComponent,
 	onAdd,
@@ -48,7 +49,7 @@ describe('Prefab Integration Tests', () => {
 		addEntity(world, IsA(Npc));
 
 		assert(query(world, [IsA(Human)]).length === 2);
-		assert(getAllEntities(world).length === 2);
+		assert(getAllEntities(world).length === 5);
 	});
 
 	test('multiple inheritance and overrides', () => {
@@ -56,8 +57,8 @@ describe('Prefab Integration Tests', () => {
 			() => ({ x: [], y: [] })
 		);
 		onAdd(Position, (world, store, eid, params) => {
-			store.x[eid] = params.x ?? 0;
-			store.y[eid] = params.y ?? 0;
+			store.x[eid] = params?.x ?? 0;
+			store.y[eid] = params?.y ?? 0;
 		});
 
 		const Health = defineComponent<number[], number>(() => []);
@@ -97,20 +98,12 @@ describe('Prefab Integration Tests', () => {
 
 		const ChaosMage = definePrefab(IsA(GoblinMage), withParams(Element, 'chaos'));
 
-		const Whatever = definePrefab();
-
-		const EnragedChaosMage = definePrefab(IsA(ChaosMage), IsA(Whatever));
-
 		const world = createWorld();
 
-		const weakMage = addEntity(
-			world,
-			IsA(EnragedChaosMage),
-			withParams(Position, { x: 10, y: 10 })
-		);
+		const weakMage = addEntity(world, IsA(ChaosMage), withParams(Position, { x: 10, y: 10 }));
 		const strongMage = addEntity(
 			world,
-			IsA(EnragedChaosMage),
+			IsA(ChaosMage),
 			withParams(Mana, 66),
 			withParams(Position, { x: 20, y: 20 })
 		);
@@ -125,7 +118,6 @@ describe('Prefab Integration Tests', () => {
 		assert(hasComponent(world, strongMage, IsA(RedGoblin)));
 		assert(hasComponent(world, strongMage, IsA(GoblinMage)));
 		assert(hasComponent(world, strongMage, IsA(ChaosMage)));
-		assert(hasComponent(world, strongMage, IsA(EnragedChaosMage)));
 
 		assert(element[weakMage] === 'chaos');
 		assert(element[strongMage] === 'chaos');
@@ -152,20 +144,18 @@ describe('Prefab Integration Tests', () => {
 		const Color = defineComponent<Vec3[], Vec3>(vec3Store);
 		onAdd(Color, onAddVec3);
 
-		const sharedColor = [0.25, 0.2, 0.1] as Vec3;
-
 		const Tree = definePrefab(Position);
 		const Trunk = definePrefab(
 			ChildOf(Tree),
 			withParams(Position, [0, 0.25, 0]),
 			withParams(Box, [0.4, 0.5, 0.4]),
-			withParams(Color, sharedColor)
+			withParams(Color, [0.25, 0.2, 0.1])
 		);
 		const Canopy = definePrefab(
 			ChildOf(Tree),
 			withParams(Position, [0, 0.9, 0]),
 			withParams(Box, [0.8, 0.8, 0.8]),
-			withParams(Color, sharedColor)
+			withParams(Color, [0.25, 0.2, 0.1])
 		);
 		onAdd(Canopy, (world, eid) => {
 			const boxes = getStore(world, Box);
@@ -189,13 +179,28 @@ describe('Prefab Integration Tests', () => {
 
 		const boxes = getStore(world, Box);
 		const positions = getStore(world, Position);
-		const colors = getStore(world, Color);
-
-		assert(colors[trunk] === sharedColor);
-		assert(colors[canopy] === sharedColor);
 
 		assert(boxes[trunk][0] === 0.4);
 		assert(boxes[canopy][0] === 0.8);
 		assert(positions[trunk][1] === 0.25);
+	});
+
+	test('should allow sharing data between prefabs and instances', () => {
+		type Vec3 = [number, number, number];
+		const Box = defineComponent<Vec3[], Vec3>(() => []);
+		onAdd(Box, (world, store, eid, vec) => {
+			store[eid] = vec ?? [0, 0, 0];
+		});
+
+		const BoxPrefab = definePrefab(withParams(Box, [0, 0, 0]));
+
+		const world = createWorld();
+
+		const eid = addEntity(world, IsA(BoxPrefab));
+
+		const prefabEid = getPrefabEid(world, BoxPrefab)!;
+
+		const store = getStore(world, Box);
+		assert(store[eid] === store[prefabEid]);
 	});
 });

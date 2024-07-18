@@ -1,5 +1,5 @@
 import { SparseSet } from '../utils/SparseSet.js';
-import { registerComponent } from '../component/Component.js';
+import { hasComponent, registerComponent } from '../component/Component.js';
 import { $componentMap } from '../component/symbols.js';
 import { $entityMasks, $entityArray, $entitySparseSet } from '../entity/symbols.js';
 import { Component } from '../component/types.js';
@@ -19,6 +19,7 @@ import { World } from '../world/types.js';
 import { EMPTY } from '../constants/Constants.js';
 import { getEntityCursor, worlds } from '../world/World.js';
 import { archetypeHash } from './utils.js';
+import { Prefab } from '../prefab/Prefab.js';
 
 export const queries: Query[] = [];
 
@@ -54,6 +55,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 	const components: TODO = [];
 	const notComponents: TODO = [];
 
+	let queriesPrefab = false;
 	query[$queryComponents].forEach((c: TODO) => {
 		if (typeof c === 'function' && c[$modifier]) {
 			const [comp, mod] = c();
@@ -65,6 +67,8 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 			if (!world[$componentMap].has(c)) registerComponent(world, c);
 			components.push(c);
 		}
+
+		if (c === Prefab) queriesPrefab = true;
 	});
 
 	const mapComponents = (c: Component) => world[$componentMap].get(c)!;
@@ -130,6 +134,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 
 	for (let eid = 0; eid < getEntityCursor(world); eid++) {
 		if (!world[$entitySparseSet].has(eid)) continue;
+		if (!queriesPrefab && hasComponent(world, eid, Prefab)) continue;
 		const match = queryCheckEntity(world, q, eid);
 		if (match) queryAddEntity(q, eid);
 	}

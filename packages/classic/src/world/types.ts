@@ -1,6 +1,7 @@
 import { $componentCount, $componentMap } from '../component/symbols';
 import { Component, ComponentNode } from '../component/types';
 import { $entityArray, $entityComponents, $entityMasks, $entitySparseSet } from '../entity/symbols';
+import { PrefabNode } from '../prefab/types';
 import {
 	$dirtyQueries,
 	$notQueries,
@@ -15,6 +16,7 @@ import { SparseSet } from '../utils/SparseSet';
 import {
 	$archetypes,
 	$bitflag,
+	$eidToPrefab,
 	$entityCursor,
 	$localEntities,
 	$localEntityLookup,
@@ -44,6 +46,7 @@ export interface World {
 	[$removed]: number[];
 	[$removedOut]: number[];
 	[$entityCursor]: number;
+	[$eidToPrefab]: Map<number, PrefabNode>;
 }
 
 export type IWorld = World;
