@@ -28,6 +28,15 @@ function createOrGetRelationComponent<T extends Component>(
 	return pairsMap.get(target)!;
 }
 
+/**
+ * Defines a new relation type with optional configuration options.
+ *
+ * @param options - An optional object with the following properties:
+ *   - `component`: A factory function that creates the relation component.
+ *   - `exclusive`: A boolean indicating whether the relation is exclusive (i.e., an entity can only have one instance of this relation).
+ *   - `autoRemoveSubject`: A boolean indicating whether the relation component should be automatically removed when the subject entity is removed.
+ * @returns A relation type function that can be used to create relation components.
+ */
 export const defineRelation = <T extends Component>(options?: {
 	component?: () => T;
 	exclusive?: boolean;
@@ -48,6 +57,14 @@ export const defineRelation = <T extends Component>(options?: {
 	return relation as RelationType<T>;
 };
 
+/**
+ * Creates or retrieves a relation component for the given relation and target.
+ *
+ * @param relation - The relation type to use.
+ * @param target - The target for the relation.
+ * @returns The relation component for the given relation and target.
+ * @throws {Error} If the relation or target is undefined.
+ */
 export const Pair = <T extends Component>(relation: RelationType<T>, target: RelationTarget): T => {
 	if (relation === undefined) throw Error('Relation is undefined');
 	if (target === undefined) throw Error('Relation target is undefined');
@@ -65,6 +82,14 @@ export const ChildOf = defineRelation({
 	autoRemoveSubject: true,
 });
 
+/**
+ * Retrieves the relation targets for the given entity in the specified world.
+ *
+ * @param world - The world to search for the entity.
+ * @param relation - The relation type to use.
+ * @param eid - The entity ID to search for.
+ * @returns An array of relation targets for the given entity and relation.
+ */
 export const getRelationTargets = (world: World, relation: RelationType<any>, eid: number) => {
 	const components = getEntityComponents(world, eid);
 	const targets = [];

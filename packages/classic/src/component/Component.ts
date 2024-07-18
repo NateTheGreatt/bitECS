@@ -22,6 +22,13 @@ import { World } from '../world/types.js';
 import { $componentCount, $componentMap, $store } from './symbols.js';
 import { Component, ComponentNode } from './types.js';
 
+/**
+ * Retrieves the store associated with the specified component in the given world.
+ *
+ * @param {World} world - The world to retrieve the component store from.
+ * @param {Component} component - The component to get the store for.
+ * @returns {Store} The store associated with the specified component.
+ */
 export const getStore = <Store>(world: World, component: Component<Store>) => {
 	if (!world[$componentMap].has(component)) registerComponent(world, component);
 
