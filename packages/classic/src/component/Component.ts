@@ -20,20 +20,33 @@ import { defineHiddenProperties } from '../utils/defineHiddenProperty.js';
 import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { $bitflag } from '../world/symbols.js';
 import { World } from '../world/types.js';
-import { $componentCount, $componentMap, $store } from './symbols.js';
-import { Component, ComponentNode } from './types.js';
+import {
+	$cleanupComponent,
+	$componentCount,
+	$componentMap,
+	$setComponent,
+	$store,
+} from './symbols.js';
+import {
+	CleanupParams,
+	Component,
+	ComponentDefinition,
+	ComponentNode,
+	ComponentStore,
+	SetParams,
+} from './types.js';
 
 /**
  * Retrieves the store associated with the specified component in the given world.
  *
  * @param {World} world - The world to retrieve the component store from.
- * @param {Component} component - The component to get the store for.
+ * @param {ComponentDefinition} component - The component to get the store for.
  * @returns {Store} The store associated with the specified component.
  */
-export const getStore = <Store>(world: World, component: Component<Store>) => {
+export const getStore = <C>(world: World, component: C) => {
 	if (!world[$componentMap].has(component)) registerComponent(world, component);
 
-	return world[$componentMap].get(component as any)?.store as Store;
+	return world[$componentMap].get(component as any)?.store as ComponentStore<C>;
 };
 
 /**
@@ -43,11 +56,17 @@ export const getStore = <Store>(world: World, component: Component<Store>) => {
  *
  * @returns {object}
  */
-export function defineComponent<Store, Params = void>(store: () => Store): Component<Store, Params> {
-	const component = {} as Component<Store, Params>;
+export function defineComponent<Store, Params = never, W extends World = World>(
+	store: () => Store,
+	set?: SetParams<Store, Params, W>,
+	cleanup?: CleanupParams<Store, W>
+): ComponentDefinition<Store, Params> {
+	const component = {} as ComponentDefinition<Store, Params>;
 
 	defineHiddenProperties(component, {
-		[$store]: store ?? (() => ({})),
+		[$store]: store,
+		[$setComponent]: set ?? null,
+		[$cleanupComponent]: cleanup ?? null,
 	});
 
 	return component;
@@ -80,9 +99,13 @@ export const registerComponent = (world: World, component: Component) => {
 		generationId: world[$entityMasks].length - 1,
 		bitflag: world[$bitflag],
 		ref: component,
-		store: component[$store]?.() ?? {},
+		store: component[$store]?.() ?? component,
+		set: component[$setComponent] ?? null,
+		cleanup: component[$cleanupComponent] ?? null,
 		queries,
 		notQueries,
+		onAddCallbacks: [],
+		onRemoveCallbacks: [],
 	};
 
 	world[$componentMap].set(component, componentNode);
@@ -94,9 +117,9 @@ export const registerComponent = (world: World, component: Component) => {
  * Registers multiple components with a world.
  *
  * @param {World} world
- * @param {Component[]} components
+ * @param {ComponentDefinition[]} components
  */
-export const registerComponents = (world: World, components: Component[]) => {
+export const registerComponents = (world: World, components: ComponentDefinition[]) => {
 	components.forEach((component) => registerComponent(world, component));
 };
 
@@ -105,7 +128,7 @@ export const registerComponents = (world: World, components: Component[]) => {
  *
  * @param {World} world
  * @param {number} eid
- * @param {Component} component
+ * @param {ComponentDefinition} component
  * @returns {boolean}
  */
 export const hasComponent = (world: World, eid: number, component: Component): boolean => {
@@ -123,7 +146,7 @@ export const hasComponent = (world: World, eid: number, component: Component): b
  *
  * @param {World} world
  * @param {number} eid
- * @param {Component} component
+ * @param {ComponentDefinition} component
  * @param {boolean} [reset=false]
  */
 export const addComponent = (world: World, eid: number, arg: ComponentOrWithParams) => {
@@ -131,7 +154,59 @@ export const addComponent = (world: World, eid: number, arg: ComponentOrWithPara
 		throw new Error('bitECS - entity does not exist in the world.');
 	}
 
-	addComponentsInternal(world, eid, [arg]);
+	// addComponentsInternal(world, eid, [arg]);
+
+	let component: ComponentDefinition;
+	let params: any;
+
+	// Check if it's a params object or a component.
+	if (typeof arg === 'object' && 'target' in arg) {
+		component = arg.target;
+		params = arg.params;
+	} else {
+		component = arg;
+	}
+
+	// Exit early if the entity already has the component.
+	if (hasComponent(world, eid, component)) return;
+
+	// Register the component with the world if it isn't already.
+	if (!world[$componentMap].has(component)) registerComponent(world, component);
+
+	const componentNode = world[$componentMap].get(component)!;
+	const { generationId, bitflag, queries } = componentNode;
+
+	// Add bitflag to entity bitmask.
+	world[$entityMasks][generationId][eid] |= bitflag;
+
+	if (!hasComponent(world, eid, Prefab)) {
+		queries.forEach((queryNode: QueryData) => {
+			// Remove this entity from toRemove if it exists in this query.
+			queryNode.toRemove.remove(eid);
+			const match = queryCheckEntity(world, queryNode, eid);
+
+			if (match) queryAddEntity(queryNode, eid);
+			else queryRemoveEntity(world, queryNode, eid);
+		});
+	}
+
+	// Add component to entity internally.
+	world[$entityComponents].get(eid)!.add(component);
+
+	if (component[$isPairComponent]) {
+		const relation = component[$relation]!;
+		const target = component[$pairTarget]!;
+		world[$relationTargetEntities].add(target);
+		if (relation[$exclusiveRelation] === true && target !== Wildcard) {
+			const oldTarget = getRelationTargets(world, relation, eid)[0];
+			if (oldTarget !== null && oldTarget !== undefined && oldTarget !== target) {
+				removeComponent(world, eid, relation(oldTarget));
+			}
+		}
+	}
+
+	// Call set callback if it exists.
+	componentNode.set?.(world, getStore(world, component), eid, params);
 };
 
 /**
@@ -151,7 +226,7 @@ export function addComponents(world: World, eid: number, ...args: ComponentOrWit
 
 export const addComponentsInternal = (world: World, eid: number, args: ComponentOrWithParams[]) => {
 	const prefabs = new Map<PrefabNode, any>();
-	const components = new Map<Component, any>();
+	const components = new Map<ComponentDefinition, any>();
 	const children: PrefabNode[] = [];
 
 	/*
@@ -159,12 +234,12 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 	 * repeatedly and to allow params overriding
 	 */
 	for (const arg of args) {
-		let component: Component;
+		let component: ComponentDefinition;
 		let params: any;
-		// Check if it's a component/params tuple or not
-		if (Array.isArray(arg)) {
-			component = arg[0];
-			params = arg[1];
+		// Check if it's a params object or a component
+		if ('target' in arg) {
+			component = arg.target;
+			params = arg.params;
 		} else {
 			component = arg;
 		}
@@ -219,12 +294,13 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 		const component = tuple[0];
 		const params = tuple[1];
 
-		addComponentInternal(world, eid, component);
-		if (component[$relation] && component[$pairTarget] !== Wildcard) {
-			component[$relation][$onAdd]?.(world, getStore(world, component), eid, params);
-		} else {
-			component[$onAdd]?.(world, getStore(world, component), eid, params);
-		}
+		addComponentInternal(world, eid, component, params);
+
+		// if (component[$relation] && component[$pairTarget] !== Wildcard) {
+		// 	component[$relation][$onAdd]?.(world, getStore(world, component), eid, params);
+		// } else {
+		// 	component[$onAdd]?.(world, getStore(world, component), eid, params);
+		// }
 	}
 
 	for (const tuple of prefabs.entries()) {
@@ -232,14 +308,19 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 		const params = tuple[1];
 		registerPrefab(world, prefab);
 
-		addComponentInternal(world, eid, IsA(prefab));
+		addComponentInternal(world, eid, IsA(prefab), params);
 		prefab[$onAdd]?.(world, eid, params);
 	}
 
 	addChildren(world, eid, children);
 };
 
-export const addComponentInternal = (world: World, eid: number, component: Component) => {
+export const addComponentInternal = (
+	world: World,
+	eid: number,
+	component: ComponentDefinition,
+	params: any
+) => {
 	// Exit early if the entity already has the component.
 	if (hasComponent(world, eid, component)) return;
 
@@ -277,6 +358,9 @@ export const addComponentInternal = (world: World, eid: number, component: Compo
 			}
 		}
 	}
+
+	// Call set callback if it exists.
+	componentNode.set?.(world, getStore(world, component), eid, params);
 };
 
 /**
@@ -284,10 +368,15 @@ export const addComponentInternal = (world: World, eid: number, component: Compo
  *
  * @param {World} world
  * @param {number} eid
- * @param {Component} component
+ * @param {ComponentDefinition} component
  * @param {boolean} [reset=true]
  */
-export const removeComponent = (world: World, eid: number, component: Component, reset = true) => {
+export const removeComponent = (
+	world: World,
+	eid: number,
+	component: ComponentDefinition,
+	reset = true
+) => {
 	if (!entityExists(world, eid)) {
 		throw new Error('bitECS - entity does not exist in the world.');
 	}
@@ -338,12 +427,13 @@ export const removeComponent = (world: World, eid: number, component: Component,
 		if (component[$relation] === IsA) {
 			(component[$pairTarget] as PrefabNode)[$onRemove]?.(world, eid, reset);
 		} else if (component[$pairTarget] !== Wildcard) {
-			component[$relation]![$onRemove]?.(world, getStore(world, component), eid, reset);
+			// component[$relation]![$onRemove]?.(world, getStore(world, component), eid, reset);
 		}
 
 		// TODO: recursively disinherit
 	} else {
-		component[$onRemove]?.(world, getStore(world, component), eid, reset);
+		// component[$onRemove]?.(world, getStore(world, component), eid, reset);
+		componentNode.cleanup?.(world, getStore(world, component), eid, reset);
 	}
 };
 
@@ -352,9 +442,9 @@ export const removeComponent = (world: World, eid: number, component: Component,
  *
  * @param {World} world
  * @param {number} eid
- * @param {Component[]} components
+ * @param {ComponentDefinition[]} components
  * @param {boolean} [reset=true]
  */
-export const removeComponents = (world: World, eid: number, components: Component[]) => {
+export const removeComponents = (world: World, eid: number, components: ComponentDefinition[]) => {
 	components.forEach((component) => removeComponent(world, eid, component));
 };

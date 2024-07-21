@@ -1,4 +1,4 @@
-import { Component } from '../component/types';
+import { ComponentDefinition } from '../component/types';
 import { addEntity } from '../entity/Entity';
 import { ComponentOrWithParams } from '../hooks/types';
 import { ChildOf, IsA } from '../relation/Relation';
@@ -25,7 +25,7 @@ export const definePrefab = <Params = void>(...args: ComponentOrWithParams[]) =>
 	const prefabs: PrefabNode[] = [];
 	const components: ComponentOrWithParams[] = [];
 	for (const arg of args) {
-		let component: Component;
+		let component: ComponentDefinition;
 		let params: any;
 		if (Array.isArray(arg)) {
 			component = arg[0];

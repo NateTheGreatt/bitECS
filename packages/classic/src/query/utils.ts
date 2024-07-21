@@ -1,12 +1,12 @@
 import { registerComponent } from '../component/Component';
 import { $componentMap } from '../component/symbols';
-import { Component } from '../component/types';
+import { ComponentDefinition } from '../component/types';
 import { TODO } from '../utils/types';
 import { World } from '../world/types';
 import { $modifier } from './symbols';
 import { QueryModifier } from './types';
 
-export const archetypeHash = (world: World, components: (Component | QueryModifier)[]) => {
+export const archetypeHash = (world: World, components: (ComponentDefinition | QueryModifier)[]) => {
 	return components
 		.sort((a: TODO, b: TODO) => {
 			if (typeof a === 'function' && a[$modifier]) {

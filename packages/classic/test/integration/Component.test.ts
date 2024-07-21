@@ -9,26 +9,58 @@ import {
 	addComponents,
 	flushRemovedEntities,
 	defineComponent,
+	getStore,
+	withParams,
 } from '../../src/index.js';
 import { createWorld } from '../../src/world/World.js';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { $componentMap } from '../../src/component/symbols.js';
 
-const componentTypes = {
-	SoA: defineComponent(() => ({ value: [] as number[] })),
-	object: defineComponent(() => ({})),
-	array: defineComponent(() => []),
-	buffer: defineComponent(() => new ArrayBuffer(8)),
-	string: defineComponent(() => 'test'),
-	number: defineComponent(() => 1),
-	Map: defineComponent(() => new Map()),
-	Set: defineComponent(() => new Set()),
+const primtiveTypes = {
+	object: {},
+	array: [],
+	buffer: new ArrayBuffer(8),
+	string: 'test',
+	number: 1,
+	Map: new Map(),
+	Set: new Set(),
 };
 
+const TestComponent = defineComponent<{ value: number[] }, { value: number }>(
+	() => ({ value: [] }),
+	(world, store, eid, params = { value: 0 }) => {
+		store.value[eid] = params.value;
+	},
+	(world, store, eid, reset) => {
+		if (reset) delete store.value[eid];
+	}
+);
+
 describe('Component Integration Tests', () => {
+	it('should define a component with a store that gets registered per world', () => {
+		const worldA = createWorld();
+		const worldB = createWorld();
+
+		const eidA = addEntity(worldA);
+		addComponent(worldA, eidA, TestComponent);
+
+		const storeA = getStore(worldA, TestComponent);
+
+		// Gets added with default value of 0 to eid 0.
+		expect(storeA).toMatchObject({ value: [0] });
+
+		const eidB = addEntity(worldB);
+		addComponent(worldB, eidB, TestComponent);
+
+		const storeB = getStore(worldB, TestComponent);
+
+		// Gets added with default value of 0 to eid 0.
+		expect(storeB).toMatchObject({ value: [0] });
+		expect(storeA).not.toBe(storeB);
+	});
+
 	it('should register components on-demand', () => {
 		const world = createWorld();
-		const TestComponent = {};
 
 		registerComponent(world, TestComponent);
 		assert(world[$componentMap].has(TestComponent));
@@ -36,7 +68,6 @@ describe('Component Integration Tests', () => {
 
 	it('should register components automatically upon adding to an entity', () => {
 		const world = createWorld();
-		const TestComponent = defineComponent(() => [] as number[]);
 
 		const eid = addEntity(world);
 
@@ -46,7 +77,6 @@ describe('Component Integration Tests', () => {
 
 	it('should add and remove components from an entity', () => {
 		const world = createWorld();
-		const TestComponent = {};
 
 		const eid = addEntity(world);
 
@@ -57,14 +87,46 @@ describe('Component Integration Tests', () => {
 		assert(hasComponent(world, eid, TestComponent) === false);
 	});
 
-	(Object.keys(componentTypes) as (keyof typeof componentTypes)[]).forEach((type) => {
-		it(`should correctly add ${type} components`, () => {
+	it('should add component with params', () => {
+		const world = createWorld();
+
+		const eid = addEntity(world);
+
+		addComponent(world, eid, withParams(TestComponent, { value: 10 }));
+		const store = getStore(world, TestComponent);
+		assert(store.value[eid] === 10);
+	});
+
+	it('should create tag components', () => {
+		const world = createWorld();
+		const IsTag = {};
+
+		const eid = addEntity(world);
+
+		addComponent(world, eid, IsTag);
+		assert(hasComponent(world, eid, IsTag));
+
+		// Return the tag component from getStore.
+		const tag = getStore(world, IsTag);
+		assert(tag === IsTag);
+
+		removeComponent(world, eid, IsTag);
+		assert(hasComponent(world, eid, IsTag) === false);
+	});
+
+	(Object.keys(primtiveTypes) as (keyof typeof primtiveTypes)[]).forEach((type) => {
+		it(`should correctly add ${type} as components`, () => {
+			const component = primtiveTypes[type];
 			const world = createWorld();
 
 			const eid = addEntity(world);
 
-			addComponent(world, eid, componentTypes[type]);
-			assert(hasComponent(world, eid, componentTypes[type]));
+			addComponent(world, eid, component);
+			assert(hasComponent(world, eid, component));
+
+			// Primitives return themselves as the store.
+			const store = getStore(world, component);
+			assert(store === component);
 		});
 	});
 
@@ -85,9 +147,8 @@ describe('Component Integration Tests', () => {
 		assert(hasComponent(world, eid, TestComponent2) === true);
 	});
 
-	it('should create tag components', () => {
+	it('should run cleanup function when removing a component', () => {
 		const world = createWorld();
-		const TestComponent = {};
 
 		const eid = addEntity(world);
 
@@ -96,6 +157,9 @@ describe('Component Integration Tests', () => {
 
 		removeComponent(world, eid, TestComponent);
 		assert(hasComponent(world, eid, TestComponent) === false);
+
+		const store = getStore(world, TestComponent);
+		assert(store.value[eid] === undefined);
 	});
 
 	it('should correctly register more than 32 components', () => {
