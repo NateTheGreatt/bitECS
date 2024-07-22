@@ -13,6 +13,7 @@ import {
 	defineDeserializer,
 	defineSerializer,
 	DESERIALIZE_MODE,
+	removeEntity,
 } from '../../src/index.js';
 
 const Types = TYPES_ENUM;
@@ -170,6 +171,37 @@ describe('Serialize Integration Tests', () => {
 		strictEqual(TestComponent.value[mappedEid], 1);
 		strictEqual(ents[0], mappedEid);
 	});
+
+	it('should deserialize properly with STRICT behavior', () => {
+		const world = createWorld();
+		const TestComponent = defineComponent({ value: Types.f32 });
+		
+		// Add 3 entities
+		const eid1 = addEntity(world);
+		const eid2 = addEntity(world);
+		const eid3 = addEntity(world);
+		
+		addComponent(world, TestComponent, eid1);
+		addComponent(world, TestComponent, eid2);
+		addComponent(world, TestComponent, eid3);
+		
+		// Remove the 2nd entity
+		removeEntity(world, eid2);
+		
+		// Serialize the entities
+		const serialize = defineSerializer(world);
+		const packet = serialize(world);
+		
+		// Deserialize with STRICT mode
+		const deserialize = defineDeserializer(world);
+		const deserializedEntities = deserialize(world, packet, DESERIALIZE_MODE.STRICT);
+		
+		// Check that the entities have the same IDs as before, even though the middle one was removed
+		strictEqual(deserializedEntities.includes(eid1), true);
+		strictEqual(deserializedEntities.includes(eid3), true);
+		strictEqual(deserializedEntities.includes(eid2), false);
+	});
+	
 	// todo
 	// it('should maintain references when deserializing', () => {
 

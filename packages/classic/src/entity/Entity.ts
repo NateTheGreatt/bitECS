@@ -114,12 +114,15 @@ export const Prefab = defineComponent();
  * Adds a new entity to the specified world.
  *
  * @param {World} world
+ * @param {number | null} specifiedEid (Optional) specific entity ID to be assigned.
  * @returns {number} eid
  */
-export const addEntity = (world: World): number => {
+export const addEntity = (world: World, specifiedEid: number | null = null): number => {
 	let eid: number;
 
-	if (
+	if (specifiedEid !== null) {
+		eid = specifiedEid;
+	} else if (
 		(world[$manualEntityRecycling] && getRemovedLength() > 0) ||
 		(!world[$manualEntityRecycling] &&
 			getRemovedLength() > Math.round(globalSize * removedReuseThreshold))
@@ -145,6 +148,7 @@ export const addEntity = (world: World): number => {
 
 	return eid;
 };
+
 
 /**
  * Removes an existing entity from the specified world.

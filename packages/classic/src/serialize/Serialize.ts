@@ -21,6 +21,7 @@ export const DESERIALIZE_MODE = {
 	REPLACE: 0,
 	APPEND: 1,
 	MAP: 2,
+	STRICT: 3,
 } as const;
 
 let resized = false;
@@ -361,6 +362,15 @@ export const defineDeserializer = (target: TODO): Deserializer => {
 					(mode === DESERIALIZE_MODE.REPLACE && !world[$entitySparseSet].has(eid))
 				) {
 					const newEid = newEntities.get(eid) || addEntity(world);
+					newEntities.set(eid, newEid);
+					eid = newEid;
+				}
+
+				if (
+					mode === DESERIALIZE_MODE.STRICT && 
+					!world[$entitySparseSet].has(eid)
+				) {
+					const newEid = newEntities.get(eid) || addEntity(world, eid);
 					newEntities.set(eid, newEid);
 					eid = newEid;
 				}
