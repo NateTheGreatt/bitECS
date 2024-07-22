@@ -171,7 +171,6 @@ describe('Serialize Integration Tests', () => {
 		strictEqual(TestComponent.value[mappedEid], 1);
 		strictEqual(ents[0], mappedEid);
 	});
-
 	it('should deserialize properly with STRICT behavior', () => {
 		const world = createWorld();
 		const TestComponent = defineComponent({ value: Types.f32 });
@@ -201,7 +200,6 @@ describe('Serialize Integration Tests', () => {
 		strictEqual(deserializedEntities.includes(eid3), true);
 		strictEqual(deserializedEntities.includes(eid2), false);
 	});
-	
 	// todo
 	// it('should maintain references when deserializing', () => {
 

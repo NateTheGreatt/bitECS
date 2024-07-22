@@ -149,7 +149,6 @@ export const addEntity = (world: World, specifiedEid: number | null = null): num
 	return eid;
 };
 
-
 /**
  * Removes an existing entity from the specified world.
  *
