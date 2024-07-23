@@ -12,15 +12,17 @@ import {
 	onAdd,
 	Pair,
 	removeEntity,
+	withStore,
 } from '../../src';
 import { describe, test } from 'vitest';
+import { withComponent, withOptions } from '../../src/relation/args';
 
 describe('Relation Unit Tests', () => {
 	// this test only works if the player eid is 0, so it needs to be first
 	test('should maintain exclusive relations for eid 0', () => {
 		const world = createWorld();
 
-		const Targeting = defineRelation({ exclusive: true });
+		const Targeting = defineRelation(withOptions({ exclusive: true }));
 
 		const player = addEntity(world); // 0
 		const guard = addEntity(world); // 1
@@ -39,7 +41,7 @@ describe('Relation Unit Tests', () => {
 	test('should auto remove subject', () => {
 		const world = createWorld();
 
-		const ChildOf = defineRelation({ autoRemoveSubject: true });
+		const ChildOf = defineRelation(withOptions({ autoRemoveSubject: true }));
 
 		const parent = addEntity(world);
 		const child = addEntity(world);
@@ -54,12 +56,15 @@ describe('Relation Unit Tests', () => {
 	test('should init store', () => {
 		const world = createWorld();
 
-		const Contains = defineRelation({
-			component: () =>
-				defineComponent<{ amount: number[] }, number>(() => ({
-					amount: [],
-				})),
-		});
+		const Contains = defineRelation(
+			withComponent(() =>
+				defineComponent(
+					withStore(() => ({
+						amount: [] as number[],
+					}))
+				)
+			)
+		);
 
 		const inventory = addEntity(world);
 		const gold = addEntity(world);
@@ -83,7 +88,7 @@ describe('Relation Unit Tests', () => {
 	test('should auto remove all descendants of subject', () => {
 		const world = createWorld();
 
-		const ChildOf = defineRelation({ autoRemoveSubject: true });
+		const ChildOf = defineRelation(withOptions({ autoRemoveSubject: true }));
 
 		const parent = addEntity(world);
 
@@ -113,7 +118,7 @@ describe('Relation Unit Tests', () => {
 	test('should maintain exclusive relations', () => {
 		const world = createWorld();
 
-		const Targeting = defineRelation({ exclusive: true });
+		const Targeting = defineRelation(withOptions({ exclusive: true }));
 
 		const hero = addEntity(world);
 		const rat = addEntity(world);

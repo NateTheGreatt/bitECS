@@ -1,6 +1,13 @@
 import { Component, World, getEntityComponents } from '..';
 import { defineHiddenProperty } from '../utils/defineHiddenProperty';
 import {
+	WithComponent,
+	withComponentSymbol,
+	withOptions,
+	WithOptions,
+	withOptionsSymbol,
+} from './args';
+import {
 	$pairsMap,
 	$isPairComponent,
 	$relation,
@@ -9,7 +16,7 @@ import {
 	$exclusiveRelation,
 	$component,
 } from './symbols';
-import { RelationTarget, RelationType } from './types';
+import { RelationOptions, RelationTarget, RelationType } from './types';
 
 function createOrGetRelationComponent<T extends Component>(
 	relation: (target: RelationTarget) => T,
@@ -37,12 +44,29 @@ function createOrGetRelationComponent<T extends Component>(
  *   - `autoRemoveSubject`: A boolean indicating whether the relation component should be automatically removed when the subject entity is removed.
  * @returns A relation type function that can be used to create relation components.
  */
-export const defineRelation = <T extends Component>(options?: {
-	component?: () => T;
-	exclusive?: boolean;
-	autoRemoveSubject?: boolean;
-}): RelationType<T> => {
-	const componentFactory = options?.component || ((() => ({})) as () => T);
+export const defineRelation = <T extends Component>(
+	...args: (WithComponent<T> | WithOptions)[]
+): RelationType<T> => {
+	const options: RelationOptions = {
+		exclusive: false,
+		autoRemoveSubject: false,
+	};
+
+	let componentFactory = (() => ({})) as () => T;
+
+	for (const arg of args) {
+		switch (arg.__type) {
+			case withComponentSymbol: {
+				componentFactory = arg.componentFactory;
+				break;
+			}
+			case withOptionsSymbol: {
+				options.exclusive = arg.options.exclusive ?? false;
+				options.autoRemoveSubject = arg.options.autoRemoveSubject ?? false;
+				break;
+			}
+		}
+	}
 
 	const pairsMap = new Map();
 	const relation = function (target: RelationTarget) {
@@ -52,8 +76,8 @@ export const defineRelation = <T extends Component>(options?: {
 	};
 	defineHiddenProperty(relation, $pairsMap, pairsMap);
 	defineHiddenProperty(relation, $component, componentFactory);
-	defineHiddenProperty(relation, $exclusiveRelation, options && options.exclusive);
-	defineHiddenProperty(relation, $autoRemoveSubject, options && options.autoRemoveSubject);
+	defineHiddenProperty(relation, $exclusiveRelation, options.exclusive);
+	defineHiddenProperty(relation, $autoRemoveSubject, options.autoRemoveSubject);
 	return relation as RelationType<T>;
 };
 
@@ -78,9 +102,11 @@ export const Pair = <T extends Component>(relation: RelationType<T>, target: Rel
 
 export const Wildcard: RelationType<any> | string = defineRelation();
 export const IsA: RelationType<any> = defineRelation();
-export const ChildOf = defineRelation({
-	autoRemoveSubject: true,
-});
+export const ChildOf = defineRelation(
+	withOptions({
+		autoRemoveSubject: true,
+	})
+);
 
 /**
  * Retrieves the relation targets for the given entity in the specified world.

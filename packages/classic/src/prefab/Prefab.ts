@@ -1,53 +1,79 @@
 import { Component } from '../component/types';
 import { addEntity } from '../entity/Entity';
+import { $onAdd, $onRemove } from '../hooks/symbols';
 import { ComponentOrWithParams } from '../hooks/types';
 import { ChildOf, IsA } from '../relation/Relation';
 import { $isPairComponent, $relation, $pairTarget } from '../relation/symbols';
-import { defineHiddenProperties } from '../utils/defineHiddenProperty';
+import { defineHiddenProperties, defineHiddenProperty } from '../utils/defineHiddenProperty';
 import { $eidToPrefab } from '../world/symbols';
 import { World } from '../world/types';
+import {
+	onDeInstantiateSymbol,
+	OnDeIstantiate,
+	OnInstantiate,
+	onInstantiateSymbol,
+	WithComponents,
+	withComponentsSymbol,
+} from './args';
 import { $children, $ancestors, $prefabComponents, $worldToEid } from './symbols';
 import { PrefabNode } from './types';
 
 export const Prefab = {};
-
 /**
  * Defines a prefab, which is a reusable collection of components that can be added to an entity.
  *
  * @param args - An array of components or component-parameter pairs that make up the prefab.
  * @returns A prefab object that can be used to create new entities with the specified components.
  */
-export const definePrefab = <Params = void>(...args: ComponentOrWithParams[]) => {
+export const definePrefab = <Params = void>(
+	...args: (WithComponents | OnInstantiate<Params> | OnDeIstantiate)[]
+) => {
 	const prefab = {} as PrefabNode;
 
-	// Arrange prefabs and components separately
-	// prefabs will be used to build the ancestors list
 	const prefabs: PrefabNode[] = [];
 	const components: ComponentOrWithParams[] = [];
+
 	for (const arg of args) {
-		let component: Component;
-		let params: any;
-		if (Array.isArray(arg)) {
-			component = arg[0];
-			params = arg[1];
-		} else {
-			component = arg;
-		}
+		switch (arg.__type) {
+			// Arrange prefabs and components separately
+			// prefabs will be used to build the ancestors list
+			case withComponentsSymbol: {
+				for (const c of arg.components) {
+					let component: Component;
+					let params: any;
+					if (Array.isArray(c)) {
+						component = c[0];
+						params = c[1];
+					} else {
+						component = c;
+					}
 
-		if (component[$isPairComponent]) {
-			const relation = component[$relation]!;
+					if (component[$isPairComponent]) {
+						const relation = component[$relation]!;
 
-			if (relation === IsA) {
-				const target = component[$pairTarget] as PrefabNode;
-				prefabs.push(target);
-			} else if (relation === ChildOf) {
-				const target = component[$pairTarget] as PrefabNode;
-				if (typeof target === 'object' && $worldToEid in target) {
-					target[$children].push(prefab);
+						if (relation === IsA) {
+							const target = component[$pairTarget] as PrefabNode;
+							prefabs.push(target);
+						} else if (relation === ChildOf) {
+							const target = component[$pairTarget] as PrefabNode;
+							if (typeof target === 'object' && $worldToEid in target) {
+								target[$children].push(prefab);
+							}
+						}
+					} else {
+						components.push(c);
+					}
 				}
+				break;
 			}
-		} else {
-			components.push(arg);
+			case onInstantiateSymbol: {
+				defineHiddenProperty(prefab, $onAdd, arg.onInstantiate);
+				break;
+			}
+			case onDeInstantiateSymbol: {
+				defineHiddenProperty(prefab, $onRemove, arg.onDeInstantiate);
+				break;
+			}
 		}
 	}
 

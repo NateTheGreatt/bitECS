@@ -20,3 +20,8 @@ export type RelationType<T> = T & {
 	[$onRemove]: (world: World, eid: number, reset: boolean) => void;
 	[$onTargetRemoved]: (world: World, subject: number, target: number) => void;
 } & ((target: RelationTarget) => T);
+
+export type RelationOptions = {
+	exclusive: boolean;
+	autoRemoveSubject: boolean;
+};

@@ -16,10 +16,20 @@ import {
 	$relation,
 	$relationTargetEntities,
 } from '../relation/symbols.js';
-import { defineHiddenProperties } from '../utils/defineHiddenProperty.js';
+import { defineHiddenProperties, defineHiddenProperty } from '../utils/defineHiddenProperty.js';
 import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { $bitflag } from '../world/symbols.js';
 import { World } from '../world/types.js';
+import {
+	WithContext,
+	WithStore,
+	OnAdd,
+	OnRemove,
+	withContextSymbol,
+	withStoreSymbol,
+	onAddSymbol,
+	onRemoveSymbol,
+} from './args.js';
 import { $componentCount, $componentMap, $store } from './symbols.js';
 import { Component, ComponentNode } from './types.js';
 
@@ -43,12 +53,31 @@ export const getStore = <Store>(world: World, component: Component<Store>) => {
  *
  * @returns {object}
  */
-export function defineComponent<Store, Params = void>(store: () => Store): Component<Store, Params> {
+export function defineComponent<Store, Params = void, Context extends {} = {}>(
+	...args: (WithContext<Context> | WithStore<Store> | OnAdd<Store, Params> | OnRemove<Store>)[]
+): Component<Store, Params> {
 	const component = {} as Component<Store, Params>;
 
-	defineHiddenProperties(component, {
-		[$store]: store ?? (() => ({})),
-	});
+	for (const arg of args) {
+		switch (arg.__type) {
+			case withContextSymbol: {
+				Object.assign(component, arg.context);
+				break;
+			}
+			case withStoreSymbol: {
+				defineHiddenProperty(component, $store, arg.store);
+				break;
+			}
+			case onAddSymbol: {
+				defineHiddenProperty(component, $onAdd, arg.onAdd);
+				break;
+			}
+			case onRemoveSymbol: {
+				defineHiddenProperty(component, $onRemove, arg.onRemove);
+				break;
+			}
+		}
+	}
 
 	return component;
 }
@@ -80,7 +109,7 @@ export const registerComponent = (world: World, component: Component) => {
 		generationId: world[$entityMasks].length - 1,
 		bitflag: world[$bitflag],
 		ref: component,
-		store: component[$store]?.() ?? {},
+		store: component[$store]?.() ?? component,
 		queries,
 		notQueries,
 	};
