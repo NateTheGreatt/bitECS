@@ -1,5 +1,5 @@
-import { Component, ComponentDefinition } from '../component/types';
+import { Component } from '../component/types';
 
 export type ComponentOrWithParams<C extends Component = Component> =
 	| C
-	| { target: C; params: C extends ComponentDefinition<any, infer P> ? P : never };
+	| [C, C extends Component<any, infer P> ? P : never];

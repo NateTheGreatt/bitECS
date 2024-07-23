@@ -2,7 +2,7 @@ import { SparseSet } from '../utils/SparseSet.js';
 import { hasComponent, registerComponent } from '../component/Component.js';
 import { $componentMap } from '../component/symbols.js';
 import { $entityMasks, $entityArray, $entitySparseSet } from '../entity/symbols.js';
-import { ComponentDefinition } from '../component/types.js';
+import { Component } from '../component/types.js';
 import { TODO } from '../utils/types.js';
 import {
 	$dirtyQueries,
@@ -23,26 +23,26 @@ import { Prefab } from '../prefab/Prefab.js';
 
 export const queries: Query[] = [];
 
-function modifier(c: ComponentDefinition, mod: string): QueryModifier {
+function modifier(c: Component, mod: string): QueryModifier {
 	const inner: TODO = () => [c, mod] as const;
 	inner[$modifier] = true;
 	return inner;
 }
 
-export const Not = (c: ComponentDefinition) => modifier(c, 'not');
-export const Or = (c: ComponentDefinition) => modifier(c, 'or');
+export const Not = (c: Component) => modifier(c, 'not');
+export const Or = (c: Component) => modifier(c, 'or');
 
-export function Any(...comps: ComponentDefinition[]) {
+export function Any(...comps: Component[]) {
 	return function QueryAny() {
 		return comps;
 	};
 }
-export function All(...comps: ComponentDefinition[]) {
+export function All(...comps: Component[]) {
 	return function QueryAll() {
 		return comps;
 	};
 }
-export function None(...comps: ComponentDefinition[]) {
+export function None(...comps: Component[]) {
 	return function QueryNone() {
 		return comps;
 	};
@@ -71,7 +71,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
 		if (c === Prefab) queriesPrefab = true;
 	});
 
-	const mapComponents = (c: ComponentDefinition) => world[$componentMap].get(c)!;
+	const mapComponents = (c: Component) => world[$componentMap].get(c)!;
 	const allComponents = components.concat(notComponents).map(mapComponents);
 
 	const sparseSet = SparseSet();
@@ -147,7 +147,7 @@ export const registerQuery = <W extends World>(world: W, query: Query) => {
  * @returns {function} query
  */
 
-export const defineQuery = (components: (ComponentDefinition | QueryModifier)[]): Query => {
+export const defineQuery = (components: (Component | QueryModifier)[]): Query => {
 	if (components === undefined) {
 		const query: Query = function <W extends World>(world: W) {
 			return world[$entityArray].slice();
@@ -181,13 +181,10 @@ export const defineQuery = (components: (ComponentDefinition | QueryModifier)[])
 
 export function query<W extends World>(
 	world: W,
-	components: (ComponentDefinition | QueryModifier)[]
+	components: (Component | QueryModifier)[]
 ): QueryResult;
 export function query<W extends World>(world: W, queue: Queue): QueryResult;
-export function query<W extends World>(
-	world: W,
-	args: (ComponentDefinition | QueryModifier)[] | Queue
-) {
+export function query<W extends World>(world: W, args: (Component | QueryModifier)[] | Queue) {
 	if (Array.isArray(args)) {
 		const components = args;
 		const hash = archetypeHash(world, components);

@@ -1,4 +1,4 @@
-import { ComponentDefinition } from '../component/types';
+import { Component } from '../component/types';
 import { EMPTY } from '../constants/Constants';
 import { SparseSet } from '../utils/SparseSet';
 import { worlds } from '../world/World';
@@ -8,8 +8,8 @@ import { $queryDataMap, $queueRegisters } from './symbols';
 import { Query, Queue } from './types';
 
 export function defineEnterQueue(query: Query): Queue;
-export function defineEnterQueue(components: ComponentDefinition[]): Queue;
-export function defineEnterQueue(args: Query | ComponentDefinition[]): Queue {
+export function defineEnterQueue(components: Component[]): Queue;
+export function defineEnterQueue(args: Query | Component[]): Queue {
 	const query = typeof args === 'function' ? args : defineQuery(args);
 	let index = -1;
 
@@ -43,8 +43,8 @@ export function defineEnterQueue(args: Query | ComponentDefinition[]): Queue {
 }
 
 export function defineExitQueue(query: Query): Queue;
-export function defineExitQueue(components: ComponentDefinition[]): Queue;
-export function defineExitQueue(args: Query | ComponentDefinition[]): Queue {
+export function defineExitQueue(components: Component[]): Queue;
+export function defineExitQueue(args: Query | Component[]): Queue {
 	const query = typeof args === 'function' ? args : defineQuery(args);
 	let index = -1;
 

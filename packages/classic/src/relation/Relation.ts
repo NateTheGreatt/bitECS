@@ -1,4 +1,4 @@
-import { ComponentDefinition, World, getEntityComponents } from '..';
+import { Component, World, getEntityComponents } from '..';
 import { defineHiddenProperty } from '../utils/defineHiddenProperty';
 import {
 	$pairsMap,
@@ -11,7 +11,7 @@ import {
 } from './symbols';
 import { RelationTarget, RelationType } from './types';
 
-function createOrGetRelationComponent<T extends ComponentDefinition>(
+function createOrGetRelationComponent<T extends Component>(
 	relation: (target: RelationTarget) => T,
 	componentFactory: () => T,
 	pairsMap: Map<any, T>,
@@ -37,7 +37,7 @@ function createOrGetRelationComponent<T extends ComponentDefinition>(
  *   - `autoRemoveSubject`: A boolean indicating whether the relation component should be automatically removed when the subject entity is removed.
  * @returns A relation type function that can be used to create relation components.
  */
-export const defineRelation = <T extends ComponentDefinition>(options?: {
+export const defineRelation = <T extends Component>(options?: {
 	component?: () => T;
 	exclusive?: boolean;
 	autoRemoveSubject?: boolean;
@@ -65,10 +65,7 @@ export const defineRelation = <T extends ComponentDefinition>(options?: {
  * @returns The relation component for the given relation and target.
  * @throws {Error} If the relation or target is undefined.
  */
-export const Pair = <T extends ComponentDefinition>(
-	relation: RelationType<T>,
-	target: RelationTarget
-): T => {
+export const Pair = <T extends Component>(relation: RelationType<T>, target: RelationTarget): T => {
 	if (relation === undefined) throw Error('Relation is undefined');
 	if (target === undefined) throw Error('Relation target is undefined');
 	if (target === '*') target = Wildcard;
