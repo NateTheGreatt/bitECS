@@ -1,6 +1,8 @@
 import { Component, World, getEntityComponents } from '..';
 import { defineHiddenProperty } from '../utils/defineHiddenProperty';
 import {
+	OnTargetRemoved,
+	onTargetRemovedSymbol,
 	WithComponent,
 	withComponentSymbol,
 	withOptions,
@@ -15,6 +17,7 @@ import {
 	$autoRemoveSubject,
 	$exclusiveRelation,
 	$component,
+	$onTargetRemoved,
 } from './symbols';
 import { RelationOptions, RelationTarget, RelationType } from './types';
 
@@ -45,14 +48,14 @@ function createOrGetRelationComponent<T extends Component>(
  * @returns A relation type function that can be used to create relation components.
  */
 export const defineRelation = <T extends Component>(
-	...args: (WithComponent<T> | WithOptions)[]
+	...args: (WithComponent<T> | WithOptions | OnTargetRemoved)[]
 ): RelationType<T> => {
 	const options: RelationOptions = {
 		exclusive: false,
 		autoRemoveSubject: false,
 	};
-
 	let componentFactory = (() => ({})) as () => T;
+	let onTargetRemoved = null;
 
 	for (const arg of args) {
 		switch (arg.__type) {
@@ -63,6 +66,10 @@ export const defineRelation = <T extends Component>(
 			case withOptionsSymbol: {
 				options.exclusive = arg.options.exclusive ?? false;
 				options.autoRemoveSubject = arg.options.autoRemoveSubject ?? false;
+				break;
+			}
+			case onTargetRemovedSymbol: {
+				onTargetRemoved = arg.onTargetRemoved;
 				break;
 			}
 		}
@@ -78,6 +85,8 @@ export const defineRelation = <T extends Component>(
 	defineHiddenProperty(relation, $component, componentFactory);
 	defineHiddenProperty(relation, $exclusiveRelation, options.exclusive);
 	defineHiddenProperty(relation, $autoRemoveSubject, options.autoRemoveSubject);
+	defineHiddenProperty(relation, $onTargetRemoved, onTargetRemoved);
+
 	return relation as RelationType<T>;
 };
 

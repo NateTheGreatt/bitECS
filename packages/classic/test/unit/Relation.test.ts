@@ -9,13 +9,13 @@ import {
 	getRelationTargets,
 	getStore,
 	hasComponent,
-	onAdd,
 	Pair,
+	removeComponent,
 	removeEntity,
 	withStore,
 } from '../../src';
-import { describe, test } from 'vitest';
-import { withComponent, withOptions } from '../../src/relation/args';
+import { describe, expect, test, vi } from 'vitest';
+import { onTargetRemoved, withComponent, withOptions } from '../../src/relation/args';
 
 describe('Relation Unit Tests', () => {
 	// this test only works if the player eid is 0, so it needs to be first
@@ -129,5 +129,18 @@ describe('Relation Unit Tests', () => {
 
 		assert(hasComponent(world, hero, Targeting(rat)) === false);
 		assert(hasComponent(world, hero, Targeting(goblin)) === true);
+	});
+
+	test('should call onTargetRemoved when needed', () => {
+		const world = createWorld();
+		const cbMock = vi.fn();
+		const Targeting = defineRelation(onTargetRemoved(cbMock));
+
+		const hero = addEntity(world);
+		addEntity(world, Targeting(hero));
+
+		removeEntity(world, hero);
+
+		expect(cbMock).toBeCalledTimes(1);
 	});
 });
