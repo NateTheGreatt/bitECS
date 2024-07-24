@@ -14,6 +14,7 @@ export {
 export { addEntity, removeEntity, getEntityComponents, entityExists } from './entity/Entity.js';
 export {
 	getStore,
+	setStore,
 	defineComponent,
 	registerComponent,
 	registerComponents,

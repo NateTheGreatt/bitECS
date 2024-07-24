@@ -10,6 +10,7 @@ import {
 	flushRemovedEntities,
 	defineComponent,
 	getStore,
+	setStore,
 	withParams,
 	withStore,
 	onAdd,
@@ -215,5 +216,16 @@ describe('Component Integration Tests', () => {
 		assert(hasComponent(world, eid, A));
 		assert(hasComponent(world, eid, B));
 		assert(hasComponent(world, eid, C));
+	});
+
+	it('should replace the store of a component', () => {
+		const world = createWorld();
+		registerComponent(world, TestComponent);
+
+		const mockStore = {};
+
+		setStore(world, TestComponent, mockStore as any);
+
+		assert(getStore(world, TestComponent) === mockStore);
 	});
 });

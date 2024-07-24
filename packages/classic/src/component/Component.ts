@@ -16,7 +16,7 @@ import {
 	$relation,
 	$relationTargetEntities,
 } from '../relation/symbols.js';
-import { defineHiddenProperties, defineHiddenProperty } from '../utils/defineHiddenProperty.js';
+import { defineHiddenProperty } from '../utils/defineHiddenProperty.js';
 import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { $bitflag } from '../world/symbols.js';
 import { World } from '../world/types.js';
@@ -43,7 +43,21 @@ import { Component, ComponentNode } from './types.js';
 export const getStore = <Store>(world: World, component: Component<Store>) => {
 	if (!world[$componentMap].has(component)) registerComponent(world, component);
 
-	return world[$componentMap].get(component as any)?.store as Store;
+	return world[$componentMap].get(component)?.store as Store;
+};
+
+/**
+ * Sets the store associated with the specified component in the given world.
+ *
+ * @param {World} world - The world to set the component store in.
+ * @param {Component} component - The component to set the store for.
+ * @param {Store} store - The store to associate with the component.
+ */
+export const setStore = <Store>(world: World, component: Component<Store>, store: Store) => {
+	if (!world[$componentMap].has(component)) registerComponent(world, component);
+
+	const node = world[$componentMap].get(component)!;
+	node.store = store;
 };
 
 /**
