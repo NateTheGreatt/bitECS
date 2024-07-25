@@ -28,4 +28,4 @@ export interface ComponentInstance {
 export type WithStoreFn<Store> = (component: Component) => void & { [$withStore]: true };
 export type OnSetFn<Store, Params> = (component: Component) => void & { [$onSet]: true };
 export type OnRemoveFn<Store> = (component: Component) => void & { [$onRemove]: true };
-export type WithContext<Context> = (component: Component) => void & { [$withContext]: true };
+export type WithContextFn<Context> = (component: Component) => void & { [$withContext]: true };

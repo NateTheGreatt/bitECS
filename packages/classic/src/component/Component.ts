@@ -25,7 +25,7 @@ import {
 	ComponentInstance,
 	OnRemoveFn,
 	OnSetFn,
-	WithContext,
+	WithContextFn,
 	WithStoreFn,
 } from './types.js';
 
@@ -68,7 +68,7 @@ export function defineComponent<Store, Params = void, Context extends {} = {}>(
 		| WithStoreFn<Store>
 		| OnSetFn<Store, Params>
 		| OnRemoveFn<Store>
-		| WithContext<Context>
+		| WithContextFn<Context>
 	)[]
 ): Component<Store, Params> & Context {
 	const component = {} as Component<Store, Params>;

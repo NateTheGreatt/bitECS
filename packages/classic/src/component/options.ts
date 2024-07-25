@@ -2,12 +2,12 @@ import { $onAdd, $onRemove } from '../hooks/symbols';
 import { defineHiddenProperty } from '../utils/defineHiddenProperty';
 import { World } from '../world/types';
 import { $createStore } from './symbols';
-import { Component, OnRemoveFn, OnSetFn, WithContext, WithStoreFn } from './types';
+import { Component, OnRemoveFn, OnSetFn, WithContextFn, WithStoreFn } from './types';
 
-export function withContext<Context>(context: Context): WithContext<Context> {
+export function withContext<Context>(context: Context): WithContextFn<Context> {
 	return ((component: Component) => {
 		Object.assign(component, context);
-	}) as WithContext<Context>;
+	}) as WithContextFn<Context>;
 }
 
 export function withStore<Store>(createStore: () => Store): WithStoreFn<Store> {
