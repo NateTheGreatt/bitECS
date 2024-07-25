@@ -244,10 +244,22 @@ describe('Component Integration Tests', () => {
 		const world = createWorld();
 		registerComponent(world, TestComponent);
 
-		const mockStore = {};
+		const mockStore = { value: [] };
 
-		setStore(world, TestComponent, mockStore as any);
+		setStore(world, TestComponent, mockStore);
 
 		assert(getStore(world, TestComponent) === mockStore);
+	});
+
+	it('should replace the context of a component when the store was not provided', () => {
+		const world = createWorld();
+		const ContextComponent = defineComponent(withContext({ foo: 'bar' }));
+		registerComponent(world, ContextComponent);
+
+		const mockContext = { foo: 'baz' };
+
+		setStore(world, ContextComponent, mockContext);
+
+		assert(getStore(world, ContextComponent) === mockContext);
 	});
 });
