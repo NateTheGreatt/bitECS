@@ -9,8 +9,6 @@ import {
 	flushRemovedEntities,
 	getStore,
 	hasComponent,
-	onRemove,
-	onSet,
 	registerComponent,
 	removeComponent,
 	removeEntity,
@@ -21,13 +19,14 @@ import {
 } from '../../src/index.js';
 import { createWorld } from '../../src/world/World.js';
 
-const TestComponent = defineComponent<{ value: number[] }, { value: number }>(
-	withStore(() => ({ value: [] })),
-	onSet((world, store, eid, params = { value: 0 }) => {
-		store.value[eid] = params.value;
-	}),
-	onRemove((world, store, eid, reset) => {
-		if (reset) delete store.value[eid];
+const TestComponent = defineComponent(
+	withStore<{ value: number[] }, { value: number }>(() => ({ value: [] }), {
+		onSet: (world, store, eid, params = { value: 0 }) => {
+			store.value[eid] = params.value;
+		},
+		onRemove: (world, store, eid, reset) => {
+			if (reset) delete store.value[eid];
+		},
 	})
 );
 
@@ -52,6 +51,24 @@ describe('Component Integration Tests', () => {
 		// Gets added with default value of 0 to eid 0.
 		expect(storeB).toMatchObject({ value: [0] });
 		expect(storeA).not.toBe(storeB);
+	});
+
+	it('should chain multiple withStore calls', () => {
+		const world = createWorld();
+
+		const TestComponent = defineComponent(
+			withStore<{ value: number[] }, { value: number }>(() => ({ value: [] })),
+			withStore<{ value2: number[] }, { value2: number }>((store) => {
+				return Object.assign(store, { value2: [] });
+			})
+		);
+
+		const eid = addEntity(world);
+		addComponent(world, eid, TestComponent);
+
+		const store = getStore(world, TestComponent);
+
+		expect(store).toMatchObject({ value: [], value2: [] });
 	});
 
 	it('should register components on-demand', () => {
@@ -79,6 +96,24 @@ describe('Component Integration Tests', () => {
 		addComponent(world, eid, StaticComponent);
 		assert(hasComponent(world, eid, StaticComponent));
 		assert(StaticComponent.resource === resource);
+	});
+
+	it('can chain multiple withContext calls', () => {
+		const world = createWorld();
+
+		const resource = new Float64Array(1000);
+		const resource2 = new Float64Array(1000);
+
+		const StaticComponent = defineComponent(
+			withContext({ resource }),
+			withContext({ resource2 })
+		);
+
+		const eid = addEntity(world);
+		addComponent(world, eid, StaticComponent);
+
+		expect(StaticComponent.resource).toBe(resource);
+		expect(StaticComponent.resource2).toBe(resource2);
 	});
 
 	it('should add and remove components from an entity', () => {

@@ -1,8 +1,8 @@
-import { $onAdd, $onRemove } from '../hooks/symbols';
+import { $onRemove, $onSet } from '../hooks/symbols';
 import { defineHiddenProperty } from '../utils/defineHiddenProperty';
 import { World } from '../world/types';
 import { $createStore } from './symbols';
-import { Component, OnRemoveFn, OnSetFn, WithContextFn, WithStoreFn } from './types';
+import { Component, WithContextFn, WithStoreFn } from './types';
 
 export function withContext<Context>(context: Context): WithContextFn<Context> {
 	return ((component: Component) => {
@@ -10,24 +10,20 @@ export function withContext<Context>(context: Context): WithContextFn<Context> {
 	}) as WithContextFn<Context>;
 }
 
-export function withStore<Store>(createStore: () => Store): WithStoreFn<Store> {
-	return ((component: Component) => {
-		defineHiddenProperty(component, $createStore, createStore);
-	}) as WithStoreFn<Store>;
-}
+type WithStoreOptions<Store, Params, W extends World> = {
+	onSet?: (world: W, store: Store, eid: number, params: Params) => void;
+	onRemove?: (world: W, store: Store, eid: number, reset: boolean) => void;
+};
 
-export function onSet<Store, Params, W extends World>(
-	callback: (world: W, store: Store, eid: number, params: Params) => void
-): OnSetFn<Store, Params> {
+export function withStore<Store, Params = unknown, W extends World = World>(
+	createStore: (store: any) => Store,
+	options: WithStoreOptions<Store, Params, W> = {}
+): WithStoreFn<Store, Params> {
 	return ((component: Component) => {
-		defineHiddenProperty(component, $onAdd, callback);
-	}) as OnSetFn<Store, Params>;
-}
+		if (!component[$createStore]) defineHiddenProperty(component, $createStore, []);
+		component[$createStore]!.push(createStore);
 
-export function onRemove<Store, W extends World>(
-	callback: (world: W, store: Store, eid: number, reset: boolean) => void
-): OnRemoveFn<Store> {
-	return ((component: Component) => {
-		defineHiddenProperty(component, $onRemove, callback);
-	}) as OnRemoveFn<Store>;
+		if (options.onSet) defineHiddenProperty(component, $onSet, options.onSet);
+		if (options.onRemove) defineHiddenProperty(component, $onRemove, options.onRemove);
+	}) as WithStoreFn<Store, Params>;
 }

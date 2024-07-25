@@ -1,6 +1,6 @@
 import { addChildren } from '../entity/Entity.js';
 import { $entityComponents, $entityMasks } from '../entity/symbols.js';
-import { $onAdd, $onRemove } from '../hooks/symbols.js';
+import { $onAdd, $onRemove, $onSet } from '../hooks/symbols.js';
 import { ComponentOrWithParams } from '../hooks/types.js';
 import { Prefab, registerPrefab } from '../prefab/Prefab.js';
 import { $ancestors, $children, $prefabComponents } from '../prefab/symbols.js';
@@ -23,8 +23,10 @@ import { $componentCount, $componentMap, $createStore } from './symbols.js';
 import {
 	Component,
 	ComponentInstance,
-	OnRemoveFn,
-	OnSetFn,
+	ComponentOptions,
+	MergeContexts,
+	MergeParams,
+	MergeStores,
 	WithContextFn,
 	WithStoreFn,
 } from './types.js';
@@ -63,18 +65,14 @@ export const setStore = <Store>(world: World, component: Component<Store>, store
  *
  * @returns {object}
  */
-export function defineComponent<Store, Params = void, Context extends {} = {}>(
-	...options: (
-		| WithStoreFn<Store>
-		| OnSetFn<Store, Params>
-		| OnRemoveFn<Store>
-		| WithContextFn<Context>
-	)[]
-): Component<Store, Params> & Context {
-	const component = {} as Component<Store, Params>;
+export function defineComponent<Options extends ComponentOptions>(
+	...options: Options
+): Component<MergeStores<Options>, MergeParams<Options>> & MergeContexts<Options> {
+	const component = {} as Component<MergeStores<Options>, MergeParams<Options>>;
 	for (const option of options) option(component);
 
-	return component as Component<Store, Params> & Context;
+	return component as Component<MergeStores<Options>, MergeParams<Options>> &
+		MergeContexts<Options>;
 }
 
 /**
@@ -98,13 +96,23 @@ export const registerComponent = (world: World, component: Component) => {
 		}
 	});
 
+	let store: any;
+
+	if (component[$createStore]) {
+		component[$createStore].forEach((createStore) => {
+			store = createStore(store);
+		});
+	} else {
+		store = component;
+	}
+
 	// Register internal component node with world.
 	const instance: ComponentInstance = {
 		id: world[$componentCount]++,
 		generationId: world[$entityMasks].length - 1,
 		bitflag: world[$bitflag],
 		ref: component,
-		store: component[$createStore]?.() ?? component,
+		store,
 		queries,
 		notQueries,
 	};
@@ -245,9 +253,9 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 
 		addComponentInternal(world, eid, component);
 		if (component[$relation] && component[$pairTarget] !== Wildcard) {
-			component[$relation][$onAdd]?.(world, getStore(world, component), eid, params);
+			component[$relation][$onSet]?.(world, getStore(world, component), eid, params);
 		} else {
-			component[$onAdd]?.(world, getStore(world, component), eid, params);
+			component[$onSet]?.(world, getStore(world, component), eid, params);
 		}
 	}
 
