@@ -43,7 +43,7 @@ export * from './relation/Relation.js';
 export * from './prefab/Prefab.js';
 //export * from './hooks/hooks.js';
 export * from './hooks/utils.js';
-export { withContext, withStore, onAdd, onRemove } from './component/args.js';
+export { withContext, withStore, onSet, onRemove } from './component/options.js';
 export { withComponents, onInstantiate, onDeInstantiate } from './prefab/args.js';
 export { withComponent, withOptions } from './relation/args.js';
 

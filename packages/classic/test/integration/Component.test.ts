@@ -1,37 +1,29 @@
 import assert from 'assert';
+import { describe, expect, it } from 'vitest';
+import { $componentMap } from '../../src/component/symbols.js';
 import {
-	addEntity,
 	addComponent,
+	addComponents,
+	addEntity,
+	defineComponent,
+	flushRemovedEntities,
+	getStore,
 	hasComponent,
+	onRemove,
+	onSet,
 	registerComponent,
 	removeComponent,
 	removeEntity,
-	addComponents,
-	flushRemovedEntities,
-	defineComponent,
-	getStore,
 	setStore,
+	withContext,
 	withParams,
 	withStore,
-	onAdd,
-	onRemove,
-	withContext,
 } from '../../src/index.js';
 import { createWorld } from '../../src/world/World.js';
-import { describe, expect, it } from 'vitest';
-import { $componentMap } from '../../src/component/symbols.js';
-
-const primtiveTypes = {
-	object: {},
-	//array: [], // Doesn't work as withParams can be an array as well
-	buffer: defineComponent(withContext({ buffer: new ArrayBuffer(8) })),
-	Map: defineComponent(withContext({ map: new Map() })),
-	Set: defineComponent(withContext({ set: new Set() })),
-};
 
 const TestComponent = defineComponent<{ value: number[] }, { value: number }>(
 	withStore(() => ({ value: [] })),
-	onAdd((world, store, eid, params = { value: 0 }) => {
+	onSet((world, store, eid, params = { value: 0 }) => {
 		store.value[eid] = params.value;
 	}),
 	onRemove((world, store, eid, reset) => {
@@ -71,11 +63,22 @@ describe('Component Integration Tests', () => {
 
 	it('should register components automatically upon adding to an entity', () => {
 		const world = createWorld();
-
 		const eid = addEntity(world);
 
 		addComponent(world, eid, TestComponent);
 		assert(world[$componentMap].has(TestComponent));
+	});
+
+	it('can define a component with context', () => {
+		const resource = new Float64Array(1000);
+		const StaticComponent = defineComponent(withContext({ resource }));
+
+		const world = createWorld();
+		const eid = addEntity(world);
+
+		addComponent(world, eid, StaticComponent);
+		assert(hasComponent(world, eid, StaticComponent));
+		assert(StaticComponent.resource === resource);
 	});
 
 	it('should add and remove components from an entity', () => {
@@ -102,7 +105,7 @@ describe('Component Integration Tests', () => {
 
 	it('should create tag components', () => {
 		const world = createWorld();
-		const IsTag = {};
+		const IsTag = defineComponent();
 
 		const eid = addEntity(world);
 
@@ -115,22 +118,6 @@ describe('Component Integration Tests', () => {
 
 		removeComponent(world, eid, IsTag);
 		assert(hasComponent(world, eid, IsTag) === false);
-	});
-
-	(Object.keys(primtiveTypes) as (keyof typeof primtiveTypes)[]).forEach((type) => {
-		it(`should correctly add ${type} as components`, () => {
-			const component = primtiveTypes[type];
-			const world = createWorld();
-
-			const eid = addEntity(world);
-
-			addComponent(world, eid, component);
-			assert(hasComponent(world, eid, component));
-
-			// Primitives return themselves as the store.
-			const store = getStore(world, component);
-			assert(store === component);
-		});
 	});
 
 	it('should only remove the component specified', () => {

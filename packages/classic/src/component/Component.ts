@@ -3,7 +3,7 @@ import { $entityComponents, $entityMasks } from '../entity/symbols.js';
 import { $onAdd, $onRemove } from '../hooks/symbols.js';
 import { ComponentOrWithParams } from '../hooks/types.js';
 import { Prefab, registerPrefab } from '../prefab/Prefab.js';
-import { $children, $ancestors, $prefabComponents, $worldToEid } from '../prefab/symbols.js';
+import { $ancestors, $children, $prefabComponents } from '../prefab/symbols.js';
 import { PrefabNode } from '../prefab/types.js';
 import { query, queryAddEntity, queryCheckEntity, queryRemoveEntity } from '../query/Query.js';
 import { $queries } from '../query/symbols.js';
@@ -16,22 +16,18 @@ import {
 	$relation,
 	$relationTargetEntities,
 } from '../relation/symbols.js';
-import { defineHiddenProperty } from '../utils/defineHiddenProperty.js';
 import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { $bitflag } from '../world/symbols.js';
 import { World } from '../world/types.js';
+import { $componentCount, $componentMap, $createStore } from './symbols.js';
 import {
+	Component,
+	ComponentInstance,
+	OnRemoveFn,
+	OnSetFn,
 	WithContext,
-	WithStore,
-	OnAdd,
-	OnRemove,
-	withContextSymbol,
-	withStoreSymbol,
-	onAddSymbol,
-	onRemoveSymbol,
-} from './args.js';
-import { $componentCount, $componentMap, $store } from './symbols.js';
-import { Component, ComponentNode } from './types.js';
+	WithStoreFn,
+} from './types.js';
 
 /**
  * Retrieves the store associated with the specified component in the given world.
@@ -68,32 +64,17 @@ export const setStore = <Store>(world: World, component: Component<Store>, store
  * @returns {object}
  */
 export function defineComponent<Store, Params = void, Context extends {} = {}>(
-	...args: (WithContext<Context> | WithStore<Store> | OnAdd<Store, Params> | OnRemove<Store>)[]
-): Component<Store, Params> {
+	...options: (
+		| WithStoreFn<Store>
+		| OnSetFn<Store, Params>
+		| OnRemoveFn<Store>
+		| WithContext<Context>
+	)[]
+): Component<Store, Params> & Context {
 	const component = {} as Component<Store, Params>;
+	for (const option of options) option(component);
 
-	for (const arg of args) {
-		switch (arg.__type) {
-			case withContextSymbol: {
-				Object.assign(component, arg.context);
-				break;
-			}
-			case withStoreSymbol: {
-				defineHiddenProperty(component, $store, arg.store);
-				break;
-			}
-			case onAddSymbol: {
-				defineHiddenProperty(component, $onAdd, arg.onAdd);
-				break;
-			}
-			case onRemoveSymbol: {
-				defineHiddenProperty(component, $onRemove, arg.onRemove);
-				break;
-			}
-		}
-	}
-
-	return component;
+	return component as Component<Store, Params> & Context;
 }
 
 /**
@@ -118,17 +99,17 @@ export const registerComponent = (world: World, component: Component) => {
 	});
 
 	// Register internal component node with world.
-	const componentNode: ComponentNode = {
+	const instance: ComponentInstance = {
 		id: world[$componentCount]++,
 		generationId: world[$entityMasks].length - 1,
 		bitflag: world[$bitflag],
 		ref: component,
-		store: component[$store]?.() ?? component,
+		store: component[$createStore]?.() ?? component,
 		queries,
 		notQueries,
 	};
 
-	world[$componentMap].set(component, componentNode);
+	world[$componentMap].set(component, instance);
 
 	incrementWorldBitflag(world);
 };
@@ -289,8 +270,8 @@ export const addComponentInternal = (world: World, eid: number, component: Compo
 	// Register the component with the world if it isn't already.
 	if (!world[$componentMap].has(component)) registerComponent(world, component);
 
-	const componentNode = world[$componentMap].get(component)!;
-	const { generationId, bitflag, queries } = componentNode;
+	const instance = world[$componentMap].get(component)!;
+	const { generationId, bitflag, queries } = instance;
 
 	// Add bitflag to entity bitmask.
 	world[$entityMasks][generationId][eid] |= bitflag;
@@ -338,8 +319,8 @@ export const removeComponent = (world: World, eid: number, component: Component,
 	// Exit early if the entity does not have the component.
 	if (!hasComponent(world, eid, component)) return;
 
-	const componentNode = world[$componentMap].get(component)!;
-	const { generationId, bitflag, queries } = componentNode;
+	const instance = world[$componentMap].get(component)!;
+	const { generationId, bitflag, queries } = instance;
 
 	// Remove flag from entity bitmask.
 	world[$entityMasks][generationId][eid] &= ~bitflag;

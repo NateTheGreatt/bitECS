@@ -11,7 +11,7 @@ import {
 	getPrefabEid,
 	getStore,
 	hasComponent,
-	onAdd,
+	onSet,
 	onInstantiate,
 	query,
 	withComponents,
@@ -62,7 +62,7 @@ describe('Prefab Integration Tests', () => {
 	test('multiple inheritance and overrides', () => {
 		const Position = defineComponent(
 			withStore(() => ({ x: [] as number[], y: [] as number[] })),
-			onAdd((world, store, eid, params?: { x: number; y: number }) => {
+			onSet((world, store, eid, params?: { x: number; y: number }) => {
 				store.x[eid] = params?.x ?? 0;
 				store.y[eid] = params?.y ?? 0;
 			})
@@ -70,28 +70,28 @@ describe('Prefab Integration Tests', () => {
 
 		const Health = defineComponent(
 			withStore(() => [] as number[]),
-			onAdd((world, store, eid, health: number) => {
+			onSet((world, store, eid, health: number) => {
 				store[eid] = health ?? 0;
 			})
 		);
 
 		const Alignment = defineComponent(
 			withStore(() => [] as string[]),
-			onAdd((world, store, eid, alignment: string) => {
+			onSet((world, store, eid, alignment: string) => {
 				store[eid] = alignment ?? 'neutral';
 			})
 		);
 
 		const Mana = defineComponent(
 			withStore(() => [] as number[]),
-			onAdd((world, store, eid, amount: number) => {
+			onSet((world, store, eid, amount: number) => {
 				store[eid] = amount ?? 0;
 			})
 		);
 
 		const Element = defineComponent(
 			withStore(() => [] as string[]),
-			onAdd((world, store, eid, element: string) => {
+			onSet((world, store, eid, element: string) => {
 				store[eid] = element;
 			})
 		);
@@ -151,12 +151,12 @@ describe('Prefab Integration Tests', () => {
 	test('nested prefabs', () => {
 		type Vec3 = [number, number, number];
 		const vec3Store = () => [] as Vec3[];
-		const onAddVec3 = (world: World, store: Vec3[], eid: number, vec: Vec3) => {
+		const onSetVec3 = (world: World, store: Vec3[], eid: number, vec: Vec3) => {
 			store[eid] = vec ?? [0, 0, 0];
 		};
-		const Box = defineComponent(withStore(vec3Store), onAdd(onAddVec3));
-		const Position = defineComponent(withStore(vec3Store), onAdd(onAddVec3));
-		const Color = defineComponent(withStore(vec3Store), onAdd(onAddVec3));
+		const Box = defineComponent(withStore(vec3Store), onSet(onSetVec3));
+		const Position = defineComponent(withStore(vec3Store), onSet(onSetVec3));
+		const Color = defineComponent(withStore(vec3Store), onSet(onSetVec3));
 
 		const Tree = definePrefab(withComponents(Position));
 		const Trunk = definePrefab(
@@ -208,7 +208,7 @@ describe('Prefab Integration Tests', () => {
 		type Vec3 = [number, number, number];
 		const Box = defineComponent(
 			withStore(() => [] as Vec3[]),
-			onAdd((world, store, eid, vec: Vec3) => {
+			onSet((world, store, eid, vec: Vec3) => {
 				store[eid] = vec ?? [0, 0, 0];
 			})
 		);
