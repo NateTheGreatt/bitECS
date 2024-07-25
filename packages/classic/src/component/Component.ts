@@ -49,7 +49,15 @@ export const getStore = <Store>(world: World, component: Component<Store>) => {
  * @param {Component} component - The component to set the store for.
  * @param {Store} store - The store to associate with the component.
  */
-export const setStore = <Store>(world: World, component: Component<Store>, store: Store) => {
+export const setStore = <C extends Component>(
+	world: World,
+	component: C,
+	store: C extends Component<infer Store>
+		? undefined extends Store
+			? Omit<C, keyof Component>
+			: Store
+		: never
+) => {
 	if (!world[$componentMap].has(component)) registerComponent(world, component);
 
 	const node = world[$componentMap].get(component)!;
