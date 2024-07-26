@@ -1,7 +1,7 @@
 import { addChildren } from '../entity/Entity.js';
 import { $entityComponents, $entityMasks } from '../entity/symbols.js';
-import { $onAdd, $onReset, $onSet } from '../hooks/symbols.js';
-import { ComponentOrWithParams } from '../hooks/types.js';
+import { $createStore, $onAdd, $onReset, $onSet } from '../options/symbols.js';
+import { ComponentOrWithParams } from '../options/types.js';
 import { Prefab, registerPrefab } from '../prefab/Prefab.js';
 import { $ancestors, $children, $prefabComponents } from '../prefab/symbols.js';
 import { PrefabNode } from '../prefab/types.js';
@@ -19,7 +19,7 @@ import {
 import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { $bitflag } from '../world/symbols.js';
 import { World } from '../world/types.js';
-import { $componentCount, $componentMap, $createStore } from './symbols.js';
+import { $componentCount, $componentMap } from './symbols.js';
 import {
 	Component,
 	ComponentInstance,
@@ -27,8 +27,6 @@ import {
 	MergeContexts,
 	MergeParams,
 	MergeStores,
-	WithContextFn,
-	WithStoreFn,
 } from './types.js';
 
 /**

@@ -4,8 +4,8 @@ import {
 	hasComponent,
 	removeComponent,
 } from '../component/Component.js';
-import { $onReset } from '../hooks/symbols.js';
-import { ComponentOrWithParams } from '../hooks/types.js';
+import { $onReset } from '../options/symbols.js';
+import { ComponentOrWithParams } from '../options/types.js';
 import { Prefab } from '../prefab/Prefab.js';
 import { $children } from '../prefab/symbols.js';
 import { PrefabNode } from '../prefab/types.js';

@@ -1,5 +1,5 @@
 import { Component } from '../component/types';
-import { $onAdd, $onReset } from '../hooks/symbols';
+import { $onAdd, $onReset } from '../options/symbols';
 import { World } from '../world/types';
 import { $children, $ancestors, $prefabComponents, $worldToEid } from './symbols';
 

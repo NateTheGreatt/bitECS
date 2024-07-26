@@ -1,4 +1,4 @@
-import { $onAdd, $onReset } from '../hooks/symbols';
+import { $onAdd, $onReset } from '../options/symbols';
 import { PrefabNode } from '../prefab/types';
 import { World } from '../world/types';
 import {

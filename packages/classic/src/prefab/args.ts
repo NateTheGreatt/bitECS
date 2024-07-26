@@ -1,4 +1,4 @@
-import { ComponentOrWithParams } from '../hooks/types';
+import { ComponentOrWithParams } from '../options/types';
 import { World } from '../world/types';
 
 export const withComponentsSymbol = Symbol('withComponents');

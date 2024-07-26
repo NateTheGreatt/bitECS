@@ -1,9 +1,8 @@
-import { $onReset, $onSet } from '../hooks/symbols';
+import { $createStore, $onReset, $onSet } from '../options/symbols';
+import { WithContextFn, WithStoreFn } from '../options/types';
 import { QueryData } from '../query/types';
 import { $isPairComponent, $pairTarget, $relation } from '../relation/symbols';
 import { RelationTarget, RelationType } from '../relation/types';
-import { World } from '../world/types';
-import { $createStore, $withContext, $withStore } from './symbols';
 
 export type Component<Store = any, Params = any> = {
 	name?: string;
@@ -24,11 +23,6 @@ export interface ComponentInstance {
 	queries: Set<QueryData>;
 	notQueries: Set<QueryData>;
 }
-
-// Options
-export type WithStoreFn<Store, Params> = (component: Component) => void & { [$withStore]: true };
-export type WithContextFn<Context> = (component: Component) => void & { [$withContext]: true };
-export type OnAddFn<W extends World = World> = (world: W, eid: number) => void;
 
 export type ComponentOptions = (WithStoreFn<any, any> | WithContextFn<any>)[];
 

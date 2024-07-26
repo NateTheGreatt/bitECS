@@ -1,7 +1,7 @@
 import { Component } from '../component/types';
 import { addEntity } from '../entity/Entity';
-import { $onAdd, $onReset } from '../hooks/symbols';
-import { ComponentOrWithParams } from '../hooks/types';
+import { $onAdd, $onReset } from '../options/symbols';
+import { ComponentOrWithParams } from '../options/types';
 import { ChildOf, IsA } from '../relation/Relation';
 import { $isPairComponent, $relation, $pairTarget } from '../relation/symbols';
 import { defineHiddenProperties, defineHiddenProperty } from '../utils/defineHiddenProperty';

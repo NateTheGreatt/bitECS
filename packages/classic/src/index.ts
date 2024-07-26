@@ -41,9 +41,8 @@ export {
 	resetWorld,
 	worlds,
 } from './world/World.js';
-//export * from './hooks/hooks.js';
-export { withContext, withStore } from './component/options.js';
-export * from './hooks/utils.js';
+
+export * from './options/options.js';
 export { onDeInstantiate, onInstantiate, withComponents } from './prefab/args.js';
 export { withComponent, withOptions } from './relation/args.js';
 
