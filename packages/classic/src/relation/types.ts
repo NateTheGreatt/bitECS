@@ -1,4 +1,4 @@
-import { $onAdd, $onRemove } from '../hooks/symbols';
+import { $onAdd, $onReset } from '../hooks/symbols';
 import { PrefabNode } from '../prefab/types';
 import { World } from '../world/types';
 import {
@@ -17,7 +17,7 @@ export type RelationType<T> = T & {
 	[$exclusiveRelation]: boolean;
 	[$autoRemoveSubject]: boolean;
 	[$onAdd]: (world: World, eid: number, params: any) => void;
-	[$onRemove]: (world: World, eid: number, reset: boolean) => void;
+	[$onReset]: (world: World, eid: number, reset: boolean) => void;
 	[$onTargetRemoved]: (world: World, subject: number, target: number) => void;
 } & ((target: RelationTarget) => T);
 

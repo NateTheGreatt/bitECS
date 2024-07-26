@@ -1,6 +1,6 @@
 import { Component } from '../component/types';
 import { addEntity } from '../entity/Entity';
-import { $onAdd, $onRemove } from '../hooks/symbols';
+import { $onAdd, $onReset } from '../hooks/symbols';
 import { ComponentOrWithParams } from '../hooks/types';
 import { ChildOf, IsA } from '../relation/Relation';
 import { $isPairComponent, $relation, $pairTarget } from '../relation/symbols';
@@ -19,6 +19,7 @@ import { $children, $ancestors, $prefabComponents, $worldToEid } from './symbols
 import { PrefabNode } from './types';
 
 export const Prefab = {};
+
 /**
  * Defines a prefab, which is a reusable collection of components that can be added to an entity.
  *
@@ -71,7 +72,7 @@ export const definePrefab = <Params = void>(
 				break;
 			}
 			case onDeInstantiateSymbol: {
-				defineHiddenProperty(prefab, $onRemove, arg.onDeInstantiate);
+				defineHiddenProperty(prefab, $onReset, arg.onDeInstantiate);
 				break;
 			}
 		}

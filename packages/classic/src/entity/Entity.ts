@@ -4,7 +4,7 @@ import {
 	hasComponent,
 	removeComponent,
 } from '../component/Component.js';
-import { $onRemove } from '../hooks/symbols.js';
+import { $onReset } from '../hooks/symbols.js';
 import { ComponentOrWithParams } from '../hooks/types.js';
 import { Prefab } from '../prefab/Prefab.js';
 import { $children } from '../prefab/symbols.js';
@@ -79,12 +79,12 @@ export const removeEntity = (world: World, eid: number, reset: boolean = false) 
 	for (const component of world[$entityComponents].get(eid)!) {
 		if (component[$isPairComponent]) {
 			if (component[$relation] === IsA) {
-				(component[$pairTarget] as PrefabNode)[$onRemove]?.(world, eid, reset);
+				(component[$pairTarget] as PrefabNode)[$onReset]?.(world, eid, reset);
 			} else if (component[$pairTarget] !== Wildcard) {
-				component[$relation]![$onRemove]?.(world, getStore(world, component), eid, reset);
+				component[$relation]![$onReset]?.(world, getStore(world, component), eid, reset);
 			}
 		} else {
-			component[$onRemove]?.(world, getStore(world, component), eid, reset);
+			component[$onReset]?.(world, getStore(world, component), eid, reset);
 		}
 	}
 

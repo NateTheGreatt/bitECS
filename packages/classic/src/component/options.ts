@@ -1,8 +1,8 @@
-import { $onRemove, $onSet } from '../hooks/symbols';
+import { $onReset, $onSet } from '../hooks/symbols';
 import { defineHiddenProperty } from '../utils/defineHiddenProperty';
 import { World } from '../world/types';
 import { $createStore } from './symbols';
-import { Component, WithContextFn, WithStoreFn } from './types';
+import { Component, OnAddFn, WithContextFn, WithStoreFn } from './types';
 
 export function withContext<Context>(context: Context): WithContextFn<Context> {
 	return ((component: Component) => {
@@ -12,7 +12,7 @@ export function withContext<Context>(context: Context): WithContextFn<Context> {
 
 type WithStoreOptions<Store, Params, W extends World> = {
 	onSet?: (world: W, store: Store, eid: number, params: Params) => void;
-	onRemove?: (world: W, store: Store, eid: number, reset: boolean) => void;
+	onReset?: (world: W, store: Store, eid: number) => void;
 };
 
 export function withStore<Store, Params = unknown, W extends World = World>(
@@ -24,6 +24,6 @@ export function withStore<Store, Params = unknown, W extends World = World>(
 		component[$createStore]!.push(createStore);
 
 		if (options.onSet) defineHiddenProperty(component, $onSet, options.onSet);
-		if (options.onRemove) defineHiddenProperty(component, $onRemove, options.onRemove);
+		if (options.onReset) defineHiddenProperty(component, $onReset, options.onReset);
 	}) as WithStoreFn<Store, Params>;
 }

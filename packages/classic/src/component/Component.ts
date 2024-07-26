@@ -1,6 +1,6 @@
 import { addChildren } from '../entity/Entity.js';
 import { $entityComponents, $entityMasks } from '../entity/symbols.js';
-import { $onAdd, $onRemove, $onSet } from '../hooks/symbols.js';
+import { $onAdd, $onReset, $onSet } from '../hooks/symbols.js';
 import { ComponentOrWithParams } from '../hooks/types.js';
 import { Prefab, registerPrefab } from '../prefab/Prefab.js';
 import { $ancestors, $children, $prefabComponents } from '../prefab/symbols.js';
@@ -376,14 +376,14 @@ export const removeComponent = (world: World, eid: number, component: Component,
 		}
 
 		if (component[$relation] === IsA) {
-			(component[$pairTarget] as PrefabNode)[$onRemove]?.(world, eid, reset);
+			if (reset) (component[$pairTarget] as PrefabNode)[$onReset]?.(world, eid);
 		} else if (component[$pairTarget] !== Wildcard) {
-			component[$relation]![$onRemove]?.(world, getStore(world, component), eid, reset);
+			if (reset) component[$relation]![$onReset]?.(world, getStore(world, component), eid);
 		}
 
 		// TODO: recursively disinherit
 	} else {
-		component[$onRemove]?.(world, getStore(world, component), eid, reset);
+		if (reset) component[$onReset]?.(world, getStore(world, component), eid);
 	}
 };
 

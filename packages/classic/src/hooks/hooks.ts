@@ -3,7 +3,7 @@ import { PrefabNode } from '../prefab/types';
 import { $onTargetRemoved } from '../relation/symbols';
 import { RelationType } from '../relation/types';
 import { World } from '../world/types';
-import { $onAdd, $onRemove } from './symbols';
+import { $onAdd, $onReset } from './symbols';
 
 export function onAdd<Params, W extends World = World>(
 	prefab: PrefabNode<Params>,
@@ -34,7 +34,7 @@ export function onRemove<Store, Params, W extends World = World>(
 	cb: (world: W, store: Store, eid: number, reset: boolean) => void
 ): void;
 export function onRemove(subject: any, cb: any) {
-	subject[$onRemove] = cb;
+	subject[$onReset] = cb;
 }
 
 export function onTargetRemoved<W extends World = World>(

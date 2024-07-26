@@ -24,8 +24,8 @@ const TestComponent = defineComponent(
 		onSet: (world, store, eid, params = { value: 0 }) => {
 			store.value[eid] = params.value;
 		},
-		onRemove: (world, store, eid, reset) => {
-			if (reset) delete store.value[eid];
+		onReset: (world, store, eid) => {
+			delete store.value[eid];
 		},
 	})
 );
@@ -51,6 +51,10 @@ describe('Component Integration Tests', () => {
 		// Gets added with default value of 0 to eid 0.
 		expect(storeB).toMatchObject({ value: [0] });
 		expect(storeA).not.toBe(storeB);
+
+		// Deletes the store from worldA when reset.
+		removeComponent(worldA, eidA, TestComponent, true);
+		expect(storeA.value[eidA]).toBe(undefined);
 	});
 
 	it('should chain multiple withStore calls', () => {
