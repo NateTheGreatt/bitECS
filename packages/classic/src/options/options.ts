@@ -24,8 +24,11 @@ export function withStore<Store, Params = unknown, W extends World = World>(
 		if (!component[$createStore]) defineHiddenProperty(component, $createStore, []);
 		component[$createStore]!.push(createStore);
 
-		if (options.onSet) defineHiddenProperty(component, $onSet, options.onSet);
-		if (options.onReset) defineHiddenProperty(component, $onReset, options.onReset);
+		if (!component[$onSet]) defineHiddenProperty(component, $onSet, []);
+		if (options.onSet) component[$onSet]!.push(options.onSet);
+
+		if (!component[$onReset]) defineHiddenProperty(component, $onReset, []);
+		if (options.onReset) component[$onReset]!.push(options.onReset);
 	}) as WithStoreFn<Store, Params>;
 }
 

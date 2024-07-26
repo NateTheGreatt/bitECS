@@ -61,18 +61,38 @@ describe('Component Integration Tests', () => {
 		const world = createWorld();
 
 		const TestComponent = defineComponent(
-			withStore<{ value: number[] }, { value: number }>(() => ({ value: [] })),
-			withStore<{ value2: number[] }, { value2: number }>((store) => {
-				return Object.assign(store, { value2: [] });
-			})
+			withStore<{ value: number[] }, { value: number }>(() => ({ value: [] }), {
+				onSet: (world, store, eid, params = { value: 0 }) => {
+					store.value[eid] = params.value;
+				},
+				onReset: (world, store, eid) => {
+					delete store.value[eid];
+				},
+			}),
+			withStore<{ value2: string[] }, { value2: string }>(
+				(store) => {
+					return Object.assign(store, { value2: [] });
+				},
+				{
+					onSet: (world, store, eid, params = { value2: 'hello' }) => {
+						store.value2[eid] = params.value2;
+					},
+					onReset: (world, store, eid) => {
+						delete store.value2[eid];
+					},
+				}
+			)
 		);
 
 		const eid = addEntity(world);
 		addComponent(world, eid, TestComponent);
 
 		const store = getStore(world, TestComponent);
+		expect(store).toMatchObject({ value: [0], value2: ['hello'] });
 
-		expect(store).toMatchObject({ value: [], value2: [] });
+		removeComponent(world, eid, TestComponent, true);
+		expect(store.value[eid]).toBe(undefined);
+		expect(store.value2[eid]).toBe(undefined);
 	});
 
 	it('should register components on-demand', () => {

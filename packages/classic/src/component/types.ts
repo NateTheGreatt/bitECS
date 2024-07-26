@@ -6,8 +6,8 @@ import { RelationTarget, RelationType } from '../relation/types';
 
 export type Component<Store = any, Params = any> = {
 	name?: string;
-	[$onSet]?: (world: any, store: Store, eid: number, params: Params) => void;
-	[$onReset]?: (world: any, store: Store, eid: number) => void;
+	[$onSet]?: ((world: any, store: Store, eid: number, params: Params) => void)[];
+	[$onReset]?: ((world: any, store: Store, eid: number) => void)[];
 	[$createStore]?: ((store: any) => Store)[];
 	[$isPairComponent]?: boolean;
 	[$relation]?: RelationType<Component<Store>>;

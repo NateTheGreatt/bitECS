@@ -259,9 +259,11 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 
 		addComponentInternal(world, eid, component);
 		if (component[$relation] && component[$pairTarget] !== Wildcard) {
-			component[$relation][$onSet]?.(world, getStore(world, component), eid, params);
+			const onSets = component[$relation][$onSet];
+			onSets && onSets.forEach((fn) => fn(world, getStore(world, component), eid, params));
 		} else {
-			component[$onSet]?.(world, getStore(world, component), eid, params);
+			const onSets = component[$onSet];
+			onSets && onSets.forEach((fn) => fn(world, getStore(world, component), eid, params));
 		}
 	}
 
@@ -373,15 +375,18 @@ export const removeComponent = (world: World, eid: number, component: Component,
 			removeComponent(world, eid, Pair(relation, Wildcard));
 		}
 
+		const onResets = relation[$onReset];
+
 		if (component[$relation] === IsA) {
-			if (reset) (component[$pairTarget] as PrefabNode)[$onReset]?.(world, eid);
+			reset && onResets && onResets.forEach((fn) => fn(world, getStore(world, component), eid));
 		} else if (component[$pairTarget] !== Wildcard) {
-			if (reset) component[$relation]![$onReset]?.(world, getStore(world, component), eid);
+			reset && onResets && onResets.forEach((fn) => fn(world, getStore(world, component), eid));
 		}
 
 		// TODO: recursively disinherit
 	} else {
-		if (reset) component[$onReset]?.(world, getStore(world, component), eid);
+		const onResets = component[$onReset];
+		reset && onResets && onResets.forEach((fn) => fn(world, getStore(world, component), eid));
 	}
 };
 
