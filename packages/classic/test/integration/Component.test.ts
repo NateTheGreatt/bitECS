@@ -81,6 +81,20 @@ describe('Component Integration Tests', () => {
 						delete store.value2[eid];
 					},
 				}
+			),
+			withContext({}),
+			withStore<{ value3: boolean[] }, { value3: boolean }>(
+				(store) => {
+					return Object.assign(store, { value3: [] });
+				},
+				{
+					onSet: (world, store, eid, params = { value3: false }) => {
+						store.value3[eid] = params.value3;
+					},
+					onReset: (world, store, eid) => {
+						delete store.value3[eid];
+					},
+				}
 			)
 		);
 
@@ -88,11 +102,12 @@ describe('Component Integration Tests', () => {
 		addComponent(world, eid, TestComponent);
 
 		const store = getStore(world, TestComponent);
-		expect(store).toMatchObject({ value: [0], value2: ['hello'] });
+		expect(store).toMatchObject({ value: [0], value2: ['hello'], value3: [false] });
 
 		removeComponent(world, eid, TestComponent, true);
 		expect(store.value[eid]).toBe(undefined);
 		expect(store.value2[eid]).toBe(undefined);
+		expect(store.value3[eid]).toBe(undefined);
 	});
 
 	it('should register components on-demand', () => {
@@ -130,6 +145,14 @@ describe('Component Integration Tests', () => {
 
 		const StaticComponent = defineComponent(
 			withContext({ resource }),
+			withStore<{ value: number[] }, { value: number }>(() => ({ value: [] }), {
+				onSet: (world, store, eid, params = { value: 0 }) => {
+					store.value[eid] = params.value;
+				},
+				onReset: (world, store, eid) => {
+					delete store.value[eid];
+				},
+			}),
 			withContext({ resource2 })
 		);
 
@@ -177,6 +200,26 @@ describe('Component Integration Tests', () => {
 
 		removeComponent(world, eid, IsTag);
 		assert(hasComponent(world, eid, IsTag) === false);
+	});
+
+	it('can seed a ref to create the component definition', () => {
+		const world = createWorld();
+
+		const seed = { test: 'hello' };
+
+		const SeededComponent = defineComponent(
+			seed,
+			withStore<{ value: number[] }, { value: number }>(() => ({ value: [] }), {
+				onSet: (world, store, eid, params = { value: 0 }) => {
+					store.value[eid] = params.value;
+				},
+				onReset: (world, store, eid) => {
+					delete store.value[eid];
+				},
+			})
+		);
+
+		assert(SeededComponent.test === 'hello');
 	});
 
 	it('should only remove the component specified', () => {

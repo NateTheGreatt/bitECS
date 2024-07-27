@@ -1,7 +1,12 @@
 import { addChildren } from '../entity/Entity.js';
 import { $entityComponents, $entityMasks } from '../entity/symbols.js';
 import { $createStore, $onAdd, $onReset, $onSet } from '../options/symbols.js';
-import { ComponentOrWithParams } from '../options/types.js';
+import {
+	ComponentOptions,
+	ComponentOrWithParams,
+	WithContextFn,
+	WithStoreFn,
+} from '../options/types.js';
 import { Prefab, registerPrefab } from '../prefab/Prefab.js';
 import { $ancestors, $children, $prefabComponents } from '../prefab/symbols.js';
 import { PrefabNode } from '../prefab/types.js';
@@ -20,14 +25,7 @@ import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { $bitflag } from '../world/symbols.js';
 import { World } from '../world/types.js';
 import { $componentCount, $componentMap } from './symbols.js';
-import {
-	Component,
-	ComponentInstance,
-	ComponentOptions,
-	MergeContexts,
-	MergeParams,
-	MergeStores,
-} from './types.js';
+import { Component, ComponentInstance, MergeContexts, MergeParams, MergeStores } from './types.js';
 
 /**
  * Retrieves the store associated with the specified component in the given world.
@@ -64,6 +62,8 @@ export const setStore = <C extends Component>(
 	node.store = store;
 };
 
+type NotOption<T> = T extends WithStoreFn<any, any> | WithContextFn<any> ? never : T;
+
 /**
  * Defines a new component store.
  *
@@ -73,12 +73,29 @@ export const setStore = <C extends Component>(
  */
 export function defineComponent<Options extends ComponentOptions>(
 	...options: Options
-): Component<MergeStores<Options>, MergeParams<Options>> & MergeContexts<Options> {
-	const component = {} as Component<MergeStores<Options>, MergeParams<Options>>;
+): Component<MergeStores<Options>, MergeParams<Options>> & MergeContexts<Options>;
+export function defineComponent<Options extends ComponentOptions, Seed extends object>(
+	seed: NotOption<Seed>,
+	...options: Options
+): Component<MergeStores<Options>, MergeParams<Options>> & MergeContexts<Options> & Seed;
+
+export function defineComponent<Options extends ComponentOptions, Seed extends object = never>(
+	seedOrOption: NotOption<Seed> | Options[0],
+	...options: Options
+) {
+	let component = {};
+
+	if (typeof seedOrOption === 'object') {
+		component = seedOrOption;
+	} else if (typeof seedOrOption === 'function') {
+		seedOrOption(component);
+	}
+
 	for (const option of options) option(component);
 
 	return component as Component<MergeStores<Options>, MergeParams<Options>> &
-		MergeContexts<Options>;
+		MergeContexts<Options> &
+		Seed;
 }
 
 /**
