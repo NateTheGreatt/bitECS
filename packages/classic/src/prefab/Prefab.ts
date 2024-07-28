@@ -17,7 +17,7 @@ export const Prefab = {};
  * @param args - An array of components or component-parameter pairs that make up the prefab.
  * @returns A prefab object that can be used to create new entities with the specified components.
  */
-export const definePrefab = <Params, Ref>(definition?: {
+export const definePrefab = <Params = void, Ref extends {} = {}>(definition?: {
 	components?: ComponentOrWithParams[];
 	onSet?: (world: World, eid: number, params: Params) => void;
 	onReset?: (world: World, eid: number) => void;
