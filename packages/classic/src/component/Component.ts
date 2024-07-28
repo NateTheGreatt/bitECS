@@ -61,13 +61,17 @@ export const setStore = <C extends Component>(
 };
 
 /**
- * Defines a new component store.
+ * Defines a component for use in a World.
  *
- * @param {object} schema
+ * Components are the building blocks of entities in a World. This function allows you to define a new component with an optional store, onSet callback, and onReset callback.
  *
- * @returns {object}
+ * @param definition - An optional object that defines the component's properties.
+ * @param definition.store - A function that returns the initial store for the component.
+ * @param definition.onSet - A callback that is called when the component's store is added to an entity.
+ * @param definition.onReset - A callback that is called when the component's store is removed from an entity.
+ * @param definition.ref - An optional reference object to be used for the component.
+ * @returns The defined component.
  */
-
 export function defineComponent<
 	Store = void,
 	Params = void,
