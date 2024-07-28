@@ -68,12 +68,17 @@ export const setStore = <C extends Component>(
  * @returns {object}
  */
 
-export function defineComponent<Store, Params, Ref, W extends World = World>(definition?: {
+export function defineComponent<
+	Store = void,
+	Params = void,
+	Ref extends object = {},
+	W extends World = World
+>(definition?: {
 	store?: () => Store;
 	onSet?: (world: W, store: Store, eid: number, params: Params) => void;
 	onReset?: (world: W, store: Store, eid: number) => void;
 	ref?: Ref;
-}): Component<Store, Params> & Ref {
+}): void extends Ref ? Component<Store, Params> : Component<Store, Params> & Ref {
 	let component = (definition?.ref || {}) as Component<Store, Params> & Ref;
 
 	if (definition?.store) defineHiddenProperty(component, $createStore, definition.store);
