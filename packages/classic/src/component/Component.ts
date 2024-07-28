@@ -1,12 +1,5 @@
 import { addChildren } from '../entity/Entity.js';
 import { $entityComponents, $entityMasks } from '../entity/symbols.js';
-import { $createStore, $onAdd, $onReset, $onSet } from '../options/symbols.js';
-import {
-	ComponentOptions,
-	ComponentOrWithParams,
-	WithContextFn,
-	WithStoreFn,
-} from '../options/types.js';
 import { Prefab, registerPrefab } from '../prefab/Prefab.js';
 import { $ancestors, $children, $prefabComponents } from '../prefab/symbols.js';
 import { PrefabNode } from '../prefab/types.js';
@@ -21,11 +14,12 @@ import {
 	$relation,
 	$relationTargetEntities,
 } from '../relation/symbols.js';
+import { defineHiddenProperty } from '../utils/defineHiddenProperty.js';
 import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { $bitflag } from '../world/symbols.js';
 import { World } from '../world/types.js';
-import { $componentCount, $componentMap } from './symbols.js';
-import { Component, ComponentInstance, MergeContexts, MergeParams, MergeStores } from './types.js';
+import { $componentCount, $componentMap, $createStore, $onAdd, $onReset, $onSet } from './symbols.js';
+import { Component, ComponentInstance, ComponentOrWithParams } from './types.js';
 
 /**
  * Retrieves the store associated with the specified component in the given world.
@@ -62,8 +56,6 @@ export const setStore = <C extends Component>(
 	node.store = store;
 };
 
-type NotOption<T> = T extends WithStoreFn<any, any> | WithContextFn<any> ? never : T;
-
 /**
  * Defines a new component store.
  *
@@ -71,31 +63,20 @@ type NotOption<T> = T extends WithStoreFn<any, any> | WithContextFn<any> ? never
  *
  * @returns {object}
  */
-export function defineComponent<Options extends ComponentOptions>(
-	...options: Options
-): Component<MergeStores<Options>, MergeParams<Options>> & MergeContexts<Options>;
-export function defineComponent<Options extends ComponentOptions, Seed extends object>(
-	seed: NotOption<Seed>,
-	...options: Options
-): Component<MergeStores<Options>, MergeParams<Options>> & MergeContexts<Options> & Seed;
 
-export function defineComponent<Options extends ComponentOptions, Seed extends object = never>(
-	seedOrOption: NotOption<Seed> | Options[0],
-	...options: Options
-) {
-	let component = {};
+export function defineComponent<Store, Params, Ref, W extends World = World>(definition?: {
+	store?: () => Store;
+	onSet?: (world: W, store: Store, eid: number, params: Params) => void;
+	onReset?: (world: W, store: Store, eid: number) => void;
+	ref?: Ref;
+}): Component<Store, Params> & Ref {
+	let component = (definition?.ref || {}) as Component<Store, Params> & Ref;
 
-	if (typeof seedOrOption === 'object') {
-		component = seedOrOption;
-	} else if (typeof seedOrOption === 'function') {
-		seedOrOption(component);
-	}
+	if (definition?.store) defineHiddenProperty(component, $createStore, definition.store);
+	if (definition?.onSet) defineHiddenProperty(component, $onSet, definition.onSet);
+	if (definition?.onReset) defineHiddenProperty(component, $onReset, definition.onReset);
 
-	for (const option of options) option(component);
-
-	return component as Component<MergeStores<Options>, MergeParams<Options>> &
-		MergeContexts<Options> &
-		Seed;
+	return component;
 }
 
 /**
@@ -119,23 +100,13 @@ export const registerComponent = (world: World, component: Component) => {
 		}
 	});
 
-	let store: any;
-
-	if (component[$createStore]) {
-		component[$createStore].forEach((createStore) => {
-			store = createStore(store);
-		});
-	} else {
-		store = component;
-	}
-
 	// Register internal component node with world.
 	const instance: ComponentInstance = {
 		id: world[$componentCount]++,
 		generationId: world[$entityMasks].length - 1,
 		bitflag: world[$bitflag],
 		ref: component,
-		store,
+		store: component[$createStore] ? component[$createStore]() : component,
 		queries,
 		notQueries,
 	};
@@ -269,18 +240,19 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 		}
 	}
 
-	// prefabs onAdd is called after all components onAdd
+	// prefabs onSet is called after all components are added
 	for (const tuple of components.entries()) {
 		const component = tuple[0];
 		const params = tuple[1];
 
 		addComponentInternal(world, eid, component);
+
 		if (component[$relation] && component[$pairTarget] !== Wildcard) {
-			const onSets = component[$relation][$onSet];
-			onSets && onSets.forEach((fn) => fn(world, getStore(world, component), eid, params));
+			const onSet = component[$relation][$onSet];
+			if (onSet) onSet(world, getStore(world, component), eid, params);
 		} else {
-			const onSets = component[$onSet];
-			onSets && onSets.forEach((fn) => fn(world, getStore(world, component), eid, params));
+			const onSet = component[$onSet];
+			if (onSet) onSet(world, getStore(world, component), eid, params);
 		}
 	}
 
@@ -392,18 +364,18 @@ export const removeComponent = (world: World, eid: number, component: Component,
 			removeComponent(world, eid, Pair(relation, Wildcard));
 		}
 
-		const onResets = relation[$onReset];
+		const onReset = relation[$onReset];
 
 		if (component[$relation] === IsA) {
-			reset && onResets && onResets.forEach((fn) => fn(world, getStore(world, component), eid));
+			if (reset && onReset) onReset(world, getStore(world, component), eid);
 		} else if (component[$pairTarget] !== Wildcard) {
-			reset && onResets && onResets.forEach((fn) => fn(world, getStore(world, component), eid));
+			if (reset && onReset) onReset(world, getStore(world, component), eid);
 		}
 
 		// TODO: recursively disinherit
 	} else {
-		const onResets = component[$onReset];
-		reset && onResets && onResets.forEach((fn) => fn(world, getStore(world, component), eid));
+		const onReset = component[$onReset];
+		if (reset && onReset) onReset(world, getStore(world, component), eid);
 	}
 };
 

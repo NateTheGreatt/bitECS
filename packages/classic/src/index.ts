@@ -42,9 +42,7 @@ export {
 	worlds,
 } from './world/World.js';
 
-export * from './options/options.js';
-export { onDeInstantiate, onInstantiate, withComponents } from './prefab/args.js';
-export { withComponent, withOptions } from './relation/args.js';
+export * from './component/utils.js';
 
 // Types
 

@@ -19,7 +19,6 @@ import {
 	removeComponent,
 	removeEntity,
 	resetWorld,
-	withComponents,
 } from '../../src/index.js';
 
 describe('Query Integration Tests', () => {
@@ -313,8 +312,8 @@ describe('Query Integration Tests', () => {
 	it('should query prefab entities when given the Prefab component', () => {
 		const world = createWorld();
 		const Tag = {};
-		const A = definePrefab(withComponents(Tag));
-		const B = definePrefab(withComponents(Tag));
+		const A = definePrefab({ components: [Tag] });
+		const B = definePrefab({ components: [Tag] });
 
 		const eidA = addEntity(world, IsA(A));
 		const eidB = addEntity(world, IsA(B));

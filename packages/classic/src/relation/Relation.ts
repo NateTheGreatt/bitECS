@@ -1,23 +1,14 @@
 import { Component, World, getEntityComponents } from '..';
 import { defineHiddenProperty } from '../utils/defineHiddenProperty';
 import {
-	OnTargetRemoved,
-	onTargetRemovedSymbol,
-	WithComponent,
-	withComponentSymbol,
-	withOptions,
-	WithOptions,
-	withOptionsSymbol,
-} from './args';
-import {
-	$pairsMap,
-	$isPairComponent,
-	$relation,
-	$pairTarget,
 	$autoRemoveSubject,
-	$exclusiveRelation,
 	$component,
+	$exclusiveRelation,
+	$isPairComponent,
 	$onTargetRemoved,
+	$pairTarget,
+	$pairsMap,
+	$relation,
 } from './symbols';
 import { RelationOptions, RelationTarget, RelationType } from './types';
 
@@ -47,9 +38,12 @@ function createOrGetRelationComponent<T extends Component>(
  *   - `autoRemoveSubject`: A boolean indicating whether the relation component should be automatically removed when the subject entity is removed.
  * @returns A relation type function that can be used to create relation components.
  */
-export const defineRelation = <T extends Component>(
-	...args: (WithComponent<T> | WithOptions | OnTargetRemoved)[]
-): RelationType<T> => {
+export const defineRelation = <T extends Component>(definition?: {
+	component?: () => T;
+	exclusive?: boolean;
+	autoRemoveSubject?: boolean;
+	onTargetRemoved?: (world: World, subject: number, target: number) => void;
+}): RelationType<T> => {
 	const options: RelationOptions = {
 		exclusive: false,
 		autoRemoveSubject: false,
@@ -57,23 +51,10 @@ export const defineRelation = <T extends Component>(
 	let componentFactory = (() => ({})) as () => T;
 	let onTargetRemoved = null;
 
-	for (const arg of args) {
-		switch (arg.__type) {
-			case withComponentSymbol: {
-				componentFactory = arg.componentFactory;
-				break;
-			}
-			case withOptionsSymbol: {
-				options.exclusive = arg.options.exclusive ?? false;
-				options.autoRemoveSubject = arg.options.autoRemoveSubject ?? false;
-				break;
-			}
-			case onTargetRemovedSymbol: {
-				onTargetRemoved = arg.onTargetRemoved;
-				break;
-			}
-		}
-	}
+	if (definition?.component) componentFactory = definition.component;
+	if (definition?.exclusive) options.exclusive = definition.exclusive ?? false;
+	if (definition?.autoRemoveSubject) options.autoRemoveSubject = definition.autoRemoveSubject ?? false; //prettier-ignore
+	if (definition?.onTargetRemoved) onTargetRemoved = definition.onTargetRemoved;
 
 	const pairsMap = new Map();
 	const relation = function (target: RelationTarget) {
@@ -111,11 +92,7 @@ export const Pair = <T extends Component>(relation: RelationType<T>, target: Rel
 
 export const Wildcard: RelationType<any> | string = defineRelation();
 export const IsA: RelationType<any> = defineRelation();
-export const ChildOf = defineRelation(
-	withOptions({
-		autoRemoveSubject: true,
-	})
-);
+export const ChildOf = defineRelation({ autoRemoveSubject: true });
 
 /**
  * Retrieves the relation targets for the given entity in the specified world.

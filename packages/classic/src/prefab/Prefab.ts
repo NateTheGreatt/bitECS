@@ -1,21 +1,12 @@
-import { Component } from '../component/types';
+import { $onSet, $onReset } from '../component/symbols';
+import { Component, ComponentOrWithParams } from '../component/types';
 import { addEntity } from '../entity/Entity';
-import { $onAdd, $onReset } from '../options/symbols';
-import { ComponentOrWithParams } from '../options/types';
 import { ChildOf, IsA } from '../relation/Relation';
-import { $isPairComponent, $relation, $pairTarget } from '../relation/symbols';
+import { $isPairComponent, $pairTarget, $relation } from '../relation/symbols';
 import { defineHiddenProperties, defineHiddenProperty } from '../utils/defineHiddenProperty';
 import { $eidToPrefab } from '../world/symbols';
 import { World } from '../world/types';
-import {
-	onDeInstantiateSymbol,
-	OnDeIstantiate,
-	OnInstantiate,
-	onInstantiateSymbol,
-	WithComponents,
-	withComponentsSymbol,
-} from './args';
-import { $children, $ancestors, $prefabComponents, $worldToEid } from './symbols';
+import { $ancestors, $children, $prefabComponents, $worldToEid } from './symbols';
 import { PrefabNode } from './types';
 
 export const Prefab = {};
@@ -26,57 +17,98 @@ export const Prefab = {};
  * @param args - An array of components or component-parameter pairs that make up the prefab.
  * @returns A prefab object that can be used to create new entities with the specified components.
  */
-export const definePrefab = <Params = void>(
-	...args: (WithComponents | OnInstantiate<Params> | OnDeIstantiate)[]
-) => {
-	const prefab = {} as PrefabNode;
+export const definePrefab = <Params, Ref>(definition?: {
+	components?: ComponentOrWithParams[];
+	onSet?: (world: World, eid: number, params: Params) => void;
+	onReset?: (world: World, eid: number) => void;
+	ref?: Ref;
+}) => {
+	const prefab = (definition?.ref ?? {}) as PrefabNode;
 
 	const prefabs: PrefabNode[] = [];
 	const components: ComponentOrWithParams[] = [];
 
-	for (const arg of args) {
-		switch (arg.__type) {
-			// Arrange prefabs and components separately
-			// prefabs will be used to build the ancestors list
-			case withComponentsSymbol: {
-				for (const c of arg.components) {
-					let component: Component;
-					let params: any;
-					if (Array.isArray(c)) {
-						component = c[0];
-						params = c[1];
-					} else {
-						component = c;
-					}
+	if (definition?.components) {
+		for (const c of definition?.components) {
+			let component: Component;
+			let params: any;
 
-					if (component[$isPairComponent]) {
-						const relation = component[$relation]!;
+			if (Array.isArray(c)) {
+				component = c[0];
+				params = c[1];
+			} else {
+				component = c;
+			}
 
-						if (relation === IsA) {
-							const target = component[$pairTarget] as PrefabNode;
-							prefabs.push(target);
-						} else if (relation === ChildOf) {
-							const target = component[$pairTarget] as PrefabNode;
-							if (typeof target === 'object' && $worldToEid in target) {
-								target[$children].push(prefab);
-							}
-						}
-					} else {
-						components.push(c);
+			if (component[$isPairComponent]) {
+				const relation = component[$relation]!;
+
+				if (relation === IsA) {
+					const target = component[$pairTarget] as PrefabNode;
+					prefabs.push(target);
+				} else if (relation === ChildOf) {
+					const target = component[$pairTarget] as PrefabNode;
+					if (typeof target === 'object' && $worldToEid in target) {
+						target[$children].push(prefab);
 					}
 				}
-				break;
-			}
-			case onInstantiateSymbol: {
-				defineHiddenProperty(prefab, $onAdd, arg.onInstantiate);
-				break;
-			}
-			case onDeInstantiateSymbol: {
-				defineHiddenProperty(prefab, $onReset, arg.onDeInstantiate);
-				break;
+			} else {
+				components.push(c);
 			}
 		}
 	}
+
+	if (definition?.onSet) {
+		defineHiddenProperty(prefab, $onSet, definition.onSet);
+	}
+
+	if (definition?.onReset) {
+		defineHiddenProperty(prefab, $onReset, definition.onReset);
+	}
+
+	// for (const arg of args) {
+	// 	switch (arg.__type) {
+	// 		// Arrange prefabs and components separately
+	// 		// prefabs will be used to build the ancestors list
+	// 		case withComponentsSymbol: {
+	// 			for (const c of arg.components) {
+	// 				let component: Component;
+	// 				let params: any;
+	// 				if (Array.isArray(c)) {
+	// 					component = c[0];
+	// 					params = c[1];
+	// 				} else {
+	// 					component = c;
+	// 				}
+
+	// 				if (component[$isPairComponent]) {
+	// 					const relation = component[$relation]!;
+
+	// 					if (relation === IsA) {
+	// 						const target = component[$pairTarget] as PrefabNode;
+	// 						prefabs.push(target);
+	// 					} else if (relation === ChildOf) {
+	// 						const target = component[$pairTarget] as PrefabNode;
+	// 						if (typeof target === 'object' && $worldToEid in target) {
+	// 							target[$children].push(prefab);
+	// 						}
+	// 					}
+	// 				} else {
+	// 					components.push(c);
+	// 				}
+	// 			}
+	// 			break;
+	// 		}
+	// 		case onInstantiateSymbol: {
+	// 			defineHiddenProperty(prefab, $onAdd, arg.onInstantiate);
+	// 			break;
+	// 		}
+	// 		case onDeInstantiateSymbol: {
+	// 			defineHiddenProperty(prefab, $onReset, arg.onDeInstantiate);
+	// 			break;
+	// 		}
+	// 	}
+	// }
 
 	const ancestors = [] as PrefabNode[];
 	for (const p of prefabs) {

@@ -1,4 +1,5 @@
 import assert from 'assert';
+import { describe, test } from 'vitest';
 import {
 	ChildOf,
 	IsA,
@@ -11,32 +12,28 @@ import {
 	getPrefabEid,
 	getStore,
 	hasComponent,
-	onInstantiate,
 	query,
-	withComponents,
 	withParams,
-	withStore,
 } from '../../src';
-import { describe, test } from 'vitest';
 
 describe('Prefab Integration Tests', () => {
 	test('should reference a prefab and inherit from it', () => {
 		const world = createWorld();
 
-		const Position = defineComponent(
-			withStore(() => ({
+		const Position = defineComponent({
+			store: () => ({
 				x: [] as number[],
 				y: [] as number[],
-			}))
-		);
+			}),
+		});
 
-		const Sprite = defineComponent(
-			withStore(() => ({
-				url: {} as Record<number, string>,
-			}))
-		);
+		const Sprite = defineComponent({
+			store: () => ({
+				url: [] as string[],
+			}),
+		});
 
-		const Player = definePrefab(withComponents(Position, Sprite));
+		const Player = definePrefab({ components: [Position, Sprite] });
 
 		const eid = addEntity(world, IsA(Player));
 
@@ -48,8 +45,8 @@ describe('Prefab Integration Tests', () => {
 		const world = createWorld();
 
 		const Human = definePrefab();
-		const Player = definePrefab(withComponents(IsA(Human)));
-		const Npc = definePrefab(withComponents(IsA(Human)));
+		const Player = definePrefab({ components: [IsA(Human)] });
+		const Npc = definePrefab({ components: [IsA(Human)] });
 
 		addEntity(world, IsA(Player));
 		addEntity(world, IsA(Npc));
@@ -59,65 +56,69 @@ describe('Prefab Integration Tests', () => {
 	});
 
 	test('multiple inheritance and overrides', () => {
-		const Position = defineComponent(
-			withStore(() => ({ x: [] as number[], y: [] as number[] }), {
-				onSet: (world, store, eid, params?: { x: number; y: number }) => {
-					store.x[eid] = params?.x ?? 0;
-					store.y[eid] = params?.y ?? 0;
-				},
-			})
-		);
+		const Position = defineComponent({
+			store: () => ({
+				x: [] as number[],
+				y: [] as number[],
+			}),
+			onSet: (world, store, eid, params?: { x: number; y: number }) => {
+				store.x[eid] = params?.x ?? 0;
+				store.y[eid] = params?.y ?? 0;
+			},
+		});
 
-		const Health = defineComponent(
-			withStore(() => [] as number[], {
-				onSet: (world, store, eid, health: number) => {
-					store[eid] = health ?? 0;
-				},
-			})
-		);
+		const Health = defineComponent({
+			store: () => [] as number[],
+			onSet: (world, store, eid, health: number) => {
+				store[eid] = health ?? 0;
+			},
+		});
 
-		const Alignment = defineComponent(
-			withStore(() => [] as string[], {
-				onSet: (world, store, eid, alignment: string) => {
-					store[eid] = alignment ?? 'neutral';
-				},
-			})
-		);
+		const Alignment = defineComponent({
+			store: () => [] as string[],
+			onSet: (world, store, eid, alignment: string) => {
+				store[eid] = alignment ?? 'neutral';
+			},
+		});
 
-		const Mana = defineComponent(
-			withStore(() => [] as number[], {
-				onSet: (world, store, eid, amount: number) => {
-					store[eid] = amount ?? 0;
-				},
-			})
-		);
+		const Mana = defineComponent({
+			store: () => [] as number[],
+			onSet: (world, store, eid, amount: number) => {
+				store[eid] = amount ?? 0;
+			},
+		});
 
-		const Element = defineComponent(
-			withStore(() => [] as string[], {
-				onSet: (world, store, eid, element: string) => {
-					store[eid] = element;
-				},
-			})
-		);
+		const Element = defineComponent({
+			store: () => [] as string[],
+			onSet: (world, store, eid, element: string) => {
+				store[eid] = element;
+			},
+		});
 
-		const Character = definePrefab(
-			withComponents(Position, Health, withParams(Alignment, 'neutral'))
-		);
-		const Goblin = definePrefab(
-			withComponents(IsA(Character), withParams(Health, 75), withParams(Alignment, 'evil'))
-		);
+		const Character = definePrefab({
+			components: [Position, Health, withParams(Alignment, 'neutral')],
+		});
+		const Goblin = definePrefab({
+			components: [IsA(Character), withParams(Health, 75), withParams(Alignment, 'evil')],
+		});
 
-		const RedGoblin = definePrefab(withComponents(IsA(Goblin), withParams(Health, 100)));
+		const RedGoblin = definePrefab({
+			components: [IsA(Goblin), withParams(Health, 100)],
+		});
 
-		const Magic = definePrefab(withComponents(Mana));
+		const Magick = definePrefab({ components: [Mana] });
 
-		const Mage = definePrefab(withComponents(IsA(Magic), withParams(Mana, 35), Element));
+		const Mage = definePrefab({
+			components: [IsA(Magick), withParams(Mana, 35), Element],
+		});
 
-		const GoblinMage = definePrefab(
-			withComponents(IsA(RedGoblin), IsA(Mage), withParams(Mana, 25))
-		);
+		const GoblinMage = definePrefab({
+			components: [IsA(RedGoblin), IsA(Mage), withParams(Mana, 25)],
+		});
 
-		const ChaosMage = definePrefab(withComponents(IsA(GoblinMage), withParams(Element, 'chaos')));
+		const ChaosMage = definePrefab({
+			components: [IsA(GoblinMage), withParams(Element, 'chaos')],
+		});
 
 		const world = createWorld();
 
@@ -154,42 +155,43 @@ describe('Prefab Integration Tests', () => {
 
 	test('nested prefabs', () => {
 		type Vec3 = [number, number, number];
-		const vec3Store = withStore(() => [] as Vec3[], {
+		const vec3Store = {
+			store: () => [] as Vec3[],
 			onSet: (world: World, store: Vec3[], eid: number, vec: Vec3) => {
 				store[eid] = vec ?? [0, 0, 0];
 			},
-		});
+		};
 
 		const Box = defineComponent(vec3Store);
 		const Position = defineComponent(vec3Store);
 		const Color = defineComponent(vec3Store);
 
-		const Tree = definePrefab(withComponents(Position));
-		const Trunk = definePrefab(
-			withComponents(
+		const Tree = definePrefab({ components: [Position] });
+		const Trunk = definePrefab({
+			components: [
 				ChildOf(Tree),
 				withParams(Position, [0, 0.25, 0]),
 				withParams(Box, [0.4, 0.5, 0.4]),
-				withParams(Color, [0.25, 0.2, 0.1])
-			)
-		);
+				withParams(Color, [0.25, 0.2, 0.1]),
+			],
+		});
 
-		const Canopy = definePrefab(
-			withComponents(
+		const Canopy = definePrefab({
+			components: [
 				ChildOf(Tree),
 				withParams(Position, [0, 0.9, 0]),
 				withParams(Box, [0.8, 0.8, 0.8]),
-				withParams(Color, [0.25, 0.2, 0.1])
-			),
-			onInstantiate((world, eid) => {
+				withParams(Color, [0.25, 0.2, 0.1]),
+			],
+			onSet: (world, eid) => {
 				const boxes = getStore(world, Box);
 				const positions = getStore(world, Position);
 
 				const h = Math.random() + 0.8;
 				boxes[eid][1] = h;
 				positions[eid][1] = h / 2 + 0.5;
-			})
-		);
+			},
+		});
 
 		const world = createWorld();
 
@@ -212,15 +214,14 @@ describe('Prefab Integration Tests', () => {
 
 	test('should allow sharing data between prefabs and instances', () => {
 		type Vec3 = [number, number, number];
-		const Box = defineComponent(
-			withStore(() => [] as Vec3[], {
-				onSet: (world, store, eid, vec: Vec3) => {
-					store[eid] = vec ?? [0, 0, 0];
-				},
-			})
-		);
+		const Box = defineComponent({
+			store: () => [] as Vec3[],
+			onSet: (world, store, eid, vec: Vec3) => {
+				store[eid] = vec ?? [0, 0, 0];
+			},
+		});
 
-		const BoxPrefab = definePrefab(withComponents(withParams(Box, [0, 0, 0])));
+		const BoxPrefab = definePrefab({ components: [withParams(Box, [0, 0, 0])] });
 
 		const world = createWorld();
 

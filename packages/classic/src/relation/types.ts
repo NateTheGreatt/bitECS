@@ -1,10 +1,10 @@
-import { $onAdd, $onReset } from '../options/symbols';
+import { $onReset, $onSet } from '../component/symbols';
 import { PrefabNode } from '../prefab/types';
 import { World } from '../world/types';
 import {
 	$autoRemoveSubject,
-	$exclusiveRelation,
 	$component,
+	$exclusiveRelation,
 	$onTargetRemoved,
 	$pairsMap,
 } from './symbols';
@@ -16,8 +16,8 @@ export type RelationType<T> = T & {
 	[$component]: () => T;
 	[$exclusiveRelation]: boolean;
 	[$autoRemoveSubject]: boolean;
-	[$onAdd]: (world: World, eid: number, params: any) => void;
-	[$onReset]: (world: World, eid: number, reset: boolean) => void;
+	[$onSet]: (world: World, eid: number, params: any) => void;
+	[$onReset]: (world: World, eid: number) => void;
 	[$onTargetRemoved]: (world: World, subject: number, target: number) => void;
 } & ((target: RelationTarget) => T);
 

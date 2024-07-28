@@ -1,4 +1,5 @@
 import assert from 'assert';
+import { describe, expect, test, vi } from 'vitest';
 import {
 	addComponent,
 	addEntity,
@@ -10,19 +11,15 @@ import {
 	getStore,
 	hasComponent,
 	Pair,
-	removeComponent,
 	removeEntity,
-	withStore,
 } from '../../src';
-import { describe, expect, test, vi } from 'vitest';
-import { onTargetRemoved, withComponent, withOptions } from '../../src/relation/args';
 
 describe('Relation Unit Tests', () => {
 	// this test only works if the player eid is 0, so it needs to be first
 	test('should maintain exclusive relations for eid 0', () => {
 		const world = createWorld();
 
-		const Targeting = defineRelation(withOptions({ exclusive: true }));
+		const Targeting = defineRelation({ exclusive: true });
 
 		const player = addEntity(world); // 0
 		const guard = addEntity(world); // 1
@@ -41,7 +38,7 @@ describe('Relation Unit Tests', () => {
 	test('should auto remove subject', () => {
 		const world = createWorld();
 
-		const ChildOf = defineRelation(withOptions({ autoRemoveSubject: true }));
+		const ChildOf = defineRelation({ autoRemoveSubject: true });
 
 		const parent = addEntity(world);
 		const child = addEntity(world);
@@ -56,15 +53,14 @@ describe('Relation Unit Tests', () => {
 	test('should init store', () => {
 		const world = createWorld();
 
-		const Contains = defineRelation(
-			withComponent(() =>
-				defineComponent(
-					withStore(() => ({
+		const Contains = defineRelation({
+			component: () =>
+				defineComponent({
+					store: () => ({
 						amount: [] as number[],
-					}))
-				)
-			)
-		);
+					}),
+				}),
+		});
 
 		const inventory = addEntity(world);
 		const gold = addEntity(world);
@@ -88,7 +84,7 @@ describe('Relation Unit Tests', () => {
 	test('should auto remove all descendants of subject', () => {
 		const world = createWorld();
 
-		const ChildOf = defineRelation(withOptions({ autoRemoveSubject: true }));
+		const ChildOf = defineRelation({ autoRemoveSubject: true });
 
 		const parent = addEntity(world);
 
@@ -118,7 +114,7 @@ describe('Relation Unit Tests', () => {
 	test('should maintain exclusive relations', () => {
 		const world = createWorld();
 
-		const Targeting = defineRelation(withOptions({ exclusive: true }));
+		const Targeting = defineRelation({ exclusive: true });
 
 		const hero = addEntity(world);
 		const rat = addEntity(world);
@@ -134,7 +130,7 @@ describe('Relation Unit Tests', () => {
 	test('should call onTargetRemoved when needed', () => {
 		const world = createWorld();
 		const cbMock = vi.fn();
-		const Targeting = defineRelation(onTargetRemoved(cbMock));
+		const Targeting = defineRelation({ onTargetRemoved: cbMock });
 
 		const hero = addEntity(world);
 		addEntity(world, Targeting(hero));

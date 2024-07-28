@@ -13,22 +13,19 @@ import {
 	removeComponent,
 	removeEntity,
 	setStore,
-	withContext,
 	withParams,
-	withStore,
 } from '../../src/index.js';
 import { createWorld } from '../../src/world/World.js';
 
-const TestComponent = defineComponent(
-	withStore<{ value: number[] }, { value: number }>(() => ({ value: [] }), {
-		onSet: (world, store, eid, params = { value: 0 }) => {
-			store.value[eid] = params.value;
-		},
-		onReset: (world, store, eid) => {
-			delete store.value[eid];
-		},
-	})
-);
+const TestComponent = defineComponent({
+	store: () => ({ value: [] as number[] }),
+	onSet: (world, store, eid, params: { value: number } = { value: 0 }) => {
+		store.value[eid] = params.value;
+	},
+	onReset: (world, store, eid) => {
+		delete store.value[eid];
+	},
+});
 
 describe('Component Integration Tests', () => {
 	it('should define a component with a store that gets registered per world', () => {
@@ -57,59 +54,6 @@ describe('Component Integration Tests', () => {
 		expect(storeA.value[eidA]).toBe(undefined);
 	});
 
-	it('should chain multiple withStore calls', () => {
-		const world = createWorld();
-
-		const TestComponent = defineComponent(
-			withStore<{ value: number[] }, { value: number }>(() => ({ value: [] }), {
-				onSet: (world, store, eid, params = { value: 0 }) => {
-					store.value[eid] = params.value;
-				},
-				onReset: (world, store, eid) => {
-					delete store.value[eid];
-				},
-			}),
-			withStore<{ value2: string[] }, { value2: string }>(
-				(store) => {
-					return Object.assign(store, { value2: [] });
-				},
-				{
-					onSet: (world, store, eid, params = { value2: 'hello' }) => {
-						store.value2[eid] = params.value2;
-					},
-					onReset: (world, store, eid) => {
-						delete store.value2[eid];
-					},
-				}
-			),
-			withContext({}),
-			withStore<{ value3: boolean[] }, { value3: boolean }>(
-				(store) => {
-					return Object.assign(store, { value3: [] });
-				},
-				{
-					onSet: (world, store, eid, params = { value3: false }) => {
-						store.value3[eid] = params.value3;
-					},
-					onReset: (world, store, eid) => {
-						delete store.value3[eid];
-					},
-				}
-			)
-		);
-
-		const eid = addEntity(world);
-		addComponent(world, eid, TestComponent);
-
-		const store = getStore(world, TestComponent);
-		expect(store).toMatchObject({ value: [0], value2: ['hello'], value3: [false] });
-
-		removeComponent(world, eid, TestComponent, true);
-		expect(store.value[eid]).toBe(undefined);
-		expect(store.value2[eid]).toBe(undefined);
-		expect(store.value3[eid]).toBe(undefined);
-	});
-
 	it('should register components on-demand', () => {
 		const world = createWorld();
 
@@ -125,9 +69,9 @@ describe('Component Integration Tests', () => {
 		assert(world[$componentMap].has(TestComponent));
 	});
 
-	it('can define a component with context', () => {
+	it('can define a component with ref', () => {
 		const resource = new Float64Array(1000);
-		const StaticComponent = defineComponent(withContext({ resource }));
+		const StaticComponent = defineComponent({ ref: { resource } });
 
 		const world = createWorld();
 		const eid = addEntity(world);
@@ -135,32 +79,6 @@ describe('Component Integration Tests', () => {
 		addComponent(world, eid, StaticComponent);
 		assert(hasComponent(world, eid, StaticComponent));
 		assert(StaticComponent.resource === resource);
-	});
-
-	it('can chain multiple withContext calls', () => {
-		const world = createWorld();
-
-		const resource = new Float64Array(1000);
-		const resource2 = new Float64Array(1000);
-
-		const StaticComponent = defineComponent(
-			withContext({ resource }),
-			withStore<{ value: number[] }, { value: number }>(() => ({ value: [] }), {
-				onSet: (world, store, eid, params = { value: 0 }) => {
-					store.value[eid] = params.value;
-				},
-				onReset: (world, store, eid) => {
-					delete store.value[eid];
-				},
-			}),
-			withContext({ resource2 })
-		);
-
-		const eid = addEntity(world);
-		addComponent(world, eid, StaticComponent);
-
-		expect(StaticComponent.resource).toBe(resource);
-		expect(StaticComponent.resource2).toBe(resource2);
 	});
 
 	it('should add and remove components from an entity', () => {
@@ -200,26 +118,6 @@ describe('Component Integration Tests', () => {
 
 		removeComponent(world, eid, IsTag);
 		assert(hasComponent(world, eid, IsTag) === false);
-	});
-
-	it('can seed a ref to create the component definition', () => {
-		const world = createWorld();
-
-		const seed = { test: 'hello' };
-
-		const SeededComponent = defineComponent(
-			seed,
-			withStore<{ value: number[] }, { value: number }>(() => ({ value: [] }), {
-				onSet: (world, store, eid, params = { value: 0 }) => {
-					store.value[eid] = params.value;
-				},
-				onReset: (world, store, eid) => {
-					delete store.value[eid];
-				},
-			})
-		);
-
-		assert(SeededComponent.test === 'hello');
 	});
 
 	it('should only remove the component specified', () => {
@@ -316,17 +214,5 @@ describe('Component Integration Tests', () => {
 		setStore(world, TestComponent, mockStore);
 
 		assert(getStore(world, TestComponent) === mockStore);
-	});
-
-	it('should replace the context of a component when the store was not provided', () => {
-		const world = createWorld();
-		const ContextComponent = defineComponent(withContext({ foo: 'bar' }));
-		registerComponent(world, ContextComponent);
-
-		const mockContext = { foo: 'baz' };
-
-		setStore(world, ContextComponent, mockContext);
-
-		assert(getStore(world, ContextComponent) === mockContext);
 	});
 });
