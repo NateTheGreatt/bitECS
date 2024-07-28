@@ -15,15 +15,14 @@ import {
 } from '../../src';
 
 describe('Relation Unit Tests', () => {
-	// this test only works if the player eid is 0, so it needs to be first
-	test('should maintain exclusive relations for eid 0', () => {
+	test('should maintain exclusive relations', () => {
 		const world = createWorld();
 
 		const Targeting = defineRelation({ exclusive: true });
 
-		const player = addEntity(world); // 0
-		const guard = addEntity(world); // 1
-		const goblin = addEntity(world, Targeting(player), Targeting(guard)); // 2
+		const player = addEntity(world);
+		const guard = addEntity(world);
+		const goblin = addEntity(world, Targeting(player), Targeting(guard));
 
 		assert(getRelationTargets(world, Targeting, goblin).length === 1);
 		assert(hasComponent(world, goblin, Targeting(player)) === false);
