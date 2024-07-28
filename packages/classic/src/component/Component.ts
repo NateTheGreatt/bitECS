@@ -214,9 +214,9 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 		}
 
 		const relation = component[$relation]!;
-		components.set(Pair(relation, Wildcard), null);
+		components.set(Pair(relation, Wildcard), undefined);
 		const target = component[$pairTarget]!;
-		components.set(Pair(Wildcard, target), null);
+		components.set(Pair(Wildcard, target), undefined);
 
 		// If inheriting a prefab, go through its ancestors to resolve
 		// component params and children to be added
@@ -234,7 +234,7 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 			// Go trough each ancestor
 			// Add its components and params
 			for (const ancestor of ancestors) {
-				prefabs.set(ancestor, null);
+				prefabs.set(ancestor, undefined);
 
 				for (const prefabComponent of ancestor[$prefabComponents]) {
 					if (Array.isArray(prefabComponent)) {
@@ -244,12 +244,12 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 						components.set(component, params);
 					} else if (!components.has(prefabComponent)) {
 						// check because only non-null parameters should override
-						components.set(prefabComponent, null);
+						components.set(prefabComponent, undefined);
 					}
 				}
 			}
 		} else {
-			components.set(component, null);
+			components.set(component, undefined);
 		}
 	}
 
