@@ -205,6 +205,17 @@ describe('Component Integration Tests', () => {
 		assert(hasComponent(world, eid, C));
 	});
 
+	it('should return the ref of a component when no store is provided', () => {
+		const world = createWorld();
+		const ref = { foo: 'bar' };
+		const RefComponent = defineComponent({
+			ref,
+		});
+		registerComponent(world, RefComponent);
+
+		assert(getStore(world, RefComponent) === ref);
+	});
+
 	it('should replace the store of a component', () => {
 		const world = createWorld();
 		registerComponent(world, TestComponent);
