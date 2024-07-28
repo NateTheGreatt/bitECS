@@ -32,11 +32,12 @@ function createOrGetRelationComponent<T extends Component>(
 /**
  * Defines a new relation type with optional configuration options.
  *
- * @param options - An optional object with the following properties:
- *   - `component`: A factory function that creates the relation component.
- *   - `exclusive`: A boolean indicating whether the relation is exclusive (i.e., an entity can only have one instance of this relation).
- *   - `autoRemoveSubject`: A boolean indicating whether the relation component should be automatically removed when the subject entity is removed.
- * @returns A relation type function that can be used to create relation components.
+ * @param definition - An optional object that defines the relation options.
+ * @param definition.component - A factory function that creates the relation component.
+ * @param definition.exclusive - Whether the relation is exclusive (i.e., an entity can only have one instance of this relation).
+ * @param definition.autoRemoveSubject - A boolean indicating whether the relation component should be automatically removed when the subject entity is removed.
+ * @param definition.onTargetRemoved - A callback function that is called when a target entity of this relation is removed.
+ * @returns The defined relation type.
  */
 export const defineRelation = <T extends Component>(definition?: {
 	component?: () => T;
