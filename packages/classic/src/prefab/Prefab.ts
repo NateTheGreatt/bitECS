@@ -12,10 +12,14 @@ import { PrefabNode } from './types';
 export const Prefab = {};
 
 /**
- * Defines a prefab, which is a reusable collection of components that can be added to an entity.
+ * Defines a prefab, a reusable collection of components that can be added to an entity, with optional components, set/reset callbacks, and reference object.
  *
- * @param args - An array of components or component-parameter pairs that make up the prefab.
- * @returns A prefab object that can be used to create new entities with the specified components.
+ * @param definition - Optional object containing prefab definition.
+ * @param definition.components - Array of components or components with parameters.
+ * @param definition.onSet - Callback function called when the prefab is set in a world.
+ * @param definition.onReset - Callback function called when the prefab is reset in a world.
+ * @param definition.ref - Reference object to be used as the prefab node.
+ * @returns The created prefab node.
  */
 export const definePrefab = <Params = void, Ref extends {} = {}>(definition?: {
 	components?: ComponentOrWithParams[];
@@ -65,50 +69,6 @@ export const definePrefab = <Params = void, Ref extends {} = {}>(definition?: {
 	if (definition?.onReset) {
 		defineHiddenProperty(prefab, $onReset, definition.onReset);
 	}
-
-	// for (const arg of args) {
-	// 	switch (arg.__type) {
-	// 		// Arrange prefabs and components separately
-	// 		// prefabs will be used to build the ancestors list
-	// 		case withComponentsSymbol: {
-	// 			for (const c of arg.components) {
-	// 				let component: Component;
-	// 				let params: any;
-	// 				if (Array.isArray(c)) {
-	// 					component = c[0];
-	// 					params = c[1];
-	// 				} else {
-	// 					component = c;
-	// 				}
-
-	// 				if (component[$isPairComponent]) {
-	// 					const relation = component[$relation]!;
-
-	// 					if (relation === IsA) {
-	// 						const target = component[$pairTarget] as PrefabNode;
-	// 						prefabs.push(target);
-	// 					} else if (relation === ChildOf) {
-	// 						const target = component[$pairTarget] as PrefabNode;
-	// 						if (typeof target === 'object' && $worldToEid in target) {
-	// 							target[$children].push(prefab);
-	// 						}
-	// 					}
-	// 				} else {
-	// 					components.push(c);
-	// 				}
-	// 			}
-	// 			break;
-	// 		}
-	// 		case onInstantiateSymbol: {
-	// 			defineHiddenProperty(prefab, $onAdd, arg.onInstantiate);
-	// 			break;
-	// 		}
-	// 		case onDeInstantiateSymbol: {
-	// 			defineHiddenProperty(prefab, $onReset, arg.onDeInstantiate);
-	// 			break;
-	// 		}
-	// 	}
-	// }
 
 	const ancestors = [] as PrefabNode[];
 	for (const p of prefabs) {
