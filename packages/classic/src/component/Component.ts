@@ -28,14 +28,19 @@ import { Component, ComponentInstance, ComponentOrWithParams } from './types.js'
  * @param {Component} component - The component to get the store for.
  * @returns {Store} The store associated with the specified component.
  */
-export const getStore = <C extends Component>(world: World, component: C) => {
+export const getStore = <Store = void, C extends Component = Component>(
+	world: World,
+	component: C
+) => {
 	if (!world[$componentMap].has(component)) registerComponent(world, component);
 
-	return world[$componentMap].get(component)?.store as C extends Component<infer Store>
-		? undefined extends Store
-			? Omit<C, keyof Component>
-			: Store
-		: never;
+	return world[$componentMap].get(component)!.store as Store extends void
+		? C extends Component<infer Store>
+			? undefined extends Store
+				? Omit<C, keyof Component>
+				: Store
+			: never
+		: Store;
 };
 
 /**
