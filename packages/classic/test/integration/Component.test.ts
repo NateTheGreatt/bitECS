@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { $componentMap } from '../../src/component/symbols.js';
 import {
 	addComponent,
@@ -225,5 +225,62 @@ describe('Component Integration Tests', () => {
 		setStore(world, TestComponent, mockStore);
 
 		assert(getStore(world, TestComponent) === mockStore);
+	});
+
+	it('calls onAdd before onSet', () => {
+		const world = createWorld();
+
+		let counter = 0;
+		let addResult = 0;
+		let setResult = 0;
+
+		const onAdd = vi.fn(() => {
+			counter++;
+			addResult = counter;
+		});
+		const onSet = vi.fn(() => {
+			counter++;
+			setResult = counter;
+		});
+
+		const A = defineComponent({
+			onAdd,
+			onSet,
+		});
+
+		const eid = addEntity(world);
+		addComponent(world, eid, A);
+
+		assert(addResult === 1);
+		assert(setResult === 2);
+	});
+
+	it('calls onRemove before onReset', () => {
+		const world = createWorld();
+
+		let counter = 0;
+		let removeResult = 0;
+		let resetResult = 0;
+
+		const onRemove = vi.fn(() => {
+			counter++;
+			removeResult = counter;
+		});
+		const onReset = vi.fn(() => {
+			counter++;
+			resetResult = counter;
+		});
+
+		const A = defineComponent({
+			onRemove,
+			onReset,
+		});
+
+		const eid = addEntity(world);
+		addComponent(world, eid, A);
+		removeComponent(world, eid, A);
+
+		assert(removeResult === 1);
+		assert(resetResult === 2);
 	});
 });

@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { describe, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import {
 	ChildOf,
 	IsA,
@@ -15,6 +15,7 @@ import {
 	query,
 	withParams,
 } from '../../src';
+import { on } from 'events';
 
 describe('Prefab Integration Tests', () => {
 	test('should reference a prefab and inherit from it', () => {
@@ -176,6 +177,8 @@ describe('Prefab Integration Tests', () => {
 			],
 		});
 
+		const onAddFn = vi.fn();
+
 		const Canopy = definePrefab({
 			components: [
 				ChildOf(Tree),
@@ -183,13 +186,15 @@ describe('Prefab Integration Tests', () => {
 				withParams(Box, [0.8, 0.8, 0.8]),
 				withParams(Color, [0.25, 0.2, 0.1]),
 			],
-			onSet: (world, eid) => {
+			onAdd: (world, eid) => {
 				const boxes = getStore(world, Box);
 				const positions = getStore(world, Position);
 
 				const h = Math.random() + 0.8;
 				boxes[eid][1] = h;
 				positions[eid][1] = h / 2 + 0.5;
+
+				onAddFn();
 			},
 		});
 
@@ -210,6 +215,7 @@ describe('Prefab Integration Tests', () => {
 		assert(boxes[trunk][0] === 0.4);
 		assert(boxes[canopy][0] === 0.8);
 		assert(positions[trunk][1] === 0.25);
+		expect(onAddFn).toHaveBeenCalledTimes(1);
 	});
 
 	test('should allow sharing data between prefabs and instances', () => {

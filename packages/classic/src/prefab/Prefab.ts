@@ -1,4 +1,4 @@
-import { $onSet, $onReset } from '../component/symbols';
+import { $onSet, $onReset, $onAdd, $onRemove } from '../component/symbols';
 import { Component, ComponentOrWithParams } from '../component/types';
 import { addEntity } from '../entity/Entity';
 import { ChildOf, IsA } from '../relation/Relation';
@@ -25,6 +25,8 @@ export const definePrefab = <Params = void, Ref extends {} = {}>(definition?: {
 	components?: ComponentOrWithParams[];
 	onSet?: (world: World, eid: number, params: Params) => void;
 	onReset?: (world: World, eid: number) => void;
+	onAdd?: (world: World, eid: number) => void;
+	onRemove?: (world: World, eid: number) => void;
 	ref?: Ref;
 }) => {
 	const prefab = (definition?.ref ?? {}) as PrefabNode;
@@ -62,13 +64,10 @@ export const definePrefab = <Params = void, Ref extends {} = {}>(definition?: {
 		}
 	}
 
-	if (definition?.onSet) {
-		defineHiddenProperty(prefab, $onSet, definition.onSet);
-	}
-
-	if (definition?.onReset) {
-		defineHiddenProperty(prefab, $onReset, definition.onReset);
-	}
+	if (definition?.onSet) defineHiddenProperty(prefab, $onSet, definition.onSet);
+	if (definition?.onReset) defineHiddenProperty(prefab, $onReset, definition.onReset);
+	if (definition?.onAdd) defineHiddenProperty(prefab, $onAdd, definition.onAdd);
+	if (definition?.onRemove) defineHiddenProperty(prefab, $onRemove, definition.onRemove);
 
 	const ancestors = [] as PrefabNode[];
 	for (const p of prefabs) {

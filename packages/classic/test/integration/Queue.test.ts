@@ -1,4 +1,5 @@
-import { afterEach, describe, it } from 'vitest';
+import { strictEqual } from 'assert';
+import { describe, it } from 'vitest';
 import {
 	addComponent,
 	addEntity,
@@ -8,7 +9,6 @@ import {
 	defineQuery,
 	removeComponent,
 } from '../../src';
-import { strictEqual } from 'assert';
 
 describe('Queue Integration Tests', () => {
 	it('should define independent enter queues', () => {

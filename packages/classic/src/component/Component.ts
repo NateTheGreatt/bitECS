@@ -18,7 +18,15 @@ import { defineHiddenProperty } from '../utils/defineHiddenProperty.js';
 import { entityExists, incrementWorldBitflag } from '../world/World.js';
 import { $bitflag } from '../world/symbols.js';
 import { World } from '../world/types.js';
-import { $componentCount, $componentMap, $createStore, $onAdd, $onReset, $onSet } from './symbols.js';
+import {
+	$componentCount,
+	$componentMap,
+	$createStore,
+	$onAdd,
+	$onRemove,
+	$onReset,
+	$onSet,
+} from './symbols.js';
 import { Component, ComponentInstance, ComponentOrWithParams } from './types.js';
 
 /**
@@ -86,6 +94,8 @@ export function defineComponent<
 	store?: () => Store;
 	onSet?: (world: W, store: Store, eid: number, params: Params) => void;
 	onReset?: (world: W, store: Store, eid: number) => void;
+	onAdd?: (world: W, eid: number) => void;
+	onRemove?: (world: W, eid: number) => void;
 	ref?: Ref;
 }): void extends Ref ? Component<Store, Params> : Component<Store, Params> & Ref {
 	let component = (definition?.ref || {}) as Component<Store, Params> & Ref;
@@ -93,6 +103,8 @@ export function defineComponent<
 	if (definition?.store) defineHiddenProperty(component, $createStore, definition.store);
 	if (definition?.onSet) defineHiddenProperty(component, $onSet, definition.onSet);
 	if (definition?.onReset) defineHiddenProperty(component, $onReset, definition.onReset);
+	if (definition?.onAdd) defineHiddenProperty(component, $onAdd, definition.onAdd);
+	if (definition?.onRemove) defineHiddenProperty(component, $onRemove, definition.onRemove);
 
 	return component;
 }
@@ -266,9 +278,15 @@ export const addComponentsInternal = (world: World, eid: number, args: Component
 		addComponentInternal(world, eid, component);
 
 		if (component[$relation] && component[$pairTarget] !== Wildcard) {
+			const onAdd = component[$onAdd];
+			if (onAdd) onAdd(world, eid);
+
 			const onSet = component[$relation][$onSet];
 			if (onSet) onSet(world, getStore(world, component), eid, params);
 		} else {
+			const onAdd = component[$onAdd];
+			if (onAdd) onAdd(world, eid);
+
 			const onSet = component[$onSet];
 			if (onSet) onSet(world, getStore(world, component), eid, params);
 		}
@@ -383,15 +401,21 @@ export const removeComponent = (world: World, eid: number, component: Component,
 		}
 
 		const onReset = relation[$onReset];
+		const onRemove = component[$onRemove];
 
 		if (component[$relation] === IsA) {
+			if (onRemove) onRemove(world, eid);
 			if (reset && onReset) onReset(world, getStore(world, component), eid);
 		} else if (component[$pairTarget] !== Wildcard) {
+			if (onRemove) onRemove(world, eid);
 			if (reset && onReset) onReset(world, getStore(world, component), eid);
 		}
 
 		// TODO: recursively disinherit
 	} else {
+		const onRemove = component[$onRemove];
+		if (onRemove) onRemove(world, eid);
+
 		const onReset = component[$onReset];
 		if (reset && onReset) onReset(world, getStore(world, component), eid);
 	}
