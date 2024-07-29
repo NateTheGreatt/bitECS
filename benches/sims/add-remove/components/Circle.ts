@@ -1,4 +1,4 @@
-import { defineComponent, onRemove } from '@bitecs/classic';
+import { defineComponent, onRemove } from '@bitecs/core';
 
 export const Circle = defineComponent(() => ({
 	radius: [] as number[],

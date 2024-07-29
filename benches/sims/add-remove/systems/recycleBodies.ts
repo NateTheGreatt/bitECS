@@ -1,4 +1,4 @@
-import { getStore, query, removeEntity } from '@bitecs/classic';
+import { getStore, query, removeEntity } from '@bitecs/core';
 import { World } from '../world';
 import { Position } from '../components/Position';
 import { addBody } from './init';

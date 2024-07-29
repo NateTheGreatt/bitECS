@@ -1,4 +1,4 @@
-import { query } from '@bitecs/classic';
+import { query } from '@bitecs/core';
 import { Position, Velocity } from '../components';
 import { CONSTANTS } from '../constants';
 import { World } from '../world';

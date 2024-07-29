@@ -1,4 +1,4 @@
-import { getStore, query } from '@bitecs/classic';
+import { getStore, query } from '@bitecs/core';
 import { Position } from '../components/Position';
 import { Velocity } from '../components/Velocity';
 import { World } from '../world';

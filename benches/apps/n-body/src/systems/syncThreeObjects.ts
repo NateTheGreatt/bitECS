@@ -1,4 +1,4 @@
-import { getStore, query } from '@bitecs/classic';
+import { getStore, query } from '@bitecs/core';
 import { Circle, Color, Position, World } from '@sim/n-body';
 import { ThreeObject } from '../components/ThreeObject';
 import * as THREE from 'three';

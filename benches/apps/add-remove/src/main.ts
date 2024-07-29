@@ -14,7 +14,7 @@ import { initStats } from '@app/bench-tools';
 import { scene } from './scene';
 import { syncThreeObjects } from './systems/syncThreeObjects';
 import { init } from './systems/init';
-import { flushRemovedEntities } from '@bitecs/classic';
+import { flushRemovedEntities } from '@bitecs/core';
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({

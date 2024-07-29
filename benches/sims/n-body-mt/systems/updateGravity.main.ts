@@ -1,5 +1,5 @@
 import { World } from '../world.js';
-import { Query } from '@bitecs/classic';
+import { Query } from '@bitecs/core';
 import { UpdateGravityComponents } from './updateGravity.common.js';
 import { getThreadCount, Worker } from '@sim/bench-tools';
 

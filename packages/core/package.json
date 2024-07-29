@@ -1,7 +1,7 @@
 {
 	"name": "@bitecs/core",
-	"version": "0.0.1",
-	"description": "ECS toolkit",
+	"version": "0.4.0",
+	"description": "Functional, minimal, data-oriented, ultra-high performance ECS library written in Javascript",
 	"license": "MPL-2.0",
 	"repository": {
 		"type": "git",
@@ -10,12 +10,39 @@
 	"type": "module",
 	"main": "./src/index.ts",
 	"types": "./src/index.ts",
+	"author": {
+		"name": "Nathaniel Martin",
+		"email": "mrtn.nathaniel@gmail.com",
+		"url": "https://github.com/NateTheGreatt"
+	},
+	"contributors": [
+		{
+			"name": "Randy Lebeau",
+			"email": "randylebeau@gmail.com",
+			"url": "https://github.com/SupremeTechnopriest"
+		},
+		{
+			"name": "Kris Baumgartner",
+			"email": "kjbaumgartner@gmail.com",
+			"url": "https://github.com/krispya"
+		},
+		{
+			"name": "Pietro Paolo Vismara",
+			"email": "pp.vismara@gmail.com",
+			"url": "https://github.com/pietrovismara"
+		}
+	],
 	"scripts": {
-		"test": "vitest"
+		"test": "vitest",
+		"build": "tsup"
+	},
+	"dependencies": {
+		"@bitecs/utils": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/assert": "^1.5.10",
 		"tsconfig": "workspace:*",
+		"tsup": "^8.0.2",
 		"vitest": "^1.4.0"
 	}
 }

@@ -1,4 +1,4 @@
-import { getStore } from '@bitecs/classic';
+import { getStore } from '@bitecs/core';
 import { Circle } from '../components/Circle';
 import { Color } from '../components/Color';
 import { Mass } from '../components/Mass';

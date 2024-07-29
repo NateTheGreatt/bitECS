@@ -4,7 +4,7 @@ import { moveBodies } from './moveBodies';
 import { updateTime } from './updateTime';
 import { World } from '../world';
 import { recycleBodies } from './recycleBodies';
-import { flushRemovedEntities } from '@bitecs/classic';
+import { flushRemovedEntities } from '@bitecs/core';
 
 export const pipeline = (world: World) => {
 	updateTime(world);

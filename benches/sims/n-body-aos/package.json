@@ -6,7 +6,7 @@
 	"type": "module",
 	"main": "index.ts",
 	"dependencies": {
-		"@bitecs/classic": "workspace:*",
+		"@bitecs/core": "workspace:*",
 		"@sim/bench-tools": "workspace:*"
 	},
 	"devDependencies": {

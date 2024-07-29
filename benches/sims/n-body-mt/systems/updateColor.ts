@@ -1,4 +1,4 @@
-import { query } from '@bitecs/classic';
+import { query } from '@bitecs/core';
 import { Color, Velocity } from '../components';
 import { colorFromSpeed } from '../utils/colorFromSpeed';
 import { World } from '../world';

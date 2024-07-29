@@ -1,6 +1,6 @@
-import { World } from '@bitecs/classic';
+import { World } from '@bitecs/core';
 import { CONSTANTS } from '../constants';
-import { addComponent, addEntity } from '@bitecs/classic';
+import { addComponent, addEntity } from '@bitecs/core';
 import { IsCentralMass } from '../components/IsCentralMass';
 import { Position } from '../components/Position';
 import { Velocity } from '../components/Velocity';

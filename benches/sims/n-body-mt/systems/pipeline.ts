@@ -1,4 +1,4 @@
-import { defineQuery } from '@bitecs/classic';
+import { defineQuery } from '@bitecs/core';
 import { Acceleration, Mass, Position, Velocity } from '../components';
 import { World } from '../world';
 import { moveBodies } from './moveBodies';

@@ -1,6 +1,8 @@
-import { defineComponent } from '@bitecs/classic';
+import { defineComponent } from '@bitecs/core';
 
-export const Acceleration = defineComponent(() => ({
-	x: [] as number[],
-	y: [] as number[],
-}));
+export const Acceleration = defineComponent({
+	store: () => ({
+		x: [] as number[],
+		y: [] as number[],
+	}),
+});

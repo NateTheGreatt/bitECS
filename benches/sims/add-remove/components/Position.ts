@@ -1,4 +1,4 @@
-import { defineComponent, onRemove } from '@bitecs/classic';
+import { defineComponent, onRemove } from '@bitecs/core';
 
 export const Position = defineComponent(() => ({
 	x: [] as number[],

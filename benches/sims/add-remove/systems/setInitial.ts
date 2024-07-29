@@ -3,13 +3,7 @@ import { Position } from '../components/Position';
 import { Velocity } from '../components/Velocity';
 import { Mass } from '../components/Mass';
 import { Circle } from '../components/Circle';
-import {
-	addComponent,
-	defineEnterQueue,
-	getEntityComponents,
-	getStore,
-	query,
-} from '@bitecs/classic';
+import { addComponent, defineEnterQueue, getEntityComponents, getStore, query } from '@bitecs/core';
 import { randInRange } from '../utils/randInRange';
 import { Color } from '../components/Color';
 import { DummyComponents } from '../components/Dummy';

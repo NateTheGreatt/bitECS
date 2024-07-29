@@ -2,7 +2,7 @@ import { Position } from '../components/Position';
 import { Mass } from '../components/Mass';
 import { CONSTANTS } from '../constants';
 import { World } from '../world';
-import { query } from '@bitecs/classic';
+import { query } from '@bitecs/core';
 
 export function computeGravitationalForce(
 	world: World,

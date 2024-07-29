@@ -1,11 +1,11 @@
-# @bitecs/classic
+# @bitecs/core
 
 `bitECS` is a functional and minimal ECS written in TypeScript with low-opinionation.
 
-`@bitecs/classic` maintains compatibility with the 0.3.x `bitECS` API and uses sparse arrays for a simplified memory layout. More detail below.
+`@bitecs/core` maintains compatibility with the 0.3.x `bitECS` API and uses sparse arrays for a simplified memory layout. More detail below.
 
 ```bash
-npm install @bitecs/classic
+npm install @bitecs/core
 ```
 
 ## What is an ECS?
@@ -508,4 +508,4 @@ In this example, playerRange and itemRange are used to allocate EIDs for players
 
 ## Classic memory layout
 
-`@bitecs/classic` uses sparse arrays for its memory layout, as opposed to [archetypes](https://ajmmertens.medium.com/building-an-ecs-2-archetypes-and-vectorization-fe21690805f9). This means that each entity ID corresponds directly to an array index without any indirection. This vastly simplifies memory layout and improves add/remove performance at the cost of a higher memory footprint and iteration speeds.
+`@bitecs/core` uses sparse arrays for its memory layout, as opposed to [archetypes](https://ajmmertens.medium.com/building-an-ecs-2-archetypes-and-vectorization-fe21690805f9). This means that each entity ID corresponds directly to an array index without any indirection. This vastly simplifies memory layout and improves add/remove performance at the cost of a higher memory footprint and iteration speeds.

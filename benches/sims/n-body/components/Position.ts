@@ -1,6 +1,8 @@
-import { defineComponent } from '@bitecs/classic';
+import { defineComponent } from '@bitecs/core';
 
-export const Position = defineComponent(() => ({
-	x: [] as number[],
-	y: [] as number[],
-}));
+export const Position = defineComponent({
+	store: () => ({
+		x: [] as number[],
+		y: [] as number[],
+	}),
+});

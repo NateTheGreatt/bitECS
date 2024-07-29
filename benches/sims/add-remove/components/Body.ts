@@ -1,4 +1,4 @@
-import { definePrefab } from '@bitecs/classic';
+import { definePrefab } from '@bitecs/core';
 import { Circle } from './Circle';
 import { Color } from './Color';
 import { Mass } from './Mass';

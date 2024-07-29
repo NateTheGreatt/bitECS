@@ -1,6 +1,6 @@
 import { CONSTANTS } from '../constants';
 import { randInRange } from '../utils/randInRange';
-import { defineEnterQueue, query } from '@bitecs/classic';
+import { defineEnterQueue, query } from '@bitecs/core';
 import { Position, Mass, Velocity, Circle, IsCentralMass } from '../components';
 import { World } from '../world';
 

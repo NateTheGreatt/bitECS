@@ -1,4 +1,4 @@
-import { createWorld, World as IWorld } from '@bitecs/classic';
+import { createWorld, World as IWorld } from '@bitecs/core';
 
 export type World = IWorld & {
 	time: {

@@ -1,4 +1,4 @@
-import { createWorld, enableBufferedQueries } from '@bitecs/classic';
+import { createWorld, enableBufferedQueries } from '@bitecs/core';
 
 export type World = typeof world;
 

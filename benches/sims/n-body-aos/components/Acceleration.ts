@@ -1,3 +1,3 @@
-import { Types, defineComponent } from '@bitecs/classic';
+import { Types, defineComponent } from '@bitecs/core';
 
 export const Acceleration: { x: number; y: number }[] = [];

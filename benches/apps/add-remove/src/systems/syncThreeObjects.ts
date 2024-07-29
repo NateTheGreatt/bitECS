@@ -1,4 +1,4 @@
-import { defineExitQueue, getStore, query } from '@bitecs/classic';
+import { defineExitQueue, getStore, query } from '@bitecs/core';
 import { Circle, Color, Position, World } from '@sim/add-remove';
 import { ThreeObject } from '../components/ThreeObject';
 

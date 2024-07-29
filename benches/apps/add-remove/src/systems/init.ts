@@ -2,7 +2,7 @@ import { CONSTANTS, init as initSim } from '@sim/add-remove';
 import { ThreeObject } from '../components/ThreeObject';
 import * as THREE from 'three';
 import { scene } from '../scene';
-import { World } from '@bitecs/classic';
+import { World } from '@bitecs/core';
 
 export function init(world: World) {
 	const particleCount = CONSTANTS.BODIES;

@@ -12,7 +12,7 @@ import {
 } from '@sim/n-body-mt';
 import { render } from './render';
 import { syncThreeObjects } from './syncThreeObjects';
-import { defineQuery } from '@bitecs/classic';
+import { defineQuery } from '@bitecs/core';
 
 const bodyQuery = defineQuery([Position, Mass, Velocity, Acceleration]);
 

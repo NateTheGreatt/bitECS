@@ -15,7 +15,6 @@ import {
 	query,
 	withParams,
 } from '../../src';
-import { on } from 'events';
 
 describe('Prefab Integration Tests', () => {
 	test('should reference a prefab and inherit from it', () => {

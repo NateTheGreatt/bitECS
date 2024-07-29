@@ -4,7 +4,7 @@ import { Velocity } from '../components/Velocity';
 import { Mass } from '../components/Mass';
 import { Circle } from '../components/Circle';
 import { randInRange } from '../utils/randInRange';
-import { defineEnterQueue, getStore, query } from '@bitecs/classic';
+import { defineEnterQueue, getStore, query } from '@bitecs/core';
 import { IsCentralMass } from '../components/IsCentralMass';
 import { World } from '../world';
 
