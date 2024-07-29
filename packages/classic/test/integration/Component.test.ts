@@ -202,25 +202,25 @@ describe('Component Integration Tests', () => {
 		assert(hasComponent(world, eid, IsTag) === false);
 	});
 
-	it('can seed a ref to create the component definition', () => {
-		const world = createWorld();
+	// it('can seed a ref to create the component definition', () => {
+	// 	const world = createWorld();
 
-		const seed = { test: 'hello' };
+	// 	const seed = { test: 'hello' };
 
-		const SeededComponent = defineComponent(
-			seed,
-			withStore<{ value: number[] }, { value: number }>(() => ({ value: [] }), {
-				onSet: (world, store, eid, params = { value: 0 }) => {
-					store.value[eid] = params.value;
-				},
-				onReset: (world, store, eid) => {
-					delete store.value[eid];
-				},
-			})
-		);
+	// 	const SeededComponent = defineComponent(
+	// 		seed,
+	// 		withStore<{ value: number[] }, { value: number }>(() => ({ value: [] }), {
+	// 			onSet: (world, store, eid, params = { value: 0 }) => {
+	// 				store.value[eid] = params.value;
+	// 			},
+	// 			onReset: (world, store, eid) => {
+	// 				delete store.value[eid];
+	// 			},
+	// 		})
+	// 	);
 
-		assert(SeededComponent.test === 'hello');
-	});
+	// 	assert(SeededComponent.test === 'hello');
+	// });
 
 	it('should only remove the component specified', () => {
 		const world = createWorld();

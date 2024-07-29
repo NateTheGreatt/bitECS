@@ -71,31 +71,16 @@ type NotOption<T> = T extends WithStoreFn<any, any> | WithContextFn<any> ? never
  *
  * @returns {object}
  */
+
 export function defineComponent<Options extends ComponentOptions>(
 	...options: Options
-): Component<MergeStores<Options>, MergeParams<Options>> & MergeContexts<Options>;
-export function defineComponent<Options extends ComponentOptions, Seed extends object>(
-	seed: NotOption<Seed>,
-	...options: Options
-): Component<MergeStores<Options>, MergeParams<Options>> & MergeContexts<Options> & Seed;
-
-export function defineComponent<Options extends ComponentOptions, Seed extends object = never>(
-	seedOrOption: NotOption<Seed> | Options[0],
-	...options: Options
-) {
+): Component<MergeStores<Options>, MergeParams<Options>> & MergeContexts<Options> {
 	let component = {};
-
-	if (typeof seedOrOption === 'object') {
-		component = seedOrOption;
-	} else if (typeof seedOrOption === 'function') {
-		seedOrOption(component);
-	}
 
 	for (const option of options) option(component);
 
 	return component as Component<MergeStores<Options>, MergeParams<Options>> &
-		MergeContexts<Options> &
-		Seed;
+		MergeContexts<Options>;
 }
 
 /**
