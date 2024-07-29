@@ -1,1 +1,5 @@
-export const Position: { x: number, y: number }[] = []
+import { defineComponent } from '@bitecs/core';
+
+export const Position = defineComponent({
+	store: () => new Array<{ x: number; y: number }>(),
+});
