@@ -61,9 +61,9 @@ importers:
       '@bitecs/core':
         specifier: workspace:*
         version: link:../../../packages/core
-      '@sim/n-body':
+      '@sim/n-body-aos':
         specifier: workspace:*
-        version: link:../../sims/n-body
+        version: link:../../sims/n-body-aos
       three:
         specifier: ^0.162.0
         version: 0.162.0

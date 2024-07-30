@@ -1,3 +1,6 @@
+import { defineComponent } from '@bitecs/core';
 import * as THREE from 'three';
 
-export const ThreeObject: THREE.InstancedMesh[] = [];
+export const ThreeObject = defineComponent({
+	store: () => new Array<THREE.InstancedMesh>(),
+});

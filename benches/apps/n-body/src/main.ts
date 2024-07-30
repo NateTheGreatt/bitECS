@@ -1,5 +1,5 @@
 import { initStats } from '@app/bench-tools';
-import { CONSTANTS, world } from '@sim/n-body';
+import { CONSTANTS, world } from '@sim/n-body-aos';
 import * as THREE from 'three';
 import './styles.css';
 import { init } from './systems/init';
