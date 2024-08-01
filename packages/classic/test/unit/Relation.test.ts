@@ -9,26 +9,13 @@ import {
 	getRelationTargets,
 	hasComponent,
 	removeEntity,
+	resetGlobals,
 } from '../../src';
-import { describe, test } from 'vitest';
+import { describe, afterEach, test } from 'vitest';
 
 describe('Relation Unit Tests', () => {
-	// this test only works if the player eid is 0, so it needs to be first
-	test('should maintain exclusive relations for eid 0', () => {
-		const world = createWorld();
-
-		const player = addEntity(world); // 0
-		const guard = addEntity(world); // 1
-		const goblin = addEntity(world); // 2
-
-		const Targeting = defineRelation({ exclusive: true });
-
-		addComponent(world, Targeting(player), goblin);
-		addComponent(world, Targeting(guard), goblin);
-
-		assert(getRelationTargets(world, Targeting, goblin).length === 1); 
-		assert(hasComponent(world, Targeting(player), goblin) === false);
-		assert(hasComponent(world, Targeting(guard), goblin) === true);
+	afterEach(() => {
+		resetGlobals();
 	});
 
 	test('should auto remove subject', () => {
@@ -117,4 +104,25 @@ describe('Relation Unit Tests', () => {
 		assert(hasComponent(world, Targeting(rat), hero) === false);
 		assert(hasComponent(world, Targeting(goblin), hero) === true);
 	});
+
+	test('should maintain exclusive relations for eid 0', () => {
+		const world = createWorld();
+
+		const player = addEntity(world); // 0
+
+		assert(player === 0);
+
+		const guard = addEntity(world); // 1
+		const goblin = addEntity(world); // 2
+
+		const Targeting = defineRelation({ exclusive: true });
+
+		addComponent(world, Targeting(player), goblin);
+		addComponent(world, Targeting(guard), goblin);
+
+		assert(getRelationTargets(world, Targeting, goblin).length === 1); 
+		assert(hasComponent(world, Targeting(player), goblin) === false);
+		assert(hasComponent(world, Targeting(guard), goblin) === true);
+	});
+
 });
