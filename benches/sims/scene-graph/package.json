@@ -1,0 +1,17 @@
+{
+	"name": "@sim/scene-graph",
+	"private": true,
+	"version": "0.0.1",
+	"description": "Scene graph simulator to stress test relations",
+	"type": "module",
+	"main": "index.ts",
+	"dependencies": {
+		"@bitecs/classic": "workspace:*",
+		"@sim/bench-tools": "workspace:*",
+		"gl-matrix": "^3.4.3"
+	},
+	"devDependencies": {
+		"tsconfig": "workspace:*",
+		"tsx": "latest"
+	}
+}
