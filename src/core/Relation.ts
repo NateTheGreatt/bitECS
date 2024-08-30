@@ -2,7 +2,7 @@ import { getEntityComponents, World } from '.'
 import { defineHiddenProperty } from './utils/defineHiddenProperty'
 
 export type OnTargetRemovedCallback = (subject: number, target: number | string) => void
-export type RelationTarget = number | '*'
+export type RelationTarget = number | '*' | typeof Wildcard
 
 export const $relation = Symbol('relation')
 export const $pairTarget = Symbol('pairTarget')
