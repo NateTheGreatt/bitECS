@@ -19,22 +19,25 @@ bitECS
 </p>
 
 <p align="center">
-Functional, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-oriented</a>, ultra-high performance <a href="https://en.wikipedia.org/wiki/Entity_component_system">ECS</a> library written using JavaScript TypedArrays.
+Functional, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-oriented</a> <a href="https://en.wikipedia.org/wiki/Entity_component_system">ECS</a> library for Typescript.
 </p>
 
 </center>
 
 ## ✨ Features
 
-|   |   |
-| --------------------------------- | ---------------------------------------- |
-| 🔮  Simple, declarative API       | 🔥  Blazing fast iteration               |
-| 🔍  Powerful & performant queries | 💾  Serialization included              |
-| 🍃  Zero dependencies             | 🌐  Node or browser                     |
-| 🤏  `~5kb` minzipped              | 🏷  TypeScript support                   |
-| ❤  Made with love                | 🔺 [glMatrix](https://github.com/toji/gl-matrix) support |
+- 🔮 Simple, declarative API
+- 🔍 Powerful & performant queries
+- 💾 Serialization included
+- 🧵 Thread friendly
+- 🍃 Zero dependencies
+- 🌐 Node or browser compatible
+- 🤏 Tiny footprint (~3kb minzipped)
+- ❤ Made with love
 
 ### 📈 Benchmarks
+
+Microbenchmarks should be taken with a grain of salt.
 
 |                                                                 |                                                                           |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------- |
@@ -58,28 +61,25 @@ npm i bitecs
 ```js
 import {
   createWorld,
-  Types,
-  defineComponent,
-  defineQuery,
+  query,
   addEntity,
   addComponent,
   pipe,
 } from 'bitecs'
 
-const Vector3 = { x: Types.f32, y: Types.f32, z: Types.f32 }
-const Position = defineComponent(Vector3)
-const Velocity = defineComponent(Vector3)
+const max = 1e5
 
-const movementQuery = defineQuery([Position, Velocity])
 
 const movementSystem = (world) => {
-  const { time: { delta } } = world
-  const ents = movementQuery(world)
+  const { 
+    components: { Position, Velocity },
+    time: { delta } 
+  } = world
+  const ents = query(world, [Position, Velocity])
   for (let i = 0; i < ents.length; i++) {
     const eid = ents[i]
     Position.x[eid] += Velocity.x[eid] * delta
     Position.y[eid] += Velocity.y[eid] * delta
-    Position.z[eid] += Velocity.z[eid] * delta
   }
   return world
 }
@@ -96,12 +96,24 @@ const timeSystem = world => {
 
 const pipeline = pipe(movementSystem, timeSystem)
 
-const world = createWorld()
-world.time = { delta: 0, elapsed: 0, then: performance.now() }
+const world = createWorld(withContext({
+  components: {
+    // components can be whatever you want. define local to the world, or global to the project
+    Position: { x: [], y: [] },
+    Velocity: { x: [], y: [] }
+  },
+  time: { 
+    delta: 0, 
+    elapsed: 0, 
+    then: performance.now() 
+  }
+}))
 
 const eid = addEntity(world)
 addComponent(world, Position, eid)
 addComponent(world, Velocity, eid)
+Position.x[eid] = 0
+Position.y[eid] = 0
 Velocity.x[eid] = 1.23
 Velocity.y[eid] = 1.23
 
@@ -110,12 +122,14 @@ setInterval(() => {
 }, 16)
 ```
 
-## 🔌 Powering
 
-<a href="https://github.com/etherealengine/etherealengine/"><img src="https://user-images.githubusercontent.com/5104160/275346499-878a74b0-11eb-463d-a70e-6cb7055683eb.png" width="420"/></a>
+## Star History
 
-<a href="https://github.com/thirdroom/thirdroom"><img src="https://github.com/thirdroom/thirdroom/raw/main/docs/assets/logo.png" width="420"/></a>
-
-<a href="https://github.com/mozilla/hubs"><img src="https://github.com/NateTheGreatt/bitECS/blob/master/mozilla-hubs.png" width="420"/></a>
+[![Star History Chart](https://api.star-history.com/svg?repos=NateTheGreatt/bitECS&type=Date)](https://star-history.com/#NateTheGreatt/bitECS&Date)
 
 
+## Used by
+
+- [iR Engine](https://github.com/ir-engine/ir-engine)
+- [Third Room](https://github.com/thirdroom/thirdroom)
+- [Mozilla Hubs](https://github.com/mozilla/hubs)
