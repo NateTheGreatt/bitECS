@@ -98,7 +98,7 @@ const pipeline = pipe(movementSystem, timeSystem)
 
 const world = createWorld(withContext({
   components: {
-    // components can be whatever you want. define local to the world, or global to the project
+    // components can be anything
     Position: { x: [], y: [] },
     Velocity: { x: [], y: [] }
   },
@@ -110,8 +110,8 @@ const world = createWorld(withContext({
 }))
 
 const eid = addEntity(world)
-addComponent(world, Position, eid)
-addComponent(world, Velocity, eid)
+addComponent(world, eid, Position)
+addComponent(world, eid, Velocity)
 Position.x[eid] = 0
 Position.y[eid] = 0
 Velocity.x[eid] = 1.23
@@ -132,4 +132,4 @@ setInterval(() => {
 
 - [iR Engine](https://github.com/ir-engine/ir-engine)
 - [Third Room](https://github.com/thirdroom/thirdroom)
-- [Mozilla Hubs](https://github.com/mozilla/hubs)
+- [Hubs Foundation](https://github.com/Hubs-Foundation/hubs)
