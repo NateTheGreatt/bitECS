@@ -1,6 +1,8 @@
 import { getEntityComponents, World } from '.'
 import { defineHiddenProperty } from './utils/defineHiddenProperty'
-import { OnTargetRemovedCallback, RelationTarget } from './types'
+
+export type OnTargetRemovedCallback = (subject: number, target: number | string) => void
+export type RelationTarget = number | '*'
 
 export const $relation = Symbol('relation')
 export const $pairTarget = Symbol('pairTarget')
