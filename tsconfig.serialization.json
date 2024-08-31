@@ -1,0 +1,8 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+      "outFile": "dist/serialization/index.d.ts"
+    },
+    "include": ["src/serialization/**/*"],
+    "exclude": ["src/core/**/*"]
+  }

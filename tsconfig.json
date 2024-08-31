@@ -6,6 +6,7 @@
     "lib": ["ESNext"],
     "declaration": true,
     "declarationMap": true,
+    "emitDeclarationOnly": true,
     "esModuleInterop": true,
     "noImplicitAny": false,
     "noLib": false,
