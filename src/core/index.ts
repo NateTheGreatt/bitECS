@@ -4,6 +4,8 @@ export {
 	getWorldComponents,
 	getAllEntities,
 	$internal,
+	withContext,
+	withEntityIndex
 } from './World'
 
 export type {

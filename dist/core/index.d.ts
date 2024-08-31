@@ -1,4 +1,4 @@
-export { createWorld, resetWorld, getWorldComponents, getAllEntities, $internal, } from './World';
+export { createWorld, resetWorld, getWorldComponents, getAllEntities, $internal, withContext, withEntityIndex } from './World';
 export type { World, InternalWorld, WorldContext } from './World';
 export { addEntity, removeEntity, getEntityComponents, entityExists, Prefab, } from './Entity';
 export { registerComponent, registerComponents, hasComponent, addComponent, addComponents, removeComponent, removeComponents, } from './Component';
