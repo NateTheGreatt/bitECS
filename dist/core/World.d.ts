@@ -17,16 +17,18 @@ export type WorldContext = {
 export type InternalWorld = {
     [$internal]: WorldContext;
 };
-export type World<T extends object = {}> = T;
-type WorldModifier<T> = (world: World) => World & T;
-export declare const withEntityIndex: (entityIndex: EntityIndex) => WorldModifier<{}>;
-export declare const withContext: <T extends object>(context: T) => WorldModifier<T>;
-export declare const createWorld: <T extends object = {}>(...args: (WorldModifier<any> | {
-    entityIndex?: EntityIndex;
+export type World<T extends object = {}> = {
+    [K in keyof T]: T[K];
+};
+export declare const withEntityIndex: (entityIndex: EntityIndex) => <T extends object>(world: World<T>) => World<T>;
+export declare const withContext: <U extends object>(context: U) => <T extends object>(world: World<T>) => World<T & U>;
+export declare function createWorld(): World<{}>;
+export declare function createWorld<T extends object>(options: {
     context?: T;
-})[]) => T;
-export declare const resetWorld: (world: World) => {};
+    entityIndex?: EntityIndex;
+}): World<T>;
+export declare function createWorld<T extends object>(...modifiers: Array<(world: World<{}>) => World<T>>): World<T>;
+export declare const resetWorld: (world: World) => World<{}>;
 export declare const getWorldComponents: (world: World) => string[];
 export declare const getAllEntities: (world: World) => number[];
-export {};
 //# sourceMappingURL=World.d.ts.map

@@ -114,13 +114,13 @@ While immediate entity ID recycling is the default behavior, it can sometimes le
 const Removed = {}
 
 const markEntityForRemoval = (world: World, eid: number): void => {
-  addComponent(world, eid, Removed)
-  }
+    addComponent(world, eid, Removed)
+}
 
 const removeMarkedEntities = (world: World): void => {
-  for (const eid of query(world, [Removed])) {
-    removeEntity(world, eid)
-}
+    for (const eid of query(world, [Removed])) {
+        removeEntity(world, eid)
+    }
 }
 
 const eid = addEntity(world)
@@ -135,7 +135,7 @@ removeMarkedEntities(world)
 
 Components are modular data containers that represent specific attributes of an entity. They define an entity's characteristics by their presence. For instance, separate components might represent position and mass.
 
-In `bitECS`, you have flexibility in choosing the data structure for components. Any valid JavaScript object can serve as a component, with its identity determined by reference. For optimal performance, a [structure of arrays (SoA) format](https://en.wikipedia.org/wiki/AoS_and_SoA) is recommended.
+In `bitECS`, you have flexibility in choosing the data structure for components. Any valid JavaScript reference can serve as a component, with its identity determined by reference. For concise syntax with optimal performance, a [structure of arrays (SoA) format](https://en.wikipedia.org/wiki/AoS_and_SoA) is recommended.
 
 ```ts
 // A SoA component (recommended for minimal memory footprint)
@@ -187,7 +187,7 @@ Queries are used to retrieve information from the world, which acts as a dynamic
 const entities = query(world, [Position, Mass]); // Returns number[]
 ```
 
-When dealing with large numbers of entities, you can use `bufferQuery` instead of the standard `query`. The `bufferQuery` function returns a `Uint32Array` instead of a `number[]`, which offers better performance and can be particularly advantageous for multithreaded operations. This is because `Uint32Array` can be efficiently shared between threads using SharedArrayBuffer (SAB) or copied as raw data, making it ideal for scenarios where you need to pass query results between different execution contexts or perform parallel processing on the query results.
+When dealing with large numbers of entities, you can use `bufferQuery` instead of the standard `query`. The `bufferQuery` function returns a `Uint32Array` instead of a `number[]`, which can be particularly advantageous for multithreaded operations. This is because `Uint32Array` can be efficiently shared between threads using SharedArrayBuffer (SAB) or copied as raw data, making it ideal for scenarios where you need to pass query results between different execution contexts or perform parallel processing on the query results.
 
 ```ts
 const entities = bufferQuery(world, [Position, Mass]); // Returns SAB-backed Uint32Array
@@ -231,9 +231,11 @@ Contains(silver).amount[inventory] = 12
 
 ### Auto Remove Subject
 
-Some relations can automatically remove the subject entity if the target entity is removed. This is useful for maintaining hierarchies where the existence of a child entity depends on its parent entity.
+Relations can be configured to automatically remove the subject entity if the target entity is removed. This is useful for maintaining hierarchies where the existence of a child entity depends on its parent entity.
 
 ```ts
+const ChildOf = createRelation(withAutoRemoveSubject)
+// or
 const ChildOf = createRelation({ autoRemoveSubject: true })
 
 const parent = addEntity(world)
@@ -253,6 +255,8 @@ In this example, when the parent entity is removed, the child entity is also aut
 Exclusive relationships ensure that each subject entity can only be related to a single target entity at a time.
 
 ```ts
+const Targeting = createRelation(makeExclusive)
+// or
 const Targeting = createRelation({ exclusive: true })
 
 const hero = addEntity(world)
@@ -278,7 +282,7 @@ const silver = addEntity(world)
 addComponent(world, inventory, Contains(gold))
 addComponent(world, inventory, Contains(silver))
 
-const targets = getRelationTargets(world, Contains, inventory); // Returns [gold, silver]
+const targets = getRelationTargets(world, inventory, Contains); // Returns [gold, silver]
 ```
 
 ### Relationship wildcards
@@ -344,9 +348,7 @@ Prefabs in `bitECS` allow you to define reusable templates for entities. They ca
 const Gold = addPrefab(world)
 ```
 
-### Adding Components to Prefabs
-
-Components can be added to declaratively defined prefabs, allowing you to define the data structure that entities instantiated from the prefab will have:
+Components can be added to prefabs, creating a template for entities. When an entity is instantiated from a prefab, it inherits all the components and their initial values from that prefab. This allows you to define a consistent data structure and default values for a category of similar entities:
 
 ```ts
 const Vitals = { health: [] }
@@ -356,9 +358,9 @@ addComponent(world, Animal, Vitals)
 Vitals.health[Animal] = 100
 ```
 
-### Inheriting from Other Prefabs
+### Inheritance
 
-bitECS includes a built-in relationship called `IsA` which is used to indicate that an entity is an instance of a prefab. This relationship helps manage prefab inheritance and component composition effectively.
+`bitECS` includes a built-in relationship called `IsA` which is used to indicate that an entity is an instance of a prefab. This relationship helps manage prefab inheritance and component composition effectively.
 
 ```ts
 const Sheep = addPrefab(world)

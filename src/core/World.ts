@@ -6,24 +6,24 @@ import { Query } from './Query'
 export const $internal = Symbol('internal')
 
 export type WorldContext = {
-	entityIndex: EntityIndex
-	entityMasks: number[][]
-	entityComponents: Map<number, Set<ComponentRef>>
-	bitflag: number
-	componentMap: WeakMap<ComponentRef, ComponentData>
-	componentCount: number
-	queries: Set<Query>
-	queriesHashMap: Map<string, Query>
-	notQueries: Set<any>
-	dirtyQueries: Set<any>
+    entityIndex: EntityIndex
+    entityMasks: number[][]
+    entityComponents: Map<number, Set<ComponentRef>>
+    bitflag: number
+    componentMap: WeakMap<ComponentRef, ComponentData>
+    componentCount: number
+    queries: Set<Query>
+    queriesHashMap: Map<string, Query>
+    notQueries: Set<any>
+    dirtyQueries: Set<any>
 }
 
 export type InternalWorld = {
-	[$internal]: WorldContext
+    [$internal]: WorldContext
 }
 
-export type World<T extends object = {}> = T
-type WorldModifier<T> = (world: World) => World & T
+export type World<T extends object = {}> = { [K in keyof T]: T[K] }
+
 
 const createBaseWorld = (context?: object): World => {
     const worldContext: WorldContext = {
@@ -44,45 +44,44 @@ const createBaseWorld = (context?: object): World => {
     return world as World
 }
 
-export const withEntityIndex = (entityIndex: EntityIndex): WorldModifier<{}> => 
-    (world: World) => {
-        const ctx = (world as InternalWorld)[$internal]
+export const withEntityIndex = (entityIndex: EntityIndex) =>
+    <T extends object>(world: World<T>): World<T> => {
+        const ctx = world[$internal]
         ctx.entityIndex = entityIndex
         return world
     }
 
-export const withContext = <T extends object>(context: T): WorldModifier<T> =>
-    (world: World) => {
-        return Object.assign(context, world) as World & T
+export const withContext = <U extends object>(context: U) =>
+    <T extends object>(world: World<T>): World<T & U> => {
+        const internalData = world[$internal];
+        Object.assign(context, world);
+        defineHiddenProperty(context, $internal, internalData);
+        return context as World<T & U>;
     }
 
-export const createWorld = <T extends object = {}>(
-    ...args: Array<WorldModifier<any> | {
-        entityIndex?: EntityIndex
-        context?: T
-    }>
-): World<T> => {
-    const processInputs = (inputs: typeof args) => {
-        let context: T | undefined
-        const modifiers: Array<WorldModifier<any>> = []
 
-        inputs.forEach(arg => {
-            if (typeof arg === 'object' && !Array.isArray(arg) && !(arg instanceof Function)) {
-                const { entityIndex, context: ctx } = arg
-                if (entityIndex) modifiers.push(withEntityIndex(entityIndex))
-                if (ctx) context = ctx
-            } else if (typeof arg === 'function') {
-                modifiers.push(arg as WorldModifier<any>)
-            }
-        })
-
-        return { context, modifiers }
+export function createWorld(): World<{}>
+export function createWorld<T extends object>(options: { context?: T, entityIndex?: EntityIndex }): World<T>
+export function createWorld<T extends object>(...modifiers: Array<(world: World<{}>) => World<T>>): World<T>
+export function createWorld<T extends object>(
+    optionsOrModifier?: { context?: T, entityIndex?: EntityIndex } | ((world: World<{}>) => World<T>),
+    ...restModifiers: Array<(world: World<{}>) => World<T>>
+): World<T> {
+    if (typeof optionsOrModifier === 'object' && optionsOrModifier !== null && !Array.isArray(optionsOrModifier)) {
+        const { context, entityIndex } = optionsOrModifier;
+        let world = createBaseWorld() as World<T>;
+        if (context) {
+            world = withContext(context)(world);
+        }
+        if (entityIndex) {
+            world = withEntityIndex(entityIndex)(world);
+        }
+        return world;
+    } else {
+        const modifiers = (typeof optionsOrModifier === 'function' ? [optionsOrModifier, ...restModifiers] : restModifiers);
+        const baseWorld = createBaseWorld() as World<{}>;
+        return modifiers.reduce((world, modifier) => modifier(world), baseWorld) as World<T>;
     }
-
-    const { context, modifiers } = processInputs(args)
-    const baseWorld = createBaseWorld(context)
-
-    return modifiers.reduce((world, modifier) => modifier(world), baseWorld) as World<T>
 }
 
 /**
@@ -92,18 +91,18 @@ export const createWorld = <T extends object = {}>(
  * @returns {object}
  */
 export const resetWorld = (world: World) => {
-	const ctx = (world as InternalWorld)[$internal]
-	ctx.entityIndex = createEntityIndex()
-	ctx.entityMasks = [[]]
-	ctx.entityComponents = new Map()
-	ctx.bitflag = 1
-	ctx.componentMap = new Map()
-	ctx.componentCount = 0
-	ctx.queries = new Set()
-	ctx.queriesHashMap = new Map()
-	ctx.notQueries = new Set()
-	ctx.dirtyQueries = new Set()
-	return world
+    const ctx = (world as InternalWorld)[$internal]
+    ctx.entityIndex = createEntityIndex()
+    ctx.entityMasks = [[]]
+    ctx.entityComponents = new Map()
+    ctx.bitflag = 1
+    ctx.componentMap = new Map()
+    ctx.componentCount = 0
+    ctx.queries = new Set()
+    ctx.queriesHashMap = new Map()
+    ctx.notQueries = new Set()
+    ctx.dirtyQueries = new Set()
+    return world
 }
 
 /**
@@ -112,8 +111,8 @@ export const resetWorld = (world: World) => {
  * @param {World} world
  * @returns Array
  */
-export const getWorldComponents = (world: World) => 
-	Object.keys((world as InternalWorld)[$internal].componentMap)
+export const getWorldComponents = (world: World) =>
+    Object.keys((world as InternalWorld)[$internal].componentMap)
 
 /**
  * Returns all existing entities in a world
