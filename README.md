@@ -51,10 +51,8 @@ npm i bitecs
 ## 📘  Documentation
 |                  |
 | ---------------- |
-| 🏁  [Getting Started](https://github.com/NateTheGreatt/bitECS/blob/master/docs/INTRO.md) |
+| 🏁  [Getting Started](https://github.com/NateTheGreatt/bitECS/blob/master/docs/Intro.md) |
 | 📑  [API](https://github.com/NateTheGreatt/bitECS/blob/master/docs/API.md) |
-| ❔  [FAQ](https://github.com/NateTheGreatt/bitECS/blob/master/docs/FAQ.md) |
-| 🏛  [Tutorial](https://github.com/ourcade/phaser3-bitecs-getting-started) |
 
 ## 🕹 Example
 

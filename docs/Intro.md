@@ -108,13 +108,13 @@ assert(eid1 === eid3)
 
 ### Manual Entity ID Recycling
 
-While immediate entity ID recycling is the default behavior, it can sometimes lead to unexpected issues, especially in complex systems. Here's one way these issues can be avoided, although you are free to handle it however you like:
+While immediate entity ID recycling is the default behavior, it can sometimes lead to unexpected issues, especially in complex systems. To avoid this, you can tag entities before actually removing them later on:
 
 ```ts
 const Removed = {}
 
 const markEntityForRemoval = (world: World, eid: number): void => {
-  addComponent(world, Removed, eid)
+  addComponent(world, eid, Removed)
   }
 
 const removeMarkedEntities = (world: World): void => {
@@ -126,6 +126,7 @@ const removeMarkedEntities = (world: World): void => {
 const eid = addEntity(world)
 markEntityForRemoval(world, eid)
 
+// sometime later...
 removeMarkedEntities(world)
 ```
 
@@ -156,7 +157,7 @@ const Position = [] as { x: number; y: number }[]
 Mutations are then handled manually based on the storage format after adding a component.
 
 ```ts
-addComponent(world, Position, eid)
+addComponent(world, eid, Position)
 
 // SoA
 (Position.x[eid] = 0), (Position.y[eid] = 0)
@@ -351,7 +352,7 @@ Components can be added to declaratively defined prefabs, allowing you to define
 const Vitals = { health: [] }
 const Animal = addPrefab()
 
-addComponent(world, Vitals, Animal)
+addComponent(world, Animal, Vitals)
 Vitals.health[Animal] = 100
 ```
 
