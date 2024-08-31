@@ -8,6 +8,7 @@ import {
 	query,
 	removeComponent,
 	removeEntity,
+	Or
 } from '../../src/core'
 
 describe('Query Tests', () => {
@@ -273,5 +274,40 @@ describe('Query Tests', () => {
 			expect(singleComponentResult.length).toBe(1)
 			expect(singleComponentResult[0]).toBe(eid)
 		})
+	})
+	it('should correctly query entities using Or operator', () => {
+		const world = createWorld()
+		const ComponentA = { value: [] }
+		const ComponentB = { value: [] }
+		const ComponentC = { value: [] }
+
+		const entity1 = addEntity(world)
+		addComponent(world, ComponentA, entity1)
+
+		const entity2 = addEntity(world)
+		addComponent(world, ComponentB, entity2)
+
+		const entity3 = addEntity(world)
+		addComponent(world, ComponentC, entity3)
+
+		const entity4 = addEntity(world)
+		addComponent(world, ComponentA, entity4)
+		addComponent(world, ComponentB, entity4)
+
+		const queryResults = query(world, [Or(ComponentA, ComponentB)])
+
+		expect(queryResults.length).toBe(3)
+		expect(queryResults).toContain(entity1)
+		expect(queryResults).toContain(entity2)
+		expect(queryResults).toContain(entity4)
+		expect(queryResults).not.toContain(entity3)
+
+		const complexQueryResults = query(world, [Or(ComponentA, ComponentB, ComponentC)])
+
+		expect(complexQueryResults.length).toBe(4)
+		expect(complexQueryResults).toContain(entity1)
+		expect(complexQueryResults).toContain(entity2)
+		expect(complexQueryResults).toContain(entity3)
+		expect(complexQueryResults).toContain(entity4)
 	})
 })

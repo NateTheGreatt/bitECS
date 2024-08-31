@@ -1,4 +1,4 @@
-import { createSparseSet, type SparseSet } from './utils/SparseSet'
+import { createSparseSet, createUint32SparseSet, type SparseSet } from './utils/SparseSet'
 import { hasComponent, registerComponent } from './Component'
 import { ComponentRef, ComponentData } from './Component'
 import { World } from "./World"
@@ -10,9 +10,11 @@ import { Prefab } from './Entity'
 export type QueryResult = Uint32Array | readonly number[]
 
 export type Query = SparseSet & {
-	notComponents: ComponentRef[]
 	allComponents: ComponentRef[]
+	orComponents: ComponentRef[]
+	notComponents: ComponentRef[]
 	masks: { [key: number]: number }
+	orMasks: { [key: number]: number }
 	notMasks: { [key: number]: number }
 	hasMasks: { [key: number]: number }
 	generations: number[]
@@ -116,8 +118,10 @@ export const queryHash = (world: World, terms: QueryTerm[]): string => {
 
     const termToString = (term: QueryTerm): string => {
         if ('type' in term) {
-            const componentIds = term.components.map(getComponentId).sort((a, b) => a - b)
-            return `${term.type}(${componentIds.join(',')})`
+            const componentIds = term.components.map(getComponentId)
+            const sortedComponentIds = componentIds.sort((a, b) => a - b)
+            const sortedType = term.type.toLowerCase()
+            return `${sortedType}(${sortedComponentIds.join(',')})`
         } else {
             return getComponentId(term).toString()
         }
@@ -129,31 +133,40 @@ export const queryHash = (world: World, terms: QueryTerm[]): string => {
         .join('-')
 }
 
-export const registerQuery = (world: World, terms: QueryTerm[]): Query => {
+export const registerQuery = (world: World, terms: QueryTerm[], options: { buffered?: boolean } = {}): Query => {
 	const ctx = (world as InternalWorld)[$internal]
 	const hash = queryHash(world, terms)
-	if (ctx.queriesHashMap.has(hash)) {
-		return ctx.queriesHashMap.get(hash)!
-	}
-
+	// if (ctx.queriesHashMap.has(hash)) {
+	// 	return ctx.queriesHashMap.get(hash)!
+	// }
 	const components: ComponentRef[] = []
 	const notComponents: ComponentRef[] = []
-	terms.forEach((c: QueryTerm) => {
-		if (c.type === 'Not') {
-			c.components.forEach((comp: ComponentRef) => {
-				if (!ctx.componentMap.has(comp)) registerComponent(world, comp)
-				notComponents.push(comp)
-			})
+	const orComponents: ComponentRef[] = []
+
+	const processComponents = (comps: ComponentRef[], targetArray: ComponentRef[]) => {
+		comps.forEach((comp: ComponentRef) => {
+			if (!ctx.componentMap.has(comp)) registerComponent(world, comp)
+			targetArray.push(comp)
+		})
+	}
+
+	terms.forEach((term: QueryTerm) => {
+		if ('type' in term) {
+			if (term.type === 'Not') {
+				processComponents(term.components, notComponents)
+			} else if (term.type === 'Or') {
+				processComponents(term.components, orComponents)
+			}
 		} else {
-			if (!ctx.componentMap.has(c)) registerComponent(world, c)
-			components.push(c)
+			if (!ctx.componentMap.has(term)) registerComponent(world, term)
+			components.push(term)
 		}
 	})
 
 	const mapComponents = (c: ComponentRef) => ctx.componentMap.get(c)!
-	const allComponents = components.concat(notComponents).map(mapComponents)
+	const allComponents = components.concat(notComponents).concat(orComponents.flat()).map(mapComponents)
 
-	const sparseSet = createSparseSet()
+	const sparseSet = options.buffered ? createUint32SparseSet() : createSparseSet()
 
 	const toRemove = createSparseSet()
 
@@ -173,6 +186,7 @@ export const registerQuery = (world: World, terms: QueryTerm[]): Query => {
 
 	const masks = components.map(mapComponents).reduce(reduceBitflags, {})
 	const notMasks = notComponents.map(mapComponents).reduce(reduceBitflags, {})
+	const orMasks = orComponents.map(mapComponents).reduce(reduceBitflags, {})
 	const hasMasks = allComponents.reduce(reduceBitflags, {})
 
 	const addObservable = createObservable()
@@ -181,9 +195,11 @@ export const registerQuery = (world: World, terms: QueryTerm[]): Query => {
 	const query = Object.assign(sparseSet, {
 		components,
 		notComponents,
+		orComponents,
 		allComponents,
 		masks,
 		notMasks,
+		orMasks,
 		hasMasks,
 		generations,
 		toRemove,
@@ -214,29 +230,37 @@ export const registerQuery = (world: World, terms: QueryTerm[]): Query => {
 	return query
 }
 
-export function innerQuery(world: World, terms: QueryTerm[]): QueryResult {
+export function innerQuery(world: World, terms: QueryTerm[], options: { buffered?: boolean } = {}): QueryResult {
 	const ctx = (world as InternalWorld)[$internal]
 	const hash = queryHash(world, terms)
 	let queryData = ctx.queriesHashMap.get(hash)
 	if (!queryData) {
-		queryData = registerQuery(world, terms)
+		queryData = registerQuery(world, terms, options)
+	} else if (options.buffered && !('buffer' in queryData.dense)) {
+		queryData = registerQuery(world, terms, { buffered: true })
 	}
 	return queryData.dense
 }
 
-export function query(world: World, terms: QueryTerm[]): QueryResult {
+export function query(world: World, terms: QueryTerm[]): readonly number[] {
 	commitRemovals(world)
-	return innerQuery(world, terms)
+	return innerQuery(world, terms) as number[]
 }
 
-export const queryCheckEntity = (world: World, query: Query, eid: number) => {
+export function bufferQuery(world: World, terms: QueryTerm[]): Uint32Array {
+	commitRemovals(world)
+	return innerQuery(world, terms, { buffered: true }) as Uint32Array
+}
+
+export function queryCheckEntity(world: World, query: Query, eid: number): boolean {
 	const ctx = (world as InternalWorld)[$internal]
-	const { masks, notMasks, generations } = query
+	const { masks, notMasks, orMasks, generations } = query
 
 	for (let i = 0; i < generations.length; i++) {
 		const generationId = generations[i]
 		const qMask = masks[generationId]
 		const qNotMask = notMasks[generationId]
+		const qOrMask = orMasks[generationId]
 		const eMask = ctx.entityMasks[generationId][eid]
 
 		if (qNotMask && (eMask & qNotMask) !== 0) {
@@ -244,6 +268,10 @@ export const queryCheckEntity = (world: World, query: Query, eid: number) => {
 		}
 
 		if (qMask && (eMask & qMask) !== qMask) {
+			return false
+		}
+
+		if (qOrMask && (eMask & qOrMask) === 0) {
 			return false
 		}
 	}

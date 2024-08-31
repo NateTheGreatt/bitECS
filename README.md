@@ -109,6 +109,8 @@ const world = createWorld(withContext({
   }
 }))
 
+const { Position, Velocity } = world.components
+
 const eid = addEntity(world)
 addComponent(world, eid, Position)
 addComponent(world, eid, Velocity)
@@ -132,4 +134,4 @@ setInterval(() => {
 
 - [iR Engine](https://github.com/ir-engine/ir-engine)
 - [Third Room](https://github.com/thirdroom/thirdroom)
-- [Hubs Foundation](https://github.com/Hubs-Foundation/hubs)
+- [Hubs](https://github.com/Hubs-Foundation/hubs)

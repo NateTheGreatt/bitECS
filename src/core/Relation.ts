@@ -8,10 +8,10 @@ export const $relation = Symbol('relation')
 export const $pairTarget = Symbol('pairTarget')
 export const $isPairComponent = Symbol('isPairComponent')
 
-export const $relationData = Symbol('internal')
+export const $relationData = Symbol('relationData')
 
 type RelationData<T> = {
-    pairsMap: Map<number | string, T>
+    pairsMap: Map<number | string | Relation<any>, T>
     initStore: () => T
     exclusiveRelation: boolean
     autoRemoveSubject: boolean

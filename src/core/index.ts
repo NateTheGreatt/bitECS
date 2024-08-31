@@ -36,7 +36,6 @@ export type {
 } from './Component'
 
 export {
-	Not,
 	commitRemovals,
 	removeQuery,
 	registerQuery,
@@ -45,9 +44,6 @@ export {
 	observe,
 	onAdd,
 	onRemove,
-} from './Query'
-
-export type {
 	ObservableHook,
 	QueryResult,
 	Query,
@@ -60,11 +56,17 @@ export type {
 	NotOp,
 	AnyOp,
 	AllOp,
-	NoneOp
+	NoneOp,
+	Or,
+	And,
+	Not,
+	Any,
+	All,
+	None
 } from './Query'
 
 export { pipe } from './utils/pipe'
 
 export * from './Relation'
 
-export * from './EntityIndex'
+export { createEntityIndex } from './EntityIndex'
