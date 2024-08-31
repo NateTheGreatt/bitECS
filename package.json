@@ -12,14 +12,14 @@
   "types": "./dist/core/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/core/index.d.ts",
       "import": "./dist/core/index.min.mjs",
-      "require": "./dist/core/index.min.cjs",
-      "types": "./dist/core/index.d.ts"
+      "require": "./dist/core/index.min.cjs"
     },
     "./serialization": {
+      "types": "./dist/serialization/index.d.ts",
       "import": "./dist/serialization/index.min.mjs",
-      "require": "./dist/serialization/index.min.cjs",
-      "types": "./dist/serialization/index.d.ts"
+      "require": "./dist/serialization/index.min.cjs"
     }
   },
   "author": {
