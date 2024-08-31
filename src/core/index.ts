@@ -20,6 +20,7 @@ export {
 	getEntityComponents,
 	entityExists,
 	Prefab,
+	addPrefab,
 } from './Entity'
 
 export {
@@ -46,6 +47,15 @@ export {
 	observe,
 	onAdd,
 	onRemove,
+	Or,
+	And,
+	Not,
+	Any,
+	All,
+	None
+} from './Query'
+
+export type {
 	ObservableHook,
 	QueryResult,
 	Query,
@@ -59,16 +69,25 @@ export {
 	AnyOp,
 	AllOp,
 	NoneOp,
-	Or,
-	And,
-	Not,
-	Any,
-	All,
-	None
 } from './Query'
 
 export { pipe } from './utils/pipe'
 
-export * from './Relation'
+export {
+	withAutoRemoveSubject,
+	withOnTargetRemoved,
+	withStore,
+	createRelation,
+	getRelationTargets,
+	Wildcard,
+	IsA,
+	Pair,
+} from './Relation'
+
+export type {
+	OnTargetRemovedCallback,
+	Relation,
+	RelationTarget,
+} from './Relation'
 
 export { createEntityIndex } from './EntityIndex'

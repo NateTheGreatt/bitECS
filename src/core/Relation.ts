@@ -77,13 +77,13 @@ export const makeExclusive = <T>(relation: Relation<T>): Relation<T> => {
     return relation
 }
 
-export const withAutoRemove = <T>(relation: Relation<T>): Relation<T> => {
+export const withAutoRemoveSubject = <T>(relation: Relation<T>): Relation<T> => {
     const ctx = relation[$relationData] as RelationData<T>
     ctx.autoRemoveSubject = true
     return relation
 }
 
-export const withOnRemove = <T>(onRemove: OnTargetRemovedCallback) => (relation: Relation<T>): Relation<T> => {
+export const withOnTargetRemoved = <T>(onRemove: OnTargetRemovedCallback) => (relation: Relation<T>): Relation<T> => {
     const ctx = relation[$relationData] as RelationData<T>
     ctx.onTargetRemoved = onRemove
     return relation
@@ -142,8 +142,8 @@ export function createRelation<T>(
         const modifiers = [
             store && withStore(store),
             exclusive && makeExclusive,
-            autoRemoveSubject && withAutoRemove,
-            onTargetRemoved && withOnRemove(onTargetRemoved)
+            autoRemoveSubject && withAutoRemoveSubject,
+            onTargetRemoved && withOnTargetRemoved(onTargetRemoved)
         ].filter(Boolean) as Array<(relation: Relation<T>) => Relation<T>>
         return modifiers.reduce((acc, modifier) => modifier(acc), createBaseRelation<T>())
     } else {
