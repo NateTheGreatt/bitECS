@@ -37,7 +37,7 @@
   "scripts": {
     "test": "vitest",
     "build": "bun build:core && bun build:serialization && bun build:types",
-    "build:types": "tsc --declaration --emitDeclarationOnly --project tsconfig.core.json && tsc --declaration --emitDeclarationOnly --project tsconfig.serialization.json",
+    "build:types": "tsc",
     "build:core": "bun build:core:mjs && bun build:core:cjs",
     "build:core:mjs": "esbuild src/core/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/core/index.min.mjs",
     "build:core:cjs": "esbuild src/core/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/core/index.min.cjs",
