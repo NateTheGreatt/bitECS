@@ -236,12 +236,11 @@ export const queryHash = (world: World, terms: QueryTerm[]): string => {
         }
         return ctx.componentMap.get(component)!.id
     }
-
     const termToString = (term: QueryTerm): string => {
-        if ('type' in term) {
-            const componentIds = term.components.map(getComponentId)
+        if ($opType in term) {
+            const componentIds = term[$opComponents].map(getComponentId)
             const sortedComponentIds = componentIds.sort((a, b) => a - b)
-            const sortedType = term.type.toLowerCase()
+            const sortedType = term[$opType].toLowerCase()
             return `${sortedType}(${sortedComponentIds.join(',')})`
         } else {
             return getComponentId(term).toString()
