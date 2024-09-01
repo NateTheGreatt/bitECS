@@ -24,7 +24,6 @@ export type InternalWorld = {
 
 export type World<T extends object = {}> = { [K in keyof T]: T[K] }
 
-
 const createBaseWorld = (context?: object): World => {
     const worldContext: WorldContext = {
         entityIndex: createEntityIndex(),
@@ -104,6 +103,16 @@ export const resetWorld = (world: World) => {
     ctx.dirtyQueries = new Set()
     return world
 }
+
+/**
+ * Deletes a world by removing its internal data.
+ *
+ * @param {World} world - The world to be deleted.
+ */
+export const deleteWorld = (world: World) => {
+    delete (world as any)[$internal];
+}
+
 
 /**
  * Returns all components registered to a world

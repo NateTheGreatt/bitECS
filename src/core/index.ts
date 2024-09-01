@@ -1,6 +1,7 @@
 export {
 	createWorld,
 	resetWorld,
+	deleteWorld,
 	getWorldComponents,
 	getAllEntities,
 	$internal,
