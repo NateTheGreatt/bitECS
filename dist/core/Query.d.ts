@@ -25,9 +25,11 @@ export type Query = SparseSet & {
     removeObservable: ReturnType<typeof createObservable>;
 };
 export type QueryOperatorType = 'Or' | 'And' | 'Not';
+export declare const $opType: unique symbol;
+export declare const $opComponents: unique symbol;
 export type OpReturnType = {
-    type: QueryOperatorType;
-    components: ComponentRef[];
+    [$opType]: string;
+    [$opComponents]: ComponentRef[];
 };
 export type QueryOperator = (...components: ComponentRef[]) => OpReturnType;
 export type QueryTerm = ComponentRef | QueryOperator;
@@ -38,14 +40,14 @@ export type AnyOp = OrOp;
 export type AllOp = AndOp;
 export type NoneOp = NotOp;
 export type ObservableHook = (...components: ComponentRef[]) => {
-    type: 'add' | 'remove' | 'set';
-    components: ComponentRef[];
+    [$opType]: 'add' | 'remove' | 'set';
+    [$opComponents]: ComponentRef[];
 };
 export declare const onAdd: ObservableHook;
 export declare const onRemove: ObservableHook;
 export declare const onSet: ObservableHook;
 export declare const set: <T>(world: World, eid: number, component: ComponentRef, params: T) => void;
-export declare const observe: (world: World, hook: ReturnType<typeof onAdd | typeof onRemove>, callback: (eid: number) => void) => () => void;
+export declare const observe: (world: World, hook: ReturnType<typeof onAdd | typeof onRemove | typeof onSet>, callback: (eid: number) => void) => () => void;
 export declare const Or: OrOp;
 export declare const And: AndOp;
 export declare const Not: NotOp;
