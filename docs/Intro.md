@@ -67,9 +67,18 @@ const world = createWorld()
 
 ```ts
 const world = createWorld(withContext({
-    then: 0,
-    delta: 0,
+    time: {
+        then: 0,
+        delta: 0,
+    }
 }))
+// dual API - alternatively:
+const world = createWorld({ context: {
+    time: {
+        then: 0,
+        delta: 0
+    }
+}})
 ```
 
 `withEntityIndex` allows you to provide an entity index which can be used to share an EID space between worlds.
@@ -132,10 +141,10 @@ removeMarkedEntities(world)
 
 
 ## Component
-
 Components are modular data containers that represent specific attributes of an entity. They define an entity's characteristics by their presence. For instance, separate components might represent position and mass.
 
 In `bitECS`, you have flexibility in choosing the data structure for components. Any valid JavaScript reference can serve as a component, with its identity determined by reference. For concise syntax with optimal performance, a [structure of arrays (SoA) format](https://en.wikipedia.org/wiki/AoS_and_SoA) is recommended.
+
 
 ```ts
 // A SoA component (recommended for minimal memory footprint)
@@ -152,6 +161,27 @@ const Position = {
 
 // An AoS component (performant so long as the shape is small and there are < 100k objects)
 const Position = [] as { x: number; y: number }[]
+```
+
+
+### Associating Components with the World
+
+
+Components are automatically registered with a world when they are first added to an entity in that world. This means that components are typically not shared between different worlds, ensuring data isolation. However, if multiple worlds share the same entity index, components can be shared across those worlds.
+
+It's important to associate components with the world object for this reason.
+
+```ts
+createWorld(withContext({
+    components: { Position: { x: [], y: [] } }
+}));
+
+```
+
+Components can be retrieved via destructuring.
+
+```ts
+const { Position } = world.components
 ```
 
 Mutations are then handled manually based on the storage format after adding a component.
