@@ -119,8 +119,8 @@ describe('Query Tests', () => {
 		// notFooQuery should have eid 1 & 2
 		ents = query(world, [Not(Foo)])
 		strictEqual(ents.length, 2)
-		strictEqual(ents[0], eid2)
-		strictEqual(ents[1], eid1)
+		strictEqual(ents[0], eid1)
+		strictEqual(ents[1], eid2)
 
 		// fooBarQuery should still only have eid 3
 		ents = query(world, [Foo, Bar])
@@ -146,8 +146,8 @@ describe('Query Tests', () => {
 		// and notFooQuery should have eid 1, 2, & 3
 		ents = query(world, [Not(Foo)])
 		strictEqual(ents.length, 3)
-		strictEqual(ents[0], eid2)
-		strictEqual(ents[1], eid1)
+		strictEqual(ents[0], eid1)
+		strictEqual(ents[1], eid2)
 		strictEqual(ents[2], eid3)
 	})
 

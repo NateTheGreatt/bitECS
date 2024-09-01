@@ -47,15 +47,20 @@ export type Query = SparseSet & {
  * @description Types of query operators.
  */
 export type QueryOperatorType = 'Or' | 'And' | 'Not'
+/**
+ * Symbols for query operator types and components
+ */
+export const $opType = Symbol('opType');
+export const $opComponents = Symbol('opComponents');
 
 /**
  * @typedef {Object} OpReturnType
- * @property {QueryOperatorType} type - The type of the operator.
- * @property {ComponentRef[]} components - The components involved in the operation.
+ * @property {symbol} [$opType] - The type of the operator.
+ * @property {symbol} [$opComponents] - The components involved in the operation.
  */
 export type OpReturnType = {
-    type: QueryOperatorType
-    components: ComponentRef[]
+    [$opType]: string
+    [$opComponents]: ComponentRef[]
 }
 
 /**
@@ -87,33 +92,42 @@ export type NoneOp = NotOp
  * @returns {{type: 'add' | 'remove' | 'set', components: ComponentRef[]}} The observable hook configuration.
  */
 export type ObservableHook = (...components: ComponentRef[]) => {
-	type: 'add' | 'remove' | 'set'
-	components: ComponentRef[]
+	[$opType]: 'add' | 'remove' | 'set'
+	[$opComponents]: ComponentRef[]
 }
 
 /**
  * @function onAdd
  * @description Creates an 'add' observable hook.
  * @param {...ComponentRef} components - The components to observe for addition.
- * @returns {{type: 'add', components: ComponentRef[]}} The 'add' observable hook configuration.
+ * @returns {OpReturnType} The 'add' observable hook configuration.
  */
-export const onAdd: ObservableHook = (...components: ComponentRef[]) => ({ type: 'add', components })
+export const onAdd: ObservableHook = (...components: ComponentRef[]) => ({
+    [$opType]: 'add',
+    [$opComponents]: components
+})
 
 /**
  * @function onRemove
  * @description Creates a 'remove' observable hook.
  * @param {...ComponentRef} components - The components to observe for removal.
- * @returns {{type: 'remove', components: ComponentRef[]}} The 'remove' observable hook configuration.
+ * @returns {OpReturnType} The 'remove' observable hook configuration.
  */
-export const onRemove: ObservableHook = (...components: ComponentRef[]) => ({ type: 'remove', components })
+export const onRemove: ObservableHook = (...components: ComponentRef[]) => ({
+    [$opType]: 'remove',
+    [$opComponents]: components
+})
 
 /**
  * @function onSet
  * @description Creates a 'set' observable hook.
  * @param {...ComponentRef} components - The components to observe for setting.
- * @returns {{type: 'set', components: ComponentRef[]}} The 'set' observable hook configuration.
+ * @returns {OpReturnType} The 'set' observable hook configuration.
  */
-export const onSet: ObservableHook = (...components: ComponentRef[]) => ({ type: 'set', components })
+export const onSet: ObservableHook = (...components: ComponentRef[]) => ({
+    [$opType]: 'set',
+    [$opComponents]: components
+})
 
 /**
  * @function set
@@ -148,13 +162,13 @@ export const set = <T>(world: World, eid: number, component: ComponentRef, param
  * @function observe
  * @description Observes changes in entities based on specified components.
  * @param {World} world - The world object.
- * @param {ReturnType<typeof onAdd | typeof onRemove>} hook - The observable hook.
+ * @param {ReturnType<typeof onAdd | typeof onRemove | typeof onSet>} hook - The observable hook.
  * @param {function(number): void} callback - The callback function to execute when changes occur.
  * @returns {function(): void} A function to unsubscribe from the observation.
  */
-export const observe = (world: World, hook: ReturnType<typeof onAdd | typeof onRemove>, callback: (eid: number) => void): () => void => {
+export const observe = (world: World, hook: ReturnType<typeof onAdd | typeof onRemove | typeof onSet>, callback: (eid: number) => void): () => void => {
 	const ctx = (world as InternalWorld)[$internal]
-	const { type, components } = hook
+	const { [$opType]: type, [$opComponents]: components } = hook
 	const hash = queryHash(world, components)
 	let queryData = ctx.queriesHashMap.get(hash)!
 
@@ -176,8 +190,8 @@ export const observe = (world: World, hook: ReturnType<typeof onAdd | typeof onR
  * @returns {OpReturnType} The 'Or' operator configuration.
  */
 export const Or: OrOp = (...components: ComponentRef[]) => ({
-	type: 'Or',
-	components
+	[$opType]: 'Or',
+	[$opComponents]: components
 })
 
 /**
@@ -187,8 +201,8 @@ export const Or: OrOp = (...components: ComponentRef[]) => ({
  * @returns {OpReturnType} The 'And' operator configuration.
  */
 export const And: AndOp = (...components: ComponentRef[]) => ({
-	type: 'And',
-	components
+	[$opType]: 'And',
+	[$opComponents]: components
 })
 
 /**
@@ -198,8 +212,8 @@ export const And: AndOp = (...components: ComponentRef[]) => ({
  * @returns {OpReturnType} The 'Not' operator configuration.
  */
 export const Not: NotOp = (...components: ComponentRef[]) => ({
-	type: 'Not',
-	components
+	[$opType]: 'Not',
+	[$opComponents]: components
 })
 
 export const Any: AnyOp = Or
@@ -267,11 +281,11 @@ export const registerQuery = (world: World, terms: QueryTerm[], options: { buffe
 	}
 
 	terms.forEach((term: QueryTerm) => {
-		if ('type' in term) {
-			if (term.type === 'Not') {
-				processComponents(term.components, notComponents)
-			} else if (term.type === 'Or') {
-				processComponents(term.components, orComponents)
+		if ($opType in term) {
+			if (term[$opType] === 'Not') {
+				processComponents(term[$opComponents], notComponents)
+			} else if (term[$opType] === 'Or') {
+				processComponents(term[$opComponents], orComponents)
 			}
 		} else {
 			if (!ctx.componentMap.has(term)) registerComponent(world, term)
