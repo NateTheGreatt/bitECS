@@ -43,6 +43,11 @@ const createBaseWorld = (context?: object): World => {
     return world as World
 }
 
+/**
+ * Higher-order function that returns a function to set a custom entity index for a world.
+ * @param {EntityIndex} entityIndex - The custom entity index to be set.
+ * @returns {function} A function that takes a world and returns the modified world.
+ */
 export const withEntityIndex = (entityIndex: EntityIndex) =>
     <T extends object>(world: World<T>): World<T> => {
         const ctx = world[$internal]
@@ -50,6 +55,11 @@ export const withEntityIndex = (entityIndex: EntityIndex) =>
         return world
     }
 
+/**
+ * Higher-order function that returns a function to merge a context object with a world.
+ * @param {U} context - The context object to be merged with the world.
+ * @returns {function} A function that takes a world and returns the modified world with the merged context.
+ */
 export const withContext = <U extends object>(context: U) =>
     <T extends object>(world: World<T>): World<T & U> => {
         const internalData = world[$internal];
@@ -58,10 +68,34 @@ export const withContext = <U extends object>(context: U) =>
         return context as World<T & U>;
     }
 
-
+/**
+ * Creates a new world with optional context and entity index.
+ * @returns {World<{}>} A new world without any context.
+ */
 export function createWorld(): World<{}>
+
+/**
+ * Creates a new world with optional context and entity index.
+ * @param {object} options - Options for creating the world.
+ * @param {T} [options.context] - Optional context object to be merged with the world.
+ * @param {EntityIndex} [options.entityIndex] - Optional custom entity index for the world.
+ * @returns {World<T>} A new world with the specified context and/or entity index.
+ */
 export function createWorld<T extends object>(options: { context?: T, entityIndex?: EntityIndex }): World<T>
+
+/**
+ * Creates a new world with modifiers.
+ * @param {...Array<function>} modifiers - Functions that modify the world.
+ * @returns {World<T>} A new world modified by the provided functions.
+ */
 export function createWorld<T extends object>(...modifiers: Array<(world: World<{}>) => World<T>>): World<T>
+
+/**
+ * Creates a new world with optional context, entity index, or modifiers.
+ * @param {object | function} optionsOrModifier - Options object or a modifier function.
+ * @param {...Array<function>} restModifiers - Additional modifier functions.
+ * @returns {World<T>} A new world with the specified options or modifications.
+ */
 export function createWorld<T extends object>(
     optionsOrModifier?: { context?: T, entityIndex?: EntityIndex } | ((world: World<{}>) => World<T>),
     ...restModifiers: Array<(world: World<{}>) => World<T>>

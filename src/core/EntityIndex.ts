@@ -1,10 +1,21 @@
+/**
+ * Represents the structure for managing entity IDs.
+ */
 export type EntityIndex = {
+    /** The number of currently alive entities. */
     aliveCount: number
+    /** Array of entity IDs, densely packed. */
     dense: number[]
+    /** Sparse array mapping entity IDs to their index in the dense array. */
     sparse: number[]
+    /** The highest entity ID that has been assigned. */
     maxId: number
 }
 
+/**
+ * Creates and initializes a new EntityIndex.
+ * @returns {EntityIndex} A new EntityIndex object.
+ */
 export const createEntityIndex = (): EntityIndex => ({
     aliveCount: 0,
     dense: [],
@@ -12,6 +23,11 @@ export const createEntityIndex = (): EntityIndex => ({
     maxId: 0,
 })
 
+/**
+ * Adds a new entity ID to the index or recycles an existing one.
+ * @param {EntityIndex} index - The EntityIndex to add to.
+ * @returns {number} The new or recycled entity ID.
+ */
 export const addEntityId = (index: EntityIndex): number => {
     if (index.aliveCount < index.dense.length) {
         // Recycle id
@@ -30,6 +46,11 @@ export const addEntityId = (index: EntityIndex): number => {
     return id
 }
 
+/**
+ * Removes an entity ID from the index.
+ * @param {EntityIndex} index - The EntityIndex to remove from.
+ * @param {number} id - The entity ID to remove.
+ */
 export const removeEntityId = (index: EntityIndex, id: number): void => {
     const record = index.sparse[id]
     if (record === undefined || record >= index.aliveCount) {
@@ -52,6 +73,12 @@ export const removeEntityId = (index: EntityIndex, id: number): void => {
     index.aliveCount--
 }
 
+/**
+ * Checks if an entity ID is currently alive in the index.
+ * @param {EntityIndex} index - The EntityIndex to check.
+ * @param {number} id - The entity ID to check.
+ * @returns {boolean} True if the entity ID is alive, false otherwise.
+ */
 export const isEntityIdAlive = (index: EntityIndex, id: number): boolean => {
     const record = index.sparse[id]
     return record !== undefined && index.dense[record] === id
