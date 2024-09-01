@@ -1,6 +1,14 @@
+import { ComponentRef } from "../core"
+
+/**
+ * Symbols representing different data types for serialization.
+ */
 const $u8 = Symbol('u8'), $i8 = Symbol('i8'), $u16 = Symbol('u16'), $i16 = Symbol('i16'),
     $u32 = Symbol('u32'), $i32 = Symbol('i32'), $f32 = Symbol('f32'), $f64 = Symbol('f64')
 
+/**
+ * Union type of all possible TypedArray types.
+ */
 export type TypedArray = 
     | Int8Array
     | Uint8Array
@@ -11,18 +19,35 @@ export type TypedArray =
     | Float32Array
     | Float64Array
 
+/**
+ * Union type of all possible type symbols.
+ */
 export type TypeSymbol = typeof $u8 | typeof $i8 | typeof $u16 | typeof $i16 | typeof $u32 | typeof $i32 | typeof $f32 | typeof $f64
 
+/**
+ * Type representing a primitive brand, which is either a number array with a symbol property or a TypedArray.
+ */
 export type PrimitiveBrand = (number[] & { [key: symbol]: true }) | TypedArray
 
+/**
+ * Creates a function that tags an array with a type symbol for serialization.
+ * @param {TypeSymbol} symbol - The type symbol to tag the array with.
+ * @returns {Function} A function that tags an array with the given type symbol.
+ */
 const typeTagForSerialization = (symbol: TypeSymbol) => (a: number[] = []): PrimitiveBrand => 
     Object.defineProperty(a, symbol, { value: true, enumerable: false, writable: false, configurable: false }) as PrimitiveBrand
 
+/**
+ * Functions to create arrays tagged with specific type symbols.
+ */
 export const u8 = typeTagForSerialization($u8),     i8 = typeTagForSerialization($i8),
             u16 = typeTagForSerialization($u16),    i16 = typeTagForSerialization($i16),
             u32 = typeTagForSerialization($u32),    i32 = typeTagForSerialization($i32),
             f32 = typeTagForSerialization($f32),    f64 = typeTagForSerialization($f64)
 
+/**
+ * Object containing setter functions for each data type.
+ */
 const typeSetters = {
     [$u8]: (view: DataView, offset: number, value: number) => { view.setUint8(offset, value); return 1; },
     [$i8]: (view: DataView, offset: number, value: number) => { view.setInt8(offset, value); return 1; },
@@ -34,6 +59,9 @@ const typeSetters = {
     [$f64]: (view: DataView, offset: number, value: number) => { view.setFloat64(offset, value); return 8; }
 }
 
+/**
+ * Object containing getter functions for each data type.
+ */
 const typeGetters = {
     [$u8]: (view: DataView, offset: number) => ({ value: view.getUint8(offset), size: 1 }),
     [$i8]: (view: DataView, offset: number) => ({ value: view.getInt8(offset), size: 1 }),
@@ -45,7 +73,12 @@ const typeGetters = {
     [$f64]: (view: DataView, offset: number) => ({ value: view.getFloat64(offset), size: 8 })
 }
 
-export const createComponentSerializer = (component: Record<string, PrimitiveBrand>) => {
+/**
+ * Creates a serializer function for a component.
+ * @param {ComponentRef} component - The component to create a serializer for.
+ * @returns {Function} A function that serializes the component.
+ */
+export const createComponentSerializer = (component: ComponentRef) => {
     const props = Object.keys(component)
     const types = props.map(prop => {
         const arr = component[prop]
@@ -66,7 +99,12 @@ export const createComponentSerializer = (component: Record<string, PrimitiveBra
     }
 }
 
-export const createComponentDeserializer = (component: Record<string, PrimitiveBrand>) => {
+/**
+ * Creates a deserializer function for a component.
+ * @param {ComponentRef} component - The component to create a deserializer for.
+ * @returns {Function} A function that deserializes the component.
+ */
+export const createComponentDeserializer = (component: ComponentRef) => {
     const props = Object.keys(component)
     const types = props.map(prop => {
         const arr = component[prop]
@@ -93,7 +131,13 @@ export const createComponentDeserializer = (component: Record<string, PrimitiveB
     }
 }
 
-export const createSoASerializer = (components: Record<string, PrimitiveBrand>[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+/**
+ * Creates a serializer function for Structure of Arrays (SoA) data.
+ * @param {ComponentRef[]} components - The components to serialize.
+ * @param {ArrayBuffer} [buffer] - The buffer to use for serialization.
+ * @returns {Function} A function that serializes the SoA data.
+ */
+export const createSoASerializer = (components: ComponentRef[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
     const view = new DataView(buffer)
     const componentSerializers = components.map(createComponentSerializer)
     return (indices: number[]): ArrayBuffer => {
@@ -108,7 +152,12 @@ export const createSoASerializer = (components: Record<string, PrimitiveBrand>[]
     }
 }
 
-export const createSoADeserializer = (components: Record<string, PrimitiveBrand>[]) => {
+/**
+ * Creates a deserializer function for Structure of Arrays (SoA) data.
+ * @param {ComponentRef[]} components - The components to deserialize.
+ * @returns {Function} A function that deserializes the SoA data.
+ */
+export const createSoADeserializer = (components: ComponentRef[]) => {
     const componentDeserializers = components.map(createComponentDeserializer)
     return (packet: ArrayBuffer, entityIdMapping?: Map<number, number>): void => {
         const view = new DataView(packet)

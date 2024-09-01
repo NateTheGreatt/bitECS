@@ -8,6 +8,14 @@ import {
     World,
 } from '../core'
 
+/**
+ * Creates a serializer for observing and serializing changes in networked entities.
+ * @param {World} world - The ECS world object.
+ * @param {any} networkedTag - The component used to tag networked entities.
+ * @param {any[]} components - An array of components to observe for changes.
+ * @param {ArrayBuffer} [buffer=new ArrayBuffer(1024 * 1024 * 100)] - The buffer to use for serialization.
+ * @returns {Function} A function that, when called, serializes the queued changes and returns a slice of the buffer.
+ */
 export const createObserverSerializer = (world: World, networkedTag: any, components: any[], buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
     const dataView = new DataView(buffer)
     let offset = 0
@@ -41,6 +49,13 @@ export const createObserverSerializer = (world: World, networkedTag: any, compon
     }
 }
 
+/**
+ * Creates a deserializer for applying serialized changes to a world.
+ * @param {World} world - The ECS world object.
+ * @param {any} networkedTag - The component used to tag networked entities.
+ * @param {any[]} components - An array of components that can be added or removed.
+ * @returns {Function} A function that takes a serialized packet and an optional entity ID mapping, and applies the changes to the world.
+ */
 export const createObserverDeserializer = (world: World, networkedTag: any, components: any[]) => {
     return (packet: ArrayBuffer, entityIdMapping: Map<number, number> = new Map()) => {
         const dataView = new DataView(packet)

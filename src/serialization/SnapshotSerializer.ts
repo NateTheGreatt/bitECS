@@ -7,10 +7,21 @@ import {
     addEntity,
 } from '../core'
 
+/**
+ * Creates a snapshot serializer for the given world and components.
+ * @param {World} world - The ECS world object.
+ * @param {Record<string, PrimitiveBrand>[]} components - An array of component definitions.
+ * @param {ArrayBuffer} [buffer=new ArrayBuffer(1024 * 1024 * 100)] - The buffer to use for serialization.
+ * @returns {Function} A function that, when called, serializes the world state and returns a slice of the buffer.
+ */
 export const createSnapshotSerializer = (world: World, components: Record<string, PrimitiveBrand>[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
     const dataView = new DataView(buffer)
     let offset = 0
 
+    /**
+     * Serializes entity-component relationships.
+     * @param {number[]} entities - An array of entity IDs.
+     */
     const serializeEntityComponentRelationships = (entities: number[]) => {
         const entityCount = entities.length
         
@@ -41,6 +52,10 @@ export const createSnapshotSerializer = (world: World, components: Record<string
         }
     }
 
+    /**
+     * Serializes component data for all entities.
+     * @param {number[]} entities - An array of entity IDs.
+     */
     const serializeComponentData = (entities: number[]) => {
         const soaSerializer = createSoASerializer(components, buffer.slice(offset))
         const componentData = soaSerializer(entities)
@@ -57,6 +72,12 @@ export const createSnapshotSerializer = (world: World, components: Record<string
     }
 }
 
+/**
+ * Creates a snapshot deserializer for the given world and components.
+ * @param {World} world - The ECS world object.
+ * @param {Record<string, PrimitiveBrand>[]} components - An array of component definitions.
+ * @returns {Function} A function that takes a serialized packet and deserializes it into the world, returning a map of packet entity IDs to world entity IDs.
+ */
 export const createSnapshotDeserializer = (world: World, components: Record<string, PrimitiveBrand>[]) => {
     const soaDeserializer = createSoADeserializer(components)
 
@@ -93,4 +114,3 @@ export const createSnapshotDeserializer = (world: World, components: Record<stri
         return entityIdMap
     }
 }
-
