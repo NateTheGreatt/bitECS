@@ -24,7 +24,7 @@ export type InternalWorld = {
 
 export type World<T extends object = {}> = { [K in keyof T]: T[K] }
 
-// type WorldMiddleware<T extends object, U extends object> = (world: World<T>) => World<U>;
+export type WorldMiddleware<T extends object> = (world: World<T>) => World<T>;
 
 const createBaseWorld = <T extends object>(context?: T): World<T> => {
     const worldContext: WorldContext = {
@@ -69,13 +69,18 @@ export const withContext = <T extends object>(context: T) => (world: World<T>): 
     return context as World<T>;
 }
 
-    /**
+export function createWorld<T extends object = {}>(): World<T>;
+
+/**
  * Creates a new world with modifiers.
  * @template T
  * @param {...Array<function(World<T>): World<T>>} modifiers - Modifier functions for the world.
  * @returns {World<T>} The created world.
  */
-export function createWorld<T extends object>(...modifiers: Array<(world: World<T>) => World<T>>): World<T>
+// export function createWorld<T extends object>(...modifiers: Array<WorldMiddleware<T>>): World<T>
+export function createWorld<T extends object = {}, U extends object = {}>(
+    ...modifiers: Array<WorldMiddleware<T & U>>
+): World<T & U>;
 
 /**
  * Creates a new world with options.
@@ -91,7 +96,7 @@ export function createWorld<T extends object>(options: {
 }): World<T>
 
 export function createWorld<T extends object>(
-    ...args: Array<(world: World<T>) => World<T>> | [{
+    ...args: Array<WorldMiddleware<T>> | [{
         context?: T
         entityIndex?: EntityIndex
     }]
@@ -101,10 +106,10 @@ export function createWorld<T extends object>(
         const modifiers = [
             context && withContext(context),
             entityIndex && withEntityIndex(entityIndex)
-        ].filter(Boolean) as Array<(world: World<T>) => World<T>>
+        ].filter(Boolean) as Array<WorldMiddleware<T>>
         return modifiers.reduce((acc, modifier) => modifier(acc), createBaseWorld<T>())
     } else {
-        const modifiers = args as Array<(world: World<T>) => World<T>>
+        const modifiers = args as Array<WorldMiddleware<T>>
         return modifiers.reduce((acc, modifier) => modifier(acc), createBaseWorld<T>())
     }
 }
