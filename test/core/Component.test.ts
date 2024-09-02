@@ -82,7 +82,7 @@ describe('Component Tests', () => {
 	})
 
 	it('should add components to entities after recycling', () => {
-		const world = createWorld(10)
+		const world = createWorld()
 		let eid = 0
 
 		for (let i = 0; i < 10; i++) {

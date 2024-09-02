@@ -24,7 +24,9 @@ export type InternalWorld = {
 
 export type World<T extends object = {}> = { [K in keyof T]: T[K] }
 
-const createBaseWorld = (context?: object): World => {
+// type WorldMiddleware<T extends object, U extends object> = (world: World<T>) => World<U>;
+
+const createBaseWorld = <T extends object>(context?: T): World<T> => {
     const worldContext: WorldContext = {
         entityIndex: createEntityIndex(),
         entityMasks: [[]],
@@ -40,7 +42,7 @@ const createBaseWorld = (context?: object): World => {
 
     const world = context || {}
     defineHiddenProperty(world, $internal, worldContext)
-    return world as World
+    return world as World<T>
 }
 
 /**
@@ -60,60 +62,50 @@ export const withEntityIndex = (entityIndex: EntityIndex) =>
  * @param {U} context - The context object to be merged with the world.
  * @returns {function} A function that takes a world and returns the modified world with the merged context.
  */
-export const withContext = <U extends object>(context: U) =>
-    <T extends object>(world: World<T>): World<T & U> => {
-        const internalData = world[$internal];
-        Object.assign(context, world);
-        defineHiddenProperty(context, $internal, internalData);
-        return context as World<T & U>;
-    }
+export const withContext = <T extends object>(context: T) => (world: World<T>): World<T> => {
+    const internalData = world[$internal];
+    Object.assign(context, world);
+    defineHiddenProperty(context, $internal, internalData);
+    return context as World<T>;
+}
 
-/**
- * Creates a new world with optional context and entity index.
- * @returns {World<{}>} A new world without any context.
+    /**
+ * Creates a new world with modifiers.
+ * @template T
+ * @param {...Array<function(World<T>): World<T>>} modifiers - Modifier functions for the world.
+ * @returns {World<T>} The created world.
  */
-export function createWorld(): World<{}>
+export function createWorld<T extends object>(...modifiers: Array<(world: World<T>) => World<T>>): World<T>
 
 /**
- * Creates a new world with optional context and entity index.
- * @param {object} options - Options for creating the world.
+ * Creates a new world with options.
+ * @template T
+ * @param {Object} options - Options for creating the world.
  * @param {T} [options.context] - Optional context object to be merged with the world.
  * @param {EntityIndex} [options.entityIndex] - Optional custom entity index for the world.
- * @returns {World<T>} A new world with the specified context and/or entity index.
+ * @returns {World<T>} The created world.
  */
-export function createWorld<T extends object>(options: { context?: T, entityIndex?: EntityIndex }): World<T>
+export function createWorld<T extends object>(options: {
+    context?: T
+    entityIndex?: EntityIndex
+}): World<T>
 
-/**
- * Creates a new world with modifiers.
- * @param {...Array<function>} modifiers - Functions that modify the world.
- * @returns {World<T>} A new world modified by the provided functions.
- */
-export function createWorld<T extends object>(...modifiers: Array<(world: World<{}>) => World<T>>): World<T>
-
-/**
- * Creates a new world with optional context, entity index, or modifiers.
- * @param {object | function} optionsOrModifier - Options object or a modifier function.
- * @param {...Array<function>} restModifiers - Additional modifier functions.
- * @returns {World<T>} A new world with the specified options or modifications.
- */
 export function createWorld<T extends object>(
-    optionsOrModifier?: { context?: T, entityIndex?: EntityIndex } | ((world: World<{}>) => World<T>),
-    ...restModifiers: Array<(world: World<{}>) => World<T>>
+    ...args: Array<(world: World<T>) => World<T>> | [{
+        context?: T
+        entityIndex?: EntityIndex
+    }]
 ): World<T> {
-    if (typeof optionsOrModifier === 'object' && optionsOrModifier !== null && !Array.isArray(optionsOrModifier)) {
-        const { context, entityIndex } = optionsOrModifier;
-        let world = createBaseWorld() as World<T>;
-        if (context) {
-            world = withContext(context)(world);
-        }
-        if (entityIndex) {
-            world = withEntityIndex(entityIndex)(world);
-        }
-        return world;
+    if (args.length === 1 && typeof args[0] === 'object') {
+        const { context, entityIndex } = args[0]
+        const modifiers = [
+            context && withContext(context),
+            entityIndex && withEntityIndex(entityIndex)
+        ].filter(Boolean) as Array<(world: World<T>) => World<T>>
+        return modifiers.reduce((acc, modifier) => modifier(acc), createBaseWorld<T>())
     } else {
-        const modifiers = (typeof optionsOrModifier === 'function' ? [optionsOrModifier, ...restModifiers] : restModifiers);
-        const baseWorld = createBaseWorld() as World<{}>;
-        return modifiers.reduce((world, modifier) => modifier(world), baseWorld) as World<T>;
+        const modifiers = args as Array<(world: World<T>) => World<T>>
+        return modifiers.reduce((acc, modifier) => modifier(acc), createBaseWorld<T>())
     }
 }
 
