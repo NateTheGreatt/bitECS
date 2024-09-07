@@ -183,6 +183,7 @@ const recursivelyInherit = (world: World, baseEid: EntityId, inheritedEid: Entit
 		}
 		addComponent(world, baseEid, component)
 		// Trigger onSet observer for this component
+		// TODO: inherit reference vs copy
 		const componentData = ctx.componentMap.get(component)
 		if (componentData && componentData.setObservable) {
 			const data = getComponentData(world, inheritedEid, component)
