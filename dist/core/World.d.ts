@@ -1,11 +1,12 @@
 import { EntityIndex } from './EntityIndex';
 import { ComponentRef, ComponentData } from './Component';
 import { Query } from './Query';
+import { EntityId } from './Entity';
 export declare const $internal: unique symbol;
 export type WorldContext = {
     entityIndex: EntityIndex;
     entityMasks: number[][];
-    entityComponents: Map<number, Set<ComponentRef>>;
+    entityComponents: Map<EntityId, Set<ComponentRef>>;
     bitflag: number;
     componentMap: WeakMap<ComponentRef, ComponentData>;
     componentCount: number;
@@ -20,9 +21,11 @@ export type InternalWorld = {
 export type World<T extends object = {}> = {
     [K in keyof T]: T[K];
 };
+export type WorldMiddleware<T extends object> = (world: World<T>) => World<T>;
 export declare const withEntityIndex: (entityIndex: EntityIndex) => <T extends object>(world: World<T>) => World<T>;
 export declare const withContext: <T extends object>(context: T) => (world: World<T>) => World<T>;
-export declare function createWorld<T extends object>(...modifiers: Array<(world: World<T>) => World<T>>): World<T>;
+export declare function createWorld<T extends object = {}>(): World<T>;
+export declare function createWorld<T extends object = {}, U extends object = {}>(...modifiers: Array<WorldMiddleware<T & U>>): World<T & U>;
 export declare function createWorld<T extends object>(options: {
     context?: T;
     entityIndex?: EntityIndex;

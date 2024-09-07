@@ -1,5 +1,6 @@
 import { World } from '.';
-export type OnTargetRemovedCallback = (subject: number, target: number | string) => void;
+import { EntityId } from './Entity';
+export type OnTargetRemovedCallback = (subject: EntityId, target: EntityId | string) => void;
 export type RelationTarget = number | '*' | typeof Wildcard;
 export declare const $relation: unique symbol;
 export declare const $pairTarget: unique symbol;
@@ -13,7 +14,7 @@ export declare const withOnTargetRemoved: <T>(onRemove: OnTargetRemovedCallback)
 export declare const Pair: <T>(relation: Relation<T>, target: RelationTarget) => T;
 export declare const Wildcard: Relation<any>;
 export declare const IsA: Relation<any>;
-export declare const getRelationTargets: (world: World, relation: Relation<any>, eid: number) => any[];
+export declare const getRelationTargets: (world: World, eid: EntityId, relation: Relation<any>) => any[];
 export declare function createRelation<T>(...modifiers: Array<(relation: Relation<T>) => Relation<T>>): Relation<T>;
 export declare function createRelation<T>(options: {
     store?: () => T;

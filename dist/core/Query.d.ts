@@ -2,34 +2,28 @@ import { type SparseSet } from './utils/SparseSet';
 import { ComponentRef, ComponentData } from './Component';
 import { World } from "./World";
 import { createObservable } from './utils/Observer';
+import { EntityId } from './Entity';
 export type QueryResult = Uint32Array | readonly number[];
 export type Query = SparseSet & {
     allComponents: ComponentRef[];
     orComponents: ComponentRef[];
     notComponents: ComponentRef[];
-    masks: {
-        [key: number]: number;
-    };
-    orMasks: {
-        [key: number]: number;
-    };
-    notMasks: {
-        [key: number]: number;
-    };
-    hasMasks: {
-        [key: number]: number;
-    };
+    masks: Record<number, number>;
+    orMasks: Record<number, number>;
+    notMasks: Record<number, number>;
+    hasMasks: Record<number, number>;
     generations: number[];
     toRemove: SparseSet;
     addObservable: ReturnType<typeof createObservable>;
     removeObservable: ReturnType<typeof createObservable>;
+    queues: Record<any, any>;
 };
 export type QueryOperatorType = 'Or' | 'And' | 'Not';
 export declare const $opType: unique symbol;
-export declare const $opComponents: unique symbol;
+export declare const $opTerms: unique symbol;
 export type OpReturnType = {
     [$opType]: string;
-    [$opComponents]: ComponentRef[];
+    [$opTerms]: ComponentRef[];
 };
 export type QueryOperator = (...components: ComponentRef[]) => OpReturnType;
 export type QueryTerm = ComponentRef | QueryOperator;
@@ -39,15 +33,16 @@ export type NotOp = QueryOperator;
 export type AnyOp = OrOp;
 export type AllOp = AndOp;
 export type NoneOp = NotOp;
-export type ObservableHook = (...components: ComponentRef[]) => {
-    [$opType]: 'add' | 'remove' | 'set';
-    [$opComponents]: ComponentRef[];
+export type ObservableHookDef = (...terms: QueryTerm[]) => {
+    [$opType]: 'add' | 'remove' | 'set' | 'get';
+    [$opTerms]: QueryTerm[];
 };
-export declare const onAdd: ObservableHook;
-export declare const onRemove: ObservableHook;
-export declare const onSet: ObservableHook;
-export declare const set: <T>(world: World, eid: number, component: ComponentRef, params: T) => void;
-export declare const observe: (world: World, hook: ReturnType<typeof onAdd | typeof onRemove | typeof onSet>, callback: (eid: number) => void) => () => void;
+export type ObservableHook = ReturnType<ObservableHookDef>;
+export declare const onAdd: ObservableHookDef;
+export declare const onRemove: ObservableHookDef;
+export declare const onSet: ObservableHookDef;
+export declare const onGet: ObservableHookDef;
+export declare function observe(world: World, hook: ObservableHook, callback: (eid: EntityId, ...args: any[]) => any): () => void;
 export declare const Or: OrOp;
 export declare const And: AndOp;
 export declare const Not: NotOp;
@@ -63,10 +58,10 @@ export declare function innerQuery(world: World, terms: QueryTerm[], options?: {
 }): QueryResult;
 export declare function query(world: World, terms: QueryTerm[]): readonly number[];
 export declare function bufferQuery(world: World, terms: QueryTerm[]): Uint32Array;
-export declare function queryCheckEntity(world: World, query: Query, eid: number): boolean;
+export declare function queryCheckEntity(world: World, query: Query, eid: EntityId): boolean;
 export declare const queryCheckComponent: (query: Query, c: ComponentData) => boolean;
-export declare const queryAddEntity: (query: Query, eid: number) => void;
+export declare const queryAddEntity: (query: Query, eid: EntityId) => void;
 export declare const commitRemovals: (world: World) => void;
-export declare const queryRemoveEntity: (world: World, query: Query, eid: number) => void;
+export declare const queryRemoveEntity: (world: World, query: Query, eid: EntityId) => void;
 export declare const removeQuery: (world: World, terms: QueryTerm[]) => void;
 //# sourceMappingURL=Query.d.ts.map
