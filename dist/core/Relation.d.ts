@@ -1,6 +1,6 @@
 import { World } from '.';
 import { EntityId } from './Entity';
-export type OnTargetRemovedCallback = (subject: EntityId, target: EntityId | string) => void;
+export type OnTargetRemovedCallback = (subject: EntityId, target: EntityId) => void;
 export type RelationTarget = number | '*' | typeof Wildcard;
 export declare const $relation: unique symbol;
 export declare const $pairTarget: unique symbol;
