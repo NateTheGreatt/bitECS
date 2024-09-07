@@ -20,6 +20,11 @@
       "types": "./dist/serialization/index.d.ts",
       "import": "./dist/serialization/index.min.mjs",
       "require": "./dist/serialization/index.min.cjs"
+    },
+    "./legacy": {
+      "types": "./dist/legacy/index.d.ts",
+      "import": "./dist/legacy/index.min.mjs",
+      "require": "./dist/legacy/index.min.cjs"
     }
   },
   "author": {
@@ -36,14 +41,17 @@
   ],
   "scripts": {
     "test": "vitest",
-    "build": "bun build:core && bun build:serialization && bun build:types",
+    "build": "bun build:core && bun build:serialization && bun build:legacy && bun build:types",
     "build:types": "tsc",
     "build:core": "bun build:core:mjs && bun build:core:cjs",
     "build:core:mjs": "esbuild src/core/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/core/index.min.mjs",
     "build:core:cjs": "esbuild src/core/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/core/index.min.cjs",
     "build:serialization": "bun build:serialization:mjs && bun build:serialization:cjs",
     "build:serialization:mjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/serialization/index.min.mjs",
-    "build:serialization:cjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/serialization/index.min.cjs"
+    "build:serialization:cjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/serialization/index.min.cjs",
+    "build:legacy": "bun build:legacy:mjs && bun build:legacy:cjs",
+    "build:legacy:mjs": "esbuild src/legacy/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/legacy/index.min.mjs",
+    "build:legacy:cjs": "esbuild src/legacy/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/legacy/index.min.cjs"
   },
   "devDependencies": {
     "esbuild": "^0.23.1",
