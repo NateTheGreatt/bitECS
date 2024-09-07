@@ -21,15 +21,7 @@ export type InternalWorld = {
 export type World<T extends object = {}> = {
     [K in keyof T]: T[K];
 };
-export type WorldMiddleware<T extends object> = (world: World<T>) => World<T>;
-export declare const withEntityIndex: (entityIndex: EntityIndex) => <T extends object>(world: World<T>) => World<T>;
-export declare const withContext: <T extends object>(context: T) => (world: World<T>) => World<T>;
-export declare function createWorld<T extends object = {}>(): World<T>;
-export declare function createWorld<T extends object = {}, U extends object = {}>(...modifiers: Array<WorldMiddleware<T & U>>): World<T & U>;
-export declare function createWorld<T extends object>(options: {
-    context?: T;
-    entityIndex?: EntityIndex;
-}): World<T>;
+export declare function createWorld<T extends object = {}>(...args: Array<EntityIndex | T>): World<T>;
 export declare const resetWorld: (world: World) => World<{}>;
 export declare const deleteWorld: (world: World) => void;
 export declare const getWorldComponents: (world: World) => string[];
