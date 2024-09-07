@@ -51,7 +51,6 @@ export const addEntity = (world: World): EntityId => {
  */
 
 export const removeEntity = (world: World, eid: EntityId) => {
-	console.trace('removeEntity', eid)
 	const ctx = (world as InternalWorld)[$internal]
 	// Check if entity is already removed
 	if (!isEntityIdAlive(ctx.entityIndex, eid)) return
