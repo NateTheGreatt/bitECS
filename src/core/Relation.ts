@@ -1,4 +1,5 @@
 import { getEntityComponents, World } from '.'
+import { EntityId } from './Entity'
 import { defineHiddenProperty } from './utils/defineHiddenProperty'
 
 /**
@@ -7,7 +8,7 @@ import { defineHiddenProperty } from './utils/defineHiddenProperty'
  * @param {number} subject - The subject entity ID.
  * @param {number | string} target - The target entity ID or string.
  */
-export type OnTargetRemovedCallback = (subject: number, target: number | string) => void
+export type OnTargetRemovedCallback = (subject: EntityId, target: EntityId | string) => void
 
 /**
  * Possible types for a relation target.
@@ -207,7 +208,7 @@ export const IsA: Relation<any> = createRelation()
  * @param {number} eid - The entity ID.
  * @returns {Array<any>} An array of relation targets.
  */
-export const getRelationTargets = (world: World, relation: Relation<any>, eid: number) => {
+export const getRelationTargets = (world: World, eid: EntityId, relation: Relation<any>) => {
 	const components = getEntityComponents(world, eid)
 	const targets = []
 	for (const c of components) {

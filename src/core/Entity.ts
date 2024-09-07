@@ -12,11 +12,13 @@ import { addEntityId, isEntityIdAlive, removeEntityId } from './EntityIndex'
 import { $internal } from './World'
 import { ComponentRef } from './Component'
 
+export type EntityId = number
+
 export const Prefab = {}
 export const addPrefab = (world: World) => {
 	const eid = addEntity(world)
 
-	addComponent(world, Prefab, eid)
+	addComponent(world, eid, Prefab)
 
 	return eid
 }
@@ -27,7 +29,7 @@ export const addPrefab = (world: World) => {
  * @param {World} world
  * @returns {number} eid
  */
-export const addEntity = (world: World): number => {
+export const addEntity = (world: World): EntityId => {
 	const ctx = (world as InternalWorld)[$internal]
 	const eid = addEntityId(ctx.entityIndex)
 
@@ -48,7 +50,8 @@ export const addEntity = (world: World): number => {
  * @param {number} eid
  */
 
-export const removeEntity = (world: World, eid: number) => {
+export const removeEntity = (world: World, eid: EntityId) => {
+	console.trace('removeEntity', eid)
 	const ctx = (world as InternalWorld)[$internal]
 	// Check if entity is already removed
 	if (!isEntityIdAlive(ctx.entityIndex, eid)) return
@@ -78,10 +81,10 @@ export const removeEntity = (world: World, eid: number) => {
 
                 const relation = component[$relation]
                 const relationData = relation[$relationData]
-                componentRemovalQueue.push(() => removeComponent(world, Pair(Wildcard, currentEid), subject))
+                componentRemovalQueue.push(() => removeComponent(world, subject, Pair(Wildcard, currentEid)))
 
                 if (component[$pairTarget] === currentEid) {
-                    componentRemovalQueue.push(() => removeComponent(world, component, subject))
+                    componentRemovalQueue.push(() => removeComponent(world, subject, component))
                     if (relationData.autoRemoveSubject) {
                         removalQueue.push(subject)
                     }
@@ -124,7 +127,7 @@ export const removeEntity = (world: World, eid: number) => {
  * @param {*} world
  * @param {*} eid
  */
-export const getEntityComponents = (world: World, eid: number): ComponentRef[] => {
+export const getEntityComponents = (world: World, eid: EntityId): ComponentRef[] => {
 	const ctx = (world as InternalWorld)[$internal]
 	if (eid === undefined) throw new Error('bitECS - entity is undefined.')
 	if (!isEntityIdAlive(ctx.entityIndex, eid))
@@ -138,4 +141,4 @@ export const getEntityComponents = (world: World, eid: number): ComponentRef[] =
  * @param {World} world
  * @param {number} eid
  */
-export const entityExists = (world: World, eid: number) => isEntityIdAlive((world as InternalWorld)[$internal].entityIndex, eid)
+export const entityExists = (world: World, eid: EntityId) => isEntityIdAlive((world as InternalWorld)[$internal].entityIndex, eid)

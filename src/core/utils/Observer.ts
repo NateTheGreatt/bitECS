@@ -1,8 +1,10 @@
-export type Observer = (entity: number, ...args: any[]) => void
+import { EntityId } from "../Entity"
+
+export type Observer = (entity: EntityId, ...args: any[]) => void | object
 
 export interface Observable {
   subscribe: (observer: Observer) => () => void
-  notify: (entity: number, ...args: any[])  => void
+  notify: (entity: EntityId, ...args: any[])  => void | object
 }
 
 export const createObservable = (): Observable => {
@@ -14,9 +16,11 @@ export const createObservable = (): Observable => {
       observers.delete(observer)
     }
   }
-
-  const notify = (entity: number, ...args: any[]) => {
-    observers.forEach((listener) => listener(entity, ...args))
+  const notify = (entity: EntityId, ...args: any[]) => {
+    return Array.from(observers).reduce((acc, listener) => {
+      const result = listener(entity, ...args)
+      return result && typeof result === 'object' ? { ...acc, ...result } : acc
+    }, {})
   }
 
   return {

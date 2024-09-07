@@ -441,7 +441,7 @@ const unsubscribe = observe(world, hook, callback)
 ### Observing component addition
 
 ```typescript
-const unsubscribe = observe(world, onAdd(Position, Velocity), (eid) => {
+observe(world, onAdd(Position, Velocity), (eid) => {
     console.log(`Entity ${eid} added Position and Velocity components`)
 })
 ```
@@ -449,7 +449,7 @@ const unsubscribe = observe(world, onAdd(Position, Velocity), (eid) => {
 ### Observing component removal
 
 ```typescript
-const unsubscribe = observe(world, onRemove(Health), (eid) => {
+observe(world, onRemove(Health), (eid) => {
     console.log(`Entity ${eid} removed Health component`)
 })
 ```
@@ -457,10 +457,26 @@ const unsubscribe = observe(world, onRemove(Health), (eid) => {
 ### Observing component updates
 
 ```typescript
-const unsubscribe = observe(world, onSet(Score), (eid) => {
-    console.log(`Entity ${eid} updated Score component`)
+observe(world, onSet(Position), (eid, params) => {
+    Position.x[eid] = params.x
+    Position.y[eid] = params.y
 })
+
+setComponent(world, eid, Position, { x: 10, y: 20 })
 ```
+
+
+### Observing component access
+
+The `onGet` hook is particularly useful when implementing inheritance via the `IsA` relation. It allows you to define how component data is accessed, taking into account the inheritance hierarchy. By providing a custom getter function, you can ensure that `bitECS` retrieves data from the appropriate entity in the inheritance chain. This is crucial for systems where entities inherit properties from their parent types. Similarly, the `onSet` hook can be used to define how inherited component data is updated, allowing for proper propagation of changes through the inheritance hierarchy.
+
+```ts
+observe(world, onGet(Position), (eid) => ({
+    x: Position.x[eid],
+    y: Position.y[eid]
+}))
+```
+
 
 ### Unsubscribing
 

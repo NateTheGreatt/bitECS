@@ -25,14 +25,11 @@ Functional, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-
 </center>
 
 ## ✨ Features
-
-- 🔮 Simple, declarative API
-- 🔍 Powerful & performant queries
-- 💾 Serialization included
-- 🧵 Thread friendly
-- 🍃 Zero dependencies
-- 🌐 Node or browser compatible
-- 🤏 Tiny footprint (~3kb minzipped)
+- 🔮 Simple, flexible API
+- 🔍 Powerful queries & serialization
+- 🧵 Lightweight & thread-friendly
+- 🌐 Works in Node & browser
+- 🤏 Tiny (~3kb) 
 - ❤ Made with love
 
 ### 📈 Benchmarks
@@ -62,37 +59,33 @@ import {
   query,
   addEntity,
   addComponent,
-  pipe,
 } from 'bitecs'
 
 const max = 1e5
 
-
-const movementSystem = (world) => {
-  const { 
+// Systems are just functions
+const movementSystem = ({
     components: { Position, Velocity },
     time: { delta } 
-  } = world
-  const ents = query(world, [Position, Velocity])
-  for (let i = 0; i < ents.length; i++) {
-    const eid = ents[i]
+}) => {
+  for (const eid of query(world, [Position, Velocity])) {
     Position.x[eid] += Velocity.x[eid] * delta
     Position.y[eid] += Velocity.y[eid] * delta
   }
-  return world
 }
 
-const timeSystem = world => {
-  const { time } = world
+const timeSystem = ({ time }) => {
   const now = performance.now()
   const delta = now - time.then
   time.delta = delta
   time.elapsed += delta
   time.then = now
-  return world
 }
 
-const pipeline = pipe(movementSystem, timeSystem)
+const update = (world) => {
+  movementSystem(world)
+  timeSystem(world)
+}
 
 const world = createWorld(withContext({
   components: {
@@ -118,7 +111,7 @@ Velocity.x[eid] = 1.23
 Velocity.y[eid] = 1.23
 
 setInterval(() => {
-  pipeline(world)
+  update(world)
 }, 16)
 ```
 

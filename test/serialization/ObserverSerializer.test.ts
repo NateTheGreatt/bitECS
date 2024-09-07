@@ -21,26 +21,26 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
         const deserialize = createObserverDeserializer(world, networkedTag, components)
 
         const entity1 = addEntity(world)
-        addComponent(world, Position, entity1)
-        addComponent(world, networkedTag, entity1)
+        addComponent(world, entity1, Position)
+        addComponent(world, entity1, networkedTag)
 
         const entity2 = addEntity(world)
-        addComponent(world, Velocity, entity2)
-        addComponent(world, networkedTag, entity2)
+        addComponent(world, entity2, Velocity)
+        addComponent(world, entity2, networkedTag)
 
         const serializedData = serialize()
         
-        removeComponent(world, Position, entity1)
-        removeComponent(world, networkedTag, entity1)
-        removeComponent(world, Velocity, entity2)
-        removeComponent(world, networkedTag, entity2)
+        removeComponent(world, entity1, Position)
+        removeComponent(world, entity1, networkedTag)
+        removeComponent(world, entity2, Velocity)
+        removeComponent(world, entity2, networkedTag)
 
         const entityIdMapping = deserialize(serializedData)
 
-        expect(hasComponent(world, Position, entityIdMapping.get(entity1)!)).toBe(true)
-        expect(hasComponent(world, networkedTag, entityIdMapping.get(entity1)!)).toBe(true)
-        expect(hasComponent(world, Velocity, entityIdMapping.get(entity2)!)).toBe(true)
-        expect(hasComponent(world, networkedTag, entityIdMapping.get(entity2)!)).toBe(true)
+        expect(hasComponent(world, entityIdMapping.get(entity1)!, Position)).toBe(true)
+        expect(hasComponent(world, entityIdMapping.get(entity1)!, networkedTag)).toBe(true)
+        expect(hasComponent(world, entityIdMapping.get(entity2)!, Velocity)).toBe(true)
+        expect(hasComponent(world, entityIdMapping.get(entity2)!, networkedTag)).toBe(true)
 
         expect(entityIdMapping.size).toBe(2)
         expect(entityIdMapping.has(entity1)).toBe(true)
@@ -60,25 +60,25 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
         const deserialize = createObserverDeserializer(world, networkedTag, components)
 
         const entity1 = addEntity(world)
-        addComponent(world, Position, entity1)
-        addComponent(world, networkedTag, entity1)
+        addComponent(world, entity1, Position)
+        addComponent(world, entity1, networkedTag)
 
         const entity2 = addEntity(world)
-        addComponent(world, Velocity, entity2)
-        addComponent(world, networkedTag, entity2)
+        addComponent(world, entity2, Velocity)
+        addComponent(world, entity2, networkedTag)
 
-        removeComponent(world, Position, entity1)
-        removeComponent(world, Velocity, entity2)
+        removeComponent(world, entity1, Position)
+        removeComponent(world, entity2, Velocity)
 
         const serializedData = serialize()
 
-        addComponent(world, Position, entity1)
-        addComponent(world, Velocity, entity2)
+        addComponent(world, entity1, Position)
+        addComponent(world, entity2, Velocity)
 
         const entityIdMapping = deserialize(serializedData)
 
-        expect(hasComponent(world, Position, entityIdMapping.get(entity1)!)).toBe(false)
-        expect(hasComponent(world, Velocity, entityIdMapping.get(entity2)!)).toBe(false)
+        expect(hasComponent(world, entityIdMapping.get(entity1)!, Position)).toBe(false)
+        expect(hasComponent(world, entityIdMapping.get(entity2)!, Velocity)).toBe(false)
     })
 
     it('should correctly handle add, remove, add sequence', () => {
@@ -92,26 +92,26 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
         const deserialize = createObserverDeserializer(world, networkedTag, components)
 
         const entity = addEntity(world)
-        addComponent(world, Position, entity)
-        addComponent(world, networkedTag, entity)
+        addComponent(world, entity, Position)
+        addComponent(world, entity, networkedTag)
 
         let serializedData = serialize()
         let entityIdMapping = deserialize(serializedData)
 
-        expect(hasComponent(world, Position, entityIdMapping.get(entity)!)).toBe(true)
+        expect(hasComponent(world, entityIdMapping.get(entity)!, Position)).toBe(true)
 
-        removeComponent(world, Position, entity)
-
-        serializedData = serialize()
-        entityIdMapping = deserialize(serializedData)
-
-        expect(hasComponent(world, Position, entityIdMapping.get(entity)!)).toBe(false)
-
-        addComponent(world, Position, entity)
+        removeComponent(world, entity, Position)
 
         serializedData = serialize()
         entityIdMapping = deserialize(serializedData)
 
-        expect(hasComponent(world, Position, entityIdMapping.get(entity)!)).toBe(true)
+        expect(hasComponent(world, entityIdMapping.get(entity)!, Position)).toBe(false)
+
+        addComponent(world, entity, Position)
+
+        serializedData = serialize()
+        entityIdMapping = deserialize(serializedData)
+
+        expect(hasComponent(world, entityIdMapping.get(entity)!, Position)).toBe(true)
     })
 })

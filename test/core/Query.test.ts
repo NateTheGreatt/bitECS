@@ -8,7 +8,9 @@ import {
 	query,
 	removeComponent,
 	removeEntity,
-	Or
+	Or,
+	observe,
+	onAdd
 } from '../../src/core'
 
 describe('Query Tests', () => {
@@ -16,7 +18,7 @@ describe('Query Tests', () => {
 		const world = createWorld()
 		const TestComponent = {value: []}
 		const eid = addEntity(world)
-		addComponent(world, TestComponent, eid)
+		addComponent(world, eid, TestComponent)
 		
 		let ents = query(world,[TestComponent])
 
@@ -38,7 +40,7 @@ describe('Query Tests', () => {
 		strictEqual(ents.length, 1)
 		strictEqual(ents[0], eid0)
 
-		addComponent(world, Foo, eid0)
+		addComponent(world, eid0, Foo)
 
 		ents = query(world,[Not(Foo)])
 		strictEqual(ents.length, 0)
@@ -80,12 +82,12 @@ describe('Query Tests', () => {
 
 		/* add components */
 
-		addComponent(world, Foo, eid1)
+		addComponent(world, eid1, Foo)
 
-		addComponent(world, Bar, eid2)
+		addComponent(world, eid2, Bar)
 
-		addComponent(world, Foo, eid3)
-		addComponent(world, Bar, eid3)
+		addComponent(world, eid3, Foo)
+		addComponent(world, eid3, Bar)
 
 		// now fooQuery should have eid 1 & 3
 		ents = query(world, [Foo])
@@ -109,7 +111,7 @@ describe('Query Tests', () => {
 
 		/* remove components */
 
-		removeComponent(world, Foo, eid1)
+		removeComponent(world, eid1, Foo)
 
 		// now fooQuery should only have eid 3
 		ents = query(world, [Foo])
@@ -134,8 +136,8 @@ describe('Query Tests', () => {
 
 		/* remove more components */
 
-		removeComponent(world, Foo, eid3)
-		removeComponent(world, Bar, eid3)
+		removeComponent(world, eid3, Foo)
+		removeComponent(world, eid3, Bar)
 
 		// notFooBarQuery should have eid 1 & 3
 		ents = query(world, [Not(Foo), Not(Bar)])
@@ -162,9 +164,9 @@ describe('Query Tests', () => {
 		let eids = query(world, [TestComponent, FooComponent, BarComponent])
 		strictEqual(eids.length, 0)
 
-		addComponent(world, TestComponent, eid)
-		addComponent(world, FooComponent, eid)
-		addComponent(world, BarComponent, eid)
+		addComponent(world, eid, TestComponent)
+		addComponent(world, eid, FooComponent)
+		addComponent(world, eid, BarComponent)
 
 		eids = query(world, [TestComponent, BarComponent, FooComponent])
 
@@ -184,11 +186,11 @@ describe('Query Tests', () => {
 		const eid0 = addEntity(world)
 		const eid1 = addEntity(world)
 
-		addComponent(world, TestComponent, eid0)
-		addComponent(world, BarComponent, eid0)
+		addComponent(world, eid0, TestComponent)
+		addComponent(world, eid0, BarComponent)
 
-		addComponent(world, FooComponent, eid1)
-		addComponent(world, BarComponent, eid1)
+		addComponent(world, eid1, FooComponent)
+		addComponent(world, eid1, BarComponent)
 
 		let eids = query(world, [Not(TestComponent)])
 		strictEqual(eids.length, 1)
@@ -208,7 +210,7 @@ describe('Query Tests', () => {
 
 		for (let i = 0; i < 10; i += 1) {
 			const eid = addEntity(world)
-			addComponent(world, TestComponent, eid)
+			addComponent(world, eid, TestComponent)
 		}
 
 		const results = query(world, [TestComponent])
@@ -226,13 +228,13 @@ describe('Query Tests', () => {
 
 		for (let i = 0; i < 10; i += 1) {
 			const eid = addEntity(world)
-			addComponent(world, TestComponent, eid)
+			addComponent(world, eid, TestComponent)
 		}
 
 		const results = query(world, [TestComponent])
 		const length = results.length
 		for (const eid of results) {
-			removeComponent(world, TestComponent, eid)
+			removeComponent(world, eid, TestComponent)
 		}
 
 		expect(length).toBe(results.length)
@@ -249,7 +251,7 @@ describe('Query Tests', () => {
 			.map((_, index) => createComponent(index))
 
 		components.forEach((component) => {
-			addComponent(world, component, eid)
+			addComponent(world, eid, component)
 		})
 
 		// Query for all components
@@ -282,17 +284,17 @@ describe('Query Tests', () => {
 		const ComponentC = { value: [] }
 
 		const entity1 = addEntity(world)
-		addComponent(world, ComponentA, entity1)
+		addComponent(world, entity1, ComponentA)
 
 		const entity2 = addEntity(world)
-		addComponent(world, ComponentB, entity2)
+		addComponent(world, entity2, ComponentB)
 
 		const entity3 = addEntity(world)
-		addComponent(world, ComponentC, entity3)
+		addComponent(world, entity3, ComponentC)
 
 		const entity4 = addEntity(world)
-		addComponent(world, ComponentA, entity4)
-		addComponent(world, ComponentB, entity4)
+		addComponent(world, entity4, ComponentA)
+		addComponent(world, entity4, ComponentB)
 
 		const queryResults = query(world, [Or(ComponentA, ComponentB)])
 

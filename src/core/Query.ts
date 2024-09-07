@@ -5,7 +5,7 @@ import { World } from "./World"
 import { InternalWorld } from './World'
 import { $internal } from './World'
 import { createObservable } from './utils/Observer'
-import { Prefab } from './Entity'
+import { EntityId, Prefab } from './Entity'
 
 /**
  * @typedef {Uint32Array | readonly number[]} QueryResult
@@ -32,14 +32,15 @@ export type Query = SparseSet & {
 	allComponents: ComponentRef[]
 	orComponents: ComponentRef[]
 	notComponents: ComponentRef[]
-	masks: { [key: number]: number }
-	orMasks: { [key: number]: number }
-	notMasks: { [key: number]: number }
-	hasMasks: { [key: number]: number }
+	masks: Record<number, number>
+	orMasks: Record<number, number>
+	notMasks: Record<number, number>
+	hasMasks: Record<number, number>
 	generations: number[]
 	toRemove: SparseSet
 	addObservable: ReturnType<typeof createObservable>
 	removeObservable: ReturnType<typeof createObservable>
+	queues: Record<any, any>
 }
 
 /**
@@ -47,20 +48,21 @@ export type Query = SparseSet & {
  * @description Types of query operators.
  */
 export type QueryOperatorType = 'Or' | 'And' | 'Not'
+
 /**
  * Symbols for query operator types and components
  */
 export const $opType = Symbol('opType');
-export const $opComponents = Symbol('opComponents');
+export const $opTerms = Symbol('opTerms');
 
 /**
  * @typedef {Object} OpReturnType
  * @property {symbol} [$opType] - The type of the operator.
- * @property {symbol} [$opComponents] - The components involved in the operation.
+ * @property {symbol} [$opTerms] - The components involved in the operation.
  */
 export type OpReturnType = {
-    [$opType]: string
-    [$opComponents]: ComponentRef[]
+	[$opType]: string
+	[$opTerms]: ComponentRef[]
 }
 
 /**
@@ -77,6 +79,7 @@ export type QueryOperator = (...components: ComponentRef[]) => OpReturnType
  */
 export type QueryTerm = ComponentRef | QueryOperator
 
+
 // Aliases
 export type OrOp = QueryOperator
 export type AndOp = QueryOperator
@@ -88,99 +91,100 @@ export type NoneOp = NotOp
 /**
  * @typedef {Function} ObservableHook
  * @description A function that creates an observable hook for queries.
- * @param {...ComponentRef} components - The components to observe.
- * @returns {{type: 'add' | 'remove' | 'set', components: ComponentRef[]}} The observable hook configuration.
+ * @param {...QueryTerm} terms - The query terms to observe.
+ * @returns {{type: 'add' | 'remove' | 'set', terms: QueryTerm[]}} The observable hook configuration.
  */
-export type ObservableHook = (...components: ComponentRef[]) => {
-	[$opType]: 'add' | 'remove' | 'set'
-	[$opComponents]: ComponentRef[]
+export type ObservableHookDef = (...terms: QueryTerm[]) => {
+	[$opType]: 'add' | 'remove' | 'set' | 'get'
+	[$opTerms]: QueryTerm[]
 }
+
+export type ObservableHook = ReturnType<ObservableHookDef>
 
 /**
  * @function onAdd
  * @description Creates an 'add' observable hook.
- * @param {...ComponentRef} components - The components to observe for addition.
+ * @param {...QueryTerm} terms - The query terms to observe for addition.
  * @returns {OpReturnType} The 'add' observable hook configuration.
  */
-export const onAdd: ObservableHook = (...components: ComponentRef[]) => ({
-    [$opType]: 'add',
-    [$opComponents]: components
+export const onAdd: ObservableHookDef = (...terms: QueryTerm[]) => ({
+	[$opType]: 'add',
+	[$opTerms]: terms
 })
 
 /**
  * @function onRemove
  * @description Creates a 'remove' observable hook.
- * @param {...ComponentRef} components - The components to observe for removal.
+ * @param {...QueryTerm} terms - The query terms to observe for removal.
  * @returns {OpReturnType} The 'remove' observable hook configuration.
  */
-export const onRemove: ObservableHook = (...components: ComponentRef[]) => ({
-    [$opType]: 'remove',
-    [$opComponents]: components
+export const onRemove: ObservableHookDef = (...terms: QueryTerm[]) => ({
+	[$opType]: 'remove',
+	[$opTerms]: terms
 })
 
 /**
  * @function onSet
  * @description Creates a 'set' observable hook.
- * @param {...ComponentRef} components - The components to observe for setting.
+ * @param {...QueryTerm} terms - The query terms to observe for setting.
  * @returns {OpReturnType} The 'set' observable hook configuration.
  */
-export const onSet: ObservableHook = (...components: ComponentRef[]) => ({
-    [$opType]: 'set',
-    [$opComponents]: components
+export const onSet: ObservableHookDef = (component: ComponentRef) => ({
+	[$opType]: 'set',
+	[$opTerms]: [component]
 })
 
 /**
- * @function set
- * @description Sets a component for an entity.
- * @template T
- * @param {World} world - The world object.
- * @param {number} eid - The entity ID.
- * @param {ComponentRef} component - The component to set.
- * @param {T} params - The parameters for the component.
- * @returns {ComponentRef} The set component.
- * @throws {Error} If the entity does not have the component.
+ * @function onGet
+ * @description Creates a 'get' observable hook.
+ * @param {...QueryTerm} terms - The query terms to observe for getting.
+ * @returns {OpReturnType} The 'get' observable hook configuration.
  */
-export const set = <T>(world: World, eid: number, component: ComponentRef, params: T): void => {
-	const ctx = (world as InternalWorld)[$internal]
-	let componentData = ctx.componentMap.get(component)
-
-	if (!componentData) {
-		registerComponent(world, component)
-		componentData = ctx.componentMap.get(component)
-	}
-
-	if (!hasComponent(world, eid, component)) {
-		throw new Error(`Entity ${eid} does not have component ${component.name}`)
-	}
-
-	componentData.setObservable.notify(eid, params)
-
-	return component
-}
+export const onGet: ObservableHookDef = (component: ComponentRef) => ({
+	[$opType]: 'get',
+	[$opTerms]: [component]
+})
 
 /**
  * @function observe
  * @description Observes changes in entities based on specified components.
  * @param {World} world - The world object.
- * @param {ReturnType<typeof onAdd | typeof onRemove | typeof onSet>} hook - The observable hook.
- * @param {function(number): void} callback - The callback function to execute when changes occur.
+ * @param {ObservableHook} hook - The observable hook.
+ * @param {function(number): void | object} callback - The callback function to execute when changes occur.
  * @returns {function(): void} A function to unsubscribe from the observation.
  */
-export const observe = (world: World, hook: ReturnType<typeof onAdd | typeof onRemove | typeof onSet>, callback: (eid: number) => void): () => void => {
+export function observe(world: World, hook: ObservableHook, callback: (eid: EntityId, ...args: any[]) => void | object): () => void {
 	const ctx = (world as InternalWorld)[$internal]
-	const { [$opType]: type, [$opComponents]: components } = hook
-	const hash = queryHash(world, components)
-	let queryData = ctx.queriesHashMap.get(hash)!
+	const { [$opType]: type, [$opTerms]: components } = hook
 
-	if (!queryData) {
-		queryData = registerQuery(world, components)
+	if (type === 'add' || type === 'remove') {
+		const hash = queryHash(world, components)
+		let queryData = ctx.queriesHashMap.get(hash)!
+
+		if (!queryData) {
+			queryData = registerQuery(world, components)
+		}
+
+		const observableKey = type === 'add' ? 'addObservable' : 'removeObservable'
+		return queryData[observableKey].subscribe(callback)
+	} else if (type === 'set' || type === 'get') {
+		if (components.length !== 1) {
+			throw new Error('Set and Get hooks can only observe a single component')
+		}
+		const component = components[0]
+		const componentData = ctx.componentMap.get(component)
+		if (!componentData) {
+			registerComponent(world, component)
+			const componentData = ctx.componentMap.get(component)
+			if (!componentData) {
+				throw new Error(`Failed to register component ${component.name}`)
+			}
+		}
+		const observableKey = type === 'set' ? 'setObservable' : 'getObservable'
+		return componentData[observableKey].subscribe(callback)
 	}
 
-	const observableKey = type === 'add' ? 'addObservable' : type === 'remove' ? 'removeObservable' : 'setObservable'
-
-	const unsubscribe = queryData[observableKey].subscribe(callback)
-
-	return unsubscribe
+	throw new Error(`Invalid hook type: ${type}`)
 }
 
 /**
@@ -191,7 +195,7 @@ export const observe = (world: World, hook: ReturnType<typeof onAdd | typeof onR
  */
 export const Or: OrOp = (...components: ComponentRef[]) => ({
 	[$opType]: 'Or',
-	[$opComponents]: components
+	[$opTerms]: components
 })
 
 /**
@@ -202,7 +206,7 @@ export const Or: OrOp = (...components: ComponentRef[]) => ({
  */
 export const And: AndOp = (...components: ComponentRef[]) => ({
 	[$opType]: 'And',
-	[$opComponents]: components
+	[$opTerms]: components
 })
 
 /**
@@ -213,7 +217,7 @@ export const And: AndOp = (...components: ComponentRef[]) => ({
  */
 export const Not: NotOp = (...components: ComponentRef[]) => ({
 	[$opType]: 'Not',
-	[$opComponents]: components
+	[$opTerms]: components
 })
 
 export const Any: AnyOp = Or
@@ -228,29 +232,29 @@ export const None: NoneOp = Not
  * @returns {string} The generated hash.
  */
 export const queryHash = (world: World, terms: QueryTerm[]): string => {
-    const ctx = (world as InternalWorld)[$internal]
+	const ctx = (world as InternalWorld)[$internal]
 
-    const getComponentId = (component: ComponentRef): number => {
-        if (!ctx.componentMap.has(component)) {
-            registerComponent(world, component)
-        }
-        return ctx.componentMap.get(component)!.id
-    }
-    const termToString = (term: QueryTerm): string => {
-        if ($opType in term) {
-            const componentIds = term[$opComponents].map(getComponentId)
-            const sortedComponentIds = componentIds.sort((a, b) => a - b)
-            const sortedType = term[$opType].toLowerCase()
-            return `${sortedType}(${sortedComponentIds.join(',')})`
-        } else {
-            return getComponentId(term).toString()
-        }
-    }
+	const getComponentId = (component: ComponentRef): number => {
+		if (!ctx.componentMap.has(component)) {
+			registerComponent(world, component)
+		}
+		return ctx.componentMap.get(component)!.id
+	}
+	const termToString = (term: QueryTerm): string => {
+		if ($opType in term) {
+			const componentIds = term[$opTerms].map(getComponentId)
+			const sortedComponentIds = componentIds.sort((a, b) => a - b)
+			const sortedType = term[$opType].toLowerCase()
+			return `${sortedType}(${sortedComponentIds.join(',')})`
+		} else {
+			return getComponentId(term).toString()
+		}
+	}
 
-    return terms
-        .map(termToString)
-        .sort()
-        .join('-')
+	return terms
+		.map(termToString)
+		.sort()
+		.join('-')
 }
 
 /**
@@ -282,9 +286,9 @@ export const registerQuery = (world: World, terms: QueryTerm[], options: { buffe
 	terms.forEach((term: QueryTerm) => {
 		if ($opType in term) {
 			if (term[$opType] === 'Not') {
-				processComponents(term[$opComponents], notComponents)
+				processComponents(term[$opTerms], notComponents)
 			} else if (term[$opType] === 'Or') {
-				processComponents(term[$opComponents], orComponents)
+				processComponents(term[$opTerms], orComponents)
 			}
 		} else {
 			if (!ctx.componentMap.has(term)) registerComponent(world, term)
@@ -293,7 +297,7 @@ export const registerQuery = (world: World, terms: QueryTerm[], options: { buffe
 	})
 
 	const mapComponents = (c: ComponentRef) => ctx.componentMap.get(c)!
-	const allComponents = components.concat(notComponents).concat(orComponents.flat()).map(mapComponents)
+	const allComponents = components.concat(notComponents.flat()).concat(orComponents.flat()).map(mapComponents)
 
 	const sparseSet = options.buffered ? createUint32SparseSet() : createSparseSet()
 
@@ -307,7 +311,7 @@ export const registerQuery = (world: World, terms: QueryTerm[], options: { buffe
 			return a
 		}, [] as number[])
 
-	const reduceBitflags = (a: { [key:number]: number }, c: ComponentData) => {
+	const reduceBitflags = (a: { [key: number]: number }, c: ComponentData) => {
 		if (!a[c.generationId]) a[c.generationId] = 0
 		a[c.generationId] |= c.bitflag
 		return a
@@ -334,6 +338,7 @@ export const registerQuery = (world: World, terms: QueryTerm[], options: { buffe
 		toRemove,
 		addObservable,
 		removeObservable,
+		queues: {},
 	}) as Query
 
 	ctx.queries.add(query)
@@ -349,7 +354,7 @@ export const registerQuery = (world: World, terms: QueryTerm[], options: { buffe
 	const entityIndex = ctx.entityIndex
 	for (let i = 0; i < entityIndex.aliveCount; i++) {
 		const eid = entityIndex.dense[i]
-		if (hasComponent(world, Prefab, eid)) continue
+		if (hasComponent(world, eid, Prefab)) continue
 		const match = queryCheckEntity(world, query, eid)
 		if (match) {
 			queryAddEntity(query, eid)
@@ -412,7 +417,7 @@ export function bufferQuery(world: World, terms: QueryTerm[]): Uint32Array {
  * @param {number} eid - The entity ID to check.
  * @returns {boolean} True if the entity matches the query, false otherwise.
  */
-export function queryCheckEntity(world: World, query: Query, eid: number): boolean {
+export function queryCheckEntity(world: World, query: Query, eid: EntityId): boolean {
 	const ctx = (world as InternalWorld)[$internal]
 	const { masks, notMasks, orMasks, generations } = query
 
@@ -459,7 +464,7 @@ export const queryCheckComponent = (query: Query, c: ComponentData) => {
  * @param {Query} query - The query to add the entity to.
  * @param {number} eid - The entity ID to add.
  */
-export const queryAddEntity = (query: Query, eid: number) => {
+export const queryAddEntity = (query: Query, eid: EntityId) => {
 	query.toRemove.remove(eid)
 
 	query.addObservable.notify(eid)
@@ -500,7 +505,7 @@ export const commitRemovals = (world: World) => {
  * @param {Query} query - The query to remove the entity from.
  * @param {number} eid - The entity ID to remove.
  */
-export const queryRemoveEntity = (world: World, query: Query, eid: number) => {
+export const queryRemoveEntity = (world: World, query: Query, eid: EntityId) => {
 	const ctx = (world as InternalWorld)[$internal]
 	const has = query.has(eid)
 	if (!has || query.toRemove.has(eid)) return

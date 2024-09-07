@@ -2,13 +2,14 @@ import { defineHiddenProperty } from './utils/defineHiddenProperty'
 import { createEntityIndex, EntityIndex } from './EntityIndex'
 import { ComponentRef, ComponentData } from './Component'
 import { Query } from './Query'
+import { EntityId } from './Entity'
 
 export const $internal = Symbol('internal')
 
 export type WorldContext = {
     entityIndex: EntityIndex
     entityMasks: number[][]
-    entityComponents: Map<number, Set<ComponentRef>>
+    entityComponents: Map<EntityId, Set<ComponentRef>>
     bitflag: number
     componentMap: WeakMap<ComponentRef, ComponentData>
     componentCount: number

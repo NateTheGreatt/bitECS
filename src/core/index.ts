@@ -16,6 +16,7 @@ export type {
 } from './World'
 
 export {
+	type EntityId,
 	addEntity,
 	removeEntity,
 	getEntityComponents,
@@ -32,6 +33,9 @@ export {
 	addComponents,
 	removeComponent,
 	removeComponents,
+	getComponentData,
+	setComponent,
+	set
 } from './Component'
 
 export type {
@@ -53,10 +57,13 @@ export {
 	Not,
 	Any,
 	All,
-	None
+	None,
+	onGet, 
+	onSet,
 } from './Query'
 
 export type {
+	ObservableHookDef,
 	ObservableHook,
 	QueryResult,
 	Query,
@@ -92,3 +99,4 @@ export type {
 } from './Relation'
 
 export { createEntityIndex } from './EntityIndex'
+

@@ -7,6 +7,7 @@ import {
     onRemove,
     World,
 } from '../core'
+import { EntityId } from '../core/Entity'
 
 /**
  * Creates a serializer for observing and serializing changes in networked entities.
@@ -22,11 +23,11 @@ export const createObserverSerializer = (world: World, networkedTag: any, compon
     const queue: [number, number, number][] = []
 
     components.forEach((component, i) => {
-        observe(world, onAdd(networkedTag, component), (eid: number) => {
+        observe(world, onAdd(networkedTag, component), (eid: EntityId) => {
             queue.push([eid, 0, i])
         })
 
-        observe(world, onRemove(networkedTag, component), (eid: number) => {
+        observe(world, onRemove(networkedTag, component), (eid: EntityId) => {
             queue.push([eid, 1, i])
         })
     })
@@ -76,12 +77,11 @@ export const createObserverDeserializer = (world: World, networkedTag: any, comp
                 worldEntityId = addEntity(world)
                 entityIdMapping.set(packetEntityId, worldEntityId)
             }
-
             if (operationType === 0) {
-                addComponent(world, component, worldEntityId)
-                addComponent(world, networkedTag, worldEntityId)
+                addComponent(world, worldEntityId, component)
+                addComponent(world, worldEntityId, networkedTag)
             } else if (operationType === 1) {
-                removeComponent(world, component, worldEntityId)
+                removeComponent(world, worldEntityId, component)
             }
         }
 

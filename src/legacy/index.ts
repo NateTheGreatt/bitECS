@@ -1,4 +1,4 @@
-import { QueryTerm, World, observe, onAdd, onRemove, query } from '../core'
+import { ComponentRef, QueryTerm, World, observe, onAdd, onRemove, query, addComponent as ecsAddComponent } from '../core'
 
 export const defineQuery = (...terms: QueryTerm[]) => (world: World) => query(world, terms)
 
@@ -7,7 +7,7 @@ export const enterQuery = (...terms: QueryTerm[]) => {
   const initSet = new WeakSet<World>()
   return (world: World) => {
     if (!initSet.has(world)) {
-      observe(world, onAdd(...terms), (eid: number) => queue.push(eid))
+      observe(world, onAdd(...terms), (eid: EntityId) => queue.push(eid))
       initSet.add(world)
     }
     const results = queue
@@ -15,15 +15,13 @@ export const enterQuery = (...terms: QueryTerm[]) => {
     return results
   }
 }
-
-export const enterQueue = enterQuery
 
 export const exitQuery = (...terms: QueryTerm[]) => {
   let queue: number[] = []
   const initSet = new WeakSet<World>()
   return (world: World) => {
     if (!initSet.has(world)) {
-      observe(world, onRemove(...terms), (eid: number) => queue.push(eid))
+      observe(world, onRemove(...terms), (eid: EntityId) => queue.push(eid))
       initSet.add(world)
     }
     const results = queue
@@ -32,4 +30,5 @@ export const exitQuery = (...terms: QueryTerm[]) => {
   }
 }
 
-export const exitQueue = exitQuery
+export const addComponent = (world: World, component: ComponentRef, eid: EntityId) =>
+  ecsAddComponent(world, eid, component)

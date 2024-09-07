@@ -19,7 +19,7 @@ describe('Component Tests', () => {
 
 		const eid = addEntity(world)
 
-		addComponent(world, TestComponent, eid)
+		addComponent(world, eid, TestComponent)
 		const ctx = (world as InternalWorld)[$internal]
 		assert(ctx.componentMap.has(TestComponent))
 	})
@@ -30,11 +30,11 @@ describe('Component Tests', () => {
 
 		const eid = addEntity(world)
 
-		addComponent(world, TestComponent, eid)
-		assert(hasComponent(world, TestComponent, eid))
+		addComponent(world, eid, TestComponent)
+		assert(hasComponent(world, eid, TestComponent))
 
-		removeComponent(world, TestComponent, eid)
-		assert(hasComponent(world, TestComponent, eid) === false)
+		removeComponent(world, eid, TestComponent)
+		assert(hasComponent(world, eid, TestComponent) === false)
 	})
 
 	it('should only remove the component specified', () => {
@@ -44,14 +44,14 @@ describe('Component Tests', () => {
 
 		const eid = addEntity(world)
 
-		addComponent(world, TestComponent, eid)
-		addComponent(world, TestComponent2, eid)
-		assert(hasComponent(world, TestComponent, eid))
-		assert(hasComponent(world, TestComponent2, eid))
+		addComponent(world, eid, TestComponent)
+		addComponent(world, eid, TestComponent2)
+		assert(hasComponent(world, eid, TestComponent))
+		assert(hasComponent(world, eid, TestComponent2))
 
-		removeComponent(world, TestComponent, eid)
-		assert(hasComponent(world, TestComponent, eid) === false)
-		assert(hasComponent(world, TestComponent2, eid) === true)
+		removeComponent(world, eid, TestComponent)
+		assert(hasComponent(world, eid, TestComponent) === false)
+		assert(hasComponent(world, eid, TestComponent2) === true)
 	})
 
 	it('should create tag components', () => {
@@ -60,11 +60,11 @@ describe('Component Tests', () => {
 
 		const eid = addEntity(world)
 
-		addComponent(world, TestComponent, eid)
-		assert(hasComponent(world, TestComponent, eid))
+		addComponent(world, eid, TestComponent)
+		assert(hasComponent(world, eid, TestComponent))
 
-		removeComponent(world, TestComponent, eid)
-		assert(hasComponent(world, TestComponent, eid) === false)
+		removeComponent(world, eid, TestComponent)
+		assert(hasComponent(world, eid, TestComponent) === false)
 	})
 
 	it('should correctly register more than 32 components', () => {
@@ -76,8 +76,8 @@ describe('Component Tests', () => {
 			.fill(null)
 			.map(() => ({}))
 			.forEach((c) => {
-				addComponent(world, c, eid)
-				assert(hasComponent(world, c, eid))
+				addComponent(world, eid, c)
+				assert(hasComponent(world, eid, c))
 			})
 	})
 
@@ -98,9 +98,9 @@ describe('Component Tests', () => {
 		}
 
 		const component = { value: [] }
-		addComponent(world, component, eid)
+		addComponent(world, eid, component)
 
-		assert(hasComponent(world, component, eid))
+		assert(hasComponent(world, eid, component))
 	})
 
 	it('should correctly add more than 64 components to an entity', () => {
@@ -114,8 +114,8 @@ describe('Component Tests', () => {
 			.map((_, index) => createComponent(index))
 
 		components.forEach((component) => {
-			addComponent(world, component, eid)
-			assert(hasComponent(world, component, eid), `Component ${component.index} should be added`)
+			addComponent(world, eid, component)
+			assert(hasComponent(world, eid, component), `Component ${component.index} should be added`)
 		})
 
 		const entityComponents = getEntityComponents(world, eid)
@@ -123,7 +123,7 @@ describe('Component Tests', () => {
 
 		components.forEach((component) => {
 			assert(entityComponents.includes(component), `Component ${component.index} should be in entity components`)
-			assert(hasComponent(world, component, eid), `Component ${component.index} should be present using hasComponent`)
+			assert(hasComponent(world, eid, component), `Component ${component.index} should be present using hasComponent`)
 		})
 	})
 })

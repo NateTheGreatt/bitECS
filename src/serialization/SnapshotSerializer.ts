@@ -41,7 +41,7 @@ export const createSnapshotSerializer = (world: World, components: Record<string
             offset += 1
             
             for (let j = 0; j < components.length; j++) {
-                if (hasComponent(world, components[j], entityId)) {
+                if (hasComponent(world, entityId, components[j])) {
                     dataView.setUint8(offset, j)
                     offset += 1
                     componentCount++
@@ -104,7 +104,7 @@ export const createSnapshotDeserializer = (world: World, components: Record<stri
             for (let i = 0; i < componentCount; i++) {
                 const componentIndex = dataView.getUint8(offset)
                 offset += 1
-                addComponent(world, components[componentIndex], worldEntityId)
+                addComponent(world, worldEntityId, components[componentIndex])
             }
         }
 
