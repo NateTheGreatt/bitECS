@@ -6,9 +6,9 @@ import { defineHiddenProperty } from './utils/defineHiddenProperty'
  * Callback function type for when a target is removed from a relation.
  * @callback OnTargetRemovedCallback
  * @param {number} subject - The subject entity ID.
- * @param {number | string} target - The target entity ID or string.
+ * @param {number} target - The target entity ID.
  */
-export type OnTargetRemovedCallback = (subject: EntityId, target: EntityId | string) => void
+export type OnTargetRemovedCallback = (subject: EntityId, target: EntityId) => void
 
 /**
  * Possible types for a relation target.
@@ -75,12 +75,11 @@ const createBaseRelation = <T>(): Relation<T> => {
         autoRemoveSubject: false,
         onTargetRemoved: undefined
     }
-
     const relation = (target: RelationTarget): T => {
         if (target === undefined) throw Error('Relation target is undefined')
         const normalizedTarget = target === '*' ? Wildcard : target
         if (!data.pairsMap.has(normalizedTarget)) {
-            const component = {} as T
+            const component = data.initStore ? data.initStore() : {} as T
             defineHiddenProperty(component, $relation, relation)
             defineHiddenProperty(component, $pairTarget, normalizedTarget)
             defineHiddenProperty(component, $isPairComponent, true)
@@ -104,22 +103,7 @@ const createBaseRelation = <T>(): Relation<T> => {
 export const withStore = <T>(createStore: () => T) => (relation: Relation<T>): Relation<T> => {
     const ctx = relation[$relationData] as RelationData<T>
     ctx.initStore = createStore
-
-    return ((target: RelationTarget): T => {
-        if (target === undefined) throw Error('Relation target is undefined')
-        const normalizedTarget = target === '*' ? Wildcard : target
-
-        if (!ctx.pairsMap.has(normalizedTarget)) {
-            const component = createStore()
-            defineHiddenProperty(component, $relationData, {
-                pairTarget: normalizedTarget,
-                ...ctx
-            })
-            ctx.pairsMap.set(normalizedTarget, component)
-        }
-
-        return ctx.pairsMap.get(normalizedTarget)!
-    }) as Relation<T>
+    return relation
 }
 
 /**
