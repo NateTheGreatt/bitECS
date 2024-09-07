@@ -150,10 +150,10 @@ export const onGet: ObservableHookDef = (component: ComponentRef) => ({
  * @description Observes changes in entities based on specified components.
  * @param {World} world - The world object.
  * @param {ObservableHook} hook - The observable hook.
- * @param {function(number): void | object} callback - The callback function to execute when changes occur.
+ * @param {function(number): any} callback - The callback function to execute when changes occur.
  * @returns {function(): void} A function to unsubscribe from the observation.
  */
-export function observe(world: World, hook: ObservableHook, callback: (eid: EntityId, ...args: any[]) => void | object): () => void {
+export function observe(world: World, hook: ObservableHook, callback: (eid: EntityId, ...args: any[]) => any): () => void {
 	const ctx = (world as InternalWorld)[$internal]
 	const { [$opType]: type, [$opTerms]: components } = hook
 

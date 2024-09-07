@@ -1,4 +1,4 @@
-import { ComponentRef, QueryTerm, World, observe, onAdd, onRemove, query, addComponent as ecsAddComponent } from '../core'
+import { ComponentRef, QueryTerm, World, observe, onAdd, onRemove, query, addComponent as ecsAddComponent, EntityId } from '../core'
 
 export const defineQuery = (...terms: QueryTerm[]) => (world: World) => query(world, terms)
 
