@@ -1,12 +1,21 @@
-import { ComponentRef, QueryTerm, EntityId } from '../core';
+import { ComponentRef, EntityId } from '../core';
 export interface IWorld {
 }
-export declare const defineQuery: (terms: QueryTerm[]) => {
-    (world: IWorld): readonly number[];
-    terms: any[];
-};
-export declare const enterQuery: (queryFn: ReturnType<typeof defineQuery>) => (world: IWorld) => number[];
-export declare const exitQuery: (queryFn: ReturnType<typeof defineQuery>) => (world: IWorld) => number[];
+export type ComponentProp = TypedArray | Array<TypedArray>;
+export interface IComponentProp {
+}
+export interface IComponent {
+}
+export type Component = IComponent | ComponentType<ISchema>;
+export type QueryModifier = (c: IComponent[]) => IComponent | QueryModifier;
+export type Query<W extends IWorld = IWorld> = (world: W, clearDiff?: Boolean) => number[];
+export declare const $modifier: unique symbol;
+export declare const Not: (c: Component | ISchema) => QueryModifier;
+export declare const Or: (c: Component | ISchema) => QueryModifier;
+export declare const Changed: (c: Component | ISchema) => QueryModifier;
+export declare function defineQuery<W extends IWorld = IWorld>(components: (Component | QueryModifier)[]): Query<W>;
+export declare function enterQuery<W extends IWorld = IWorld>(queryFn: Query<W>): Query<W>;
+export declare function exitQuery<W extends IWorld = IWorld>(queryFn: Query<W>): Query<W>;
 export declare const addComponent: (world: IWorld, component: ComponentRef, eid: EntityId) => void;
 export declare const hasComponent: (world: IWorld, component: ComponentRef, eid: EntityId) => boolean;
 export declare const removeComponent: (world: IWorld, component: ComponentRef, eid: EntityId) => void;
@@ -44,4 +53,5 @@ export type ComponentType<T extends ISchema> = {
     [key in keyof T]: T[key] extends Type ? ArrayByType[T[key]] : T[key] extends [infer RT, number] ? RT extends Type ? Array<ArrayByType[RT]> : unknown : T[key] extends ISchema ? ComponentType<T[key]> : unknown;
 };
 export declare const defineComponent: <T extends ISchema>(schema: T, max?: number) => ComponentType<T>;
+export * from './serialization';
 //# sourceMappingURL=index.d.ts.map

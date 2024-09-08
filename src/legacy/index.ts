@@ -1,4 +1,4 @@
-import { ComponentRef, QueryTerm, observe, onAdd, onRemove, query, EntityId } from '../core'
+import { ComponentRef, observe, onAdd, onRemove, query, EntityId } from '../core'
 import {
   addComponent as ecsAddComponent,
   hasComponent as ecsHasComponent,
@@ -7,18 +7,44 @@ import {
 
 export interface IWorld { }
 
-export const defineQuery = (terms: QueryTerm[]) => {
-  const queryFn = (world: IWorld) => query(world, terms)
-  queryFn.terms = terms
-  return queryFn
+export type ComponentProp = TypedArray | Array<TypedArray>
+
+export interface IComponentProp {
 }
 
-export const enterQuery = (queryFn: ReturnType<typeof defineQuery>) => {
+export interface IComponent {
+}
+
+export type Component = IComponent | ComponentType<ISchema>
+
+export type QueryModifier = (c: IComponent[]) => IComponent | QueryModifier
+
+export type Query<W extends IWorld = IWorld> = (world: W, clearDiff?: Boolean) => number[]
+
+export const $modifier = Symbol("$modifier")
+
+function modifier(c, mod) {
+  const inner = () => [c, mod]
+  inner[$modifier] = true
+  return inner
+}
+
+export const Not = (c: Component | ISchema): QueryModifier => modifier(c, 'not')
+export const Or = (c: Component | ISchema): QueryModifier => modifier(c, 'or')
+export const Changed = (c: Component | ISchema): QueryModifier => modifier(c, 'changed')
+
+export function defineQuery<W extends IWorld = IWorld>(components: (Component | QueryModifier)[]): Query<W> {
+  const queryFn = (world: IWorld) => query(world, components)
+  queryFn.components = components
+  return queryFn as unknown as Query<W>
+}
+
+export function enterQuery<W extends IWorld = IWorld>(queryFn: Query<W>): Query<W> {
   let queue: number[] = []
   const initSet = new WeakSet<IWorld>()
-  return (world: IWorld) => {
+  return (world: W) => {
     if (!initSet.has(world)) {
-      observe(world, onAdd(...queryFn.terms), (eid: EntityId) => queue.push(eid))
+      observe(world, onAdd(...(queryFn as any).components), (eid: EntityId) => queue.push(eid))
       initSet.add(world)
     }
     const results = queue.slice()
@@ -27,12 +53,12 @@ export const enterQuery = (queryFn: ReturnType<typeof defineQuery>) => {
   }
 }
 
-export const exitQuery = (queryFn: ReturnType<typeof defineQuery>) => {
+export function exitQuery<W extends IWorld = IWorld>(queryFn: Query<W>): Query<W> {
   let queue: number[] = []
   const initSet = new WeakSet<IWorld>()
-  return (world: IWorld) => {
+  return (world: W) => {
     if (!initSet.has(world)) {
-      observe(world, onRemove(...queryFn.terms), (eid: EntityId) => queue.push(eid))
+      observe(world, onRemove(...(queryFn as any).terms), (eid: EntityId) => queue.push(eid))
       initSet.add(world)
     }
     const results = queue.slice()
@@ -156,3 +182,5 @@ export const defineComponent = <T extends ISchema>(schema: T, max: number = 1e5)
   }
   return createSoA(schema, max)
 }
+
+export * from './serialization'
