@@ -3,7 +3,7 @@ import { ComponentRef, ComponentData } from './Component';
 import { World } from "./World";
 import { createObservable } from './utils/Observer';
 import { EntityId } from './Entity';
-export type QueryResult = Uint32Array | readonly number[];
+export type QueryResult = Uint32Array | readonly EntityId[];
 export type Query = SparseSet & {
     allComponents: ComponentRef[];
     orComponents: ComponentRef[];
@@ -56,7 +56,7 @@ export declare const registerQuery: (world: World, terms: QueryTerm[], options?:
 export declare function innerQuery(world: World, terms: QueryTerm[], options?: {
     buffered?: boolean;
 }): QueryResult;
-export declare function query(world: World, terms: QueryTerm[]): readonly number[];
+export declare function query(world: World, terms: QueryTerm[]): readonly EntityId[];
 export declare function bufferQuery(world: World, terms: QueryTerm[]): Uint32Array;
 export declare function queryCheckEntity(world: World, query: Query, eid: EntityId): boolean;
 export declare const queryCheckComponent: (query: Query, c: ComponentData) => boolean;
