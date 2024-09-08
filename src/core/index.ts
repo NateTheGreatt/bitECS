@@ -122,4 +122,6 @@ export {
   Types,
   defineComponent,
   ComponentType,
+  defineSerializer,
+  defineDeserializer,
 } from '../legacy/index'

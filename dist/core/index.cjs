@@ -41,7 +41,9 @@ __export(core_exports, {
   createRelation: () => createRelation,
   createWorld: () => createWorld,
   defineComponent: () => defineComponent,
+  defineDeserializer: () => defineDeserializer,
   defineQuery: () => defineQuery,
+  defineSerializer: () => defineSerializer,
   deleteWorld: () => deleteWorld,
   enterQuery: () => enterQuery,
   entityExists: () => entityExists,
@@ -809,6 +811,71 @@ var pipe = (...functions) => {
   return (...args) => functions.reduce((result, fn) => [fn(...result)], args)[0];
 };
 
+// src/serialization/ObserverSerializer.ts
+var createObserverSerializer = (world, networkedTag, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+  const dataView = new DataView(buffer);
+  let offset = 0;
+  const queue = [];
+  observe(world, onAdd(networkedTag), (eid) => {
+    queue.push([eid, 0 /* AddEntity */, -1]);
+  });
+  observe(world, onRemove(networkedTag), (eid) => {
+    queue.push([eid, 1 /* RemoveEntity */, -1]);
+  });
+  components.forEach((component, i) => {
+    observe(world, onAdd(networkedTag, component), (eid) => {
+      queue.push([eid, 2 /* AddComponent */, i]);
+    });
+    observe(world, onRemove(networkedTag, component), (eid) => {
+      queue.push([eid, 3 /* RemoveComponent */, i]);
+    });
+  });
+  return () => {
+    offset = 0;
+    for (let i = 0; i < queue.length; i++) {
+      const [entityId, type, componentId] = queue[i];
+      dataView.setUint32(offset, entityId);
+      offset += 4;
+      dataView.setUint8(offset, type);
+      offset += 1;
+      dataView.setUint8(offset, componentId);
+      offset += 1;
+    }
+    queue.length = 0;
+    return buffer.slice(0, offset);
+  };
+};
+var createObserverDeserializer = (world, networkedTag, components) => {
+  return (packet, entityIdMapping = /* @__PURE__ */ new Map()) => {
+    const dataView = new DataView(packet);
+    let offset = 0;
+    while (offset < packet.byteLength) {
+      const packetEntityId = dataView.getUint32(offset);
+      offset += 4;
+      const operationType = dataView.getUint8(offset);
+      offset += 1;
+      const componentId = dataView.getUint8(offset);
+      offset += 1;
+      const component = components[componentId];
+      let worldEntityId = entityIdMapping.get(packetEntityId);
+      if (worldEntityId === void 0) {
+        worldEntityId = addEntity(world);
+        entityIdMapping.set(packetEntityId, worldEntityId);
+      }
+      if (operationType === 0 /* AddEntity */) {
+        addComponent2(world, worldEntityId, networkedTag);
+      } else if (operationType === 1 /* RemoveEntity */) {
+        removeEntity(world, worldEntityId);
+      } else if (operationType === 2 /* AddComponent */) {
+        addComponent2(world, worldEntityId, component);
+      } else if (operationType === 3 /* RemoveComponent */) {
+        removeComponent2(world, worldEntityId, component);
+      }
+    }
+    return entityIdMapping;
+  };
+};
+
 // src/serialization/SoASerializer.ts
 var $u8 = Symbol("u8");
 var $i8 = Symbol("i8");
@@ -871,6 +938,112 @@ var typeGetters = {
   [$f32]: (view, offset) => ({ value: view.getFloat32(offset), size: 4 }),
   [$f64]: (view, offset) => ({ value: view.getFloat64(offset), size: 8 })
 };
+var createComponentSerializer = (component) => {
+  const props = Object.keys(component);
+  const types = props.map((prop) => {
+    const arr = component[prop];
+    for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
+      if (symbol in arr) return symbol;
+    }
+    return $f64;
+  });
+  const setters = types.map((type) => typeSetters[type] || (() => {
+    throw new Error(`Unsupported or unannotated type`);
+  }));
+  return (view, offset, index) => {
+    let bytesWritten = 0;
+    bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index);
+    for (let i = 0; i < props.length; i++) {
+      bytesWritten += setters[i](view, offset + bytesWritten, component[props[i]][index]);
+    }
+    return bytesWritten;
+  };
+};
+var createComponentDeserializer = (component) => {
+  const props = Object.keys(component);
+  const types = props.map((prop) => {
+    const arr = component[prop];
+    for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
+      if (symbol in arr) return symbol;
+    }
+    return $f64;
+  });
+  const getters = types.map((type) => typeGetters[type] || (() => {
+    throw new Error(`Unsupported or unannotated type`);
+  }));
+  return (view, offset, entityIdMapping) => {
+    let bytesRead = 0;
+    const { value: originalIndex, size: indexSize } = typeGetters[$u32](view, offset + bytesRead);
+    bytesRead += indexSize;
+    const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex;
+    for (let i = 0; i < props.length; i++) {
+      const { value, size } = getters[i](view, offset + bytesRead);
+      component[props[i]][index] = value;
+      bytesRead += size;
+    }
+    return bytesRead;
+  };
+};
+var createSoASerializer = (components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+  const view = new DataView(buffer);
+  const componentSerializers = components.map(createComponentSerializer);
+  return (indices) => {
+    let offset = 0;
+    for (let i = 0; i < indices.length; i++) {
+      const index = indices[i];
+      for (let j = 0; j < componentSerializers.length; j++) {
+        offset += componentSerializers[j](view, offset, index);
+      }
+    }
+    return buffer.slice(0, offset);
+  };
+};
+var createSoADeserializer = (components) => {
+  const componentDeserializers = components.map(createComponentDeserializer);
+  return (packet, entityIdMapping) => {
+    const view = new DataView(packet);
+    let offset = 0;
+    while (offset < packet.byteLength) {
+      for (let i = 0; i < componentDeserializers.length; i++) {
+        offset += componentDeserializers[i](view, offset, entityIdMapping);
+      }
+    }
+  };
+};
+
+// src/legacy/serialization.ts
+function defineSerializer(components, maxBytes) {
+  const initSet = /* @__PURE__ */ new WeakSet();
+  let serializeObservations, serializeData;
+  return (world) => {
+    if (!initSet.has(components)) {
+      initSet.add(components);
+      serializeObservations = createObserverSerializer(world, components[0], components);
+      serializeData = createSoASerializer(components);
+    }
+    const observerData = serializeObservations();
+    const soaData = serializeData(query(world, components));
+    const combinedData = new ArrayBuffer(observerData.byteLength + soaData.byteLength);
+    const combinedView = new Uint8Array(combinedData);
+    combinedView.set(new Uint8Array(observerData), 0);
+    combinedView.set(new Uint8Array(soaData), observerData.byteLength);
+    return combinedData;
+  };
+}
+function defineDeserializer(components) {
+  const initSet = /* @__PURE__ */ new WeakSet();
+  let deserializeObservations, deserializeData;
+  return (world, packet, mode) => {
+    if (!initSet.has(components)) {
+      initSet.add(components);
+      deserializeObservations = createObserverDeserializer(world, components[0], components);
+      deserializeData = createSoADeserializer(components);
+    }
+    const observerDataLength = deserializeObservations(packet, mode);
+    const soaData = packet.slice(observerDataLength);
+    return deserializeData(soaData, mode);
+  };
+}
 
 // src/legacy/index.ts
 var $modifier = Symbol("$modifier");

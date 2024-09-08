@@ -9,5 +9,5 @@ export { pipe } from './utils/pipe';
 export { withAutoRemoveSubject, withOnTargetRemoved, withStore, createRelation, getRelationTargets, Wildcard, IsA, Pair, } from './Relation';
 export type { OnTargetRemovedCallback, Relation, RelationTarget, } from './Relation';
 export { createEntityIndex } from './EntityIndex';
-export { IWorld, ComponentProp, IComponentProp, IComponent, Component, QueryModifier, Query, $modifier, Not, Or, Changed, defineQuery, enterQuery, exitQuery, addComponent, hasComponent, removeComponent, ISchema, Type, ListType, Types, defineComponent, ComponentType, } from '../legacy/index';
+export { IWorld, ComponentProp, IComponentProp, IComponent, Component, QueryModifier, Query, $modifier, Not, Or, Changed, defineQuery, enterQuery, exitQuery, addComponent, hasComponent, removeComponent, ISchema, Type, ListType, Types, defineComponent, ComponentType, defineSerializer, defineDeserializer, } from '../legacy/index';
 //# sourceMappingURL=index.d.ts.map
