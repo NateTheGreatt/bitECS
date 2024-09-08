@@ -282,8 +282,8 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
     return buffer.slice(0, offset);
   };
 };
-var createObserverDeserializer = (world, networkedTag, components) => {
-  return (packet, entityIdMapping = /* @__PURE__ */ new Map()) => {
+var createObserverDeserializer = (world, networkedTag, components, entityIdMapping = /* @__PURE__ */ new Map()) => {
+  return (packet) => {
     const dataView = new DataView(packet);
     let offset = 0;
     while (offset < packet.byteLength) {

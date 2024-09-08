@@ -74,8 +74,8 @@ export const createObserverSerializer = (world: World, networkedTag: ComponentRe
  * @param {any[]} components - An array of components that can be added or removed.
  * @returns {Function} A function that takes a serialized packet and an optional entity ID mapping, and applies the changes to the world.
  */
-export const createObserverDeserializer = (world: World, networkedTag: ComponentRef, components: ComponentRef[]) => {
-    return (packet: ArrayBuffer, entityIdMapping: Map<number, number> = new Map()) => {
+export const createObserverDeserializer = (world: World, networkedTag: ComponentRef, components: ComponentRef[], entityIdMapping: Map<number, number> = new Map()) => {
+    return (packet: ArrayBuffer) => {
         const dataView = new DataView(packet)
         let offset = 0
 
