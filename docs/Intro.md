@@ -63,34 +63,34 @@ const world = createWorld()
 
 ### Options
 
-`withContext` allows you to use any object as the world object.
+Passing an object to `createWorld` will use the object as a context. The object will be decorated and the same reference will be returned.
 
 ```ts
-const world = createWorld(withContext({
+const world = createWorld({
     time: {
         then: 0,
         delta: 0,
     }
-}))
-// dual API - alternatively:
-const world = createWorld({ context: {
-    time: {
-        then: 0,
-        delta: 0
-    }
-}})
+})
 ```
 
-`withEntityIndex` allows you to provide an entity index which can be used to share an EID space between worlds.
+Passing an `entityIndex` uses the entity index to share an EID space between worlds.
 
 ```ts
 const entityIndex = createEntityIndex()
-const worldA = createWorld(withEntityIndex(entityIndex))
-const worldB = createWorld(withEntityIndex(entityIndex))
+const worldA = createWorld(entityIndex)
+const worldB = createWorld(entityIndex)
 
 addEntity(worldA) // 1
 addEntity(worldB) // 2
 addEntity(worldA) // 3
+```
+
+You can pass either in any order.
+
+```ts
+createWorld({ data: 1 }, entityIndex)
+createWorld(entityIndex, { data: 1 })
 ```
 
 ## Entity
@@ -334,6 +334,23 @@ addComponent(world, quiver, Contains(arrow))
 
 const containers = query(world, [Contains('*')]); // [chest, backpack, quiver]
 ```
+
+### Inverting Wildcard Search with Pair
+
+In some cases, you may want to find all components that are related to a specific target entity, regardless of the relationship type. This can be achieved using the `Pair` function with a wildcard as the first argument. For example, if you want to find all components that are related to the entity `Earth` in any way, you can use the following query:
+
+```ts
+const earth = addEntity(world)
+const moon = addEntity(world)
+const sun = addEntity(world)
+
+addComponent(world, earth, OrbitedBy(moon))
+addComponent(world, earth, IlluminatedBy(sun))
+
+const relatedToEarth = query(world, [Pair('*', earth)]); // Returns [OrbitedBy(moon), IlluminatedBy(sun)]
+
+```
+
 
 ## System
 
