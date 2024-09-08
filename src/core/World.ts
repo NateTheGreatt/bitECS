@@ -4,7 +4,7 @@ import { ComponentRef, ComponentData } from './Component'
 import { Query } from './Query'
 import { EntityId } from './Entity'
 
-export const $internal = Symbol('internal')
+export const $internal = Symbol.for('bitecs_internal')
 
 export type WorldContext = {
     entityIndex: EntityIndex

@@ -11,7 +11,7 @@ import { EntityId, Prefab } from './Entity'
  * @typedef {Uint32Array | readonly number[]} QueryResult
  * @description The result of a query, either as a Uint32Array or a readonly array of numbers.
  */
-export type QueryResult = Uint32Array | readonly number[]
+export type QueryResult = Uint32Array | readonly EntityId[]
 
 /**
  * @typedef {Object} Query
@@ -172,13 +172,9 @@ export function observe(world: World, hook: ObservableHook, callback: (eid: Enti
 			throw new Error('Set and Get hooks can only observe a single component')
 		}
 		const component = components[0]
-		const componentData = ctx.componentMap.get(component)
+		let componentData = ctx.componentMap.get(component)
 		if (!componentData) {
-			registerComponent(world, component)
-			const componentData = ctx.componentMap.get(component)
-			if (!componentData) {
-				throw new Error(`Failed to register component ${component.name}`)
-			}
+			componentData = registerComponent(world, component)
 		}
 		const observableKey = type === 'set' ? 'setObservable' : 'getObservable'
 		return componentData[observableKey].subscribe(callback)
@@ -390,11 +386,11 @@ export function innerQuery(world: World, terms: QueryTerm[], options: { buffered
  * @description Performs a query operation.
  * @param {World} world - The world object.
  * @param {QueryTerm[]} terms - The query terms.
- * @returns {readonly number[]} The result of the query as a readonly array of entity IDs.
+ * @returns {readonly EntityId[]} The result of the query as a readonly array of entity IDs.
  */
-export function query(world: World, terms: QueryTerm[]): readonly number[] {
+export function query(world: World, terms: QueryTerm[]): readonly EntityId[] {
 	commitRemovals(world)
-	return innerQuery(world, terms) as number[]
+	return innerQuery(world, terms) as EntityId[]
 }
 
 /**
