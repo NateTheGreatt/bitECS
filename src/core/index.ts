@@ -124,4 +124,5 @@ export {
   ComponentType,
   defineSerializer,
   defineDeserializer,
+  DESERIALIZE_MODE,
 } from '../legacy/index'
