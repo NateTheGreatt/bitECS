@@ -21,6 +21,7 @@ var legacy_exports = {};
 __export(legacy_exports, {
   $modifier: () => $modifier,
   Changed: () => Changed,
+  DESERIALIZE_MODE: () => DESERIALIZE_MODE,
   Not: () => Not,
   Or: () => Or,
   Types: () => Types,
@@ -273,6 +274,12 @@ function defineDeserializer(components) {
     return deserializeData(soaData, mode);
   };
 }
+var DESERIALIZE_MODE = /* @__PURE__ */ ((DESERIALIZE_MODE2) => {
+  DESERIALIZE_MODE2[DESERIALIZE_MODE2["REPLACE"] = 0] = "REPLACE";
+  DESERIALIZE_MODE2[DESERIALIZE_MODE2["APPEND"] = 1] = "APPEND";
+  DESERIALIZE_MODE2[DESERIALIZE_MODE2["MAP"] = 2] = "MAP";
+  return DESERIALIZE_MODE2;
+})(DESERIALIZE_MODE || {});
 
 // src/legacy/index.ts
 var $modifier = Symbol("$modifier");

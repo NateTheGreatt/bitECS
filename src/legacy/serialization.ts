@@ -40,3 +40,9 @@ export function defineDeserializer<W extends IWorld = IWorld>(components: Compon
     return deserializeData(soaData, mode);
   }
 }
+
+export enum DESERIALIZE_MODE {
+    REPLACE,
+    APPEND,
+    MAP
+}
