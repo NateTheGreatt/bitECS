@@ -744,14 +744,14 @@ var createSoADeserializer = (components) => {
 function defineSerializer(components, maxBytes) {
   const initSet = /* @__PURE__ */ new WeakSet();
   let serializeObservations, serializeData;
-  return (world) => {
-    if (!initSet.has(components)) {
-      initSet.add(components);
+  return (world, ents) => {
+    if (!initSet.has(world)) {
+      initSet.add(world);
       serializeObservations = createObserverSerializer(world, components[0], components);
       serializeData = createSoASerializer(components);
     }
     const observerData = serializeObservations();
-    const soaData = serializeData(query(world, components));
+    const soaData = serializeData(ents);
     const combinedData = new ArrayBuffer(observerData.byteLength + soaData.byteLength);
     const combinedView = new Uint8Array(combinedData);
     combinedView.set(new Uint8Array(observerData), 0);
@@ -763,8 +763,8 @@ function defineDeserializer(components) {
   const initSet = /* @__PURE__ */ new WeakSet();
   let deserializeObservations, deserializeData;
   return (world, packet, mode) => {
-    if (!initSet.has(components)) {
-      initSet.add(components);
+    if (!initSet.has(world)) {
+      initSet.add(world);
       deserializeObservations = createObserverDeserializer(world, components[0], components);
       deserializeData = createSoADeserializer(components);
     }
