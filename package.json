@@ -47,11 +47,14 @@
     "build:core:mjs": "esbuild src/core/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/core/index.min.mjs",
     "build:core:cjs": "esbuild src/core/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/core/index.min.cjs",
     "build:serialization": "bun build:serialization:mjs && bun build:serialization:cjs",
-    "build:serialization:mjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/serialization/index.min.mjs",
-    "build:serialization:cjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/serialization/index.min.cjs",
+    "build:serialization:mjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/serialization/index.min.mjs --external:../core",
+    "build:serialization:cjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/serialization/index.min.cjs --external:../core",
     "build:legacy": "bun build:legacy:mjs && bun build:legacy:cjs",
-    "build:legacy:mjs": "esbuild src/legacy/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/legacy/index.min.mjs",
-    "build:legacy:cjs": "esbuild src/legacy/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/legacy/index.min.cjs"
+    "build:legacy:mjs": "esbuild src/legacy/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/legacy/index.min.mjs --external:../core",
+    "build:legacy:cjs": "esbuild src/legacy/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/legacy/index.min.cjs --external:../core",
+    "build:next": "bun build:next:mjs && bun build:next:cjs",
+    "build:next:mjs": "esbuild src/next/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/next/index.min.mjs --external:../core",
+    "build:next:cjs": "esbuild src/next/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/next/index.min.cjs --external:../core"
   },
   "devDependencies": {
     "esbuild": "^0.23.1",

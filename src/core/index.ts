@@ -98,3 +98,4 @@ export type {
 
 export { createEntityIndex } from './EntityIndex'
 
+export * from '../legacy/index'

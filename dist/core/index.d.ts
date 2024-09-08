@@ -9,4 +9,5 @@ export { pipe } from './utils/pipe';
 export { withAutoRemoveSubject, withOnTargetRemoved, withStore, createRelation, getRelationTargets, Wildcard, IsA, Pair, } from './Relation';
 export type { OnTargetRemovedCallback, Relation, RelationTarget, } from './Relation';
 export { createEntityIndex } from './EntityIndex';
+export * from '../legacy/index';
 //# sourceMappingURL=index.d.ts.map

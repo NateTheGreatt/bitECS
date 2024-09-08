@@ -1,37 +1,52 @@
-import { ComponentRef, QueryTerm, World, observe, onAdd, onRemove, query, addComponent as ecsAddComponent, EntityId } from '../core'
+import { ComponentRef, QueryTerm, World, observe, onAdd, onRemove, query, EntityId } from '../core'
+import { 
+  addComponent as ecsAddComponent,
+  hasComponent as ecsHasComponent, 
+  removeComponent as ecsRemoveComponent 
+} from '../core'
 
-export const defineQuery = (...terms: QueryTerm[]) => (world: World) => query(world, terms)
+export const defineQuery = (terms: QueryTerm[]) => {
+  const queryFn = (world: World) => query(world, terms)
+  queryFn.terms = terms
+  return queryFn
+}
 
-export const enterQuery = (...terms: QueryTerm[]) => {
+export const enterQuery = (queryFn: ReturnType<typeof defineQuery>) => {
   let queue: number[] = []
   const initSet = new WeakSet<World>()
   return (world: World) => {
     if (!initSet.has(world)) {
-      observe(world, onAdd(...terms), (eid: EntityId) => queue.push(eid))
+      observe(world, onAdd(...queryFn.terms), (eid: EntityId) => queue.push(eid))
       initSet.add(world)
     }
-    const results = queue
-    queue = []
+    const results = queue.slice()
+    queue.length = 0
     return results
   }
 }
 
-export const exitQuery = (...terms: QueryTerm[]) => {
+export const exitQuery = (queryFn: ReturnType<typeof defineQuery>) => {
   let queue: number[] = []
   const initSet = new WeakSet<World>()
   return (world: World) => {
     if (!initSet.has(world)) {
-      observe(world, onRemove(...terms), (eid: EntityId) => queue.push(eid))
+      observe(world, onRemove(...queryFn.terms), (eid: EntityId) => queue.push(eid))
       initSet.add(world)
     }
-    const results = queue
-    queue = []
+    const results = queue.slice()
+    queue.length = 0
     return results
   }
 }
 
 export const addComponent = (world: World, component: ComponentRef, eid: EntityId) =>
   ecsAddComponent(world, eid, component)
+
+export const hasComponent = (world: World, component: ComponentRef, eid: EntityId) =>
+  ecsHasComponent(world, eid, component)
+
+export const removeComponent = (world: World, component: ComponentRef, eid: EntityId) =>
+  ecsRemoveComponent(world, eid, component)
 
 export type Schema = { [key: string]: Schema | PrimitiveType | [PrimitiveType, number] }
 
