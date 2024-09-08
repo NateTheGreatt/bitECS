@@ -2,12 +2,21 @@ import {
     addComponent,
     removeComponent,
     addEntity,
+    removeEntity,
     observe,
     onAdd,
     onRemove,
     World,
+    ComponentRef,
 } from '../core'
 import { EntityId } from '../core/Entity'
+
+enum OperationType {
+    AddEntity = 0,
+    RemoveEntity = 1,
+    AddComponent = 2,
+    RemoveComponent = 3
+}
 
 /**
  * Creates a serializer for observing and serializing changes in networked entities.
@@ -17,18 +26,26 @@ import { EntityId } from '../core/Entity'
  * @param {ArrayBuffer} [buffer=new ArrayBuffer(1024 * 1024 * 100)] - The buffer to use for serialization.
  * @returns {Function} A function that, when called, serializes the queued changes and returns a slice of the buffer.
  */
-export const createObserverSerializer = (world: World, networkedTag: any, components: any[], buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+export const createObserverSerializer = (world: World, networkedTag: ComponentRef, components: ComponentRef[], buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
     const dataView = new DataView(buffer)
     let offset = 0
-    const queue: [number, number, number][] = []
+    const queue: [number, OperationType, number][] = []
+    
+    observe(world, onAdd(networkedTag), (eid: EntityId) => {
+        queue.push([eid, OperationType.AddEntity, -1])
+    })
+
+    observe(world, onRemove(networkedTag), (eid: EntityId) => {
+        queue.push([eid, OperationType.RemoveEntity, -1])
+    })
 
     components.forEach((component, i) => {
         observe(world, onAdd(networkedTag, component), (eid: EntityId) => {
-            queue.push([eid, 0, i])
+            queue.push([eid, OperationType.AddComponent, i])
         })
 
         observe(world, onRemove(networkedTag, component), (eid: EntityId) => {
-            queue.push([eid, 1, i])
+            queue.push([eid, OperationType.RemoveComponent, i])
         })
     })
 
@@ -57,7 +74,7 @@ export const createObserverSerializer = (world: World, networkedTag: any, compon
  * @param {any[]} components - An array of components that can be added or removed.
  * @returns {Function} A function that takes a serialized packet and an optional entity ID mapping, and applies the changes to the world.
  */
-export const createObserverDeserializer = (world: World, networkedTag: any, components: any[]) => {
+export const createObserverDeserializer = (world: World, networkedTag: ComponentRef, components: ComponentRef[]) => {
     return (packet: ArrayBuffer, entityIdMapping: Map<number, number> = new Map()) => {
         const dataView = new DataView(packet)
         let offset = 0
@@ -77,10 +94,13 @@ export const createObserverDeserializer = (world: World, networkedTag: any, comp
                 worldEntityId = addEntity(world)
                 entityIdMapping.set(packetEntityId, worldEntityId)
             }
-            if (operationType === 0) {
-                addComponent(world, worldEntityId, component)
+            if (operationType === OperationType.AddEntity) {
                 addComponent(world, worldEntityId, networkedTag)
-            } else if (operationType === 1) {
+            } else if (operationType === OperationType.RemoveEntity) {
+                removeEntity(world, worldEntityId)
+            } else if (operationType === OperationType.AddComponent) {
+                addComponent(world, worldEntityId, component)
+            } else if (operationType === OperationType.RemoveComponent) {
                 removeComponent(world, worldEntityId, component)
             }
         }
