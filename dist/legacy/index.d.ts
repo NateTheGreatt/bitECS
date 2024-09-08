@@ -16,9 +16,9 @@ export declare const Changed: (c: Component | ISchema) => QueryModifier;
 export declare function defineQuery<W extends IWorld = IWorld>(components: (Component | QueryModifier)[]): Query<W>;
 export declare function enterQuery<W extends IWorld = IWorld>(queryFn: Query<W>): Query<W>;
 export declare function exitQuery<W extends IWorld = IWorld>(queryFn: Query<W>): Query<W>;
-export declare const addComponent: (world: IWorld, component: ComponentRef, eid: EntityId) => void;
-export declare const hasComponent: (world: IWorld, component: ComponentRef, eid: EntityId) => boolean;
-export declare const removeComponent: (world: IWorld, component: ComponentRef, eid: EntityId) => void;
+export declare const addComponent: (world: IWorld, component: ComponentRef, eid: EntityId) => any;
+export declare const hasComponent: (world: IWorld, component: ComponentRef, eid: EntityId) => any;
+export declare const removeComponent: (world: IWorld, component: ComponentRef, eid: EntityId) => any;
 export interface ISchema {
     [key: string]: Type | ListType | ISchema;
 }

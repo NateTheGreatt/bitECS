@@ -2,6 +2,8 @@ import { createSoASerializer, createSoADeserializer, PrimitiveBrand } from './So
 import {
     addComponent,
     hasComponent,
+} from '../core/Component'
+import {
     World,
     getAllEntities,
     addEntity,
