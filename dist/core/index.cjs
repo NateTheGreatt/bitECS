@@ -864,13 +864,13 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
         entityIdMapping.set(packetEntityId, worldEntityId);
       }
       if (operationType === 0 /* AddEntity */) {
-        addComponent2(world, worldEntityId, networkedTag);
+        addComponent(world, worldEntityId, networkedTag);
       } else if (operationType === 1 /* RemoveEntity */) {
         removeEntity(world, worldEntityId);
       } else if (operationType === 2 /* AddComponent */) {
-        addComponent2(world, worldEntityId, component);
+        addComponent(world, worldEntityId, component);
       } else if (operationType === 3 /* RemoveComponent */) {
-        removeComponent2(world, worldEntityId, component);
+        removeComponent(world, worldEntityId, component);
       }
     }
     return entityIdMapping;

@@ -171,6 +171,77 @@ var createSoADeserializer = (components) => {
   };
 };
 
+// src/core/utils/SparseSet.ts
+var createSparseSet = () => {
+  const dense = [];
+  const sparse = [];
+  const has = (val) => dense[sparse[val]] === val;
+  const add = (val) => {
+    if (has(val)) return;
+    sparse[val] = dense.push(val) - 1;
+  };
+  const remove = (val) => {
+    if (!has(val)) return;
+    const index = sparse[val];
+    const swapped = dense.pop();
+    if (swapped !== val) {
+      dense[index] = swapped;
+      sparse[swapped] = index;
+    }
+  };
+  const reset = () => {
+    dense.length = 0;
+    sparse.length = 0;
+  };
+  return {
+    add,
+    remove,
+    has,
+    sparse,
+    dense,
+    reset
+  };
+};
+var createUint32SparseSet = (initialCapacity = 1e3) => {
+  const sparse = [];
+  let length = 0;
+  let dense = new Uint32Array(initialCapacity);
+  const has = (val) => val < sparse.length && sparse[val] < length && dense[sparse[val]] === val;
+  const add = (val) => {
+    if (has(val)) return;
+    if (length >= dense.length) {
+      const newDense = new Uint32Array(dense.length * 2);
+      newDense.set(dense);
+      dense = newDense;
+    }
+    dense[length] = val;
+    sparse[val] = length;
+    length++;
+  };
+  const remove = (val) => {
+    if (!has(val)) return;
+    length--;
+    const index = sparse[val];
+    const swapped = dense[length];
+    dense[index] = swapped;
+    sparse[swapped] = index;
+  };
+  const reset = () => {
+    length = 0;
+    sparse.length = 0;
+  };
+  return {
+    add,
+    remove,
+    has,
+    sparse,
+    get dense() {
+      return new Uint32Array(dense.buffer, 0, length);
+    },
+    reset
+  };
+};
+
 // src/core/utils/defineHiddenProperty.ts
 var defineHiddenProperty = (obj, key, value) => Object.defineProperty(obj, key, {
   value,
@@ -180,6 +251,33 @@ var defineHiddenProperty = (obj, key, value) => Object.defineProperty(obj, key, 
 });
 
 // src/core/EntityIndex.ts
+var addEntityId = (index) => {
+  if (index.aliveCount < index.dense.length) {
+    const recycledId = index.dense[index.aliveCount];
+    index.sparse[recycledId] = index.aliveCount;
+    index.aliveCount++;
+    return recycledId;
+  }
+  const id = ++index.maxId;
+  index.dense.push(id);
+  index.sparse[id] = index.aliveCount;
+  index.aliveCount++;
+  return id;
+};
+var removeEntityId = (index, id) => {
+  const record = index.sparse[id];
+  if (record === void 0 || record >= index.aliveCount) {
+    return;
+  }
+  const denseIndex = record;
+  const lastIndex = index.aliveCount - 1;
+  const lastId = index.dense[lastIndex];
+  index.sparse[lastId] = denseIndex;
+  index.dense[denseIndex] = lastId;
+  index.sparse[id] = index.dense.length;
+  index.dense[lastIndex] = id;
+  index.aliveCount--;
+};
 var isEntityIdAlive = (index, id) => {
   const record = index.sparse[id];
   return record !== void 0 && index.dense[record] === id;
@@ -212,6 +310,146 @@ var createObservable = () => {
 // src/core/Query.ts
 var $opType = Symbol("opType");
 var $opTerms = Symbol("opTerms");
+var onAdd = (...terms) => ({
+  [$opType]: "add",
+  [$opTerms]: terms
+});
+var onRemove = (...terms) => ({
+  [$opType]: "remove",
+  [$opTerms]: terms
+});
+function observe(world, hook, callback) {
+  const ctx = world[$internal];
+  const { [$opType]: type, [$opTerms]: components } = hook;
+  if (type === "add" || type === "remove") {
+    const hash = queryHash(world, components);
+    let queryData = ctx.queriesHashMap.get(hash);
+    if (!queryData) {
+      queryData = registerQuery(world, components);
+    }
+    const observableKey = type === "add" ? "addObservable" : "removeObservable";
+    return queryData[observableKey].subscribe(callback);
+  } else if (type === "set" || type === "get") {
+    if (components.length !== 1) {
+      throw new Error("Set and Get hooks can only observe a single component");
+    }
+    const component = components[0];
+    let componentData = ctx.componentMap.get(component);
+    if (!componentData) {
+      componentData = registerComponent(world, component);
+    }
+    const observableKey = type === "set" ? "setObservable" : "getObservable";
+    return componentData[observableKey].subscribe(callback);
+  }
+  throw new Error(`Invalid hook type: ${type}`);
+}
+var queryHash = (world, terms) => {
+  const ctx = world[$internal];
+  const getComponentId = (component) => {
+    if (!ctx.componentMap.has(component)) {
+      registerComponent(world, component);
+    }
+    return ctx.componentMap.get(component).id;
+  };
+  const termToString = (term) => {
+    if ($opType in term) {
+      const componentIds = term[$opTerms].map(getComponentId);
+      const sortedComponentIds = componentIds.sort((a, b) => a - b);
+      const sortedType = term[$opType].toLowerCase();
+      return `${sortedType}(${sortedComponentIds.join(",")})`;
+    } else {
+      return getComponentId(term).toString();
+    }
+  };
+  return terms.map(termToString).sort().join("-");
+};
+var registerQuery = (world, terms, options = {}) => {
+  const ctx = world[$internal];
+  const hash = queryHash(world, terms);
+  const components = [];
+  const notComponents = [];
+  const orComponents = [];
+  const processComponents = (comps, targetArray) => {
+    comps.forEach((comp) => {
+      if (!ctx.componentMap.has(comp)) registerComponent(world, comp);
+      targetArray.push(comp);
+    });
+  };
+  terms.forEach((term) => {
+    if ($opType in term) {
+      if (term[$opType] === "Not") {
+        processComponents(term[$opTerms], notComponents);
+      } else if (term[$opType] === "Or") {
+        processComponents(term[$opTerms], orComponents);
+      }
+    } else {
+      if (!ctx.componentMap.has(term)) registerComponent(world, term);
+      components.push(term);
+    }
+  });
+  const mapComponents = (c) => ctx.componentMap.get(c);
+  const allComponents = components.concat(notComponents.flat()).concat(orComponents.flat()).map(mapComponents);
+  const sparseSet = options.buffered ? createUint32SparseSet() : createSparseSet();
+  const toRemove = createSparseSet();
+  const generations = allComponents.map((c) => c.generationId).reduce((a, v) => {
+    if (a.includes(v)) return a;
+    a.push(v);
+    return a;
+  }, []);
+  const reduceBitflags = (a, c) => {
+    if (!a[c.generationId]) a[c.generationId] = 0;
+    a[c.generationId] |= c.bitflag;
+    return a;
+  };
+  const masks = components.map(mapComponents).reduce(reduceBitflags, {});
+  const notMasks = notComponents.map(mapComponents).reduce(reduceBitflags, {});
+  const orMasks = orComponents.map(mapComponents).reduce(reduceBitflags, {});
+  const hasMasks = allComponents.reduce(reduceBitflags, {});
+  const addObservable = createObservable();
+  const removeObservable = createObservable();
+  const query2 = Object.assign(sparseSet, {
+    components,
+    notComponents,
+    orComponents,
+    allComponents,
+    masks,
+    notMasks,
+    orMasks,
+    hasMasks,
+    generations,
+    toRemove,
+    addObservable,
+    removeObservable,
+    queues: {}
+  });
+  ctx.queries.add(query2);
+  ctx.queriesHashMap.set(hash, query2);
+  allComponents.forEach((c) => {
+    c.queries.add(query2);
+  });
+  if (notComponents.length) ctx.notQueries.add(query2);
+  const entityIndex = ctx.entityIndex;
+  for (let i = 0; i < entityIndex.aliveCount; i++) {
+    const eid = entityIndex.dense[i];
+    if (hasComponent(world, eid, Prefab)) continue;
+    const match = queryCheckEntity(world, query2, eid);
+    if (match) {
+      queryAddEntity(query2, eid);
+    }
+  }
+  return query2;
+};
+function innerQuery(world, terms, options = {}) {
+  const ctx = world[$internal];
+  const hash = queryHash(world, terms);
+  let queryData = ctx.queriesHashMap.get(hash);
+  if (!queryData) {
+    queryData = registerQuery(world, terms, options);
+  } else if (options.buffered && !("buffer" in queryData.dense)) {
+    queryData = registerQuery(world, terms, { buffered: true });
+  }
+  return queryData.dense;
+}
 function queryCheckEntity(world, query2, eid) {
   const ctx = world[$internal];
   const { masks, notMasks, orMasks, generations } = query2;
@@ -248,22 +486,21 @@ var queryRemoveEntity = (world, query2, eid) => {
 };
 
 // src/serialization/ObserverSerializer.ts
-var import_core = require("../core");
 var createObserverSerializer = (world, networkedTag, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
   const dataView = new DataView(buffer);
   let offset = 0;
   const queue = [];
-  (0, import_core.observe)(world, (0, import_core.onAdd)(networkedTag), (eid) => {
+  observe(world, onAdd(networkedTag), (eid) => {
     queue.push([eid, 0 /* AddEntity */, -1]);
   });
-  (0, import_core.observe)(world, (0, import_core.onRemove)(networkedTag), (eid) => {
+  observe(world, onRemove(networkedTag), (eid) => {
     queue.push([eid, 1 /* RemoveEntity */, -1]);
   });
   components.forEach((component, i) => {
-    (0, import_core.observe)(world, (0, import_core.onAdd)(networkedTag, component), (eid) => {
+    observe(world, onAdd(networkedTag, component), (eid) => {
       queue.push([eid, 2 /* AddComponent */, i]);
     });
-    (0, import_core.observe)(world, (0, import_core.onRemove)(networkedTag, component), (eid) => {
+    observe(world, onRemove(networkedTag, component), (eid) => {
       queue.push([eid, 3 /* RemoveComponent */, i]);
     });
   });
@@ -296,17 +533,17 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
       const component = components[componentId];
       let worldEntityId = entityIdMapping.get(packetEntityId);
       if (worldEntityId === void 0) {
-        worldEntityId = (0, import_core.addEntity)(world);
+        worldEntityId = addEntity(world);
         entityIdMapping.set(packetEntityId, worldEntityId);
       }
       if (operationType === 0 /* AddEntity */) {
-        (0, import_core.addComponent)(world, worldEntityId, networkedTag);
+        addComponent(world, worldEntityId, networkedTag);
       } else if (operationType === 1 /* RemoveEntity */) {
-        (0, import_core.removeEntity)(world, worldEntityId);
+        removeEntity(world, worldEntityId);
       } else if (operationType === 2 /* AddComponent */) {
-        (0, import_core.addComponent)(world, worldEntityId, component);
+        addComponent(world, worldEntityId, component);
       } else if (operationType === 3 /* RemoveComponent */) {
-        (0, import_core.removeComponent)(world, worldEntityId, component);
+        removeComponent(world, worldEntityId, component);
       }
     }
     return entityIdMapping;
@@ -359,9 +596,9 @@ var withAutoRemoveSubject = (relation) => {
   ctx.autoRemoveSubject = true;
   return relation;
 };
-var withOnTargetRemoved = (onRemove3) => (relation) => {
+var withOnTargetRemoved = (onRemove2) => (relation) => {
   const ctx = relation[$relationData];
-  ctx.onTargetRemoved = onRemove3;
+  ctx.onTargetRemoved = onRemove2;
   return relation;
 };
 var Pair = (relation, target) => {
@@ -398,6 +635,64 @@ function createRelation(...args) {
 
 // src/core/Entity.ts
 var Prefab = {};
+var addEntity = (world) => {
+  const ctx = world[$internal];
+  const eid = addEntityId(ctx.entityIndex);
+  ctx.notQueries.forEach((q) => {
+    const match = queryCheckEntity(world, q, eid);
+    if (match) queryAddEntity(q, eid);
+  });
+  ctx.entityComponents.set(eid, /* @__PURE__ */ new Set());
+  return eid;
+};
+var removeEntity = (world, eid) => {
+  const ctx = world[$internal];
+  if (!isEntityIdAlive(ctx.entityIndex, eid)) return;
+  const removalQueue = [eid];
+  const processedEntities = /* @__PURE__ */ new Set();
+  while (removalQueue.length > 0) {
+    const currentEid = removalQueue.shift();
+    if (processedEntities.has(currentEid)) continue;
+    processedEntities.add(currentEid);
+    const componentRemovalQueue = [];
+    for (const subject of innerQuery(world, [Wildcard(currentEid)])) {
+      if (!entityExists(world, subject)) {
+        continue;
+      }
+      for (const component of ctx.entityComponents.get(subject)) {
+        if (!component[$isPairComponent]) {
+          continue;
+        }
+        const relation = component[$relation];
+        const relationData = relation[$relationData];
+        componentRemovalQueue.push(() => removeComponent(world, subject, Pair(Wildcard, currentEid)));
+        if (component[$pairTarget] === currentEid) {
+          componentRemovalQueue.push(() => removeComponent(world, subject, component));
+          if (relationData.autoRemoveSubject) {
+            removalQueue.push(subject);
+          }
+          if (relationData.onTargetRemoved) {
+            componentRemovalQueue.push(() => relationData.onTargetRemoved(world, subject, currentEid));
+          }
+        }
+      }
+    }
+    for (const removeOperation of componentRemovalQueue) {
+      removeOperation();
+    }
+    for (const eid2 of removalQueue) {
+      removeEntity(world, eid2);
+    }
+    for (const query2 of ctx.queries) {
+      queryRemoveEntity(world, query2, currentEid);
+    }
+    removeEntityId(ctx.entityIndex, currentEid);
+    ctx.entityComponents.delete(currentEid);
+    for (let i = 0; i < ctx.entityMasks.length; i++) {
+      ctx.entityMasks[i][currentEid] = 0;
+    }
+  }
+};
 var getEntityComponents = (world, eid) => {
   const ctx = world[$internal];
   if (eid === void 0) throw new Error("bitECS - entity is undefined.");
@@ -452,13 +747,13 @@ var getComponentData = (world, eid, component) => {
 };
 var recursivelyInherit = (world, baseEid, inheritedEid) => {
   const ctx = world[$internal];
-  addComponent2(world, baseEid, IsA(inheritedEid));
+  addComponent(world, baseEid, IsA(inheritedEid));
   const components = getEntityComponents(world, inheritedEid);
   for (const component of components) {
     if (component === Prefab) {
       continue;
     }
-    addComponent2(world, baseEid, component);
+    addComponent(world, baseEid, component);
     const componentData = ctx.componentMap.get(component);
     if (componentData && componentData.setObservable) {
       const data = getComponentData(world, inheritedEid, component);
@@ -470,7 +765,7 @@ var recursivelyInherit = (world, baseEid, inheritedEid) => {
     recursivelyInherit(world, baseEid, inheritedEid2);
   }
 };
-var addComponent2 = (world, eid, ...components) => {
+var addComponent = (world, eid, ...components) => {
   const ctx = world[$internal];
   if (!entityExists(world, eid)) {
     throw new Error(`Cannot add component - entity ${eid} does not exist in the world.`);
@@ -497,14 +792,14 @@ var addComponent2 = (world, eid, ...components) => {
     }
     if (component[$isPairComponent]) {
       const relation = component[$relation];
-      addComponent2(world, eid, Pair(relation, Wildcard));
+      addComponent(world, eid, Pair(relation, Wildcard));
       const target = component[$pairTarget];
-      addComponent2(world, eid, Pair(Wildcard, target));
+      addComponent(world, eid, Pair(Wildcard, target));
       const relationData = relation[$relationData];
       if (relationData.exclusiveRelation === true && target !== Wildcard) {
         const oldTarget = getRelationTargets(world, eid, relation)[0];
         if (oldTarget !== void 0 && oldTarget !== null && oldTarget !== target) {
-          removeComponent2(world, eid, relation(oldTarget));
+          removeComponent(world, eid, relation(oldTarget));
         }
       }
       if (relation === IsA) {
@@ -516,7 +811,7 @@ var addComponent2 = (world, eid, ...components) => {
     }
   });
 };
-var removeComponent2 = (world, eid, ...components) => {
+var removeComponent = (world, eid, ...components) => {
   const ctx = world[$internal];
   if (!entityExists(world, eid)) {
     throw new Error(`Cannot remove component - entity ${eid} does not exist in the world.`);
@@ -535,18 +830,18 @@ var removeComponent2 = (world, eid, ...components) => {
     ctx.entityComponents.get(eid).delete(component);
     if (component[$isPairComponent]) {
       const target = component[$pairTarget];
-      removeComponent2(world, eid, Pair(Wildcard, target));
+      removeComponent(world, eid, Pair(Wildcard, target));
       const relation = component[$relation];
       const otherTargets = getRelationTargets(world, eid, relation);
       if (otherTargets.length === 0) {
-        removeComponent2(world, eid, Pair(relation, Wildcard));
+        removeComponent(world, eid, Pair(relation, Wildcard));
       }
     }
   });
 };
 
 // src/serialization/SnapshotSerializer.ts
-var import_core2 = require("../core");
+var import_core = require("../core");
 var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
   const dataView = new DataView(buffer);
   let offset = 0;
@@ -579,7 +874,7 @@ var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024
   };
   return () => {
     offset = 0;
-    const entities = (0, import_core2.getAllEntities)(world);
+    const entities = (0, import_core.getAllEntities)(world);
     serializeEntityComponentRelationships(entities);
     serializeComponentData(entities);
     return buffer.slice(0, offset);
@@ -596,14 +891,14 @@ var createSnapshotDeserializer = (world, components) => {
     for (let entityIndex = 0; entityIndex < entityCount; entityIndex++) {
       const packetEntityId = dataView.getUint32(offset);
       offset += 4;
-      const worldEntityId = (0, import_core2.addEntity)(world);
+      const worldEntityId = (0, import_core.addEntity)(world);
       entityIdMap.set(packetEntityId, worldEntityId);
       const componentCount = dataView.getUint8(offset);
       offset += 1;
       for (let i = 0; i < componentCount; i++) {
         const componentIndex = dataView.getUint8(offset);
         offset += 1;
-        addComponent2(world, worldEntityId, components[componentIndex]);
+        addComponent(world, worldEntityId, components[componentIndex]);
       }
     }
     soaDeserializer(packet.slice(offset), entityIdMap);

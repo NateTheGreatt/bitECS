@@ -1,14 +1,7 @@
-import {
-    addComponent,
-    removeComponent,
-    addEntity,
-    removeEntity,
-    observe,
-    onAdd,
-    onRemove,
-    World,
-    ComponentRef,
-} from '../core'
+import { addComponent, removeComponent } from '../core/Component'
+import { addEntity, removeEntity } from '../core/Entity'
+import { observe, onAdd, onRemove } from '../core/Query'
+import { World, ComponentRef } from '../core/index'
 import { EntityId } from '../core/Entity'
 
 enum OperationType {

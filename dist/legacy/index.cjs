@@ -117,6 +117,33 @@ var defineHiddenProperty = (obj, key, value) => Object.defineProperty(obj, key, 
 });
 
 // src/core/EntityIndex.ts
+var addEntityId = (index) => {
+  if (index.aliveCount < index.dense.length) {
+    const recycledId = index.dense[index.aliveCount];
+    index.sparse[recycledId] = index.aliveCount;
+    index.aliveCount++;
+    return recycledId;
+  }
+  const id = ++index.maxId;
+  index.dense.push(id);
+  index.sparse[id] = index.aliveCount;
+  index.aliveCount++;
+  return id;
+};
+var removeEntityId = (index, id) => {
+  const record = index.sparse[id];
+  if (record === void 0 || record >= index.aliveCount) {
+    return;
+  }
+  const denseIndex = record;
+  const lastIndex = index.aliveCount - 1;
+  const lastId = index.dense[lastIndex];
+  index.sparse[lastId] = denseIndex;
+  index.dense[denseIndex] = lastId;
+  index.sparse[id] = index.dense.length;
+  index.dense[lastIndex] = id;
+  index.aliveCount--;
+};
 var isEntityIdAlive = (index, id) => {
   const record = index.sparse[id];
   return record !== void 0 && index.dense[record] === id;
@@ -168,9 +195,9 @@ var withAutoRemoveSubject = (relation) => {
   ctx.autoRemoveSubject = true;
   return relation;
 };
-var withOnTargetRemoved = (onRemove3) => (relation) => {
+var withOnTargetRemoved = (onRemove2) => (relation) => {
   const ctx = relation[$relationData];
-  ctx.onTargetRemoved = onRemove3;
+  ctx.onTargetRemoved = onRemove2;
   return relation;
 };
 var Pair = (relation, target) => {
@@ -207,6 +234,64 @@ function createRelation(...args) {
 
 // src/core/Entity.ts
 var Prefab = {};
+var addEntity = (world) => {
+  const ctx = world[$internal];
+  const eid = addEntityId(ctx.entityIndex);
+  ctx.notQueries.forEach((q) => {
+    const match = queryCheckEntity(world, q, eid);
+    if (match) queryAddEntity(q, eid);
+  });
+  ctx.entityComponents.set(eid, /* @__PURE__ */ new Set());
+  return eid;
+};
+var removeEntity = (world, eid) => {
+  const ctx = world[$internal];
+  if (!isEntityIdAlive(ctx.entityIndex, eid)) return;
+  const removalQueue = [eid];
+  const processedEntities = /* @__PURE__ */ new Set();
+  while (removalQueue.length > 0) {
+    const currentEid = removalQueue.shift();
+    if (processedEntities.has(currentEid)) continue;
+    processedEntities.add(currentEid);
+    const componentRemovalQueue = [];
+    for (const subject of innerQuery(world, [Wildcard(currentEid)])) {
+      if (!entityExists(world, subject)) {
+        continue;
+      }
+      for (const component of ctx.entityComponents.get(subject)) {
+        if (!component[$isPairComponent]) {
+          continue;
+        }
+        const relation = component[$relation];
+        const relationData = relation[$relationData];
+        componentRemovalQueue.push(() => removeComponent2(world, subject, Pair(Wildcard, currentEid)));
+        if (component[$pairTarget] === currentEid) {
+          componentRemovalQueue.push(() => removeComponent2(world, subject, component));
+          if (relationData.autoRemoveSubject) {
+            removalQueue.push(subject);
+          }
+          if (relationData.onTargetRemoved) {
+            componentRemovalQueue.push(() => relationData.onTargetRemoved(world, subject, currentEid));
+          }
+        }
+      }
+    }
+    for (const removeOperation of componentRemovalQueue) {
+      removeOperation();
+    }
+    for (const eid2 of removalQueue) {
+      removeEntity(world, eid2);
+    }
+    for (const query2 of ctx.queries) {
+      queryRemoveEntity(world, query2, currentEid);
+    }
+    removeEntityId(ctx.entityIndex, currentEid);
+    ctx.entityComponents.delete(currentEid);
+    for (let i = 0; i < ctx.entityMasks.length; i++) {
+      ctx.entityMasks[i][currentEid] = 0;
+    }
+  }
+};
 var getEntityComponents = (world, eid) => {
   const ctx = world[$internal];
   if (eid === void 0) throw new Error("bitECS - entity is undefined.");
@@ -571,22 +656,21 @@ var queryRemoveEntity = (world, query2, eid) => {
 };
 
 // src/serialization/ObserverSerializer.ts
-var import_core = require("../core");
 var createObserverSerializer = (world, networkedTag, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
   const dataView = new DataView(buffer);
   let offset = 0;
   const queue = [];
-  (0, import_core.observe)(world, (0, import_core.onAdd)(networkedTag), (eid) => {
+  observe(world, onAdd(networkedTag), (eid) => {
     queue.push([eid, 0 /* AddEntity */, -1]);
   });
-  (0, import_core.observe)(world, (0, import_core.onRemove)(networkedTag), (eid) => {
+  observe(world, onRemove(networkedTag), (eid) => {
     queue.push([eid, 1 /* RemoveEntity */, -1]);
   });
   components.forEach((component, i) => {
-    (0, import_core.observe)(world, (0, import_core.onAdd)(networkedTag, component), (eid) => {
+    observe(world, onAdd(networkedTag, component), (eid) => {
       queue.push([eid, 2 /* AddComponent */, i]);
     });
-    (0, import_core.observe)(world, (0, import_core.onRemove)(networkedTag, component), (eid) => {
+    observe(world, onRemove(networkedTag, component), (eid) => {
       queue.push([eid, 3 /* RemoveComponent */, i]);
     });
   });
@@ -619,17 +703,17 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
       const component = components[componentId];
       let worldEntityId = entityIdMapping.get(packetEntityId);
       if (worldEntityId === void 0) {
-        worldEntityId = (0, import_core.addEntity)(world);
+        worldEntityId = addEntity(world);
         entityIdMapping.set(packetEntityId, worldEntityId);
       }
       if (operationType === 0 /* AddEntity */) {
-        (0, import_core.addComponent)(world, worldEntityId, networkedTag);
+        addComponent2(world, worldEntityId, networkedTag);
       } else if (operationType === 1 /* RemoveEntity */) {
-        (0, import_core.removeEntity)(world, worldEntityId);
+        removeEntity(world, worldEntityId);
       } else if (operationType === 2 /* AddComponent */) {
-        (0, import_core.addComponent)(world, worldEntityId, component);
+        addComponent2(world, worldEntityId, component);
       } else if (operationType === 3 /* RemoveComponent */) {
-        (0, import_core.removeComponent)(world, worldEntityId, component);
+        removeComponent2(world, worldEntityId, component);
       }
     }
     return entityIdMapping;
