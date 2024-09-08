@@ -58,7 +58,7 @@ export function exitQuery<W extends IWorld = IWorld>(queryFn: Query<W>): Query<W
   const initSet = new WeakSet<IWorld>()
   return (world: W) => {
     if (!initSet.has(world)) {
-      observe(world, onRemove(...(queryFn as any).terms), (eid: EntityId) => queue.push(eid))
+      observe(world, onRemove(...(queryFn as any).components), (eid: EntityId) => queue.push(eid))
       initSet.add(world)
     }
     const results = queue.slice()

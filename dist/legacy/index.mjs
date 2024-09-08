@@ -289,7 +289,7 @@ function exitQuery(queryFn) {
   const initSet = /* @__PURE__ */ new WeakSet();
   return (world) => {
     if (!initSet.has(world)) {
-      observe2(world, onRemove2(...queryFn.terms), (eid) => queue.push(eid));
+      observe2(world, onRemove2(...queryFn.components), (eid) => queue.push(eid));
       initSet.add(world);
     }
     const results = queue.slice();
