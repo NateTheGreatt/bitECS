@@ -1,4 +1,4 @@
-import { IWorld, Component, IComponentProp } from '../core';
+import { IWorld, Component, IComponentProp } from './index';
 export type Serializer<W extends IWorld = IWorld> = (target: W | number[]) => ArrayBuffer;
 export type Deserializer<W extends IWorld = IWorld> = (world: W, packet: ArrayBuffer, mode?: 'full' | 'partial') => number[];
 export declare function defineSerializer<W extends IWorld = IWorld>(components: Component[] | IComponentProp[], maxBytes?: number): Serializer<W>;

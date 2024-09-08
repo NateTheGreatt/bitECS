@@ -1013,9 +1013,9 @@ function exitQuery(queryFn) {
     return results;
   };
 }
-var addComponent2 = (world, component, eid) => addComponent2(world, eid, component);
-var hasComponent2 = (world, component, eid) => hasComponent2(world, eid, component);
-var removeComponent2 = (world, component, eid) => removeComponent2(world, eid, component);
+var addComponent2 = (world, component, eid) => addComponent(world, eid, component);
+var hasComponent2 = (world, component, eid) => hasComponent(world, eid, component);
+var removeComponent2 = (world, component, eid) => removeComponent(world, eid, component);
 var Types = {
   i8: "i8",
   ui8: "ui8",

@@ -1,9 +1,11 @@
-import { ComponentRef, observe, onAdd, onRemove, query, EntityId } from '../core'
+import { ComponentRef } from '../core/Component'
+import { observe, onAdd, onRemove, query } from '../core/Query'
+import { EntityId } from '../core/Entity'
 import {
   addComponent as ecsAddComponent,
   hasComponent as ecsHasComponent,
   removeComponent as ecsRemoveComponent
-} from '../core'
+} from '../core/Component'
 
 export interface IWorld { }
 

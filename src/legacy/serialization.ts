@@ -1,7 +1,8 @@
 
 import { createObserverSerializer, createObserverDeserializer } from '../serialization/ObserverSerializer'
 import { createSoASerializer, createSoADeserializer } from '../serialization/SoASerializer'
-import { IWorld, Component, IComponentProp, query } from '../core'
+import { query } from '../core/Query'
+import { IWorld, Component, IComponentProp } from './index'
 
 export type Serializer<W extends IWorld = IWorld> = (target: W | number[]) => ArrayBuffer
 export type Deserializer<W extends IWorld = IWorld> = (world: W, packet: ArrayBuffer, mode?: 'full' | 'partial') => number[]

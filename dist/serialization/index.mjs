@@ -174,9 +174,9 @@ var createObservable = () => {
 // src/core/Query.ts
 var $opType = Symbol("opType");
 var $opTerms = Symbol("opTerms");
-function queryCheckEntity(world, query4, eid) {
+function queryCheckEntity(world, query2, eid) {
   const ctx = world[$internal];
-  const { masks, notMasks, orMasks, generations } = query4;
+  const { masks, notMasks, orMasks, generations } = query2;
   for (let i = 0; i < generations.length; i++) {
     const generationId = generations[i];
     const qMask = masks[generationId];
@@ -195,27 +195,19 @@ function queryCheckEntity(world, query4, eid) {
   }
   return true;
 }
-var queryAddEntity = (query4, eid) => {
-  query4.toRemove.remove(eid);
-  query4.addObservable.notify(eid);
-  query4.add(eid);
+var queryAddEntity = (query2, eid) => {
+  query2.toRemove.remove(eid);
+  query2.addObservable.notify(eid);
+  query2.add(eid);
 };
-var queryRemoveEntity = (world, query4, eid) => {
+var queryRemoveEntity = (world, query2, eid) => {
   const ctx = world[$internal];
-  const has = query4.has(eid);
-  if (!has || query4.toRemove.has(eid)) return;
-  query4.toRemove.add(eid);
-  ctx.dirtyQueries.add(query4);
-  query4.removeObservable.notify(eid);
+  const has = query2.has(eid);
+  if (!has || query2.toRemove.has(eid)) return;
+  query2.toRemove.add(eid);
+  ctx.dirtyQueries.add(query2);
+  query2.removeObservable.notify(eid);
 };
-
-// src/legacy/index.ts
-import { observe as observe2, onAdd as onAdd2, onRemove as onRemove2, query as query2 } from "../core";
-import {
-  addComponent as ecsAddComponent,
-  hasComponent as ecsHasComponent,
-  removeComponent as ecsRemoveComponent
-} from "../core";
 
 // src/serialization/ObserverSerializer.ts
 import {
@@ -291,9 +283,6 @@ var createObserverDeserializer = (world, networkedTag, components) => {
   };
 };
 
-// src/legacy/serialization.ts
-import { query } from "../core";
-
 // src/legacy/index.ts
 var $modifier = Symbol("$modifier");
 
@@ -340,9 +329,9 @@ var withAutoRemoveSubject = (relation) => {
   ctx.autoRemoveSubject = true;
   return relation;
 };
-var withOnTargetRemoved = (onRemove4) => (relation) => {
+var withOnTargetRemoved = (onRemove3) => (relation) => {
   const ctx = relation[$relationData];
-  ctx.onTargetRemoved = onRemove4;
+  ctx.onTargetRemoved = onRemove3;
   return relation;
 };
 var Pair = (relation, target) => {
@@ -433,13 +422,13 @@ var getComponentData = (world, eid, component) => {
 };
 var recursivelyInherit = (world, baseEid, inheritedEid) => {
   const ctx = world[$internal];
-  addComponent3(world, baseEid, IsA(inheritedEid));
+  addComponent2(world, baseEid, IsA(inheritedEid));
   const components = getEntityComponents(world, inheritedEid);
   for (const component of components) {
     if (component === Prefab) {
       continue;
     }
-    addComponent3(world, baseEid, component);
+    addComponent2(world, baseEid, component);
     const componentData = ctx.componentMap.get(component);
     if (componentData && componentData.setObservable) {
       const data = getComponentData(world, inheritedEid, component);
@@ -451,7 +440,7 @@ var recursivelyInherit = (world, baseEid, inheritedEid) => {
     recursivelyInherit(world, baseEid, inheritedEid2);
   }
 };
-var addComponent3 = (world, eid, ...components) => {
+var addComponent2 = (world, eid, ...components) => {
   const ctx = world[$internal];
   if (!entityExists(world, eid)) {
     throw new Error(`Cannot add component - entity ${eid} does not exist in the world.`);
@@ -478,14 +467,14 @@ var addComponent3 = (world, eid, ...components) => {
     }
     if (component[$isPairComponent]) {
       const relation = component[$relation];
-      addComponent3(world, eid, Pair(relation, Wildcard));
+      addComponent2(world, eid, Pair(relation, Wildcard));
       const target = component[$pairTarget];
-      addComponent3(world, eid, Pair(Wildcard, target));
+      addComponent2(world, eid, Pair(Wildcard, target));
       const relationData = relation[$relationData];
       if (relationData.exclusiveRelation === true && target !== Wildcard) {
         const oldTarget = getRelationTargets(world, eid, relation)[0];
         if (oldTarget !== void 0 && oldTarget !== null && oldTarget !== target) {
-          removeComponent3(world, eid, relation(oldTarget));
+          removeComponent2(world, eid, relation(oldTarget));
         }
       }
       if (relation === IsA) {
@@ -497,7 +486,7 @@ var addComponent3 = (world, eid, ...components) => {
     }
   });
 };
-var removeComponent3 = (world, eid, ...components) => {
+var removeComponent2 = (world, eid, ...components) => {
   const ctx = world[$internal];
   if (!entityExists(world, eid)) {
     throw new Error(`Cannot remove component - entity ${eid} does not exist in the world.`);
@@ -516,11 +505,11 @@ var removeComponent3 = (world, eid, ...components) => {
     ctx.entityComponents.get(eid).delete(component);
     if (component[$isPairComponent]) {
       const target = component[$pairTarget];
-      removeComponent3(world, eid, Pair(Wildcard, target));
+      removeComponent2(world, eid, Pair(Wildcard, target));
       const relation = component[$relation];
       const otherTargets = getRelationTargets(world, eid, relation);
       if (otherTargets.length === 0) {
-        removeComponent3(world, eid, Pair(relation, Wildcard));
+        removeComponent2(world, eid, Pair(relation, Wildcard));
       }
     }
   });
@@ -587,7 +576,7 @@ var createSnapshotDeserializer = (world, components) => {
       for (let i = 0; i < componentCount; i++) {
         const componentIndex = dataView.getUint8(offset);
         offset += 1;
-        addComponent3(world, worldEntityId, components[componentIndex]);
+        addComponent2(world, worldEntityId, components[componentIndex]);
       }
     }
     soaDeserializer(packet.slice(offset), entityIdMap);
