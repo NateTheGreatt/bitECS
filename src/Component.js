@@ -97,12 +97,13 @@ export const hasComponent = (world, component, eid) => {
  * @param {Component} component
  * @param {number} eid
  * @param {boolean} [reset=false]
+ * @returns {boolean}
  */
 export const addComponent = (world, component, eid, reset=false) => {
   if (eid === undefined) throw new Error('bitECS - entity is undefined.')
   if (!world[$entitySparseSet].has(eid)) throw new Error('bitECS - entity does not exist in the world.')
   if (!world[$componentMap].has(component)) registerComponent(world, component)
-  if (hasComponent(world, component, eid)) return
+  if (hasComponent(world, component, eid)) return false
 
   const c = world[$componentMap].get(component)
   const { generationId, bitflag, queries, notQueries } = c
@@ -129,6 +130,7 @@ export const addComponent = (world, component, eid, reset=false) => {
 
   // Zero out each property value
   if (reset) resetStoreFor(component, eid)
+  return true
 }
 
 /**
