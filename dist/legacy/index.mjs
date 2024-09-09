@@ -643,8 +643,10 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
       offset += 4;
       dataView.setUint8(offset, type);
       offset += 1;
-      dataView.setUint8(offset, componentId);
-      offset += 1;
+      if (type === 2 /* AddComponent */ || type === 3 /* RemoveComponent */) {
+        dataView.setUint8(offset, componentId);
+        offset += 1;
+      }
     }
     queue.length = 0;
     return buffer.slice(0, offset);
@@ -659,22 +661,29 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
       offset += 4;
       const operationType = dataView.getUint8(offset);
       offset += 1;
-      const componentId = dataView.getUint8(offset);
-      offset += 1;
+      let componentId = -1;
+      if (operationType === 2 /* AddComponent */ || operationType === 3 /* RemoveComponent */) {
+        componentId = dataView.getUint8(offset);
+        offset += 1;
+      }
       const component = components[componentId];
       let worldEntityId = entityIdMapping.get(packetEntityId);
-      if (worldEntityId === void 0) {
-        worldEntityId = addEntity(world);
-        entityIdMapping.set(packetEntityId, worldEntityId);
-      }
       if (operationType === 0 /* AddEntity */) {
-        addComponent2(world, worldEntityId, networkedTag);
-      } else if (operationType === 1 /* RemoveEntity */) {
-        removeEntity(world, worldEntityId);
-      } else if (operationType === 2 /* AddComponent */) {
-        addComponent2(world, worldEntityId, component);
-      } else if (operationType === 3 /* RemoveComponent */) {
-        removeComponent2(world, worldEntityId, component);
+        if (worldEntityId === void 0) {
+          worldEntityId = addEntity(world);
+          entityIdMapping.set(packetEntityId, worldEntityId);
+          addComponent2(world, worldEntityId, networkedTag);
+        } else {
+          throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
+        }
+      } else if (worldEntityId !== void 0 && entityExists(world, worldEntityId)) {
+        if (operationType === 1 /* RemoveEntity */) {
+          removeEntity(world, worldEntityId);
+        } else if (operationType === 2 /* AddComponent */) {
+          addComponent2(world, worldEntityId, component);
+        } else if (operationType === 3 /* RemoveComponent */) {
+          removeComponent2(world, worldEntityId, component);
+        }
       }
     }
     return entityIdMapping;

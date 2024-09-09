@@ -1,7 +1,7 @@
 import { addComponent, removeComponent } from '../core/Component'
 import { addEntity, removeEntity } from '../core/Entity'
 import { observe, onAdd, onRemove } from '../core/Query'
-import { World, ComponentRef } from '../core/index'
+import { World, ComponentRef, entityExists } from '../core/index'
 import { EntityId } from '../core/Entity'
 
 enum OperationType {
@@ -51,8 +51,10 @@ export const createObserverSerializer = (world: World, networkedTag: ComponentRe
             offset += 4
             dataView.setUint8(offset, type)
             offset += 1
-            dataView.setUint8(offset, componentId)
-            offset += 1
+            if (type === OperationType.AddComponent || type === OperationType.RemoveComponent) {
+                dataView.setUint8(offset, componentId)
+                offset += 1
+            }
         }
         queue.length = 0
 
@@ -66,7 +68,7 @@ export const createObserverSerializer = (world: World, networkedTag: ComponentRe
  * @param {any} networkedTag - The component used to tag networked entities.
  * @param {any[]} components - An array of components that can be added or removed.
  * @returns {Function} A function that takes a serialized packet and an optional entity ID mapping, and applies the changes to the world.
- */
+*/
 export const createObserverDeserializer = (world: World, networkedTag: ComponentRef, components: ComponentRef[], entityIdMapping: Map<number, number> = new Map()) => {
     return (packet: ArrayBuffer) => {
         const dataView = new DataView(packet)
@@ -77,24 +79,32 @@ export const createObserverDeserializer = (world: World, networkedTag: Component
             offset += 4
             const operationType = dataView.getUint8(offset)
             offset += 1
-            const componentId = dataView.getUint8(offset)
-            offset += 1
+            let componentId = -1
+            if (operationType === OperationType.AddComponent || operationType === OperationType.RemoveComponent) {
+                componentId = dataView.getUint8(offset)
+                offset += 1
+            }
 
             const component = components[componentId]
+            
+            let worldEntityId = entityIdMapping.get(packetEntityId);
 
-            let worldEntityId = entityIdMapping.get(packetEntityId)
-            if (worldEntityId === undefined) {
-                worldEntityId = addEntity(world)
-                entityIdMapping.set(packetEntityId, worldEntityId)
-            }
             if (operationType === OperationType.AddEntity) {
-                addComponent(world, worldEntityId, networkedTag)
-            } else if (operationType === OperationType.RemoveEntity) {
-                removeEntity(world, worldEntityId)
-            } else if (operationType === OperationType.AddComponent) {
-                addComponent(world, worldEntityId, component)
-            } else if (operationType === OperationType.RemoveComponent) {
-                removeComponent(world, worldEntityId, component)
+                if (worldEntityId === undefined) {
+                    worldEntityId = addEntity(world);
+                    entityIdMapping.set(packetEntityId, worldEntityId);
+                    addComponent(world, worldEntityId, networkedTag)
+                } else {
+                    throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
+                }
+            } else if (worldEntityId !== undefined && entityExists(world, worldEntityId)) {
+                if (operationType === OperationType.RemoveEntity) {
+                    removeEntity(world, worldEntityId)
+                } else if (operationType === OperationType.AddComponent) {
+                    addComponent(world, worldEntityId, component)
+                } else if (operationType === OperationType.RemoveComponent) {
+                    removeComponent(world, worldEntityId, component)
+                }
             }
         }
 

@@ -1,11 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import {
-    addComponent,
-    removeComponent,
-    addEntity,
-    createWorld,
-    hasComponent
-} from '../../src/core'
+import { addComponent, removeComponent, hasComponent } from '../../src/core/Component'
+import { addEntity, entityExists, removeEntity } from '../../src/core/Entity'
+import { createWorld } from '../../src/core/World'
 
 import { createObserverSerializer, createObserverDeserializer } from '../../src/serialization'
 
@@ -113,5 +109,72 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
         entityIdMapping = deserialize(serializedData)
 
         expect(hasComponent(world, entityIdMapping.get(entity)!, Position)).toBe(true)
+    })
+
+    it('should correctly handle add and remove entity sequence', () => {
+        const world1 = createWorld()
+        const world2 = createWorld()
+        const networkedTag = {}
+        const Position = {}
+        const Velocity = {}
+        const components = [Position, Velocity]
+
+        const serialize = createObserverSerializer(world1, networkedTag, components)
+        const deserialize = createObserverDeserializer(world2, networkedTag, components)
+
+        // Add entity and components in world1
+        const entity = addEntity(world1)
+        addComponent(world1, entity, Position)
+        addComponent(world1, entity, networkedTag)
+
+        // Serialize from world1 and deserialize into world2
+        let serializedData = serialize()
+        let entityIdMapping = deserialize(serializedData)
+
+        // Check if entity and components are added in world2
+        expect(entityIdMapping.has(entity)).toBe(true)
+        expect(hasComponent(world2, entityIdMapping.get(entity)!, Position)).toBe(true)
+
+        // Remove entity in world1
+        removeEntity(world1, entity)
+
+        // Serialize from world1 and deserialize into world2
+        serializedData = serialize()
+        entityIdMapping = deserialize(serializedData)
+
+        // Check if entity is removed in world2
+        expect(entityExists(world2, entityIdMapping.get(entity)!)).toBe(false)
+    })
+
+    it('should correctly handle add and remove entity sequence with no components', () => {
+        const world1 = createWorld()
+        const world2 = createWorld()
+        const networkedTag = {}
+        const components: any[] = []
+
+        const serialize = createObserverSerializer(world1, networkedTag, components)
+        const deserialize = createObserverDeserializer(world2, networkedTag, components)
+
+        // Add entity in world1
+        const entity = addEntity(world1)
+        addComponent(world1, entity, networkedTag)
+
+        // Serialize from world1 and deserialize into world2
+        let serializedData = serialize()
+        let entityIdMapping = deserialize(serializedData)
+
+        // Check if entity is added in world2
+        expect(entityIdMapping.has(entity)).toBe(true)
+        expect(entityExists(world2, entityIdMapping.get(entity)!)).toBe(true)
+
+        // Remove entity in world1
+        removeEntity(world1, entity)
+
+        // Serialize from world1 and deserialize into world2
+        serializedData = serialize()
+        entityIdMapping = deserialize(serializedData)
+
+        // Check if entity is removed in world2
+        expect(entityExists(world2, entityIdMapping.get(entity)!)).toBe(false)
     })
 })
