@@ -790,7 +790,7 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
           entityIdMapping.set(packetEntityId, worldEntityId);
           addComponent(world, worldEntityId, networkedTag);
         } else {
-          throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
+          console.error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
         }
       } else if (worldEntityId !== void 0 && entityExists(world, worldEntityId)) {
         if (operationType === 1 /* RemoveEntity */) {

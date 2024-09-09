@@ -95,7 +95,7 @@ export const createObserverDeserializer = (world: World, networkedTag: Component
                     entityIdMapping.set(packetEntityId, worldEntityId);
                     addComponent(world, worldEntityId, networkedTag)
                 } else {
-                    throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
+                    console.error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
                 }
             } else if (worldEntityId !== undefined && entityExists(world, worldEntityId)) {
                 if (operationType === OperationType.RemoveEntity) {
