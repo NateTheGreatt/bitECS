@@ -261,7 +261,7 @@ var incrementVersion = (index, id) => {
 var addEntityId = (index) => {
   if (index.aliveCount < index.dense.length) {
     const recycledId = index.dense[index.aliveCount];
-    const entityId = getId(index, recycledId);
+    const entityId = recycledId;
     index.sparse[entityId] = index.aliveCount;
     index.aliveCount++;
     return recycledId;
@@ -273,16 +273,15 @@ var addEntityId = (index) => {
   return id;
 };
 var removeEntityId = (index, id) => {
-  const entityId = getId(index, id);
-  const denseIndex = index.sparse[entityId];
+  const denseIndex = index.sparse[id];
   if (denseIndex === void 0 || denseIndex >= index.aliveCount) {
     return;
   }
   const lastIndex = index.aliveCount - 1;
   const lastId = index.dense[lastIndex];
-  index.sparse[getId(index, lastId)] = denseIndex;
+  index.sparse[lastId] = denseIndex;
   index.dense[denseIndex] = lastId;
-  index.sparse[entityId] = lastIndex;
+  index.sparse[id] = lastIndex;
   index.dense[lastIndex] = id;
   if (index.versioning) {
     const newId = incrementVersion(index, id);
@@ -909,7 +908,7 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
           entityIdMapping.set(packetEntityId, worldEntityId);
           addComponent(world, worldEntityId, networkedTag);
         } else {
-          console.error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
+          throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
         }
       } else if (worldEntityId !== void 0 && entityExists(world, worldEntityId)) {
         if (operationType === 1 /* RemoveEntity */) {

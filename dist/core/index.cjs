@@ -94,8 +94,8 @@ var createEntityIndex = (versioning = false, versionBits = 8) => {
   const versionShift = entityBits;
   const versionMask = (1 << versionBits) - 1 << versionShift;
   return {
-    aliveCount: 1,
-    dense: [0],
+    aliveCount: 0,
+    dense: [],
     sparse: [],
     maxId: 0,
     versioning,
@@ -108,7 +108,7 @@ var createEntityIndex = (versioning = false, versionBits = 8) => {
 var addEntityId = (index) => {
   if (index.aliveCount < index.dense.length) {
     const recycledId = index.dense[index.aliveCount];
-    const entityId = getId(index, recycledId);
+    const entityId = recycledId;
     index.sparse[entityId] = index.aliveCount;
     index.aliveCount++;
     return recycledId;
@@ -120,16 +120,15 @@ var addEntityId = (index) => {
   return id;
 };
 var removeEntityId = (index, id) => {
-  const entityId = getId(index, id);
-  const denseIndex = index.sparse[entityId];
+  const denseIndex = index.sparse[id];
   if (denseIndex === void 0 || denseIndex >= index.aliveCount) {
     return;
   }
   const lastIndex = index.aliveCount - 1;
   const lastId = index.dense[lastIndex];
-  index.sparse[getId(index, lastId)] = denseIndex;
+  index.sparse[lastId] = denseIndex;
   index.dense[denseIndex] = lastId;
-  index.sparse[entityId] = lastIndex;
+  index.sparse[id] = lastIndex;
   index.dense[lastIndex] = id;
   if (index.versioning) {
     const newId = incrementVersion(index, id);
