@@ -23,14 +23,20 @@ export {
 	addPrefab,
 } from './Entity'
 
+export { 
+	createEntityIndex,
+	getId,
+	getVersion,
+} from './EntityIndex'
+
 export {
 	registerComponent,
 	registerComponents,
-	// hasComponent,
-	// addComponent,
-	// addComponents,
-	// removeComponent,
-	// removeComponents,
+	hasComponent,
+	addComponent,
+	addComponents,
+	removeComponent,
+	removeComponents,
 	getComponentData,
 	setComponent,
 	set
@@ -50,9 +56,9 @@ export {
 	observe,
 	onAdd,
 	onRemove,
-	// Or,
+	Or,
 	And,
-	// Not,
+	Not,
 	Any,
 	All,
 	None,
@@ -64,7 +70,7 @@ export type {
 	ObservableHookDef,
 	ObservableHook,
 	QueryResult,
-	// Query,
+	Query,
 	QueryOperatorType,
 	OpReturnType,
 	QueryOperator,
@@ -95,34 +101,3 @@ export type {
 	Relation,
 	RelationTarget,
 } from './Relation'
-
-export { createEntityIndex } from './EntityIndex'
-
-export {
-  IWorld,
-  ComponentProp,
-  IComponentProp,
-  IComponent,
-  Component,
-  QueryModifier,
-  Query,
-  $modifier,
-  Not,
-  Or,
-  Changed,
-  defineQuery,
-  enterQuery,
-  exitQuery,
-  addComponent,
-  hasComponent,
-  removeComponent,
-  ISchema,
-  Type,
-  ListType,
-  Types,
-  defineComponent,
-  ComponentType,
-  defineSerializer,
-  defineDeserializer,
-  DESERIALIZE_MODE,
-} from '../legacy/index'
