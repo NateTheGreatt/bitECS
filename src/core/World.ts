@@ -11,7 +11,7 @@ export type WorldContext = {
     entityMasks: number[][]
     entityComponents: Map<EntityId, Set<ComponentRef>>
     bitflag: number
-    componentMap: WeakMap<ComponentRef, ComponentData>
+    componentMap: Map<ComponentRef, ComponentData>
     componentCount: number
     queries: Set<Query>
     queriesHashMap: Map<string, Query>
@@ -31,7 +31,7 @@ const createBaseWorld = <T extends object>(context?: T, entityIndex?: EntityInde
         entityMasks: [[]],
         entityComponents: new Map(),
         bitflag: 1,
-        componentMap: new WeakMap(),
+        componentMap: new Map(),
         componentCount: 0,
         queries: new Set(),
         queriesHashMap: new Map(),
@@ -59,13 +59,7 @@ export function createWorld<T extends object = {}>(
         }
     })
 
-    const world = createBaseWorld<T>(context, entityIndex)
-
-    if (entityIndex) {
-        world[$internal].entityIndex = entityIndex
-    }
-
-    return world
+    return createBaseWorld<T>(context, entityIndex)
 }
 
 /**
