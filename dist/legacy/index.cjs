@@ -22,18 +22,18 @@ __export(legacy_exports, {
   $modifier: () => $modifier,
   Changed: () => Changed,
   DESERIALIZE_MODE: () => DESERIALIZE_MODE,
-  Not: () => Not,
-  Or: () => Or,
+  Not: () => Not2,
+  Or: () => Or2,
   Types: () => Types,
-  addComponent: () => addComponent,
+  addComponent: () => addComponent2,
   defineComponent: () => defineComponent,
   defineDeserializer: () => defineDeserializer,
   defineQuery: () => defineQuery,
   defineSerializer: () => defineSerializer,
   enterQuery: () => enterQuery,
   exitQuery: () => exitQuery,
-  hasComponent: () => hasComponent,
-  removeComponent: () => removeComponent
+  hasComponent: () => hasComponent2,
+  removeComponent: () => removeComponent2
 });
 module.exports = __toCommonJS(legacy_exports);
 
@@ -277,9 +277,9 @@ var removeEntity = (world, eid) => {
         }
         const relation = component[$relation];
         const relationData = relation[$relationData];
-        componentRemovalQueue.push(() => removeComponent2(world, subject, Pair(Wildcard, currentEid)));
+        componentRemovalQueue.push(() => removeComponent(world, subject, Pair(Wildcard, currentEid)));
         if (component[$pairTarget] === currentEid) {
-          componentRemovalQueue.push(() => removeComponent2(world, subject, component));
+          componentRemovalQueue.push(() => removeComponent(world, subject, component));
           if (relationData.autoRemoveSubject) {
             removalQueue.push(subject);
           }
@@ -359,7 +359,7 @@ var registerComponent = (world, component) => {
   }
   return data;
 };
-var hasComponent2 = (world, eid, component) => {
+var hasComponent = (world, eid, component) => {
   const ctx = world[$internal];
   const registeredComponent = ctx.componentMap.get(component);
   if (!registeredComponent) return false;
@@ -373,20 +373,20 @@ var getComponentData = (world, eid, component) => {
   if (!componentData) {
     return void 0;
   }
-  if (!hasComponent2(world, eid, component)) {
+  if (!hasComponent(world, eid, component)) {
     return void 0;
   }
   return componentData.getObservable.notify(eid);
 };
 var recursivelyInherit = (world, baseEid, inheritedEid) => {
   const ctx = world[$internal];
-  addComponent2(world, baseEid, IsA(inheritedEid));
+  addComponent(world, baseEid, IsA(inheritedEid));
   const components = getEntityComponents(world, inheritedEid);
   for (const component of components) {
     if (component === Prefab) {
       continue;
     }
-    addComponent2(world, baseEid, component);
+    addComponent(world, baseEid, component);
     const componentData = ctx.componentMap.get(component);
     if (componentData && componentData.setObservable) {
       const data = getComponentData(world, inheritedEid, component);
@@ -398,7 +398,7 @@ var recursivelyInherit = (world, baseEid, inheritedEid) => {
     recursivelyInherit(world, baseEid, inheritedEid2);
   }
 };
-var addComponent2 = (world, eid, ...components) => {
+var addComponent = (world, eid, ...components) => {
   const ctx = world[$internal];
   if (!entityExists(world, eid)) {
     throw new Error(`Cannot add component - entity ${eid} does not exist in the world.`);
@@ -407,11 +407,11 @@ var addComponent2 = (world, eid, ...components) => {
     const component = "component" in componentOrSet ? componentOrSet.component : componentOrSet;
     const data = "data" in componentOrSet ? componentOrSet.data : void 0;
     if (!ctx.componentMap.has(component)) registerComponent(world, component);
-    if (hasComponent2(world, eid, component)) return;
+    if (hasComponent(world, eid, component)) return;
     const componentData = ctx.componentMap.get(component);
     const { generationId, bitflag, queries } = componentData;
     ctx.entityMasks[generationId][eid] |= bitflag;
-    if (!hasComponent2(world, eid, Prefab)) {
+    if (!hasComponent(world, eid, Prefab)) {
       queries.forEach((queryData) => {
         queryData.toRemove.remove(eid);
         const match = queryCheckEntity(world, queryData, eid);
@@ -425,14 +425,14 @@ var addComponent2 = (world, eid, ...components) => {
     }
     if (component[$isPairComponent]) {
       const relation = component[$relation];
-      addComponent2(world, eid, Pair(relation, Wildcard));
+      addComponent(world, eid, Pair(relation, Wildcard));
       const target = component[$pairTarget];
-      addComponent2(world, eid, Pair(Wildcard, target));
+      addComponent(world, eid, Pair(Wildcard, target));
       const relationData = relation[$relationData];
       if (relationData.exclusiveRelation === true && target !== Wildcard) {
         const oldTarget = getRelationTargets(world, eid, relation)[0];
         if (oldTarget !== void 0 && oldTarget !== null && oldTarget !== target) {
-          removeComponent2(world, eid, relation(oldTarget));
+          removeComponent(world, eid, relation(oldTarget));
         }
       }
       if (relation === IsA) {
@@ -444,13 +444,13 @@ var addComponent2 = (world, eid, ...components) => {
     }
   });
 };
-var removeComponent2 = (world, eid, ...components) => {
+var removeComponent = (world, eid, ...components) => {
   const ctx = world[$internal];
   if (!entityExists(world, eid)) {
     throw new Error(`Cannot remove component - entity ${eid} does not exist in the world.`);
   }
   components.forEach((component) => {
-    if (!hasComponent2(world, eid, component)) return;
+    if (!hasComponent(world, eid, component)) return;
     const componentNode = ctx.componentMap.get(component);
     const { generationId, bitflag, queries } = componentNode;
     ctx.entityMasks[generationId][eid] &= ~bitflag;
@@ -463,11 +463,11 @@ var removeComponent2 = (world, eid, ...components) => {
     ctx.entityComponents.get(eid).delete(component);
     if (component[$isPairComponent]) {
       const target = component[$pairTarget];
-      removeComponent2(world, eid, Pair(Wildcard, target));
+      removeComponent(world, eid, Pair(Wildcard, target));
       const relation = component[$relation];
       const otherTargets = getRelationTargets(world, eid, relation);
       if (otherTargets.length === 0) {
-        removeComponent2(world, eid, Pair(relation, Wildcard));
+        removeComponent(world, eid, Pair(relation, Wildcard));
       }
     }
   });
@@ -597,7 +597,7 @@ var registerQuery = (world, terms, options = {}) => {
   const entityIndex = ctx.entityIndex;
   for (let i = 0; i < entityIndex.aliveCount; i++) {
     const eid = entityIndex.dense[i];
-    if (hasComponent2(world, eid, Prefab)) continue;
+    if (hasComponent(world, eid, Prefab)) continue;
     const match = queryCheckEntity(world, query2, eid);
     if (match) {
       queryAddEntity(query2, eid);
@@ -669,38 +669,25 @@ var queryRemoveEntity = (world, query2, eid) => {
 };
 
 // src/serialization/ObserverSerializer.ts
-var OperationType = /* @__PURE__ */ ((OperationType2) => {
-  OperationType2[OperationType2["AddEntity"] = 0] = "AddEntity";
-  OperationType2[OperationType2["RemoveEntity"] = 1] = "RemoveEntity";
-  OperationType2[OperationType2["AddComponent"] = 2] = "AddComponent";
-  OperationType2[OperationType2["RemoveComponent"] = 3] = "RemoveComponent";
-  return OperationType2;
-})(OperationType || {});
 var createObserverSerializer = (world, networkedTag, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
-  console.log("Creating observer serializer");
   const dataView = new DataView(buffer);
   let offset = 0;
   const queue = [];
   observe(world, onAdd(networkedTag), (eid) => {
-    console.log(`Entity ${eid} added to network`);
-    queue.push([eid, 0 /* AddEntity */]);
+    queue.push([eid, 0 /* AddEntity */, -1]);
   });
   observe(world, onRemove(networkedTag), (eid) => {
-    console.log(`Entity ${eid} removed from network`);
-    queue.push([eid, 1 /* RemoveEntity */]);
+    queue.push([eid, 1 /* RemoveEntity */, -1]);
   });
   components.forEach((component, i) => {
     observe(world, onAdd(networkedTag, component), (eid) => {
-      console.log(`Component ${i} added to entity ${eid}`);
       queue.push([eid, 2 /* AddComponent */, i]);
     });
     observe(world, onRemove(networkedTag, component), (eid) => {
-      console.log(`Component ${i} removed from entity ${eid}`);
       queue.push([eid, 3 /* RemoveComponent */, i]);
     });
   });
   return () => {
-    console.log("Serializing changes");
     offset = 0;
     for (let i = 0; i < queue.length; i++) {
       const [entityId, type, componentId] = queue[i];
@@ -712,17 +699,13 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
         dataView.setUint8(offset, componentId);
         offset += 1;
       }
-      console.log(`Serialized: Entity ${entityId}, Operation ${OperationType[type]}${componentId !== void 0 ? `, Component ${componentId}` : ""}`);
     }
     queue.length = 0;
-    console.log(`Serialization complete. Total bytes: ${offset}`);
     return buffer.slice(0, offset);
   };
 };
 var createObserverDeserializer = (world, networkedTag, components, entityIdMapping = /* @__PURE__ */ new Map()) => {
-  console.log("Creating observer deserializer");
   return (packet) => {
-    console.log(`Deserializing packet of ${packet.byteLength} bytes`);
     const dataView = new DataView(packet);
     let offset = 0;
     while (offset < packet.byteLength) {
@@ -737,30 +720,24 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
       }
       const component = components[componentId];
       let worldEntityId = entityIdMapping.get(packetEntityId);
-      console.log(`Processing: Entity ${packetEntityId}, Operation ${OperationType[operationType]}${componentId !== -1 ? `, Component ${componentId}` : ""}`);
       if (operationType === 0 /* AddEntity */) {
         if (worldEntityId === void 0) {
           worldEntityId = addEntity(world);
           entityIdMapping.set(packetEntityId, worldEntityId);
-          addComponent2(world, worldEntityId, networkedTag);
-          console.log(`Added new entity. Packet ID: ${packetEntityId}, World ID: ${worldEntityId}`);
+          addComponent(world, worldEntityId, networkedTag);
         } else {
-          throw new Error(`Entity with ID ${packetEntityId} already added.`);
+          console.error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
         }
       } else if (worldEntityId !== void 0 && entityExists(world, worldEntityId)) {
         if (operationType === 1 /* RemoveEntity */) {
           removeEntity(world, worldEntityId);
-          console.log(`Removed entity. World ID: ${worldEntityId}`);
         } else if (operationType === 2 /* AddComponent */) {
-          addComponent2(world, worldEntityId, component);
-          console.log(`Added component ${componentId} to entity ${worldEntityId}`);
+          addComponent(world, worldEntityId, component);
         } else if (operationType === 3 /* RemoveComponent */) {
-          removeComponent2(world, worldEntityId, component);
-          console.log(`Removed component ${componentId} from entity ${worldEntityId}`);
+          removeComponent(world, worldEntityId, component);
         }
       }
     }
-    console.log("Deserialization complete");
     return entityIdMapping;
   };
 };
@@ -947,8 +924,8 @@ function modifier(c, mod) {
   inner[$modifier] = true;
   return inner;
 }
-var Not = (c) => modifier(c, "not");
-var Or = (c) => modifier(c, "or");
+var Not2 = (c) => modifier(c, "not");
+var Or2 = (c) => modifier(c, "or");
 var Changed = (c) => modifier(c, "changed");
 function defineQuery(components) {
   const queryFn = (world) => query(world, components);
@@ -981,9 +958,9 @@ function exitQuery(queryFn) {
     return results;
   };
 }
-var addComponent = (world, component, eid) => addComponent2(world, eid, component);
-var hasComponent = (world, component, eid) => hasComponent2(world, eid, component);
-var removeComponent = (world, component, eid) => removeComponent2(world, eid, component);
+var addComponent2 = (world, component, eid) => addComponent(world, eid, component);
+var hasComponent2 = (world, component, eid) => hasComponent(world, eid, component);
+var removeComponent2 = (world, component, eid) => removeComponent(world, eid, component);
 var Types = {
   i8: "i8",
   ui8: "ui8",

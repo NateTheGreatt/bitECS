@@ -498,106 +498,6 @@ var queryRemoveEntity = (world, query2, eid) => {
   query2.removeObservable.notify(eid);
 };
 
-// src/serialization/ObserverSerializer.ts
-var OperationType = /* @__PURE__ */ ((OperationType2) => {
-  OperationType2[OperationType2["AddEntity"] = 0] = "AddEntity";
-  OperationType2[OperationType2["RemoveEntity"] = 1] = "RemoveEntity";
-  OperationType2[OperationType2["AddComponent"] = 2] = "AddComponent";
-  OperationType2[OperationType2["RemoveComponent"] = 3] = "RemoveComponent";
-  return OperationType2;
-})(OperationType || {});
-var createObserverSerializer = (world, networkedTag, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
-  console.log("Creating observer serializer");
-  const dataView = new DataView(buffer);
-  let offset = 0;
-  const queue = [];
-  observe(world, onAdd(networkedTag), (eid) => {
-    console.log(`Entity ${eid} added to network`);
-    queue.push([eid, 0 /* AddEntity */]);
-  });
-  observe(world, onRemove(networkedTag), (eid) => {
-    console.log(`Entity ${eid} removed from network`);
-    queue.push([eid, 1 /* RemoveEntity */]);
-  });
-  components.forEach((component, i) => {
-    observe(world, onAdd(networkedTag, component), (eid) => {
-      console.log(`Component ${i} added to entity ${eid}`);
-      queue.push([eid, 2 /* AddComponent */, i]);
-    });
-    observe(world, onRemove(networkedTag, component), (eid) => {
-      console.log(`Component ${i} removed from entity ${eid}`);
-      queue.push([eid, 3 /* RemoveComponent */, i]);
-    });
-  });
-  return () => {
-    console.log("Serializing changes");
-    offset = 0;
-    for (let i = 0; i < queue.length; i++) {
-      const [entityId, type, componentId] = queue[i];
-      dataView.setUint32(offset, entityId);
-      offset += 4;
-      dataView.setUint8(offset, type);
-      offset += 1;
-      if (type === 2 /* AddComponent */ || type === 3 /* RemoveComponent */) {
-        dataView.setUint8(offset, componentId);
-        offset += 1;
-      }
-      console.log(`Serialized: Entity ${entityId}, Operation ${OperationType[type]}${componentId !== void 0 ? `, Component ${componentId}` : ""}`);
-    }
-    queue.length = 0;
-    console.log(`Serialization complete. Total bytes: ${offset}`);
-    return buffer.slice(0, offset);
-  };
-};
-var createObserverDeserializer = (world, networkedTag, components, entityIdMapping = /* @__PURE__ */ new Map()) => {
-  console.log("Creating observer deserializer");
-  return (packet) => {
-    console.log(`Deserializing packet of ${packet.byteLength} bytes`);
-    const dataView = new DataView(packet);
-    let offset = 0;
-    while (offset < packet.byteLength) {
-      const packetEntityId = dataView.getUint32(offset);
-      offset += 4;
-      const operationType = dataView.getUint8(offset);
-      offset += 1;
-      let componentId = -1;
-      if (operationType === 2 /* AddComponent */ || operationType === 3 /* RemoveComponent */) {
-        componentId = dataView.getUint8(offset);
-        offset += 1;
-      }
-      const component = components[componentId];
-      let worldEntityId = entityIdMapping.get(packetEntityId);
-      console.log(`Processing: Entity ${packetEntityId}, Operation ${OperationType[operationType]}${componentId !== -1 ? `, Component ${componentId}` : ""}`);
-      if (operationType === 0 /* AddEntity */) {
-        if (worldEntityId === void 0) {
-          worldEntityId = addEntity(world);
-          entityIdMapping.set(packetEntityId, worldEntityId);
-          addComponent(world, worldEntityId, networkedTag);
-          console.log(`Added new entity. Packet ID: ${packetEntityId}, World ID: ${worldEntityId}`);
-        } else {
-          throw new Error(`Entity with ID ${packetEntityId} already added.`);
-        }
-      } else if (worldEntityId !== void 0 && entityExists(world, worldEntityId)) {
-        if (operationType === 1 /* RemoveEntity */) {
-          removeEntity(world, worldEntityId);
-          console.log(`Removed entity. World ID: ${worldEntityId}`);
-        } else if (operationType === 2 /* AddComponent */) {
-          addComponent(world, worldEntityId, component);
-          console.log(`Added component ${componentId} to entity ${worldEntityId}`);
-        } else if (operationType === 3 /* RemoveComponent */) {
-          removeComponent(world, worldEntityId, component);
-          console.log(`Removed component ${componentId} from entity ${worldEntityId}`);
-        }
-      }
-    }
-    console.log("Deserialization complete");
-    return entityIdMapping;
-  };
-};
-
-// src/legacy/index.ts
-var $modifier = Symbol("$modifier");
-
 // src/core/Relation.ts
 var $relation = Symbol("relation");
 var $pairTarget = Symbol("pairTarget");
@@ -886,7 +786,7 @@ var removeComponent = (world, eid, ...components) => {
 };
 
 // src/serialization/SnapshotSerializer.ts
-var import_core2 = require("../core");
+var import_core = require("../core");
 var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
   const dataView = new DataView(buffer);
   let offset = 0;
@@ -919,23 +819,24 @@ var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024
   };
   return () => {
     offset = 0;
-    const entities = (0, import_core2.getAllEntities)(world);
+    const entities = (0, import_core.getAllEntities)(world);
     serializeEntityComponentRelationships(entities);
     serializeComponentData(entities);
     return buffer.slice(0, offset);
   };
 };
-var createSnapshotDeserializer = (world, components, entityIdMap = /* @__PURE__ */ new Map()) => {
+var createSnapshotDeserializer = (world, components) => {
   const soaDeserializer = createSoADeserializer(components);
   return (packet) => {
     const dataView = new DataView(packet);
     let offset = 0;
+    const entityIdMap = /* @__PURE__ */ new Map();
     const entityCount = dataView.getUint32(offset);
     offset += 4;
     for (let entityIndex = 0; entityIndex < entityCount; entityIndex++) {
       const packetEntityId = dataView.getUint32(offset);
       offset += 4;
-      const worldEntityId = (0, import_core2.addEntity)(world);
+      const worldEntityId = (0, import_core.addEntity)(world);
       entityIdMap.set(packetEntityId, worldEntityId);
       const componentCount = dataView.getUint8(offset);
       offset += 1;
@@ -947,6 +848,80 @@ var createSnapshotDeserializer = (world, components, entityIdMap = /* @__PURE__ 
     }
     soaDeserializer(packet.slice(offset), entityIdMap);
     return entityIdMap;
+  };
+};
+
+// src/serialization/ObserverSerializer.ts
+var createObserverSerializer = (world, networkedTag, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+  const dataView = new DataView(buffer);
+  let offset = 0;
+  const queue = [];
+  observe(world, onAdd(networkedTag), (eid) => {
+    queue.push([eid, 0 /* AddEntity */, -1]);
+  });
+  observe(world, onRemove(networkedTag), (eid) => {
+    queue.push([eid, 1 /* RemoveEntity */, -1]);
+  });
+  components.forEach((component, i) => {
+    observe(world, onAdd(networkedTag, component), (eid) => {
+      queue.push([eid, 2 /* AddComponent */, i]);
+    });
+    observe(world, onRemove(networkedTag, component), (eid) => {
+      queue.push([eid, 3 /* RemoveComponent */, i]);
+    });
+  });
+  return () => {
+    offset = 0;
+    for (let i = 0; i < queue.length; i++) {
+      const [entityId, type, componentId] = queue[i];
+      dataView.setUint32(offset, entityId);
+      offset += 4;
+      dataView.setUint8(offset, type);
+      offset += 1;
+      if (type === 2 /* AddComponent */ || type === 3 /* RemoveComponent */) {
+        dataView.setUint8(offset, componentId);
+        offset += 1;
+      }
+    }
+    queue.length = 0;
+    return buffer.slice(0, offset);
+  };
+};
+var createObserverDeserializer = (world, networkedTag, components, entityIdMapping = /* @__PURE__ */ new Map()) => {
+  return (packet) => {
+    const dataView = new DataView(packet);
+    let offset = 0;
+    while (offset < packet.byteLength) {
+      const packetEntityId = dataView.getUint32(offset);
+      offset += 4;
+      const operationType = dataView.getUint8(offset);
+      offset += 1;
+      let componentId = -1;
+      if (operationType === 2 /* AddComponent */ || operationType === 3 /* RemoveComponent */) {
+        componentId = dataView.getUint8(offset);
+        offset += 1;
+      }
+      const component = components[componentId];
+      let worldEntityId = entityIdMapping.get(packetEntityId);
+      if (operationType === 0 /* AddEntity */) {
+        if (worldEntityId === void 0) {
+          worldEntityId = addEntity(world);
+          entityIdMapping.set(packetEntityId, worldEntityId);
+          addComponent(world, worldEntityId, networkedTag);
+        } else {
+          console.error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
+        }
+      } else if (worldEntityId !== void 0 && entityExists(world, worldEntityId)) {
+        if (operationType === 1 /* RemoveEntity */) {
+          removeEntity(world, worldEntityId);
+        } else if (operationType === 2 /* AddComponent */) {
+          addComponent(world, worldEntityId, component);
+        } else if (operationType === 3 /* RemoveComponent */) {
+          removeComponent(world, worldEntityId, component);
+        }
+      }
+    }
+    return entityIdMapping;
   };
 };
 //# sourceMappingURL=index.cjs.map
