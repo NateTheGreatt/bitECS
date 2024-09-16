@@ -14,7 +14,7 @@ describe('World Tests', () => {
 
 		strictEqual(ctx.bitflag, 1)
 
-		strictEqual(ctx.componentMap.constructor.name, 'WeakMap')
+		strictEqual(ctx.componentMap.constructor.name, 'Map')
 		strictEqual(ctx.queries.constructor.name, 'Set')
 		strictEqual(ctx.dirtyQueries.constructor.name, 'Set')
 	})

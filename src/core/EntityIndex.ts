@@ -58,14 +58,14 @@ export const incrementVersion = (index: EntityIndex, id: number): number => {
  * @returns {EntityIndex} A new EntityIndex object.
  */
 export const createEntityIndex = (versioning: boolean = false, versionBits: number = 8): EntityIndex => {
-    const entityBits = 32 - versionBits;
-    const entityMask = (1 << entityBits) - 1;
-    const versionShift = entityBits;
-    const versionMask = ((1 << versionBits) - 1) << versionShift;
+    const entityBits = 32 - versionBits
+    const entityMask = (1 << entityBits) - 1
+    const versionShift = entityBits
+    const versionMask = ((1 << versionBits) - 1) << versionShift
 
     return {
-        aliveCount: 1,
-        dense: [0],
+        aliveCount: 0,
+        dense: [],
         sparse: [],
         maxId: 0,
         versioning,
@@ -73,8 +73,8 @@ export const createEntityIndex = (versioning: boolean = false, versionBits: numb
         entityMask,
         versionShift,
         versionMask
-    };
-};
+    }
+}
 
 /**
  * Adds a new entity ID to the index or recycles an existing one.
@@ -85,7 +85,7 @@ export const addEntityId = (index: EntityIndex): number => {
     if (index.aliveCount < index.dense.length) {
         // Recycle id
         const recycledId = index.dense[index.aliveCount];
-        const entityId = getId(index, recycledId);
+        const entityId = recycledId;
         index.sparse[entityId] = index.aliveCount;
         index.aliveCount++;
         return recycledId;
@@ -106,8 +106,7 @@ export const addEntityId = (index: EntityIndex): number => {
  * @param {number} id - The entity ID to remove.
  */
 export const removeEntityId = (index: EntityIndex, id: number): void => {
-    const entityId = getId(index, id);
-    const denseIndex = index.sparse[entityId];
+    const denseIndex = index.sparse[id];
     if (denseIndex === undefined || denseIndex >= index.aliveCount) {
         // Entity is not alive or doesn't exist, nothing to be done
         return;
@@ -117,11 +116,11 @@ export const removeEntityId = (index: EntityIndex, id: number): void => {
     const lastId = index.dense[lastIndex];
 
     // Swap with the last element
-    index.sparse[getId(index, lastId)] = denseIndex;
+    index.sparse[lastId] = denseIndex;
     index.dense[denseIndex] = lastId;
 
     // Update the removed entity's record
-    index.sparse[entityId] = lastIndex; // Set to lastIndex instead of undefined
+    index.sparse[id] = lastIndex; // Set to lastIndex instead of undefined
     index.dense[lastIndex] = id; // Keep the original id, don't strip version
 
     // Version the ID if enabled
