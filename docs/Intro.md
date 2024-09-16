@@ -140,6 +140,30 @@ removeMarkedEntities(world)
 ```
 
 
+### Entity ID Versioning with Entity Index
+
+Entity ID versioning is an alternative mechanism that helps in managing recycled entity IDs more effectively. When versioning is enabled, each entity ID carries a version number that increments every time the ID is recycled. This helps in distinguishing between different lifetimes of the same entity ID, preventing potential issues that arise from immediate recycling.
+
+To enable versioning, you can pass the `versioning` flag and the number of `versionBits` to the `createEntityIndex` function. The `versionBits` parameter determines how many bits are reserved for the version number (defaults to `8` bits which gives `255` recycles before the version resets).
+
+```ts
+const entityIndex = createEntityIndex(true, 8)
+const world = createWorld(entityIndex)
+
+const eid1 = addEntityId(entityIndex)
+const eid2 = addEntityId(entityIndex)
+removeEntityId(entityIndex, eid1)
+const eid3 = addEntityId(entityIndex)
+
+assert(eid1 !== eid3) // With versioning, eid1 and eid3 will not be the same
+```
+
+
+#### ⚠️ Caution with TypedArrays
+
+When using entity ID versioning, be cautious if you are using the entity ID as an index into a sparse TypedArray. The versioning mechanism will technically change the entity ID by large amounts, which can lead to issues where the entity ID overshoots the length of the TypedArray. This can cause unexpected behavior in your system, because Javascript does not throw when trying to access an index that is out of bounds. Make sure your TypedArrays are large enough, or otherwise just use manual recycling.
+
+
 ## Component
 Components are modular data containers that represent specific attributes of an entity. They define an entity's characteristics by their presence. For instance, separate components might represent position and mass.
 
@@ -169,12 +193,12 @@ const Position = [] as { x: number; y: number }[]
 
 Components are automatically registered with a world when they are first added to an entity in that world. This means that components are typically not shared between different worlds, ensuring data isolation. However, if multiple worlds share the same entity index, components can be shared across those worlds.
 
-It's important to associate components with the world object for this reason.
+Components can be manually associated with a world.
 
 ```ts
-createWorld(withContext({
+createWorld({
     components: { Position: { x: [], y: [] } }
-}));
+});
 
 ```
 
@@ -241,6 +265,10 @@ You can define a relation with or without properties. Here's an example of defin
 const Contains = createRelation(
 	withStore(() => ({ amount: [] as number[] }))
 )
+// or
+const Contains = createRelation({
+	store: () => ({ amount: [] as number[] })
+})
 ```
 
 ### Adding Relationships
@@ -315,9 +343,9 @@ addComponent(world, inventory, Contains(silver))
 const targets = getRelationTargets(world, inventory, Contains); // Returns [gold, silver]
 ```
 
-### Relationship wildcards
+### Relationship Wildcards
 
-When querying for relationship pairs, it is often useful to be able to find all instances for a given relationship or target. To accomplish this, you can use wildcard expressions:
+When querying for relationship pairs, it is often useful to be able to find all instances for a given relationship or target. `'*'` or `Wildcard` can be used to to accomplish this.
 
 ```ts
 const gold = addEntity(world)
@@ -332,12 +360,13 @@ addComponent(world, chest, Contains(gold))
 addComponent(world, backpack, Contains(clothes))
 addComponent(world, quiver, Contains(arrow))
 
-const containers = query(world, [Contains('*')]); // [chest, backpack, quiver]
+query(world, [Contains('*')]); // [chest, backpack, quiver]
+query(world, [Contains(Wildcard)]); // [chest, backpack, quiver]
 ```
 
-### Inverting Wildcard Search with Pair
+### Inverted Wildcard Search
 
-In some cases, you may want to find all components that are related to a specific target entity, regardless of the relationship type. This can be achieved using the `Pair` function with a wildcard as the first argument. For example, if you want to find all components that are related to the entity `Earth` in any way, you can use the following query:
+In some cases, you may want to find all components that are related to a specific target entity, regardless of the relationship type. This can be achieved using `Wildcard` relation with the target entity as the argument. For example, if you want to find all components that are related to the entity `earth` in any way, you can use the following query:
 
 ```ts
 const earth = addEntity(world)
@@ -347,8 +376,7 @@ const sun = addEntity(world)
 addComponent(world, earth, OrbitedBy(moon))
 addComponent(world, earth, IlluminatedBy(sun))
 
-const relatedToEarth = query(world, [Pair('*', earth)]); // Returns [OrbitedBy(moon), IlluminatedBy(sun)]
-
+const relatedToEarth = query(world, [Wildcard(earth)]); // Returns [OrbitedBy(moon), IlluminatedBy(sun)]
 ```
 
 
@@ -356,7 +384,7 @@ const relatedToEarth = query(world, [Pair('*', earth)]); // Returns [OrbitedBy(m
 
 Systems define how entities behave in a data-oriented programming approach. They work by querying for entities with specific components and applying behavior based on those components. This separation of behavior (systems) from data (components) provides flexibility in game design.
 
-While `bitECS` doesn't enforce a specific system implementation, we recommend using simple functions that can be chained together. Here's an example:
+While `bitECS` doesn't enforce a specific system implementation, it is recommended to using simple functions that can be chained together. Here's an example:
 
 ```ts
 const moveBody = (world) => {
@@ -377,14 +405,13 @@ const applyGravity = (world) => {
     }
 }
 
-// Run systems in a loop
-const mainLoop = () => {
+const update = () => {
 	moveBody(world)
     applyGravity(world)
-    requestAnimationFrame(mainLoop)
+    requestAnimationFrame(update)
 }
 
-mainLoop()
+update()
 ```
 
 ## Prefabs
@@ -414,8 +441,14 @@ const Sheep = addPrefab(world)
 addComponent(world, Sheep, IsA(Animal)) // inherits Vitals component
 addComponent(world, Sheep, Contains(Wool))
 
-// component values are also inherited
-assert(Vitals.health[Sheep] === Vitals.health[Animal])
+// component values will be inherited if an onSet and onGet observer is established
+observe(world, onSet(Vitals), (eid, params) => {
+    Vitals.health[eid] = params.health
+})
+observe(world, onGet(Vitals), (eid, params) => ({ 
+    health: Vitals.health[eid] 
+}))
+
 ```
 
 ### Prefabs and Queries
@@ -426,7 +459,7 @@ Prefabs themselves do not appear in queries:
 query(world, [Animal]).length === 0
 ```
 
-However, entities instantiated from prefabs can be queried using the IsA relationship:
+However, entities instantiated from prefabs can be queried using the `IsA` relationship:
 
 ```ts
 const sheep = addEntity(world)
@@ -452,20 +485,19 @@ const unsubscribe = observe(world, hook, callback)
 ```
 
 - `world`: The ECS world object
-- `hook`: An observable hook (onAdd, onRemove, or onSet)
+- `hook`: An observable hook (onAdd, onRemove, onSet, or onGet)
 - `callback`: A function to be called when the observed event occurs
 
-### Observing component addition
+### Observing component adds and removes
+
+
+The `onAdd` and `onRemove` hooks can be used with any valid query terms, including components, `Or`, `Not`, and other query operators. This allows for complex observation patterns. Here are some examples:
 
 ```typescript
-observe(world, onAdd(Position, Velocity), (eid) => {
-    console.log(`Entity ${eid} added Position and Velocity components`)
+observe(world, onAdd(Position, Not(Velocity)), (eid) => {
+    console.log(`Entity ${eid} added with Position and without Velocity`)
 })
-```
 
-### Observing component removal
-
-```typescript
 observe(world, onRemove(Health), (eid) => {
     console.log(`Entity ${eid} removed Health component`)
 })
@@ -473,27 +505,46 @@ observe(world, onRemove(Health), (eid) => {
 
 ### Observing component updates
 
+The `onSet` and `onGet` hooks in `bitECS` serve as powerful mechanisms for decoupling as well as custom data storage and inheritance handling.
+
+Note that these are not property getters/setters, as `bitECS` doesn't know the shape of your data. These are component-level gets/sets. The `onSet` hook is triggered by calling `setComponent(world, eid, Position, {x:1, y:2})`.
+
+When using the `IsA` relation for inheritance, you need to define how data is stored, updated, and retrieved in the inheritance chain. This allows for efficient data management and proper propagation of changes through the hierarchy. To implement inheritance, you typically use a combination of custom data structures (like Maps) and the `onSet` and `onGet` hooks. The `onSet` hook defines how changes propagate through the hierarchy, while the `onGet` hook determines how data is fetched from the appropriate entity in the inheritance chain.
+
+These hooks also provide a way to enhance modularity in your game or application. They allow you to implement cross-cutting concerns like logging, validation, or synchronization without modifying core system logic, thus promoting a more modular design.
+
+Here's an example demonstrating how custom data storage and inheritance are implemented together, along with modularity-enhancing features:
+
 ```typescript
+// Logging hook
 observe(world, onSet(Position), (eid, params) => {
-    Position.x[eid] = params.x
-    Position.y[eid] = params.y
+    console.log(`Entity ${eid} position updated to:`, params)
+})
+
+// Validation hook
+observe(world, onSet(Health), (eid, params) => {
+    return { value: Math.max(0, Math.min(100, params.value)) }
+})
+
+// Synchronization hook
+observe(world, onSet(Inventory), (eid, params) => {
+    syncWithServer(eid, 'inventory', params)
+    return params
+})
+
+// Custom AoS data storage
+observe(world, onSet(Position), (eid, params) => {
+    Position[eid].x = params.x
+    Position[eid].y = params.y
 })
 
 setComponent(world, eid, Position, { x: 10, y: 20 })
-```
 
-
-### Observing component access
-
-The `onGet` hook is particularly useful when implementing inheritance via the `IsA` relation. It allows you to define how component data is accessed, taking into account the inheritance hierarchy. By providing a custom getter function, you can ensure that `bitECS` retrieves data from the appropriate entity in the inheritance chain. This is crucial for systems where entities inherit properties from their parent types. Similarly, the `onSet` hook can be used to define how inherited component data is updated, allowing for proper propagation of changes through the inheritance hierarchy.
-
-```ts
 observe(world, onGet(Position), (eid) => ({
-    x: Position.x[eid],
-    y: Position.y[eid]
+    x: Position[eid].x,
+    y: Position[eid].y
 }))
 ```
-
 
 ### Unsubscribing
 
