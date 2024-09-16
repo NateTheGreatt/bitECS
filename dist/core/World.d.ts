@@ -8,7 +8,7 @@ export type WorldContext = {
     entityMasks: number[][];
     entityComponents: Map<EntityId, Set<ComponentRef>>;
     bitflag: number;
-    componentMap: WeakMap<ComponentRef, ComponentData>;
+    componentMap: Map<ComponentRef, ComponentData>;
     componentCount: number;
     queries: Set<Query>;
     queriesHashMap: Map<string, Query>;

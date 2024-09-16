@@ -87,16 +87,35 @@ var defineHiddenProperty = (obj, key, value) => Object.defineProperty(obj, key, 
 });
 
 // src/core/EntityIndex.ts
-var createEntityIndex = () => ({
-  aliveCount: 0,
-  dense: [],
-  sparse: [],
-  maxId: 0
-});
+var getId = (index, id) => id & index.entityMask;
+var getVersion = (index, id) => id >>> index.versionShift & (1 << index.versionBits) - 1;
+var incrementVersion = (index, id) => {
+  const currentVersion = getVersion(index, id);
+  const newVersion = currentVersion + 1 & (1 << index.versionBits) - 1;
+  return id & index.entityMask | newVersion << index.versionShift;
+};
+var createEntityIndex = (versioning = false, versionBits = 8) => {
+  const entityBits = 32 - versionBits;
+  const entityMask = (1 << entityBits) - 1;
+  const versionShift = entityBits;
+  const versionMask = (1 << versionBits) - 1 << versionShift;
+  return {
+    aliveCount: 1,
+    dense: [0],
+    sparse: [],
+    maxId: 0,
+    versioning,
+    versionBits,
+    entityMask,
+    versionShift,
+    versionMask
+  };
+};
 var addEntityId = (index) => {
   if (index.aliveCount < index.dense.length) {
     const recycledId = index.dense[index.aliveCount];
-    index.sparse[recycledId] = index.aliveCount;
+    const entityId = getId(index, recycledId);
+    index.sparse[entityId] = index.aliveCount;
     index.aliveCount++;
     return recycledId;
   }
@@ -107,22 +126,27 @@ var addEntityId = (index) => {
   return id;
 };
 var removeEntityId = (index, id) => {
-  const record = index.sparse[id];
-  if (record === void 0 || record >= index.aliveCount) {
+  const entityId = getId(index, id);
+  const denseIndex = index.sparse[entityId];
+  if (denseIndex === void 0 || denseIndex >= index.aliveCount) {
     return;
   }
-  const denseIndex = record;
   const lastIndex = index.aliveCount - 1;
   const lastId = index.dense[lastIndex];
-  index.sparse[lastId] = denseIndex;
+  index.sparse[getId(index, lastId)] = denseIndex;
   index.dense[denseIndex] = lastId;
-  index.sparse[id] = index.dense.length;
+  index.sparse[entityId] = lastIndex;
   index.dense[lastIndex] = id;
+  if (index.versioning) {
+    const newId = incrementVersion(index, id);
+    index.dense[lastIndex] = newId;
+  }
   index.aliveCount--;
 };
 var isEntityIdAlive = (index, id) => {
-  const record = index.sparse[id];
-  return record !== void 0 && index.dense[record] === id;
+  const entityId = getId(index, id);
+  const denseIndex = index.sparse[entityId];
+  return denseIndex !== void 0 && denseIndex < index.aliveCount && index.dense[denseIndex] === id;
 };
 
 // src/core/World.ts
@@ -132,7 +156,7 @@ var createBaseWorld = (context, entityIndex) => defineHiddenProperty(context || 
   entityMasks: [[]],
   entityComponents: /* @__PURE__ */ new Map(),
   bitflag: 1,
-  componentMap: /* @__PURE__ */ new WeakMap(),
+  componentMap: /* @__PURE__ */ new Map(),
   componentCount: 0,
   queries: /* @__PURE__ */ new Set(),
   queriesHashMap: /* @__PURE__ */ new Map(),
@@ -149,11 +173,7 @@ function createWorld(...args) {
       context = arg;
     }
   });
-  const world = createBaseWorld(context, entityIndex);
-  if (entityIndex) {
-    world[$internal].entityIndex = entityIndex;
-  }
-  return world;
+  return createBaseWorld(context, entityIndex);
 }
 var resetWorld = (world) => {
   const ctx = world[$internal];
@@ -813,25 +833,38 @@ var pipe = (...functions) => {
 };
 
 // src/serialization/ObserverSerializer.ts
+var OperationType = /* @__PURE__ */ ((OperationType2) => {
+  OperationType2[OperationType2["AddEntity"] = 0] = "AddEntity";
+  OperationType2[OperationType2["RemoveEntity"] = 1] = "RemoveEntity";
+  OperationType2[OperationType2["AddComponent"] = 2] = "AddComponent";
+  OperationType2[OperationType2["RemoveComponent"] = 3] = "RemoveComponent";
+  return OperationType2;
+})(OperationType || {});
 var createObserverSerializer = (world, networkedTag, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+  console.log("Creating observer serializer");
   const dataView = new DataView(buffer);
   let offset = 0;
   const queue = [];
   observe(world, onAdd(networkedTag), (eid) => {
-    queue.push([eid, 0 /* AddEntity */, -1]);
+    console.log(`Entity ${eid} added to network`);
+    queue.push([eid, 0 /* AddEntity */]);
   });
   observe(world, onRemove(networkedTag), (eid) => {
-    queue.push([eid, 1 /* RemoveEntity */, -1]);
+    console.log(`Entity ${eid} removed from network`);
+    queue.push([eid, 1 /* RemoveEntity */]);
   });
   components.forEach((component, i) => {
     observe(world, onAdd(networkedTag, component), (eid) => {
+      console.log(`Component ${i} added to entity ${eid}`);
       queue.push([eid, 2 /* AddComponent */, i]);
     });
     observe(world, onRemove(networkedTag, component), (eid) => {
+      console.log(`Component ${i} removed from entity ${eid}`);
       queue.push([eid, 3 /* RemoveComponent */, i]);
     });
   });
   return () => {
+    console.log("Serializing changes");
     offset = 0;
     for (let i = 0; i < queue.length; i++) {
       const [entityId, type, componentId] = queue[i];
@@ -843,13 +876,17 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
         dataView.setUint8(offset, componentId);
         offset += 1;
       }
+      console.log(`Serialized: Entity ${entityId}, Operation ${OperationType[type]}${componentId !== void 0 ? `, Component ${componentId}` : ""}`);
     }
     queue.length = 0;
+    console.log(`Serialization complete. Total bytes: ${offset}`);
     return buffer.slice(0, offset);
   };
 };
 var createObserverDeserializer = (world, networkedTag, components, entityIdMapping = /* @__PURE__ */ new Map()) => {
+  console.log("Creating observer deserializer");
   return (packet) => {
+    console.log(`Deserializing packet of ${packet.byteLength} bytes`);
     const dataView = new DataView(packet);
     let offset = 0;
     while (offset < packet.byteLength) {
@@ -864,24 +901,30 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
       }
       const component = components[componentId];
       let worldEntityId = entityIdMapping.get(packetEntityId);
+      console.log(`Processing: Entity ${packetEntityId}, Operation ${OperationType[operationType]}${componentId !== -1 ? `, Component ${componentId}` : ""}`);
       if (operationType === 0 /* AddEntity */) {
         if (worldEntityId === void 0) {
           worldEntityId = addEntity(world);
           entityIdMapping.set(packetEntityId, worldEntityId);
           addComponent(world, worldEntityId, networkedTag);
+          console.log(`Added new entity. Packet ID: ${packetEntityId}, World ID: ${worldEntityId}`);
         } else {
-          console.error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
+          throw new Error(`Entity with ID ${packetEntityId} already added.`);
         }
       } else if (worldEntityId !== void 0 && entityExists(world, worldEntityId)) {
         if (operationType === 1 /* RemoveEntity */) {
           removeEntity(world, worldEntityId);
+          console.log(`Removed entity. World ID: ${worldEntityId}`);
         } else if (operationType === 2 /* AddComponent */) {
           addComponent(world, worldEntityId, component);
+          console.log(`Added component ${componentId} to entity ${worldEntityId}`);
         } else if (operationType === 3 /* RemoveComponent */) {
           removeComponent(world, worldEntityId, component);
+          console.log(`Removed component ${componentId} from entity ${worldEntityId}`);
         }
       }
     }
+    console.log("Deserialization complete");
     return entityIdMapping;
   };
 };
