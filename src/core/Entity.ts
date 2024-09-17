@@ -15,7 +15,7 @@ import { ComponentRef } from './Component'
 export type EntityId = number
 
 export const Prefab = {}
-export const addPrefab = (world: World) => {
+export const addPrefab = (world: World): EntityId => {
 	const eid = addEntity(world)
 
 	addComponent(world, eid, Prefab)
@@ -128,9 +128,9 @@ export const removeEntity = (world: World, eid: EntityId) => {
  */
 export const getEntityComponents = (world: World, eid: EntityId): ComponentRef[] => {
 	const ctx = (world as InternalWorld)[$internal]
-	if (eid === undefined) throw new Error('bitECS - entity is undefined.')
+	if (eid === undefined) throw new Error(`getEntityComponents: entity id is undefined.`)
 	if (!isEntityIdAlive(ctx.entityIndex, eid))
-		throw new Error('bitECS - entity does not exist in the world.')
+		throw new Error(`getEntityComponents: entity ${eid} does not exist in the world.`)
 	return Array.from(ctx.entityComponents.get(eid)!)
 }
 

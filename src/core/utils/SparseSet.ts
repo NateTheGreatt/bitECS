@@ -7,7 +7,7 @@ export type SparseSet = {
     reset: () => void
 }
 
-export const createSparseSet = () => {
+export const createSparseSet = (): SparseSet => {
 	const dense: number[] = []
 	const sparse: number[] = []
 

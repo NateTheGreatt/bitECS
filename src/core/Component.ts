@@ -5,7 +5,7 @@
 import { entityExists, EntityId, getEntityComponents, Prefab } from './Entity'
 import { queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query'
 import { Query } from './Query'
-import { 
+import {
 	IsA,
 	Pair,
 	Wildcard,
@@ -166,34 +166,35 @@ export const setComponent = (world: World, eid: EntityId, component: ComponentRe
 	componentData.setObservable.notify(eid, data)
 }
 
-
 /**
  * Recursively inherits components from one entity to another.
  * @param {World} world - The world object.
  * @param {number} baseEid - The ID of the entity inheriting components.
  * @param {number} inheritedEid - The ID of the entity being inherited from.
+ * @param {boolean} isFirstSuper - Whether this is the first super in the inheritance chain.
  */
-const recursivelyInherit = (world: World, baseEid: EntityId, inheritedEid: EntityId) => {
+const recursivelyInherit = (world: World, baseEid: EntityId, inheritedEid: EntityId, isFirstSuper: boolean = true): void => {
 	const ctx = (world as InternalWorld)[$internal]
+	
 	addComponent(world, baseEid, IsA(inheritedEid))
-	const components = getEntityComponents(world, inheritedEid)
-	for (const component of components) {
+
+	for (const component of getEntityComponents(world, inheritedEid)) {
 		if (component === Prefab) {
 			continue
 		}
 		addComponent(world, baseEid, component)
-		// Trigger onSet observer for this component
-		// TODO: inherit reference vs copy
-		const componentData = ctx.componentMap.get(component)
-		if (componentData && componentData.setObservable) {
-			const data = getComponentData(world, inheritedEid, component)
-			componentData.setObservable.notify(baseEid, data)
+		if (isFirstSuper) {
+			// TODO: inherit reference vs copy
+			const componentData = ctx.componentMap.get(component)
+			if (componentData?.setObservable) {
+				const data = getComponentData(world, inheritedEid, component)
+				componentData.setObservable.notify(baseEid, data)
+			}
 		}
 	}
 
-	const inheritedTargets = getRelationTargets(world, inheritedEid, IsA)
-	for (const inheritedEid2 of inheritedTargets) {
-		recursivelyInherit(world, baseEid, inheritedEid2)
+	for (const inheritedEid2 of getRelationTargets(world, inheritedEid, IsA)) {
+		recursivelyInherit(world, baseEid, inheritedEid2, false)
 	}
 }
 
@@ -221,9 +222,13 @@ export const addComponent = (world: World, eid: EntityId, ...components: (Compon
 
 		if (!ctx.componentMap.has(component)) registerComponent(world, component)
 
+		const componentData = ctx.componentMap.get(component)!
+		if (data !== undefined) {
+			componentData.setObservable.notify(eid, data)
+		}
+
 		if (hasComponent(world, eid, component)) return
 
-		const componentData = ctx.componentMap.get(component)!
 		const { generationId, bitflag, queries } = componentData
 
 		ctx.entityMasks[generationId][eid] |= bitflag
@@ -239,10 +244,6 @@ export const addComponent = (world: World, eid: EntityId, ...components: (Compon
 		}
 
 		ctx.entityComponents.get(eid)!.add(component)
-
-		if (data !== undefined) {
-			componentData.setObservable.notify(eid, data)
-		}
 
 		if (component[$isPairComponent]) {
 			const relation = component[$relation]
