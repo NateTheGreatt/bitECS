@@ -306,9 +306,9 @@ var removeEntity = (world, eid) => {
 };
 var getEntityComponents = (world, eid) => {
   const ctx = world[$internal];
-  if (eid === void 0) throw new Error("bitECS - entity is undefined.");
+  if (eid === void 0) throw new Error(`getEntityComponents: entity id is undefined.`);
   if (!isEntityIdAlive(ctx.entityIndex, eid))
-    throw new Error("bitECS - entity does not exist in the world.");
+    throw new Error(`getEntityComponents: entity ${eid} does not exist in the world.`);
   return Array.from(ctx.entityComponents.get(eid));
 };
 var entityExists = (world, eid) => isEntityIdAlive(world[$internal].entityIndex, eid);
@@ -377,24 +377,24 @@ var getComponentData = (world, eid, component) => {
   }
   return componentData.getObservable.notify(eid);
 };
-var recursivelyInherit = (world, baseEid, inheritedEid) => {
+var recursivelyInherit = (world, baseEid, inheritedEid, isFirstSuper = true) => {
   const ctx = world[$internal];
   addComponent(world, baseEid, IsA(inheritedEid));
-  const components = getEntityComponents(world, inheritedEid);
-  for (const component of components) {
+  for (const component of getEntityComponents(world, inheritedEid)) {
     if (component === Prefab) {
       continue;
     }
     addComponent(world, baseEid, component);
-    const componentData = ctx.componentMap.get(component);
-    if (componentData && componentData.setObservable) {
-      const data = getComponentData(world, inheritedEid, component);
-      componentData.setObservable.notify(baseEid, data);
+    if (isFirstSuper) {
+      const componentData = ctx.componentMap.get(component);
+      if (componentData?.setObservable) {
+        const data = getComponentData(world, inheritedEid, component);
+        componentData.setObservable.notify(baseEid, data);
+      }
     }
   }
-  const inheritedTargets = getRelationTargets(world, inheritedEid, IsA);
-  for (const inheritedEid2 of inheritedTargets) {
-    recursivelyInherit(world, baseEid, inheritedEid2);
+  for (const inheritedEid2 of getRelationTargets(world, inheritedEid, IsA)) {
+    recursivelyInherit(world, baseEid, inheritedEid2, false);
   }
 };
 var addComponent = (world, eid, ...components) => {
@@ -406,8 +406,11 @@ var addComponent = (world, eid, ...components) => {
     const component = "component" in componentOrSet ? componentOrSet.component : componentOrSet;
     const data = "data" in componentOrSet ? componentOrSet.data : void 0;
     if (!ctx.componentMap.has(component)) registerComponent(world, component);
-    if (hasComponent(world, eid, component)) return;
     const componentData = ctx.componentMap.get(component);
+    if (data !== void 0) {
+      componentData.setObservable.notify(eid, data);
+    }
+    if (hasComponent(world, eid, component)) return;
     const { generationId, bitflag, queries } = componentData;
     ctx.entityMasks[generationId][eid] |= bitflag;
     if (!hasComponent(world, eid, Prefab)) {
@@ -419,9 +422,6 @@ var addComponent = (world, eid, ...components) => {
       });
     }
     ctx.entityComponents.get(eid).add(component);
-    if (data !== void 0) {
-      componentData.setObservable.notify(eid, data);
-    }
     if (component[$isPairComponent]) {
       const relation = component[$relation];
       addComponent(world, eid, Pair(relation, Wildcard));
