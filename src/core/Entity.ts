@@ -68,31 +68,35 @@ export const removeEntity = (world: World, eid: EntityId) => {
 
         const componentRemovalQueue = []
 
-        for (const subject of innerQuery(world, [Wildcard(currentEid)])) {
-            if (!entityExists(world, subject)) {
-                continue
-            }
+		if (ctx.relationTargetEntities.has(currentEid)) {
+			for (const subject of innerQuery(world, [Wildcard(currentEid)])) {
+				if (!entityExists(world, subject)) {
+					continue
+				}
 
-            for (const component of ctx.entityComponents.get(subject)!) {
-                if (!component[$isPairComponent]) {
-                    continue
-                }
+				for (const component of ctx.entityComponents.get(subject)!) {
+					if (!component[$isPairComponent]) {
+						continue
+					}
 
-                const relation = component[$relation]
-                const relationData = relation[$relationData]
-                componentRemovalQueue.push(() => removeComponent(world, subject, Pair(Wildcard, currentEid)))
+					const relation = component[$relation]
+					const relationData = relation[$relationData]
+					componentRemovalQueue.push(() => removeComponent(world, subject, Pair(Wildcard, currentEid)))
 
-                if (component[$pairTarget] === currentEid) {
-                    componentRemovalQueue.push(() => removeComponent(world, subject, component))
-                    if (relationData.autoRemoveSubject) {
-                        removalQueue.push(subject)
-                    }
-                    if (relationData.onTargetRemoved) {
-                        componentRemovalQueue.push(() => relationData.onTargetRemoved(world, subject, currentEid))
-                    }
-                }
-            }
-        }
+					if (component[$pairTarget] === currentEid) {
+						componentRemovalQueue.push(() => removeComponent(world, subject, component))
+						if (relationData.autoRemoveSubject) {
+							removalQueue.push(subject)
+						}
+						if (relationData.onTargetRemoved) {
+							componentRemovalQueue.push(() => relationData.onTargetRemoved(world, subject, currentEid))
+						}
+					}
+				}
+			}
+
+			ctx.relationTargetEntities.delete(currentEid)
+		}
 
         for (const removeOperation of componentRemovalQueue) {
             removeOperation()

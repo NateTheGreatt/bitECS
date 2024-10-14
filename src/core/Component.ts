@@ -246,6 +246,9 @@ export const addComponent = (world: World, eid: EntityId, ...components: (Compon
 		ctx.entityComponents.get(eid)!.add(component)
 
 		if (component[$isPairComponent]) {
+			// add to a set to make removal checks faster
+			ctx.relationTargetEntities.add(eid)
+
 			const relation = component[$relation]
 			addComponent(world, eid, Pair(relation, Wildcard))
 			const target = component[$pairTarget]

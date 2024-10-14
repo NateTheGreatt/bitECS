@@ -445,7 +445,7 @@ addComponent(world, Sheep, Contains(Wool))
 observe(world, onSet(Vitals), (eid, params) => {
     Vitals.health[eid] = params.health
 })
-observe(world, onGet(Vitals), (eid, params) => ({ 
+observe(world, onGet(Vitals), (eid) => ({ 
     health: Vitals.health[eid] 
 }))
 
