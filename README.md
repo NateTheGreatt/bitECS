@@ -87,7 +87,7 @@ const update = (world) => {
   timeSystem(world)
 }
 
-const world = createWorld(withContext({
+const world = createWorld({
   components: {
     // components can be anything
     Position: { x: [], y: [] },
@@ -98,7 +98,7 @@ const world = createWorld(withContext({
     elapsed: 0, 
     then: performance.now() 
   }
-}))
+})
 
 const { Position, Velocity } = world.components
 
