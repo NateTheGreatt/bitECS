@@ -19,26 +19,24 @@ bitECS
 </p>
 
 <p align="center">
-Functional, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-oriented</a> <a href="https://en.wikipedia.org/wiki/Entity_component_system">ECS</a> library for Typescript.
+Flexible, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-oriented</a> <a href="https://en.wikipedia.org/wiki/Entity_component_system">ECS</a> library for Typescript.
 </p>
 
 </center>
 
 ## ✨ Features
-- 🔮 Simple, flexible API
-- 🔍 Powerful queries & serialization
-- 🧵 Lightweight & thread-friendly
-- 🌐 Works in Node & browser
-- 🤏 Tiny (~3kb) 
+
+
+`bitECS` is a minimal and powerful Entity Component System (ECS) library. It provides a lean API that enables developers to build their architecture to their liking, offering flexibility while maintaining efficiency in data-oriented designs. Key features include:
+
+- 🔮 Simple, declarative API
+- 🔍 Powerful queries
+- 🔗 Entity relationships
+- 🧵 Thread-friendly
+- 💾 Serialization included
+- 🌐 Node & browser compatible
+- 🤏 Tiny (`~3KB`)
 - ❤ Made with love
-
-### 📈 Benchmarks
-
-Microbenchmarks should be taken with a grain of salt.
-
-|                                                                 |                                                                           |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark) | [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks) |
 
 ## 💿 Install
 ```
@@ -61,9 +59,6 @@ import {
   addComponent,
 } from 'bitecs'
 
-const max = 1e5
-
-// Systems are just functions
 const movementSystem = ({
     components: { Position, Velocity },
     time: { delta } 
@@ -89,14 +84,14 @@ const update = (world) => {
 
 const world = createWorld({
   components: {
-    // components can be anything
     Position: { x: [], y: [] },
-    Velocity: { x: [], y: [] }
+    Velocity: { x: new Float32Array(1e5), y: new Float32Array(1e5) },
+    Health: []
   },
-  time: { 
+  time: {
     delta: 0, 
     elapsed: 0, 
-    then: performance.now() 
+    then: performance.now()
   }
 })
 
@@ -109,20 +104,27 @@ Position.x[eid] = 0
 Position.y[eid] = 0
 Velocity.x[eid] = 1.23
 Velocity.y[eid] = 1.23
+Health[eid] = 100
 
 setInterval(() => {
   update(world)
 }, 16)
 ```
 
+### 📈 Benchmarks
 
-## Star History
+Microbenchmarks should be taken with a grain of salt. To get a feel for performance in real scenarios, see the [demos](https://github.com/NateTheGreatt/bitECS/tree/master/demos).
 
-[![Star History Chart](https://api.star-history.com/svg?repos=NateTheGreatt/bitECS&type=Date)](https://star-history.com/#NateTheGreatt/bitECS&Date)
+|                                                                 |                                                                           |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark) | [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks) |
 
-
-## Used by
+## 🔌 Used by
 
 - [iR Engine](https://github.com/ir-engine/ir-engine)
 - [Third Room](https://github.com/thirdroom/thirdroom)
 - [Hubs](https://github.com/Hubs-Foundation/hubs)
+
+## 🌟 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=NateTheGreatt/bitECS&type=Date)](https://star-history.com/#NateTheGreatt/bitECS&Date)

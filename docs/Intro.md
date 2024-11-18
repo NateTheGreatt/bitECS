@@ -1,16 +1,16 @@
-# Quick start
+# Introduction
 
 `bitECS` is a flexible toolkit for data-oriented design in game development. It offers core ECS concepts without imposing strict rules:
 
-1. Entities are always represented as ID numbers.
-2. Component stores can have any structure you prefer.
-3. Systems can be implemented in various ways.
+- Entities are numerical IDs.
+- Component stores can be anything.
+- No formal concept of systems, only queries.
 
 For optimal performance:
 - Use a [Structure of Arrays (SoA) format](https://en.wikipedia.org/wiki/AoS_and_SoA) for components.
 - Implement systems as a series of functions (function pipeline).
 
-These practices enhance data locality and processing efficiency in your ECS architecture.
+These practices enhance data locality and processing efficiency in your ECS architecture, as well as feature modularity.
 
 ```ts
 import { createWorld, addEntity, addComponent, query } from 'bitecs'
@@ -63,15 +63,17 @@ const world = createWorld()
 
 ### Options
 
-Passing an object to `createWorld` will use the object as a context. The object will be decorated and the same reference will be returned.
+Passing an object to `createWorld` will use the object as a custom context, if desired. `bitECS` will treat the passed-in reference as a world, and the same reference will be returned.
 
 ```ts
-const world = createWorld({
+const context = {
     time: {
         then: 0,
         delta: 0,
     }
-})
+}
+const world = createWorld(context)
+assert(world === context) // true
 ```
 
 Passing an `entityIndex` uses the entity index to share an EID space between worlds.
@@ -161,11 +163,11 @@ assert(eid1 !== eid3) // With versioning, eid1 and eid3 will not be the same
 
 #### ⚠️ Caution with TypedArrays
 
-When using entity ID versioning, be cautious if you are using the entity ID as an index into a sparse TypedArray. The versioning mechanism will technically change the entity ID by large amounts, which can lead to issues where the entity ID overshoots the length of the TypedArray. This can cause unexpected behavior in your system, because Javascript does not throw when trying to access an index that is out of bounds. Make sure your TypedArrays are large enough, or otherwise just use manual recycling.
+When using entity ID versioning, be cautious if you are using the entity ID as an index into a sparse TypedArray. The versioning mechanism will technically change the entity ID by large amounts, which can lead to issues where the entity ID overshoots the length of the TypedArray. This can cause unexpected behavior in your system, because Javascript does not throw when trying to access an index that is out of bounds. Make sure your TypedArrays are large enough, or otherwise just handle recycling manually.
 
 
 ## Component
-Components are modular data containers that represent specific attributes of an entity. They define an entity's characteristics by their presence. For instance, separate components might represent position and mass.
+Components are modular data containers that represent specific attributes of an entity. They define an entity's characteristics by their presence. For instance, separate components might represent position, velocity, and mass.
 
 In `bitECS`, you have flexibility in choosing the data structure for components. Any valid JavaScript reference can serve as a component, with its identity determined by reference. For concise syntax with optimal performance, a [structure of arrays (SoA) format](https://en.wikipedia.org/wiki/AoS_and_SoA) is recommended.
 
@@ -188,24 +190,37 @@ const Position = [] as { x: number; y: number }[]
 ```
 
 
-### Associating Components with the World
+### Associating Components with Worlds
 
+Internally, components are automatically registered with a world when first added to an entity within that world. They can also be explicitly registered with `registerComponent`.
 
-Components are automatically registered with a world when they are first added to an entity in that world. This means that components are typically not shared between different worlds, ensuring data isolation. However, if multiple worlds share the same entity index, components can be shared across those worlds.
+When multiple worlds are in use, there are two general approaches for maintaining data isolation between them:
 
-Components can be manually associated with a world.
+1. Define components separately for each world. This approach ensures complete isolation between worlds, as each world maintains its own set of components. This is the default behavior and is recommended for most use cases.
 
 ```ts
-createWorld({
-    components: { Position: { x: [], y: [] } }
+// When defined on the world...
+const world = createWorld({
+    components: { Position: Array(1e5).fill(3).map(n => new Float32Array(n)) }
 });
 
+// ...components can, for example, be retrieved via destructuring
+const { Position } = world.components
 ```
 
-Components can be retrieved via destructuring.
+2. If multiple worlds share the same entity index, it becomes possible to share components across these worlds. This controlled approach allows for component stores to be defined globally, while still preserving the overall principle of world separation.
 
 ```ts
-const { Position } = world.components
+// When defined globally...
+const Position = Array(1e5).fill(3).map(n => new Float32Array(n))
+
+// ...components can be retrieved via importing.
+import { Position } from './components'
+
+// if using multiple worlds with global components, you need to use a shared entity index
+const entityIndex = createEntityIndex()
+const world1 = createWorld(entityIndex)
+const world2 = createWorld(entityIndex)
 ```
 
 Mutations are then handled manually based on the storage format after adding a component.
@@ -215,11 +230,15 @@ addComponent(world, eid, Position)
 
 // SoA
 (Position.x[eid] = 0), (Position.y[eid] = 0)
-Position.x[eid] += 1; // Update value
+Position.x[eid] += 1
 
 // AoS
 Position[eid] = { x: 0, y: 0 }
-Position[eid].x += 1; // Update value
+Position[eid].x += 1
+
+// Array of Typedarrays
+const pos = Position[eid]
+pos[0] += 1
 ```
 
 Removing a component updates the shape immediately.
@@ -231,6 +250,13 @@ addComponent(world, eid, Mass)
 
 // Now has a shape of just [Position]
 removeComponent(world, eid, Mass)
+```
+
+These functions are composable to a degree:
+
+```ts
+addComponent(world, eid, Position, Velocity, Mass)
+removeComponent(world, eid, Position, Velocity)
 ```
 
 ## Query
@@ -253,13 +279,34 @@ Relations can be queried just like components:
 const children = query(world, [ChildOf(parent)])
 ```
 
+### Inner Query
+
+By default, entity removals are deferred until queries are called. This is to avoid removing entities from a query during iteration. 
+
+However, this has a caveat in the case of calling a query while iterating results of another related query. This will undesireably cause entities to be removed during iteration of a query.
+
+Inner queries provide a way to perform queries without triggering the removal of entities. This is particularly useful when you need to iterate over entities without modifying the world state. By using inner queries, you can avoid the automatic removal behavior that occurs during regular queries, ensuring that entities are not removed during iteration.
+
+```ts
+// This triggers entity removals, then queries
+for (const entity of query(world, [Position, Velocity])) {
+
+  // This does not trigger entity removals
+  for (const innerEntity of innerQuery(world, [Mass])) {}
+}
+```
+
+Note: You can use query inside of another query loop with manual entity recycling, avoiding the need for `innerQuery`.
+
 ## Relationships
 
 Relationships in `bitECS` allow you to define how entities are related to each other. This can be useful for scenarios like inventory systems, parent-child hierarchies, exclusive targeting mechanics, and much more. Relations are defined using `createRelation` and can have optional properties for additional behavior.
 
+Note: The relation API is a dual-API. It can either take an options object, or composed with optional composables.
+
 ### Defining a Relation
 
-You can define a relation with or without properties. Here's an example of defining a relation with data:
+You can create a new type of relationship with or without data properties. Here's an example of defining a relation with data:
 
 ```ts
 const Contains = createRelation(
@@ -331,6 +378,8 @@ assert(hasComponent(world, hero, Targeting(goblin)) === true)
 In this example, the hero can only target one entity at a time. When the hero starts targeting the goblin, it stops targeting the rat.
 
 ### Get targets of a Relationship for entity
+
+To retrieve all target entities related to a specific entity through a particular relation, you can use the `getRelationTargets` function. This function returns an array of entity IDs that are targets of the specified relation for the given entity.
 
 ```ts
 const inventory = addEntity(world)
@@ -505,28 +554,38 @@ observe(world, onRemove(Health), (eid) => {
 
 ### Observing component updates
 
-The `onSet` and `onGet` hooks in `bitECS` serve as powerful mechanisms for decoupling as well as custom data storage and inheritance handling.
+The `onSet` and `onGet` hooks in `bitECS` serve as powerful mechanisms for decoupling, custom data storage, and inheritance handling.
 
-Note that these are not property getters/setters, as `bitECS` doesn't know the shape of your data. These are component-level gets/sets. The `onSet` hook is triggered by calling `setComponent(world, eid, Position, {x:1, y:2})`.
+Note that these are not property getters/setters, as `bitECS` doesn't know the shape of your data. These are component-level gets/sets. The `onSet` hook is triggered like so:
+```ts
+setComponent(world, eid, Position, {x:1, y:2})
+// or
+addComponent(world, eid, set(Position, {x:1, y:2}))
+```
 
-When using the `IsA` relation for inheritance, you need to define how data is stored, updated, and retrieved in the inheritance chain. This allows for efficient data management and proper propagation of changes through the hierarchy. To implement inheritance, you typically use a combination of custom data structures (like Maps) and the `onSet` and `onGet` hooks. The `onSet` hook defines how changes propagate through the hierarchy, while the `onGet` hook determines how data is fetched from the appropriate entity in the inheritance chain.
+The `IsA` relation for inheritance requires defining data handling in the component hierarchy. Both `onSet` and `onGet` hooks are needed to effectively propagate changes:
 
-These hooks also provide a way to enhance modularity in your game or application. They allow you to implement cross-cutting concerns like logging, validation, or synchronization without modifying core system logic, thus promoting a more modular design.
+- `onSet`: Defines how data is persisted to the custom data store for an entity
+- `onGet`: Determines how data is retrieved from the custom data store for an entity
+
+These hooks are meant to give you a way to interface with custom data structures of your own, ensuring consistent inheritance behavior and proper propagation of data through the hierarchy.
+
+Additionally, they provide a way to enhance modularity in your game or application. By allowing implementation of cross-cutting concerns like logging, validation, or synchronization without modifying core system logic, these hooks promote a more modular design.
 
 Here's an example demonstrating how custom data storage and inheritance are implemented together, along with modularity-enhancing features:
 
 ```typescript
-// Logging hook
+// Logging
 observe(world, onSet(Position), (eid, params) => {
-    console.log(`Entity ${eid} position updated to:`, params)
+    console.log(`Position added to ${eid}:`, params)
 })
 
-// Validation hook
+// Computed values
 observe(world, onSet(Health), (eid, params) => {
     return { value: Math.max(0, Math.min(100, params.value)) }
 })
 
-// Synchronization hook
+// Network synchronization
 observe(world, onSet(Inventory), (eid, params) => {
     syncWithServer(eid, 'inventory', params)
     return params
@@ -537,13 +596,11 @@ observe(world, onSet(Position), (eid, params) => {
     Position[eid].x = params.x
     Position[eid].y = params.y
 })
-
-setComponent(world, eid, Position, { x: 10, y: 20 })
-
 observe(world, onGet(Position), (eid) => ({
     x: Position[eid].x,
     y: Position[eid].y
 }))
+setComponent(world, eid, Position, { x: 10, y: 20 })
 ```
 
 ### Unsubscribing
