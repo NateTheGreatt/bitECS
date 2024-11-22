@@ -1,4 +1,4 @@
-:warning: [v0.4](https://github.com/NateTheGreatt/bitECS/blob/next-simple) coming soon! Read the [docs here](/docs/Intro.md)
+:warning: [v0.4](https://github.com/NateTheGreatt/bitECS/blob/next-simple) coming soon! Read the [docs here](https://github.com/NateTheGreatt/bitECS/blob/next-simple/docs/Intro.md)
 
 
 <h1 align="center">
