@@ -37,17 +37,17 @@ Position.y[entity] = 0
 // Define a system that moves entities with a Position component
 const moveEntity = (world) => {
 	const entities = query(world, [Position])
-    
+
 	for (const eid of entities) {
 		Position.x[eid] += 1
-        Position.y[eid] += 1
-    }
+		Position.y[eid] += 1
+	}
 }
 
 // Run system in a loop
 const mainLoop = () => {
 	moveEntity(world)
-    requestAnimationFrame(mainLoop)
+	requestAnimationFrame(mainLoop)
 }
 
 mainLoop()
