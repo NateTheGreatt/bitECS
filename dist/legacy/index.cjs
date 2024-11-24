@@ -25,7 +25,7 @@ __export(legacy_exports, {
   Not: () => Not2,
   Or: () => Or2,
   Types: () => Types,
-  addComponent: () => addComponent2,
+  addComponent: () => addComponent3,
   defineComponent: () => defineComponent,
   defineDeserializer: () => defineDeserializer,
   defineQuery: () => defineQuery,
@@ -33,7 +33,7 @@ __export(legacy_exports, {
   enterQuery: () => enterQuery,
   exitQuery: () => exitQuery,
   hasComponent: () => hasComponent2,
-  removeComponent: () => removeComponent2
+  removeComponent: () => removeComponent3
 });
 module.exports = __toCommonJS(legacy_exports);
 
@@ -118,43 +118,6 @@ var defineHiddenProperty = (obj, key, value) => Object.defineProperty(obj, key, 
 
 // src/core/EntityIndex.ts
 var getId = (index, id) => id & index.entityMask;
-var getVersion = (index, id) => id >>> index.versionShift & (1 << index.versionBits) - 1;
-var incrementVersion = (index, id) => {
-  const currentVersion = getVersion(index, id);
-  const newVersion = currentVersion + 1 & (1 << index.versionBits) - 1;
-  return id & index.entityMask | newVersion << index.versionShift;
-};
-var addEntityId = (index) => {
-  if (index.aliveCount < index.dense.length) {
-    const recycledId = index.dense[index.aliveCount];
-    const entityId = recycledId;
-    index.sparse[entityId] = index.aliveCount;
-    index.aliveCount++;
-    return recycledId;
-  }
-  const id = ++index.maxId;
-  index.dense.push(id);
-  index.sparse[id] = index.aliveCount;
-  index.aliveCount++;
-  return id;
-};
-var removeEntityId = (index, id) => {
-  const denseIndex = index.sparse[id];
-  if (denseIndex === void 0 || denseIndex >= index.aliveCount) {
-    return;
-  }
-  const lastIndex = index.aliveCount - 1;
-  const lastId = index.dense[lastIndex];
-  index.sparse[lastId] = denseIndex;
-  index.dense[denseIndex] = lastId;
-  index.sparse[id] = lastIndex;
-  index.dense[lastIndex] = id;
-  if (index.versioning) {
-    const newId = incrementVersion(index, id);
-    index.dense[lastIndex] = newId;
-  }
-  index.aliveCount--;
-};
 var isEntityIdAlive = (index, id) => {
   const entityId = getId(index, id);
   const denseIndex = index.sparse[entityId];
@@ -207,9 +170,9 @@ var withAutoRemoveSubject = (relation) => {
   ctx.autoRemoveSubject = true;
   return relation;
 };
-var withOnTargetRemoved = (onRemove2) => (relation) => {
+var withOnTargetRemoved = (onRemove3) => (relation) => {
   const ctx = relation[$relationData];
-  ctx.onTargetRemoved = onRemove2;
+  ctx.onTargetRemoved = onRemove3;
   return relation;
 };
 var Pair = (relation, target) => {
@@ -246,64 +209,6 @@ function createRelation(...args) {
 
 // src/core/Entity.ts
 var Prefab = {};
-var addEntity = (world) => {
-  const ctx = world[$internal];
-  const eid = addEntityId(ctx.entityIndex);
-  ctx.notQueries.forEach((q) => {
-    const match = queryCheckEntity(world, q, eid);
-    if (match) queryAddEntity(q, eid);
-  });
-  ctx.entityComponents.set(eid, /* @__PURE__ */ new Set());
-  return eid;
-};
-var removeEntity = (world, eid) => {
-  const ctx = world[$internal];
-  if (!isEntityIdAlive(ctx.entityIndex, eid)) return;
-  const removalQueue = [eid];
-  const processedEntities = /* @__PURE__ */ new Set();
-  while (removalQueue.length > 0) {
-    const currentEid = removalQueue.shift();
-    if (processedEntities.has(currentEid)) continue;
-    processedEntities.add(currentEid);
-    const componentRemovalQueue = [];
-    for (const subject of innerQuery(world, [Wildcard(currentEid)])) {
-      if (!entityExists(world, subject)) {
-        continue;
-      }
-      for (const component of ctx.entityComponents.get(subject)) {
-        if (!component[$isPairComponent]) {
-          continue;
-        }
-        const relation = component[$relation];
-        const relationData = relation[$relationData];
-        componentRemovalQueue.push(() => removeComponent(world, subject, Pair(Wildcard, currentEid)));
-        if (component[$pairTarget] === currentEid) {
-          componentRemovalQueue.push(() => removeComponent(world, subject, component));
-          if (relationData.autoRemoveSubject) {
-            removalQueue.push(subject);
-          }
-          if (relationData.onTargetRemoved) {
-            componentRemovalQueue.push(() => relationData.onTargetRemoved(world, subject, currentEid));
-          }
-        }
-      }
-    }
-    for (const removeOperation of componentRemovalQueue) {
-      removeOperation();
-    }
-    for (const eid2 of removalQueue) {
-      removeEntity(world, eid2);
-    }
-    for (const query2 of ctx.queries) {
-      queryRemoveEntity(world, query2, currentEid);
-    }
-    removeEntityId(ctx.entityIndex, currentEid);
-    ctx.entityComponents.delete(currentEid);
-    for (let i = 0; i < ctx.entityMasks.length; i++) {
-      ctx.entityMasks[i][currentEid] = 0;
-    }
-  }
-};
 var getEntityComponents = (world, eid) => {
   const ctx = world[$internal];
   if (eid === void 0) throw new Error(`getEntityComponents: entity id is undefined.`);
@@ -398,10 +303,10 @@ var recursivelyInherit = (world, baseEid, inheritedEid, isFirstSuper = true) => 
   }
 };
 var addComponent = (world, eid, ...components) => {
-  const ctx = world[$internal];
   if (!entityExists(world, eid)) {
     throw new Error(`Cannot add component - entity ${eid} does not exist in the world.`);
   }
+  const ctx = world[$internal];
   components.forEach((componentOrSet) => {
     const component = "component" in componentOrSet ? componentOrSet.component : componentOrSet;
     const data = "data" in componentOrSet ? componentOrSet.data : void 0;
@@ -424,9 +329,14 @@ var addComponent = (world, eid, ...components) => {
     ctx.entityComponents.get(eid).add(component);
     if (component[$isPairComponent]) {
       const relation = component[$relation];
-      addComponent(world, eid, Pair(relation, Wildcard));
       const target = component[$pairTarget];
+      addComponent(world, eid, Pair(relation, Wildcard));
       addComponent(world, eid, Pair(Wildcard, target));
+      if (typeof target === "number") {
+        addComponent(world, target, Pair(Wildcard, relation));
+        ctx.entitiesWithRelations.add(target);
+      }
+      ctx.entitiesWithRelations.add(target);
       const relationData = relation[$relationData];
       if (relationData.exclusiveRelation === true && target !== Wildcard) {
         const oldTarget = getRelationTargets(world, eid, relation)[0];
@@ -668,35 +578,68 @@ var queryRemoveEntity = (world, query2, eid) => {
 };
 
 // src/serialization/ObserverSerializer.ts
+var import_bitecs = require("bitecs");
 var createObserverSerializer = (world, networkedTag, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
   const dataView = new DataView(buffer);
   let offset = 0;
   const queue = [];
-  observe(world, onAdd(networkedTag), (eid) => {
+  const relationTargets = /* @__PURE__ */ new Map();
+  (0, import_bitecs.observe)(world, (0, import_bitecs.onAdd)(networkedTag), (eid) => {
     queue.push([eid, 0 /* AddEntity */, -1]);
   });
-  observe(world, onRemove(networkedTag), (eid) => {
+  (0, import_bitecs.observe)(world, (0, import_bitecs.onRemove)(networkedTag), (eid) => {
     queue.push([eid, 1 /* RemoveEntity */, -1]);
+    relationTargets.delete(eid);
   });
   components.forEach((component, i) => {
-    observe(world, onAdd(networkedTag, component), (eid) => {
-      queue.push([eid, 2 /* AddComponent */, i]);
-    });
-    observe(world, onRemove(networkedTag, component), (eid) => {
-      queue.push([eid, 3 /* RemoveComponent */, i]);
-    });
+    if ((0, import_bitecs.isRelation)(component)) {
+      (0, import_bitecs.observe)(world, (0, import_bitecs.onAdd)(networkedTag, component(import_bitecs.Wildcard)), (eid) => {
+        const targets = (0, import_bitecs.getRelationTargets)(world, eid, component);
+        for (const target of targets) {
+          if (!relationTargets.has(eid)) {
+            relationTargets.set(eid, /* @__PURE__ */ new Map());
+          }
+          relationTargets.get(eid).set(i, target);
+          queue.push([eid, 4 /* AddRelation */, i, target]);
+        }
+      });
+      (0, import_bitecs.observe)(world, (0, import_bitecs.onRemove)(networkedTag, component(import_bitecs.Wildcard)), (eid) => {
+        const targetMap = relationTargets.get(eid);
+        if (targetMap) {
+          const target = targetMap.get(i);
+          if (target !== void 0) {
+            queue.push([eid, 5 /* RemoveRelation */, i, target]);
+            targetMap.delete(i);
+            if (targetMap.size === 0) {
+              relationTargets.delete(eid);
+            }
+          }
+        }
+      });
+    } else {
+      (0, import_bitecs.observe)(world, (0, import_bitecs.onAdd)(networkedTag, component), (eid) => {
+        queue.push([eid, 2 /* AddComponent */, i]);
+      });
+      (0, import_bitecs.observe)(world, (0, import_bitecs.onRemove)(networkedTag, component), (eid) => {
+        queue.push([eid, 3 /* RemoveComponent */, i]);
+      });
+    }
   });
   return () => {
     offset = 0;
     for (let i = 0; i < queue.length; i++) {
-      const [entityId, type, componentId] = queue[i];
+      const [entityId, type, componentId, targetId] = queue[i];
       dataView.setUint32(offset, entityId);
       offset += 4;
       dataView.setUint8(offset, type);
       offset += 1;
-      if (type === 2 /* AddComponent */ || type === 3 /* RemoveComponent */) {
+      if (type === 2 /* AddComponent */ || type === 3 /* RemoveComponent */ || type === 4 /* AddRelation */ || type === 5 /* RemoveRelation */) {
         dataView.setUint8(offset, componentId);
         offset += 1;
+        if (type === 4 /* AddRelation */ || type === 5 /* RemoveRelation */) {
+          dataView.setUint32(offset, targetId);
+          offset += 4;
+        }
       }
     }
     queue.length = 0;
@@ -713,27 +656,42 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
       const operationType = dataView.getUint8(offset);
       offset += 1;
       let componentId = -1;
-      if (operationType === 2 /* AddComponent */ || operationType === 3 /* RemoveComponent */) {
+      let targetId = -1;
+      if (operationType === 2 /* AddComponent */ || operationType === 3 /* RemoveComponent */ || operationType === 4 /* AddRelation */ || operationType === 5 /* RemoveRelation */) {
         componentId = dataView.getUint8(offset);
         offset += 1;
+        if (operationType === 4 /* AddRelation */ || operationType === 5 /* RemoveRelation */) {
+          targetId = dataView.getUint32(offset);
+          offset += 4;
+        }
       }
       const component = components[componentId];
       let worldEntityId = entityIdMapping.get(packetEntityId);
       if (operationType === 0 /* AddEntity */) {
         if (worldEntityId === void 0) {
-          worldEntityId = addEntity(world);
+          worldEntityId = (0, import_bitecs.addEntity)(world);
           entityIdMapping.set(packetEntityId, worldEntityId);
-          addComponent(world, worldEntityId, networkedTag);
+          (0, import_bitecs.addComponent)(world, worldEntityId, networkedTag);
         } else {
           throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
         }
-      } else if (worldEntityId !== void 0 && entityExists(world, worldEntityId)) {
+      } else if (worldEntityId !== void 0 && (0, import_bitecs.entityExists)(world, worldEntityId)) {
         if (operationType === 1 /* RemoveEntity */) {
-          removeEntity(world, worldEntityId);
+          (0, import_bitecs.removeEntity)(world, worldEntityId);
         } else if (operationType === 2 /* AddComponent */) {
-          addComponent(world, worldEntityId, component);
+          (0, import_bitecs.addComponent)(world, worldEntityId, component);
         } else if (operationType === 3 /* RemoveComponent */) {
-          removeComponent(world, worldEntityId, component);
+          (0, import_bitecs.removeComponent)(world, worldEntityId, component);
+        } else if (operationType === 4 /* AddRelation */) {
+          const worldTargetId = entityIdMapping.get(targetId);
+          if (worldTargetId !== void 0) {
+            (0, import_bitecs.addComponent)(world, worldEntityId, component(worldTargetId));
+          }
+        } else if (operationType === 5 /* RemoveRelation */) {
+          const worldTargetId = entityIdMapping.get(targetId);
+          if (worldTargetId !== void 0) {
+            (0, import_bitecs.removeComponent)(world, worldEntityId, component(worldTargetId));
+          }
         }
       }
     }
@@ -957,9 +915,9 @@ function exitQuery(queryFn) {
     return results;
   };
 }
-var addComponent2 = (world, component, eid) => addComponent(world, eid, component);
+var addComponent3 = (world, component, eid) => addComponent(world, eid, component);
 var hasComponent2 = (world, component, eid) => hasComponent(world, eid, component);
-var removeComponent2 = (world, component, eid) => removeComponent(world, eid, component);
+var removeComponent3 = (world, component, eid) => removeComponent(world, eid, component);
 var Types = {
   i8: "i8",
   ui8: "ui8",

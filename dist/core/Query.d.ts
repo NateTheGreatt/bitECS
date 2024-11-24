@@ -33,6 +33,12 @@ export type NotOp = QueryOperator;
 export type AnyOp = OrOp;
 export type AllOp = AndOp;
 export type NoneOp = NotOp;
+export declare const Or: OrOp;
+export declare const And: AndOp;
+export declare const Not: NotOp;
+export declare const Any: AnyOp;
+export declare const All: AllOp;
+export declare const None: NoneOp;
 export type ObservableHookDef = (...terms: QueryTerm[]) => {
     [$opType]: 'add' | 'remove' | 'set' | 'get';
     [$opTerms]: QueryTerm[];
@@ -43,12 +49,6 @@ export declare const onRemove: ObservableHookDef;
 export declare const onSet: ObservableHookDef;
 export declare const onGet: ObservableHookDef;
 export declare function observe(world: World, hook: ObservableHook, callback: (eid: EntityId, ...args: any[]) => any): () => void;
-export declare const Or: OrOp;
-export declare const And: AndOp;
-export declare const Not: NotOp;
-export declare const Any: AnyOp;
-export declare const All: AllOp;
-export declare const None: NoneOp;
 export declare const queryHash: (world: World, terms: QueryTerm[]) => string;
 export declare const registerQuery: (world: World, terms: QueryTerm[], options?: {
     buffered?: boolean;

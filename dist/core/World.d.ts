@@ -14,6 +14,7 @@ export type WorldContext = {
     queriesHashMap: Map<string, Query>;
     notQueries: Set<any>;
     dirtyQueries: Set<any>;
+    entitiesWithRelations: Set<EntityId>;
 };
 export type InternalWorld = {
     [$internal]: WorldContext;

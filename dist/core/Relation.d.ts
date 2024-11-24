@@ -22,4 +22,5 @@ export declare function createRelation<T>(options: {
     autoRemoveSubject?: boolean;
     onTargetRemoved?: OnTargetRemovedCallback;
 }): Relation<T>;
+export declare function isRelation(component: any): boolean;
 //# sourceMappingURL=Relation.d.ts.map

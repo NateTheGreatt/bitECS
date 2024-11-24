@@ -12,7 +12,11 @@ export type EntityIndex = {
 export declare const getId: (index: EntityIndex, id: number) => number;
 export declare const getVersion: (index: EntityIndex, id: number) => number;
 export declare const incrementVersion: (index: EntityIndex, id: number) => number;
-export declare const createEntityIndex: (versioning?: boolean, versionBits?: number) => EntityIndex;
+export declare const withRecycling: (versionBits?: number) => {
+    versioning: boolean;
+    versionBits: number;
+};
+export declare const createEntityIndex: (options?: ReturnType<typeof withRecycling> | typeof withRecycling) => EntityIndex;
 export declare const addEntityId: (index: EntityIndex) => number;
 export declare const removeEntityId: (index: EntityIndex, id: number) => void;
 export declare const isEntityIdAlive: (index: EntityIndex, id: number) => boolean;

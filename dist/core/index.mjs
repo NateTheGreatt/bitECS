@@ -14,7 +14,14 @@ var incrementVersion = (index, id) => {
   const newVersion = currentVersion + 1 & (1 << index.versionBits) - 1;
   return id & index.entityMask | newVersion << index.versionShift;
 };
-var createEntityIndex = (versioning = false, versionBits = 8) => {
+var withRecycling = (versionBits) => ({
+  versioning: true,
+  versionBits
+});
+var createEntityIndex = (options) => {
+  const config = options ? typeof options === "function" ? options() : options : { versioning: false, versionBits: 8 };
+  const versionBits = config.versionBits ?? 8;
+  const versioning = config.versioning ?? false;
   const entityBits = 32 - versionBits;
   const entityMask = (1 << entityBits) - 1;
   const versionShift = entityBits;
@@ -80,7 +87,8 @@ var createBaseWorld = (context, entityIndex) => defineHiddenProperty(context || 
   queries: /* @__PURE__ */ new Set(),
   queriesHashMap: /* @__PURE__ */ new Map(),
   notQueries: /* @__PURE__ */ new Set(),
-  dirtyQueries: /* @__PURE__ */ new Set()
+  dirtyQueries: /* @__PURE__ */ new Set(),
+  entitiesWithRelations: /* @__PURE__ */ new Set()
 });
 function createWorld(...args) {
   let entityIndex;
@@ -106,6 +114,7 @@ var resetWorld = (world) => {
   ctx.queriesHashMap = /* @__PURE__ */ new Map();
   ctx.notQueries = /* @__PURE__ */ new Set();
   ctx.dirtyQueries = /* @__PURE__ */ new Set();
+  ctx.entitiesWithRelations = /* @__PURE__ */ new Set();
   return world;
 };
 var deleteWorld = (world) => {
@@ -209,6 +218,21 @@ var createObservable = () => {
 // src/core/Query.ts
 var $opType = Symbol("opType");
 var $opTerms = Symbol("opTerms");
+var Or = (...components) => ({
+  [$opType]: "Or",
+  [$opTerms]: components
+});
+var And = (...components) => ({
+  [$opType]: "And",
+  [$opTerms]: components
+});
+var Not = (...components) => ({
+  [$opType]: "Not",
+  [$opTerms]: components
+});
+var Any = Or;
+var All = And;
+var None = Not;
 var onAdd = (...terms) => ({
   [$opType]: "add",
   [$opTerms]: terms
@@ -250,21 +274,6 @@ function observe(world, hook, callback) {
   }
   throw new Error(`Invalid hook type: ${type}`);
 }
-var Or = (...components) => ({
-  [$opType]: "Or",
-  [$opTerms]: components
-});
-var And = (...components) => ({
-  [$opType]: "And",
-  [$opTerms]: components
-});
-var Not = (...components) => ({
-  [$opType]: "Not",
-  [$opTerms]: components
-});
-var Any = Or;
-var All = And;
-var None = Not;
 var queryHash = (world, terms) => {
   const ctx = world[$internal];
   const getComponentId = (component) => {
@@ -512,6 +521,11 @@ function createRelation(...args) {
     return modifiers.reduce((acc, modifier) => modifier(acc), createBaseRelation());
   }
 }
+function isRelation(component) {
+  if (!component) return false;
+  const symbols = Object.getOwnPropertySymbols(component);
+  return symbols.includes($relationData);
+}
 
 // src/core/Component.ts
 var registerComponent = (world, component) => {
@@ -598,10 +612,10 @@ var recursivelyInherit = (world, baseEid, inheritedEid, isFirstSuper = true) => 
   }
 };
 var addComponent = (world, eid, ...components) => {
-  const ctx = world[$internal];
   if (!entityExists(world, eid)) {
     throw new Error(`Cannot add component - entity ${eid} does not exist in the world.`);
   }
+  const ctx = world[$internal];
   components.forEach((componentOrSet) => {
     const component = "component" in componentOrSet ? componentOrSet.component : componentOrSet;
     const data = "data" in componentOrSet ? componentOrSet.data : void 0;
@@ -624,9 +638,14 @@ var addComponent = (world, eid, ...components) => {
     ctx.entityComponents.get(eid).add(component);
     if (component[$isPairComponent]) {
       const relation = component[$relation];
-      addComponent(world, eid, Pair(relation, Wildcard));
       const target = component[$pairTarget];
+      addComponent(world, eid, Pair(relation, Wildcard));
       addComponent(world, eid, Pair(Wildcard, target));
+      if (typeof target === "number") {
+        addComponent(world, target, Pair(Wildcard, relation));
+        ctx.entitiesWithRelations.add(target);
+      }
+      ctx.entitiesWithRelations.add(target);
       const relationData = relation[$relationData];
       if (relationData.exclusiveRelation === true && target !== Wildcard) {
         const oldTarget = getRelationTargets(world, eid, relation)[0];
@@ -701,27 +720,30 @@ var removeEntity = (world, eid) => {
     if (processedEntities.has(currentEid)) continue;
     processedEntities.add(currentEid);
     const componentRemovalQueue = [];
-    for (const subject of innerQuery(world, [Wildcard(currentEid)])) {
-      if (!entityExists(world, subject)) {
-        continue;
-      }
-      for (const component of ctx.entityComponents.get(subject)) {
-        if (!component[$isPairComponent]) {
+    if (ctx.entitiesWithRelations.has(currentEid)) {
+      for (const subject of innerQuery(world, [Wildcard(currentEid)])) {
+        if (!entityExists(world, subject)) {
           continue;
         }
-        const relation = component[$relation];
-        const relationData = relation[$relationData];
-        componentRemovalQueue.push(() => removeComponent(world, subject, Pair(Wildcard, currentEid)));
-        if (component[$pairTarget] === currentEid) {
-          componentRemovalQueue.push(() => removeComponent(world, subject, component));
-          if (relationData.autoRemoveSubject) {
-            removalQueue.push(subject);
+        for (const component of ctx.entityComponents.get(subject)) {
+          if (!component[$isPairComponent]) {
+            continue;
           }
-          if (relationData.onTargetRemoved) {
-            componentRemovalQueue.push(() => relationData.onTargetRemoved(world, subject, currentEid));
+          const relation = component[$relation];
+          const relationData = relation[$relationData];
+          componentRemovalQueue.push(() => removeComponent(world, subject, Pair(Wildcard, currentEid)));
+          if (component[$pairTarget] === currentEid) {
+            componentRemovalQueue.push(() => removeComponent(world, subject, component));
+            if (relationData.autoRemoveSubject) {
+              removalQueue.push(subject);
+            }
+            if (relationData.onTargetRemoved) {
+              componentRemovalQueue.push(() => relationData.onTargetRemoved(world, subject, currentEid));
+            }
           }
         }
       }
+      ctx.entitiesWithRelations.delete(currentEid);
     }
     for (const removeOperation of componentRemovalQueue) {
       removeOperation();
@@ -783,6 +805,7 @@ export {
   getWorldComponents,
   hasComponent,
   innerQuery,
+  isRelation,
   observe,
   onAdd,
   onGet,
@@ -802,6 +825,7 @@ export {
   setComponent,
   withAutoRemoveSubject,
   withOnTargetRemoved,
+  withRecycling,
   withStore
 };
 //# sourceMappingURL=index.mjs.map
