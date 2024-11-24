@@ -27,7 +27,7 @@ Flexible, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-or
 ## ✨ Features
 
 
-`bitECS` is a minimal and powerful Entity Component System (ECS) library. It provides a lean API that enables developers to build their architecture to their liking, offering flexibility while maintaining efficiency in data-oriented designs. Key features include:
+`bitECS` is a minimal, less opinionated, and powerful Entity Component System (ECS) library. It provides a lean API that enables developers to build their architecture to their liking, offering flexibility while maintaining efficiency in data-oriented designs. Features include:
 
 - 🔮 Simple, declarative API
 - 🔍 Powerful queries
@@ -46,8 +46,10 @@ npm i bitecs
 ## 📘  Documentation
 |                  |
 | ---------------- |
-| 🏁  [Getting Started](https://github.com/NateTheGreatt/bitECS/blob/master/docs/Intro.md) |
-| 📑  [API](https://github.com/NateTheGreatt/bitECS/blob/master/docs/API.md) |
+| 🏁  [Introduction](https://github.com/NateTheGreatt/bitECS/blob/master/docs/Intro.md) |
+| 💾  [Serialization](https://github.com/NateTheGreatt/bitECS/blob/master/docs/Serialization.md) |
+| 🧵  [Multithreading](https://github.com/NateTheGreatt/bitECS/blob/master/docs/Multithreading.md) |
+| 📑  [API Docs](https://github.com/NateTheGreatt/bitECS/blob/master/docs/API.md) |
 
 ## 🕹 Example
 
@@ -95,7 +97,7 @@ const world = createWorld({
   }
 })
 
-const { Position, Velocity } = world.components
+const { Position, Velocity, Health } = world.components
 
 const eid = addEntity(world)
 addComponent(world, eid, Position)
@@ -106,20 +108,28 @@ Velocity.x[eid] = 1.23
 Velocity.y[eid] = 1.23
 Health[eid] = 100
 
+// Node environment
 setInterval(() => {
   update(world)
-}, 16)
+}, 1e3/60)
+
+// Browser environment
+requestAnimationFrame(function animate() {
+  update(world)
+  requestAnimationFrame(animate)
+})
 ```
 
-### 📈 Benchmarks
+## 📈 Benchmarks
 
-Microbenchmarks should be taken with a grain of salt. To get a feel for performance in real scenarios, see the [demos](https://github.com/NateTheGreatt/bitECS/tree/master/demos).
+Microbenchmarks should be taken with a grain of salt. To get a feel for performance possibilities in real scenarios, see the [demos](https://github.com/NateTheGreatt/bitECS/tree/master/demos).
 
-|                                                                 |                                                                           |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark) | [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks) |
+- [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark) 
+- [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks)
 
 ## 🔌 Used by
+
+Engines:
 
 - [iR Engine](https://github.com/ir-engine/ir-engine)
 - [Third Room](https://github.com/thirdroom/thirdroom)
