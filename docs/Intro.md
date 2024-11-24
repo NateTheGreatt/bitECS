@@ -499,26 +499,26 @@ While `bitECS` doesn't enforce a specific system implementation, it is recommend
 ```ts
 const moveBody = (world) => {
 	const entities = query(world, [Position])
-    
+
 	for (const entity of entities) {
 		Position.x[entity] += 1
-        Position.y[entity] += 1
-    }
+		Position.y[entity] += 1
+	}
 }
 
 const applyGravity = (world) => {
 	const entities = query(world, [Position, Mass])
-    const gravity = 9.81
-    
+	const gravity = 9.81
+
 	for (const entity of entities) {
 		Position.y[entity] -= gravity * Mass.value[entity]
-    }
+	}
 }
 
 const update = () => {
 	moveBody(world)
-    applyGravity(world)
-    requestAnimationFrame(update)
+	applyGravity(world)
+	requestAnimationFrame(update)
 }
 
 update()
