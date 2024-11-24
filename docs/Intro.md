@@ -471,6 +471,24 @@ addComponent(world, earth, IlluminatedBy(sun))
 const relatedToEarth = query(world, [Wildcard(earth)]); // Returns [OrbitedBy(moon), IlluminatedBy(sun)]
 ```
 
+### Wildcard Search on Relations
+
+You can also use wildcards to search for all entities involved in a specific type of relationship, regardless of their role (source or target). This is done by using `Wildcard` with the relation itself:
+```ts
+const parent1 = addEntity(world)
+const parent2 = addEntity(world)
+const child1 = addEntity(world)
+const child2 = addEntity(world)
+
+addComponent(world, child1, ChildOf(parent1))
+addComponent(world, child2, ChildOf(parent2))
+
+// Find all entities that are parents (have children)
+const parents = query(world, [Wildcard(ChildOf)]) // Returns [parent1, parent2]
+
+// Find all entities that are children (have parents)
+const children = query(world, [ChildOf(Wildcard)]) // Returns [child1, child2]
+```
 
 ## System
 
