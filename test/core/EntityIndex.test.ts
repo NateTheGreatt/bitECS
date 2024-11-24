@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { addEntityId, removeEntityId, isEntityIdAlive, createEntityIndex, getVersion, getId } from '../../src/core/EntityIndex'
+import { addEntityId, removeEntityId, isEntityIdAlive, createEntityIndex, getVersion, getId, withRecycling } from '../../src/core/EntityIndex'
 
 describe('EntityIndex', () => {
     it('should add and remove entity IDs correctly', () => {
@@ -40,7 +40,7 @@ describe('EntityIndex', () => {
     })
 
     it('should handle versioning of recycled IDs', () => {
-        const index = createEntityIndex(true)
+        const index = createEntityIndex(withRecycling())
 
         const id1 = addEntityId(index)
         removeEntityId(index, id1)
@@ -62,7 +62,7 @@ describe('EntityIndex', () => {
     })
 
     it('should add and identify entity IDs with versioning', () => {
-        const indexWithVersioning = createEntityIndex(true)
+        const indexWithVersioning = createEntityIndex(withRecycling())
 
         const id5 = addEntityId(indexWithVersioning)
         const id6 = addEntityId(indexWithVersioning)
@@ -74,7 +74,7 @@ describe('EntityIndex', () => {
     })
 
     it('should remove and recycle entity IDs with versioning', () => {
-        const indexWithVersioning = createEntityIndex(true)
+        const indexWithVersioning = createEntityIndex(withRecycling())
 
         const id6 = addEntityId(indexWithVersioning)
         removeEntityId(indexWithVersioning, id6)
@@ -88,7 +88,7 @@ describe('EntityIndex', () => {
     })
 
     it('should correctly handle entity ID and version', () => {
-        const index = createEntityIndex(true)
+        const index = createEntityIndex(withRecycling())
 
         // Add and remove entities to ensure versioning is applied
         const id1 = addEntityId(index)
@@ -116,7 +116,7 @@ describe('EntityIndex', () => {
         expect(version3).toBe(2)
     })
     it('should handle versioning with 4 bits', () => {
-        const index = createEntityIndex(true, 4)
+        const index = createEntityIndex(withRecycling(4))
         const maxVersion = 15 // 2^4 - 1
         
         let id = addEntityId(index)
@@ -142,7 +142,7 @@ describe('EntityIndex', () => {
     })
 
     it('should handle versioning with 16 bits', () => {
-        const index = createEntityIndex(true, 16)
+        const index = createEntityIndex(withRecycling(16))
         const maxVersion = 65535 // 2^16 - 1
 
         let id = addEntityId(index)

@@ -9,6 +9,10 @@ import {
 	entityExists,
 	hasComponent,
 	removeEntity,
+	Wildcard,
+	removeComponent,
+	query,
+	Not,
 } from '../../src/core'
 
 describe('Relation Tests', () => {
@@ -101,4 +105,50 @@ describe('Relation Tests', () => {
 		assert(hasComponent(world, hero, Targeting(rat)) === false)
 		assert(hasComponent(world, hero, Targeting(goblin)) === true)
 	})
+
+    test('should correctly handle wildcard relations', () => {
+        const world = createWorld()
+        const ChildOf = createRelation()
+        
+        const parent = addEntity(world)
+        const child = addEntity(world)
+        
+        addComponent(world, child, ChildOf(parent))
+        
+        assert(hasComponent(world, child, ChildOf(Wildcard)) === true)
+        assert(hasComponent(world, child, Pair(ChildOf, Wildcard)) === true)
+
+        assert(hasComponent(world, child, Wildcard(parent)) === true)
+        assert(hasComponent(world, child, Pair(Wildcard, parent)) === true)
+
+        assert(hasComponent(world, parent, Wildcard(ChildOf)) === true)
+        assert(hasComponent(world, parent, Pair(Wildcard, ChildOf)) === true)
+
+        // Query for all entities that are children of parent
+        const childrenOfParent = query(world, [ChildOf(parent)])
+        assert(childrenOfParent.length === 1)
+        assert(childrenOfParent[0] === child)
+
+        // Query for all entities that have any ChildOf relation
+        const allChildren = query(world, [ChildOf(Wildcard)])
+        assert(allChildren.length === 1) 
+        assert(allChildren[0] === child)
+
+        // Query for all entities that are targets of any relation
+        const allParents = query(world, [Pair(Wildcard, ChildOf)])
+        assert(allParents.length === 1)
+        assert(allParents[0] === parent)
+
+        // Query for entities that don't have ChildOf relation
+        const nonChildren = query(world, [Not(ChildOf(Wildcard))])
+        assert(nonChildren.length === 1)
+        assert(nonChildren[0] === parent)
+        
+        removeComponent(world, child, ChildOf(parent))
+        
+        assert(hasComponent(world, child, ChildOf(Wildcard)) === false)
+        assert(hasComponent(world, child, Pair(ChildOf, Wildcard)) === false) 
+        assert(hasComponent(world, child, Pair(Wildcard, parent)) === false)
+
+    })
 })

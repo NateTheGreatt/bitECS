@@ -27,6 +27,7 @@ export {
 	createEntityIndex,
 	getId,
 	getVersion,
+	withRecycling,
 } from './EntityIndex'
 
 export {
@@ -94,6 +95,7 @@ export {
 	Wildcard,
 	IsA,
 	Pair,
+	isRelation,
 } from './Relation'
 
 export type {

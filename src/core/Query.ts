@@ -89,6 +89,43 @@ export type AllOp = AndOp
 export type NoneOp = NotOp
 
 /**
+ * @function Or
+ * @description Creates an 'Or' query operator.
+ * @param {...ComponentRef} components - The components to apply the 'Or' operator to.
+ * @returns {OpReturnType} The 'Or' operator configuration.
+ */
+export const Or: OrOp = (...components: ComponentRef[]) => ({
+	[$opType]: 'Or',
+	[$opTerms]: components
+})
+
+/**
+ * @function And
+ * @description Creates an 'And' query operator.
+ * @param {...ComponentRef} components - The components to apply the 'And' operator to.
+ * @returns {OpReturnType} The 'And' operator configuration.
+ */
+export const And: AndOp = (...components: ComponentRef[]) => ({
+	[$opType]: 'And',
+	[$opTerms]: components
+})
+
+/**
+ * @function Not
+ * @description Creates a 'Not' query operator.
+ * @param {...ComponentRef} components - The components to apply the 'Not' operator to.
+ * @returns {OpReturnType} The 'Not' operator configuration.
+ */
+export const Not: NotOp = (...components: ComponentRef[]) => ({
+	[$opType]: 'Not',
+	[$opTerms]: components
+})
+
+export const Any: AnyOp = Or
+export const All: AllOp = And
+export const None: NoneOp = Not
+
+/**
  * @typedef {Function} ObservableHook
  * @description A function that creates an observable hook for queries.
  * @param {...QueryTerm} terms - The query terms to observe.
@@ -182,43 +219,6 @@ export function observe(world: World, hook: ObservableHook, callback: (eid: Enti
 
 	throw new Error(`Invalid hook type: ${type}`)
 }
-
-/**
- * @function Or
- * @description Creates an 'Or' query operator.
- * @param {...ComponentRef} components - The components to apply the 'Or' operator to.
- * @returns {OpReturnType} The 'Or' operator configuration.
- */
-export const Or: OrOp = (...components: ComponentRef[]) => ({
-	[$opType]: 'Or',
-	[$opTerms]: components
-})
-
-/**
- * @function And
- * @description Creates an 'And' query operator.
- * @param {...ComponentRef} components - The components to apply the 'And' operator to.
- * @returns {OpReturnType} The 'And' operator configuration.
- */
-export const And: AndOp = (...components: ComponentRef[]) => ({
-	[$opType]: 'And',
-	[$opTerms]: components
-})
-
-/**
- * @function Not
- * @description Creates a 'Not' query operator.
- * @param {...ComponentRef} components - The components to apply the 'Not' operator to.
- * @returns {OpReturnType} The 'Not' operator configuration.
- */
-export const Not: NotOp = (...components: ComponentRef[]) => ({
-	[$opType]: 'Not',
-	[$opTerms]: components
-})
-
-export const Any: AnyOp = Or
-export const All: AllOp = And
-export const None: NoneOp = Not
 
 /**
  * @function queryHash

@@ -249,3 +249,14 @@ export function createRelation<T>(
         return modifiers.reduce((acc, modifier) => modifier(acc), createBaseRelation<T>())
     }
 }
+
+/**
+ * Checks if a component is a relation.
+ * @param {any} component - The component to check.
+ * @returns {boolean} True if the component is a relation, false otherwise.
+ */
+export function isRelation(component: any): boolean {
+    if (!component) return false
+    const symbols = Object.getOwnPropertySymbols(component)
+    return symbols.includes($relationData)
+}
