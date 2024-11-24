@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "module": "NodeNext",
-    "target": "ESNext",
+    "target": "ESNext", 
     "moduleResolution": "NodeNext",
     "lib": ["ESNext"],
     "declaration": true,
@@ -12,7 +12,13 @@
     "noLib": false,
     "removeComments": true,
     "sourceMap": true,
-    "outDir": "./dist"
+    "rootDir": "src",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "bitecs": ["src/core/index.ts"],
+      "bitecs/*": ["src/*/index.ts"]
+    }
   },
   "include": [ "./src/core", "./src/serialization" ],
   "exclude": [
