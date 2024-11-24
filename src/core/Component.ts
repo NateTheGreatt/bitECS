@@ -1,7 +1,3 @@
-/**
- * @module Component
- */
-
 import { entityExists, EntityId, getEntityComponents, Prefab } from './Entity'
 import { queryAddEntity, queryCheckEntity, queryRemoveEntity } from './Query'
 import { Query } from './Query'
@@ -211,11 +207,12 @@ type ComponentSetter<T = any> = { component: ComponentRef; data: T }
  * @throws {Error} If the entity does not exist in the world.
  */
 export const addComponent = (world: World, eid: EntityId, ...components: (ComponentRef | ComponentSetter)[]): void => {
-	const ctx = (world as InternalWorld)[$internal]
 	if (!entityExists(world, eid)) {
 		throw new Error(`Cannot add component - entity ${eid} does not exist in the world.`)
 	}
-
+	
+	const ctx = (world as InternalWorld)[$internal]
+	
 	components.forEach(componentOrSet => {
 		const component = 'component' in componentOrSet ? componentOrSet.component : componentOrSet
 		const data = 'data' in componentOrSet ? componentOrSet.data : undefined
@@ -242,17 +239,26 @@ export const addComponent = (world: World, eid: EntityId, ...components: (Compon
 				else queryRemoveEntity(world, queryData, eid)
 			})
 		}
-
 		ctx.entityComponents.get(eid)!.add(component)
-
 		if (component[$isPairComponent]) {
-			// add to a set to make removal checks faster
-			ctx.relationTargetEntities.add(eid)
-
 			const relation = component[$relation]
-			addComponent(world, eid, Pair(relation, Wildcard))
 			const target = component[$pairTarget]
+
+			// Add both Wildcard pairs for relation and target
+			addComponent(world, eid, Pair(relation, Wildcard))
 			addComponent(world, eid, Pair(Wildcard, target))
+
+			// For non-Wildcard targets, add Wildcard pair to track relation targets
+			if (typeof target === 'number') {
+				// Add Wildcard pair for target being a relation target
+				addComponent(world, target, Pair(Wildcard, relation))
+				
+				// add target to a set to make autoRemoveSubject checks faster
+				ctx.entitiesWithRelations.add(target)
+			}
+
+			// add target to a set to make autoRemoveSubject checks faster
+			ctx.entitiesWithRelations.add(target)
 
 			const relationData = relation[$relationData]
 			if (relationData.exclusiveRelation === true && target !== Wildcard) {

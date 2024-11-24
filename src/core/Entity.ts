@@ -56,7 +56,7 @@ export const removeEntity = (world: World, eid: EntityId) => {
 	if (!isEntityIdAlive(ctx.entityIndex, eid)) return
 
 	// Remove relation components from entities that have a relation to this one, breadth-first
-	// e.g. addComponent(world, Pair(ChildOf, parent), child)
+	// e.g. addComponent(world, child, ChildOf(parent))
 	// when parent is removed, we need to remove the child
 	const removalQueue = [eid]
 	const processedEntities = new Set()
@@ -68,7 +68,7 @@ export const removeEntity = (world: World, eid: EntityId) => {
 
         const componentRemovalQueue = []
 
-		if (ctx.relationTargetEntities.has(currentEid)) {
+		if (ctx.entitiesWithRelations.has(currentEid)) {
 			for (const subject of innerQuery(world, [Wildcard(currentEid)])) {
 				if (!entityExists(world, subject)) {
 					continue
@@ -95,7 +95,7 @@ export const removeEntity = (world: World, eid: EntityId) => {
 				}
 			}
 
-			ctx.relationTargetEntities.delete(currentEid)
+			ctx.entitiesWithRelations.delete(currentEid)
 		}
 
         for (const removeOperation of componentRemovalQueue) {

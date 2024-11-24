@@ -17,7 +17,7 @@ export type WorldContext = {
     queriesHashMap: Map<string, Query>
     notQueries: Set<any>
     dirtyQueries: Set<any>
-    relationTargetEntities: Set<EntityId>
+    entitiesWithRelations: Set<EntityId>
 }
 
 export type InternalWorld = {
@@ -39,7 +39,7 @@ const createBaseWorld = <T extends object>(context?: T, entityIndex?: EntityInde
         notQueries: new Set(),
         dirtyQueries: new Set(),
         entitiesWithRelations: new Set(),
-    }) as World<T>
+}) as World<T>
 
 /**
  * Creates a new world with various configurations.
@@ -47,6 +47,9 @@ const createBaseWorld = <T extends object>(context?: T, entityIndex?: EntityInde
  * @param {...Array<EntityIndex | object>} args - EntityIndex, context object, or both.
  * @returns {World<T>} The created world.
  */
+
+// TODO: middleware
+
 export function createWorld<T extends object = {}>(
     ...args: Array<EntityIndex | T>
 ): World<T> {
@@ -82,7 +85,7 @@ export const resetWorld = (world: World) => {
     ctx.queriesHashMap = new Map()
     ctx.notQueries = new Set()
     ctx.dirtyQueries = new Set()
-    ctx.relationTargetEntities = new Set()
+    ctx.entitiesWithRelations = new Set()
     return world
 }
 
