@@ -1,6 +1,6 @@
 # Introduction
 
-`bitECS` is a flexible toolkit for data-oriented design in game development. It offers core ECS concepts without imposing strict rules:
+`bitECS` is a flexible toolkit for data-oriented design in game development. It offers core ECS concepts without imposing strict rules onto your architecture:
 
 - Entities are numerical IDs.
 - Component stores can be anything.
@@ -146,10 +146,18 @@ removeMarkedEntities(world)
 
 Entity ID versioning is an alternative mechanism that helps in managing recycled entity IDs more effectively. When versioning is enabled, each entity ID carries a version number that increments every time the ID is recycled. This helps in distinguishing between different lifetimes of the same entity ID, preventing potential issues that arise from immediate recycling.
 
-To enable versioning, you can pass the `versioning` flag and the number of `versionBits` to the `createEntityIndex` function. The `versionBits` parameter determines how many bits are reserved for the version number (defaults to `8` bits which gives `255` recycles before the version resets).
+To enable versioning, pass `withRecycling()` as a first argument, and optionally specify the number of version bits. Version bits determine how many times an ID can be recycled before resetting (default is 12 bits = 4096 recycles).
+
+Using version bits reduces the maximum number of possible entities, since bits are split between versioning and entity IDs. You are free to tune this to best fit your use case:
+
+- 8 bits: 16M entities/256 recycles
+- 10 bits: 4M entities/1K recycles
+- 12 bits: 1M entities/4K recycles
+- 14 bits: 262K entities/16K recycles
+- 16 bits: 65K entities/65K recycles
 
 ```ts
-const entityIndex = createEntityIndex(true, 8)
+const entityIndex = createEntityIndex(withRecycling(8))
 const world = createWorld(entityIndex)
 
 const eid1 = addEntityId(entityIndex)
@@ -192,19 +200,21 @@ const Position = [] as { x: number; y: number }[]
 
 ### Associating Components with Worlds
 
-Internally, components are automatically registered with a world when first added to an entity within that world. They can also be explicitly registered with `registerComponent`.
+Internally, components are automatically registered with a world when first added to an entity within that world. They can also be explicitly registered with `registerComponent`. However, it is your responsibility as the user to effectively manage the data stores for components in between all worlds in use.
 
-When multiple worlds are in use, there are two general approaches for maintaining data isolation between them:
+When multiple worlds are in use, there are two general approaches. One for maintaining data store isolation between worlds, and one for sharing data stores between worlds.
 
-1. Define components separately for each world. This approach ensures complete isolation between worlds, as each world maintains its own set of components. This is the default behavior and is recommended for most use cases.
+1. Define components separately for each world. This approach ensures complete isolation between worlds, as each world maintains its own set of components. This is the default behavior and is recommended for most use cases. Note that component storage is left entirely up to you, and there is no explicit need to store components on a `components` property on the world. You can store them wherever you want.
 
 ```ts
 // When defined on the world...
 const world = createWorld({
-    components: { Position: Array(1e5).fill(3).map(n => new Float32Array(n)) }
+    components: { 
+        Position: Array(1e5).fill(3).map(n => new Float32Array(n)) 
+    }
 });
 
-// ...components can, for example, be retrieved via destructuring
+// ...components can then be cleanly destructured from the world
 const { Position } = world.components
 ```
 
@@ -217,7 +227,7 @@ const Position = Array(1e5).fill(3).map(n => new Float32Array(n))
 // ...components can be retrieved via importing.
 import { Position } from './components'
 
-// if using multiple worlds with global components, you need to use a shared entity index
+// if using multiple worlds with global components, you MUST use a shared entity index
 const entityIndex = createEntityIndex()
 const world1 = createWorld(entityIndex)
 const world2 = createWorld(entityIndex)
@@ -267,16 +277,41 @@ Queries are used to retrieve information from the world, which acts as a dynamic
 const entities = query(world, [Position, Mass]); // Returns number[]
 ```
 
-When dealing with large numbers of entities, you can use `bufferQuery` instead of the standard `query`. The `bufferQuery` function returns a `Uint32Array` instead of a `number[]`, which can be particularly advantageous for multithreaded operations. This is because `Uint32Array` can be efficiently shared between threads using SharedArrayBuffer (SAB) or copied as raw data, making it ideal for scenarios where you need to pass query results between different execution contexts or perform parallel processing on the query results.
+### Query Operators
 
+Queries can be modified using operators to create more complex conditions:
+
+- `And`/`All`: Matches entities that have ALL of the specified components (this is the default behavior)
+- `Or`/`Any`: Matches entities that have ANY of the specified components
+- `Not`/`None`: Matches entities that have NONE of the specified components
+
+Here are some examples:
 ```ts
-const entities = bufferQuery(world, [Position, Mass]); // Returns SAB-backed Uint32Array
-```
+// Match entities with Position AND Velocity
+query(world, [Position, Velocity])
+query(world, [And(Position, Velocity)])
+query(world, [All(Position, Velocity)])
 
-Relations can be queried just like components:
+// Match entities with Position OR Velocity
+query(world, [Or(Position, Velocity)])
 
-```ts
-const children = query(world, [ChildOf(parent)])
+// Match entities with Position but NOT Velocity
+query(world, [Position, Not(Velocity)])
+
+// Complex combinations
+query(world, [
+  Position,                   // Must have Position
+  Or(Health, Shield),         // Must have either Health OR Shield
+  Not(Stunned, Paralyzed)     // Must NOT have Stunned AND must NOT have Paralyzed
+])
+
+// Using Any/All/None aliases
+query(world, [
+  All(Position, Velocity),    // Same as And()
+  Any(Health, Shield),        // Same as Or()
+  None(Stunned, Paralyzed)    // Same as Not() 
+])
+
 ```
 
 ### Inner Query
@@ -298,6 +333,7 @@ for (const entity of query(world, [Position, Velocity])) {
 
 Note: You can use query inside of another query loop with manual entity recycling, avoiding the need for `innerQuery`.
 
+
 ## Relationships
 
 Relationships in `bitECS` allow you to define how entities are related to each other. This can be useful for scenarios like inventory systems, parent-child hierarchies, exclusive targeting mechanics, and much more. Relations are defined using `createRelation` and can have optional properties for additional behavior.
@@ -316,6 +352,13 @@ const Contains = createRelation(
 const Contains = createRelation({
 	store: () => ({ amount: [] as number[] })
 })
+```
+
+Relations can be queried just like components:
+
+```ts
+const ChildOf = createRelation(withAutoRemoveSubject)
+const children = query(world, [ChildOf(parent)])
 ```
 
 ### Adding Relationships
