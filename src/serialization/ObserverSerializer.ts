@@ -1,8 +1,19 @@
-import { addComponent, removeComponent } from '../core/Component'
-import { addEntity, removeEntity } from '../core/Entity'
-import { observe, onAdd, onRemove } from '../core/Query'
-import { World, ComponentRef, entityExists, isRelation, getRelationTargets, Wildcard } from '../core/index'
-import { EntityId } from '../core/Entity'
+import {
+    addComponent,
+    removeComponent,
+    addEntity,
+    removeEntity,
+    observe,
+    onAdd,
+    onRemove,
+    World,
+    ComponentRef,
+    entityExists,
+    isRelation,
+    getRelationTargets,
+    Wildcard,
+    EntityId
+  } from 'bitecs'
 
 enum OperationType {
     AddEntity = 0,

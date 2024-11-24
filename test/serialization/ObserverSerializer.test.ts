@@ -1,10 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { addComponent, removeComponent, hasComponent } from '../../src/core/Component'
-import { addEntity, entityExists, removeEntity } from '../../src/core/Entity'
-import { createWorld } from '../../src/core/World'
+import { addComponent, removeComponent, hasComponent, addEntity, entityExists, removeEntity, createWorld, createRelation, Wildcard, withAutoRemoveSubject } from 'bitecs'
 
 import { createObserverSerializer, createObserverDeserializer } from '../../src/serialization'
-import { createRelation, Wildcard, withAutoRemoveSubject } from '../../src/core'
 
 describe('ObserverSerializer and ObserverDeserializer', () => {
     it('should correctly serialize and deserialize component additions', () => {
@@ -200,7 +197,7 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
         let serializedData = serialize()
         let entityIdMapping = deserialize(serializedData)
 
-        // Check if relation is properly set in world2
+        // Get EIDs of the newly created and copied entities in world 2 
         const mappedParent = entityIdMapping.get(parent)!
         const mappedChild = entityIdMapping.get(child)!
 

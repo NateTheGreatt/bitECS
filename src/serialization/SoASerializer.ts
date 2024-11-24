@@ -1,4 +1,4 @@
-import { ComponentRef } from "../core"
+import { ComponentRef } from "bitecs"
 
 /**
  * Symbols representing different data types for serialization.

@@ -2,12 +2,10 @@ import { createSoASerializer, createSoADeserializer, PrimitiveBrand } from './So
 import {
     addComponent,
     hasComponent,
-} from '../core/Component'
-import {
     World,
     getAllEntities,
-    addEntity,
-} from '../core'
+    addEntity
+} from 'bitecs'
 
 /**
  * Creates a snapshot serializer for the given world and components.
