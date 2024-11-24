@@ -4,6 +4,7 @@ import { addEntity, entityExists, removeEntity } from '../../src/core/Entity'
 import { createWorld } from '../../src/core/World'
 
 import { createObserverSerializer, createObserverDeserializer } from '../../src/serialization'
+import { createRelation, Wildcard, withAutoRemoveSubject } from '../../src/core'
 
 describe('ObserverSerializer and ObserverDeserializer', () => {
     it('should correctly serialize and deserialize component additions', () => {
@@ -176,5 +177,52 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
 
         // Check if entity is removed in world2
         expect(entityExists(world2, entityIdMapping.get(entity)!)).toBe(false)
+    })
+
+    it('should correctly serialize and deserialize relations', () => {
+        const world1 = createWorld()
+        const world2 = createWorld()
+        const Networked = {}
+        const ChildOf = createRelation(withAutoRemoveSubject)
+        const components = [ChildOf]
+
+        const serialize = createObserverSerializer(world1, Networked, components)
+        const deserialize = createObserverDeserializer(world2, Networked, components)
+
+        // Create parent and child entities in world1
+        const parent = addEntity(world1)
+        const child = addEntity(world1)
+        addComponent(world1, parent, Networked)
+        addComponent(world1, child, Networked)
+        addComponent(world1, child, ChildOf(parent))
+
+        // Serialize from world1 and deserialize into world2
+        let serializedData = serialize()
+        let entityIdMapping = deserialize(serializedData)
+
+        // Check if relation is properly set in world2
+        const mappedParent = entityIdMapping.get(parent)!
+        const mappedChild = entityIdMapping.get(child)!
+
+        // ChildOf(parent) needs to be explicitly synced by the serializer
+        expect(hasComponent(world1, child, ChildOf(parent))).toBe(true)
+        expect(hasComponent(world2, mappedChild, ChildOf(mappedParent))).toBe(true)
+
+        // the rest will be implicitly added
+        expect(hasComponent(world1, parent, Wildcard(ChildOf))).toBe(true)
+        expect(hasComponent(world2, mappedParent, Wildcard(ChildOf))).toBe(true)
+
+        expect(hasComponent(world1, child, ChildOf(Wildcard))).toBe(true)
+        expect(hasComponent(world2, mappedChild, ChildOf(Wildcard))).toBe(true)
+
+        // Remove relation in world1
+        removeComponent(world1, child, ChildOf(parent))
+
+        // Serialize from world1 and deserialize into world2
+        serializedData = serialize()
+        entityIdMapping = deserialize(serializedData)
+
+        // Check if relation is removed in world2
+        expect(hasComponent(world2, mappedChild, ChildOf(mappedParent))).toBe(false)
     })
 })
