@@ -614,10 +614,9 @@ observe(world, onRemove(Health), (eid) => {
 ```
 
 ### Observing component updates
+The `onSet` and `onGet` hooks in `bitECS` allow you to implement custom getters and setters for component data. Each component can have its own `onSet` and `onGet` hooks that control how data is written and read.
 
-The `onSet` and `onGet` hooks in `bitECS` serve as powerful mechanisms for decoupling, custom data storage, and inheritance handling.
-
-Note that these are not property getters/setters, as `bitECS` doesn't know the shape of your data. These are component-level gets/sets. The `onSet` hook is triggered like so:
+These hooks operate at the component level rather than individual properties. When you call `setComponent()`, the `onSet` hook for that component is triggered with the entire data object:
 ```ts
 setComponent(world, eid, Position, {x:1, y:2})
 // or
