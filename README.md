@@ -35,7 +35,7 @@ Flexible, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-or
 - 🧵 Thread-friendly
 - 💾 Serialization included
 - 🌐 Node & browser compatible
-- 🤏 Tiny (`~3KB`)
+- 🤏 Tiny (`<4KB`)
 - ❤ Made with love
 
 ## 💿 Install

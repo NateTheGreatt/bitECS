@@ -1,6 +1,6 @@
 # Serialization
 
-Serialization is completely decoupled from `bitECS` and instead builds its features externally by utilizing the `bitECS` API. It provides three separate serialization APIs that work synergistically together to handle different serialization needs.
+Serialization is completely decoupled from `bitECS` and instead builds its features externally by utilizing the `bitECS` API. It provides three separate serialization APIs that work synergistically together to handle different serialization needs. These can be imported from `bitecs/serialization`.
 
 All serializers support:
 - Efficient binary serialization using TypedArrays or regular arrays
@@ -31,6 +31,8 @@ Data type tags can be used to define components with regular arrays, which lets 
 The type tags are used to annotate regular, non-typed arrays for proper serialization. TypedArrays like `Uint8Array` can be used directly without tags since their type is already known:
 
 ```ts
+import { createSoASerializer, createSoADeserializer, f32 } from 'bitecs/serialization'
+
 const Position = { x: f32([]), y: f32([]) }
 const Velocity = { vx: f32([]), vy: f32([]) }
 const Health = new Uint8Array(1e5)
@@ -103,6 +105,9 @@ The `networkTag` parameter is a component that marks entities for serialization.
 The `components` parameter is an array of components that will be tracked for addition and removal. When a component in this array is added to or removed from an entity with the network tag, it will be included in the serialized data.
 
 ```ts
+import { addComponent, removeComponent, hasComponent, addEntity, createWorld } from 'bitecs'
+import { createObserverSerializer, createObserverDeserializer } from 'bitecs/serialization'
+
 const world = createWorld()
 const eid = addEntity(world)
 
@@ -147,6 +152,9 @@ Key functions:
 - `createSnapshotDeserializer(world, components)` - Creates a full state deserializer
 
 ```ts
+import { createWorld, addEntity, addComponent, removeEntity, hasComponent } from 'bitecs'
+import { createSnapshotSerializer, createSnapshotDeserializer, f32, u8 } from 'bitecs/serialization'
+
 // Example using Snapshot serializer for full state capture
 const world = createWorld()
 const eid = addEntity(world)
