@@ -146,9 +146,9 @@ removeMarkedEntities(world)
 
 Entity ID versioning is an alternative mechanism that helps in managing recycled entity IDs more effectively. When versioning is enabled, each entity ID carries a version number that increments every time the ID is recycled. This helps in distinguishing between different lifetimes of the same entity ID, preventing potential issues that arise from immediate recycling.
 
-To enable versioning, pass `withRecycling()` as a first argument, and optionally specify the number of version bits. Version bits determine how many times an ID can be recycled before resetting (default is 12 bits = 4096 recycles).
+To enable versioning, pass `withVersioning()` as a first argument, and optionally specify the number of version bits. Version bits determine how many times an ID can be recycled before resetting (default is 12 bits = 4096 recycles).
 
-Using version bits reduces the maximum number of possible entities, since bits are split between versioning and entity IDs. You are free to tune this to best fit your use case:
+Using version bits reduces the maximum number of possible entities, since bits are split between versioning and entity IDs. You are free to tune this to best fit your use case. Here are some sensible options:
 
 - 8 bits: 16M entities/256 recycles
 - 10 bits: 4M entities/1K recycles
@@ -157,7 +157,7 @@ Using version bits reduces the maximum number of possible entities, since bits a
 - 16 bits: 65K entities/65K recycles
 
 ```ts
-const entityIndex = createEntityIndex(withRecycling(8))
+const entityIndex = createEntityIndex(withVersioning(8))
 const world = createWorld(entityIndex)
 
 const eid1 = addEntityId(entityIndex)

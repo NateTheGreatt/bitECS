@@ -27,7 +27,7 @@ export {
 	createEntityIndex,
 	getId,
 	getVersion,
-	withRecycling,
+	withVersioning,
 } from './EntityIndex'
 
 export {

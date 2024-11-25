@@ -56,19 +56,19 @@ export const incrementVersion = (index: EntityIndex, id: number): number => {
  * @param {number} [versionBits] - Optional number of bits to use for version numbers. Defaults to 8 if not specified.
  * @returns {object} Configuration object with versioning enabled and specified version bits.
  */
-export const withRecycling = (versionBits?: number) => ({
+export const withVersioning = (versionBits?: number) => ({
     versioning: true,
     versionBits
 })
 
 /**
  * Creates and initializes a new EntityIndex.
- * @param {object|function} [options] - Optional configuration object from withRecycling() or withRecycling function.
+ * @param {object|function} [options] - Optional configuration object from withVersioning() or withVersioning function.
  * @param {boolean} options.versioning - Flag to enable versioning for recycled IDs.
  * @param {number} options.versionBits - Number of bits to use for versioning (default: 8).
  * @returns {EntityIndex} A new EntityIndex object.
  */
-export const createEntityIndex = (options?: ReturnType<typeof withRecycling> | typeof withRecycling): EntityIndex => {
+export const createEntityIndex = (options?: ReturnType<typeof withVersioning> | typeof withVersioning): EntityIndex => {
     const config = options 
         ? typeof options === 'function' 
             ? options()
