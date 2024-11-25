@@ -27,6 +27,12 @@
       "require": "./dist/legacy/index.min.cjs"
     }
   },
+  "typesVersions": {
+    "*": {
+      "serialization": ["./dist/serialization/index.d.ts"],
+      "legacy": ["./dist/legacy/index.d.ts"]
+    }
+  },
   "author": {
     "name": "Nathaniel Martin",
     "email": "mrtn.nathaniel@gmail.com",
