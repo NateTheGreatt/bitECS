@@ -46,10 +46,10 @@ npm i bitecs
 ## 📘  Documentation
 |                  |
 | ---------------- |
-| 🏁  [Introduction](https://github.com/NateTheGreatt/bitECS/blob/master/docs/Intro.md) |
-| 💾  [Serialization](https://github.com/NateTheGreatt/bitECS/blob/master/docs/Serialization.md) |
-| 🧵  [Multithreading](https://github.com/NateTheGreatt/bitECS/blob/master/docs/Multithreading.md) |
-| 📑  [API Docs](https://github.com/NateTheGreatt/bitECS/blob/master/docs/API.md) |
+| 🏁  [Introduction](/docs/Intro.md) |
+| 💾  [Serialization](/docs/Serialization.md) |
+| 🧵  [Multithreading](/docs/Multithreading.md) |
+| 📑  [API Docs](/docs/API.md) |
 
 ## 🕹 Example
 
