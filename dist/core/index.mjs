@@ -14,7 +14,7 @@ var incrementVersion = (index, id) => {
   const newVersion = currentVersion + 1 & (1 << index.versionBits) - 1;
   return id & index.entityMask | newVersion << index.versionShift;
 };
-var withRecycling = (versionBits) => ({
+var withVersioning = (versionBits) => ({
   versioning: true,
   versionBits
 });
@@ -825,7 +825,7 @@ export {
   setComponent,
   withAutoRemoveSubject,
   withOnTargetRemoved,
-  withRecycling,
-  withStore
+  withStore,
+  withVersioning
 };
 //# sourceMappingURL=index.mjs.map

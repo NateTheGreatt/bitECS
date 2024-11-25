@@ -69,8 +69,8 @@ __export(core_exports, {
   setComponent: () => setComponent,
   withAutoRemoveSubject: () => withAutoRemoveSubject,
   withOnTargetRemoved: () => withOnTargetRemoved,
-  withRecycling: () => withRecycling,
-  withStore: () => withStore
+  withStore: () => withStore,
+  withVersioning: () => withVersioning
 });
 module.exports = __toCommonJS(core_exports);
 
@@ -90,7 +90,7 @@ var incrementVersion = (index, id) => {
   const newVersion = currentVersion + 1 & (1 << index.versionBits) - 1;
   return id & index.entityMask | newVersion << index.versionShift;
 };
-var withRecycling = (versionBits) => ({
+var withVersioning = (versionBits) => ({
   versioning: true,
   versionBits
 });
