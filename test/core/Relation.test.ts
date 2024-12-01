@@ -1,5 +1,4 @@
-import { describe, test } from 'vitest'
-import assert from 'assert'
+import { describe, test, expect } from 'vitest'
 import {
 	Pair,
 	addComponent,
@@ -13,6 +12,7 @@ import {
 	removeComponent,
 	query,
 	Not,
+	withStore,
 } from '../../src/core'
 
 describe('Relation Tests', () => {
@@ -30,7 +30,7 @@ describe('Relation Tests', () => {
 		console.log('parent',parent)
 		removeEntity(world, parent)
 
-		assert(entityExists(world, child) === false)
+		expect(entityExists(world, child) === false)
 	})
 
 	test('should init store', () => {
@@ -52,11 +52,35 @@ describe('Relation Tests', () => {
 		addComponent(world, inventory, Contains(silver))
 		Contains(silver).amount[inventory] = 12
 
-		assert(Contains(gold) !== Contains(silver))
-		assert(Contains(gold).amount[inventory] === 5)
-		assert(Contains(silver).amount[inventory] === 12)
-		assert(Pair(Contains, gold).amount[inventory] === 5)
-		assert(Pair(Contains, silver).amount[inventory] === 12)
+		expect(Contains(gold) !== Contains(silver))
+		expect(Contains(gold).amount[inventory] === 5)
+		expect(Contains(silver).amount[inventory] === 12)
+		expect(Pair(Contains, gold).amount[inventory] === 5)
+		expect(Pair(Contains, silver).amount[inventory] === 12)
+	})
+
+	test('should init store with withStore', () => {
+		const world = createWorld()
+
+		const Contains = createRelation(withStore(() => ({
+			amount: [] as number[]
+		})))
+
+		const inventory = addEntity(world)
+		const gold = addEntity(world)
+		const silver = addEntity(world)
+
+		addComponent(world, inventory, Contains(gold))
+		Contains(gold).amount[inventory] = 5
+
+		addComponent(world, inventory, Contains(silver))
+		Contains(silver).amount[inventory] = 12
+
+		expect(Contains(gold) !== Contains(silver))
+		expect(Contains(gold).amount[inventory] === 5)
+		expect(Contains(silver).amount[inventory] === 12)
+		expect(Pair(Contains, gold).amount[inventory] === 5)
+		expect(Pair(Contains, silver).amount[inventory] === 12)
 	})
 
 	test('should auto remove all descendants of subject', () => {
@@ -84,11 +108,11 @@ describe('Relation Tests', () => {
 
 		removeEntity(world, parent)
 
-		assert(entityExists(world, child) === false)
-		assert(entityExists(world, childChild1) === false)
-		assert(entityExists(world, childChild2) === false)
-		assert(entityExists(world, childChild3) === false)
-		assert(entityExists(world, childChildChild1) === false)
+		expect(entityExists(world, child) === false)
+		expect(entityExists(world, childChild1) === false)
+		expect(entityExists(world, childChild2) === false)
+		expect(entityExists(world, childChild3) === false)
+		expect(entityExists(world, childChildChild1) === false)
 	})
 
 	test('should maintain exclusive relations', () => {
@@ -102,8 +126,8 @@ describe('Relation Tests', () => {
 
 		addComponent(world, hero, Targeting(goblin))
 
-		assert(hasComponent(world, hero, Targeting(rat)) === false)
-		assert(hasComponent(world, hero, Targeting(goblin)) === true)
+		expect(hasComponent(world, hero, Targeting(rat)) === false)
+		expect(hasComponent(world, hero, Targeting(goblin)) === true)
 	})
 
     test('should correctly handle wildcard relations', () => {
@@ -115,40 +139,40 @@ describe('Relation Tests', () => {
         
         addComponent(world, child, ChildOf(parent))
         
-        assert(hasComponent(world, child, ChildOf(Wildcard)) === true)
-        assert(hasComponent(world, child, Pair(ChildOf, Wildcard)) === true)
+        expect(hasComponent(world, child, ChildOf(Wildcard)) === true)
+        expect(hasComponent(world, child, Pair(ChildOf, Wildcard)) === true)
 
-        assert(hasComponent(world, child, Wildcard(parent)) === true)
-        assert(hasComponent(world, child, Pair(Wildcard, parent)) === true)
+        expect(hasComponent(world, child, Wildcard(parent)) === true)
+        expect(hasComponent(world, child, Pair(Wildcard, parent)) === true)
 
-        assert(hasComponent(world, parent, Wildcard(ChildOf)) === true)
-        assert(hasComponent(world, parent, Pair(Wildcard, ChildOf)) === true)
+        expect(hasComponent(world, parent, Wildcard(ChildOf)) === true)
+        expect(hasComponent(world, parent, Pair(Wildcard, ChildOf)) === true)
 
         // Query for all entities that are children of parent
         const childrenOfParent = query(world, [ChildOf(parent)])
-        assert(childrenOfParent.length === 1)
-        assert(childrenOfParent[0] === child)
+        expect(childrenOfParent.length === 1)
+        expect(childrenOfParent[0] === child)
 
         // Query for all entities that have any ChildOf relation
         const allChildren = query(world, [ChildOf(Wildcard)])
-        assert(allChildren.length === 1) 
-        assert(allChildren[0] === child)
+        expect(allChildren.length === 1) 
+        expect(allChildren[0] === child)
 
         // Query for all entities that are targets of any relation
         const allParents = query(world, [Pair(Wildcard, ChildOf)])
-        assert(allParents.length === 1)
-        assert(allParents[0] === parent)
+        expect(allParents.length === 1)
+        expect(allParents[0] === parent)
 
         // Query for entities that don't have ChildOf relation
         const nonChildren = query(world, [Not(ChildOf(Wildcard))])
-        assert(nonChildren.length === 1)
-        assert(nonChildren[0] === parent)
+        expect(nonChildren.length === 1)
+        expect(nonChildren[0] === parent)
         
         removeComponent(world, child, ChildOf(parent))
         
-        assert(hasComponent(world, child, ChildOf(Wildcard)) === false)
-        assert(hasComponent(world, child, Pair(ChildOf, Wildcard)) === false) 
-        assert(hasComponent(world, child, Pair(Wildcard, parent)) === false)
+        expect(hasComponent(world, child, ChildOf(Wildcard)) === false)
+        expect(hasComponent(world, child, Pair(ChildOf, Wildcard)) === false) 
+        expect(hasComponent(world, child, Pair(Wildcard, parent)) === false)
 
     })
 })

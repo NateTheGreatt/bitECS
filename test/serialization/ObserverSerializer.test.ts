@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { addComponent, removeComponent, hasComponent, addEntity, entityExists, removeEntity, createWorld, createRelation, Wildcard, withAutoRemoveSubject } from 'bitecs'
+import { addComponent, removeComponent, hasComponent, addEntity, entityExists, removeEntity, createWorld, createRelation, Wildcard, withAutoRemoveSubject, withStore } from 'bitecs'
 
-import { createObserverSerializer, createObserverDeserializer } from '../../src/serialization'
+import { createObserverSerializer, createObserverDeserializer, i32 } from '../../src/serialization'
 
 describe('ObserverSerializer and ObserverDeserializer', () => {
     it('should correctly serialize and deserialize component additions', () => {
@@ -221,5 +221,62 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
 
         // Check if relation is removed in world2
         expect(hasComponent(world2, mappedChild, ChildOf(mappedParent))).toBe(false)
+    })
+
+    it('should correctly serialize and deserialize relations with data', () => {
+        const world1 = createWorld()
+        const world2 = createWorld()
+        const Networked = {}
+        const Contains1 = createRelation(withStore(()=>({ amount: i32() })))
+        const Contains2 = createRelation(withStore(()=>({ amount: i32() })))
+
+        const serialize = createObserverSerializer(world1, Networked, [Contains1])
+        const deserialize = createObserverDeserializer(world2, Networked, [Contains2])
+
+        // Create container and item entities in world1
+        const container = addEntity(world1)
+        const item = addEntity(world1)
+        addComponent(world1, container, Networked)
+        addComponent(world1, item, Networked)
+        
+        // Add Contains relation with amount data
+        const containsRelation = Contains1(item)
+        addComponent(world1, container, containsRelation)
+        Contains1(item).amount[container] = 5
+
+        // Serialize from world1 and deserialize into world2
+        let serializedData = serialize()
+        let entityIdMapping = deserialize(serializedData)
+
+        // Get mapped entity IDs in world2
+        const mappedContainer = entityIdMapping.get(container)!
+        const mappedItem = entityIdMapping.get(item)!
+
+        // Verify relation and data was copied correctly
+        expect(hasComponent(world2, mappedContainer, Contains2(mappedItem))).toBe(true)
+        expect(Contains2(mappedItem).amount[mappedContainer]).toBe(5)
+
+        // Update relation data in world1
+        const containsRelation1 = Contains1(item)
+        removeComponent(world1, container, containsRelation1)
+        addComponent(world1, container, containsRelation1)
+        containsRelation1.amount[container] = 10
+
+        // Serialize and deserialize again
+        serializedData = serialize()
+        entityIdMapping = deserialize(serializedData)
+
+        // Verify updated data was synced
+        expect(Contains2(mappedItem).amount[mappedContainer]).toBe(10)
+
+        // Remove relation in world1
+        removeComponent(world1, container, Contains1(item))
+
+        // Serialize and deserialize again
+        serializedData = serialize()
+        entityIdMapping = deserialize(serializedData)
+
+        // Verify relation was removed in world2
+        expect(hasComponent(world2, mappedContainer, Contains2(mappedItem))).toBe(false)
     })
 })

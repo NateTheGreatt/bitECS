@@ -3,7 +3,7 @@ import { ComponentRef } from "bitecs"
 /**
  * Symbols representing different data types for serialization.
  */
-const $u8 = Symbol('u8'), $i8 = Symbol('i8'), $u16 = Symbol('u16'), $i16 = Symbol('i16'),
+export const $u8 = Symbol('u8'), $i8 = Symbol('i8'), $u16 = Symbol('u16'), $i16 = Symbol('i16'),
     $u32 = Symbol('u32'), $i32 = Symbol('i32'), $f32 = Symbol('f32'), $f64 = Symbol('f64')
 
 /**
