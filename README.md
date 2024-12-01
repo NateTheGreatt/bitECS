@@ -16,6 +16,9 @@ bitECS
   <a href="https://github.com/NateTheGreatt/bitECS/blob/master/LICENSE">
     <img src="https://badgen.net/npm/license/bitecs" alt="License" />
   </a>
+  <a href="https://discord.gg/daUxSk5AwX">
+    <img src="https://img.shields.io/discord/1212857060731912202?color=7289da&label=Discord&logo=discord&logoColor=white" alt="Discord" />
+  </a>
 </p>
 
 <p align="center">
