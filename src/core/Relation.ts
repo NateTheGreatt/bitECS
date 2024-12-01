@@ -15,30 +15,29 @@ export type OnTargetRemovedCallback = (subject: EntityId, target: EntityId) => v
  * @typedef {number | '*' | typeof Wildcard} RelationTarget
  */
 export type RelationTarget = number | '*' | typeof Wildcard
-
 /**
  * Symbol for accessing the relation of a component.
  * @type {Symbol}
  */
-export const $relation = Symbol('relation')
+export const $relation = Symbol.for('bitecs-relation')
 
 /**
  * Symbol for accessing the pair target of a component.
  * @type {Symbol}
  */
-export const $pairTarget = Symbol('pairTarget')
+export const $pairTarget = Symbol.for('bitecs-pairTarget')
 
 /**
  * Symbol for checking if a component is a pair component.
  * @type {Symbol}
  */
-export const $isPairComponent = Symbol('isPairComponent')
+export const $isPairComponent = Symbol.for('bitecs-isPairComponent')
 
 /**
  * Symbol for accessing the relation data of a component.
  * @type {Symbol}
  */
-export const $relationData = Symbol('relationData')
+export const $relationData = Symbol.for('bitecs-relationData')
 
 /**
  * Interface for relation data.

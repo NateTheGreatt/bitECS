@@ -4,6 +4,7 @@ import {
     addEntity,
     createRelation,
     createWorld,
+    getRelationTargets,
     hasComponent,
     isRelation,
     query,
@@ -161,7 +162,7 @@ describe('Snapshot Serialization and Deserialization', () => {
         // Create container and item entities in world1
         const container = addEntity(world1)
         const item = addEntity(world1)
-        
+
         // Add Contains relation with amount data
         addComponent(world1, container, Contains1(item))
         Contains1(item).amount[container] = 5
@@ -180,5 +181,106 @@ describe('Snapshot Serialization and Deserialization', () => {
         // Query for containers that contain the mapped item
         const containers = query(world2, [Contains2(mappedItem)])
         expect(containers).toContain(mappedContainer)
-        expect(Contains2(mappedItem).amount[mappedContainer]).toBe(5)    })
+        expect(Contains2(mappedItem).amount[mappedContainer]).toBe(5)
+    })
+
+    it('should be able to find entities via queries instead of entity mapping', () => {
+        const world1 = createWorld()
+        const world2 = createWorld()
+        const Contains1 = createRelation(withStore(() => ({ amount: i32() })))
+        const Contains2 = createRelation(withStore(() => ({ amount: i32() })))
+
+        const serialize = createSnapshotSerializer(world1, [Contains1])
+        const deserialize = createSnapshotDeserializer(world2, [Contains2])
+
+        // Create entities and relations in world1
+        const container = addEntity(world1)
+        const item = addEntity(world1)
+        addComponent(world1, container, Contains1(item))
+        Contains1(item).amount[container] = 42
+
+        // Serialize and deserialize
+        const serializedData = serialize()
+        deserialize(serializedData)
+        // Find entities in world2 using queries
+        const containersInWorld1 = query(world1, [Contains1(Wildcard)]) // containers that contain anything
+        const containersInWorld2 = query(world2, [Contains2(Wildcard)]) // containers that contain anything
+        // Get all items that are targets of Contains relations
+        const itemsInWorld1 = containersInWorld1.flatMap(container => getRelationTargets(world1, container, Contains1))
+        const itemsInWorld2 = containersInWorld2.flatMap(container => getRelationTargets(world2, container, Contains2))
+
+        // Verify entities exist in both worlds
+        expect(containersInWorld1.length).toBe(1)
+        expect(containersInWorld2.length).toBe(1)
+        expect(itemsInWorld1.length).toBe(1)
+        expect(itemsInWorld2.length).toBe(1)
+
+        // Get the container and item from world2 via query
+        const containerInWorld2 = containersInWorld2[0]
+        const itemInWorld2 = itemsInWorld2[0]
+
+        // Verify relation data was copied correctly
+        expect(hasComponent(world2, containerInWorld2, Contains2(itemInWorld2))).toBe(true)
+        expect(Contains2(itemInWorld2).amount[containerInWorld2]).toBe(42)
+    })
+
+    it('should properly deserialize ChildOf relations to players', () => {
+        // Create two separate worlds
+        const world1 = createWorld()
+        const world2 = createWorld()
+
+        // Create relation components for both worlds
+        const ChildOf1 = createRelation()
+        const ChildOf2 = createRelation()
+
+        // Create serializer and deserializer
+        const serialize = createSnapshotSerializer(world1, [ChildOf1])
+        const deserialize = createSnapshotDeserializer(world2, [ChildOf2])
+
+        // Create mapping of user IDs to entity IDs
+        const userIdToEntityId = new Map([
+            ['user1', addEntity(world1)],
+            ['user2', addEntity(world1)]
+        ])
+
+        // Create cards in world1
+        const card1 = addEntity(world1)
+        const card2 = addEntity(world1)
+        const card3 = addEntity(world1)
+
+        // Assign cards to players using ChildOf relation
+        addComponent(world1, card1, ChildOf1(userIdToEntityId.get('user1')!))
+        addComponent(world1, card2, ChildOf1(userIdToEntityId.get('user1')!))
+        addComponent(world1, card3, ChildOf1(userIdToEntityId.get('user2')!))
+
+        // Serialize and deserialize the world state
+        const serializedData = serialize()
+        const entityMapping = deserialize(serializedData)
+
+        // Map user IDs to new world2 entity IDs
+        const userIdToEntityId2 = new Map([
+            ['user1', entityMapping.get(userIdToEntityId.get('user1')!)],
+            ['user2', entityMapping.get(userIdToEntityId.get('user2')!)]
+        ])
+
+        // Query all entities with ChildOf relations in world2
+        const allEntities = query(world2, [ChildOf2(Wildcard)])
+        expect(allEntities.length).toBe(3) // Should have 3 cards with ChildOf relations
+
+        // Query cards for each user
+        const user1Cards = query(world2, [ChildOf2(userIdToEntityId2.get('user1')!)])
+        const user2Cards = query(world2, [ChildOf2(userIdToEntityId2.get('user2')!)])
+
+        // Verify card counts per user
+        expect(user1Cards.length).toBe(2) // First user should have 2 cards
+        expect(user2Cards.length).toBe(1) // Second user should have 1 card
+
+        // Verify all cards have valid ChildOf relations
+        for (const cardId of user1Cards) {
+            expect(hasComponent(world2, cardId, ChildOf2(userIdToEntityId2.get('user1')!))).toBe(true)
+        }
+        for (const cardId of user2Cards) {
+            expect(hasComponent(world2, cardId, ChildOf2(userIdToEntityId2.get('user2')!))).toBe(true)
+        }
+    })
 });

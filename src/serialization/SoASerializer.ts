@@ -3,8 +3,8 @@ import { ComponentRef } from "bitecs"
 /**
  * Symbols representing different data types for serialization.
  */
-export const $u8 = Symbol('u8'), $i8 = Symbol('i8'), $u16 = Symbol('u16'), $i16 = Symbol('i16'),
-    $u32 = Symbol('u32'), $i32 = Symbol('i32'), $f32 = Symbol('f32'), $f64 = Symbol('f64')
+export const $u8 = Symbol.for('bitecs-u8'), $i8 = Symbol.for('bitecs-i8'), $u16 = Symbol.for('bitecs-u16'), $i16 = Symbol.for('bitecs-i16'),
+    $u32 = Symbol.for('bitecs-u32'), $i32 = Symbol.for('bitecs-i32'), $f32 = Symbol.for('bitecs-f32'), $f64 = Symbol.for('bitecs-f64')
 
 /**
  * Union type of all possible TypedArray types.

@@ -48,12 +48,17 @@ export type Query = SparseSet & {
  * @description Types of query operators.
  */
 export type QueryOperatorType = 'Or' | 'And' | 'Not'
+/**
+ * Symbol for query operator type.
+ * @type {Symbol}
+ */
+export const $opType = Symbol.for('bitecs-opType')
 
 /**
- * Symbols for query operator types and components
+ * Symbol for query operator terms.
+ * @type {Symbol}
  */
-export const $opType = Symbol('opType');
-export const $opTerms = Symbol('opTerms');
+export const $opTerms = Symbol.for('bitecs-opTerms')
 
 /**
  * @typedef {Object} OpReturnType

@@ -1,11 +1,14 @@
-import { ComponentRef } from '../core/Component'
-import { observe, onAdd, onRemove, query } from '../core/Query'
-import { EntityId } from '../core/Entity'
 import {
+  ComponentRef,
+  observe,
+  onAdd,
+  onRemove,
+  query,
+  EntityId,
   addComponent as ecsAddComponent,
   hasComponent as ecsHasComponent,
   removeComponent as ecsRemoveComponent
-} from '../core/Component'
+} from 'bitecs'
 
 export interface IWorld { }
 
