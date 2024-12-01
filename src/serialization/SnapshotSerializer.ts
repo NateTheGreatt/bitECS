@@ -11,6 +11,114 @@ import {
     Relation,
     ComponentRef
 } from 'bitecs'
+import { $u8, $i8, $u16, $i16, $u32, $i32, $f32 } from './SoASerializer'
+
+/**
+ * Serializes relation data for a specific entity
+ */
+function serializeRelationData(data: any, eid: number, dataView: DataView, offset: number) {
+    if (!data) return offset
+    
+    // Handle array data (AoS) - defaults to f64
+    if (Array.isArray(data)) {
+        const value = data[eid]
+        if (value !== undefined) {
+            dataView.setFloat64(offset, value)
+            return offset + 8
+        }
+        return offset
+    }
+    
+    // Handle object data (SoA)
+    if (typeof data === 'object') {
+        const keys = Object.keys(data).sort()
+        for (const key of keys) {
+            const arr = data[key]
+            const value = arr[eid]
+            
+            if (value !== undefined) {
+                if (arr instanceof Int8Array || $i8 in arr) {
+                    dataView.setInt8(offset, value)
+                    offset += 1
+                } else if (arr instanceof Uint8Array || $u8 in arr) {
+                    dataView.setUint8(offset, value)
+                    offset += 1
+                } else if (arr instanceof Int16Array || $i16 in arr) {
+                    dataView.setInt16(offset, value)
+                    offset += 2
+                } else if (arr instanceof Uint16Array || $u16 in arr) {
+                    dataView.setUint16(offset, value)
+                    offset += 2
+                } else if (arr instanceof Int32Array || $i32 in arr) {
+                    dataView.setInt32(offset, value)
+                    offset += 4
+                } else if (arr instanceof Uint32Array || $u32 in arr) {
+                    dataView.setUint32(offset, value)
+                    offset += 4
+                } else if (arr instanceof Float32Array || $f32 in arr) {
+                    dataView.setFloat32(offset, value)
+                    offset += 4
+                } else {
+                    // Default to f64
+                    dataView.setFloat64(offset, value)
+                    offset += 8
+                }
+            }
+        }
+    }
+    
+    return offset
+}
+
+/**
+ * Deserializes relation data for a specific entity
+ */
+function deserializeRelationData(data: any, eid: number, dataView: DataView, offset: number) {
+    if (!data) return offset
+    
+    // Handle array data (AoS) - defaults to f64
+    if (Array.isArray(data)) {
+        data[eid] = dataView.getFloat64(offset)
+        return offset + 8
+    }
+    
+    // Handle object data (SoA)
+    if (typeof data === 'object') {
+        const keys = Object.keys(data).sort()
+        for (const key of keys) {
+            const arr = data[key]
+            
+            if (arr instanceof Int8Array || $i8 in arr) {
+                arr[eid] = dataView.getInt8(offset)
+                offset += 1
+            } else if (arr instanceof Uint8Array || $u8 in arr) {
+                arr[eid] = dataView.getUint8(offset)
+                offset += 1
+            } else if (arr instanceof Int16Array || $i16 in arr) {
+                arr[eid] = dataView.getInt16(offset)
+                offset += 2
+            } else if (arr instanceof Uint16Array || $u16 in arr) {
+                arr[eid] = dataView.getUint16(offset)
+                offset += 2
+            } else if (arr instanceof Int32Array || $i32 in arr) {
+                arr[eid] = dataView.getInt32(offset)
+                offset += 4
+            } else if (arr instanceof Uint32Array || $u32 in arr) {
+                arr[eid] = dataView.getUint32(offset)
+                offset += 4
+            } else if (arr instanceof Float32Array || $f32 in arr) {
+                arr[eid] = dataView.getFloat32(offset)
+                offset += 4
+            } else {
+                // Default to f64
+                arr[eid] = dataView.getFloat64(offset)
+                offset += 8
+            }
+        }
+    }
+    
+    return offset
+}
 
 /**
  * Creates a snapshot serializer for the given world and components.
@@ -54,6 +162,8 @@ export const createSnapshotSerializer = (world: World, components: (Record<strin
                         offset += 1
                         dataView.setUint32(offset, target)
                         offset += 4
+                        const relationData = (component as any)(target)
+                        offset = serializeRelationData(relationData, entityId, dataView, offset)
                         componentCount++
                     }
                 } else if (hasComponent(world, entityId, component)) {
@@ -93,13 +203,14 @@ export const createSnapshotSerializer = (world: World, components: (Record<strin
  * @param {Record<string, PrimitiveBrand>[]} components - An array of component definitions.
  * @returns {Function} A function that takes a serialized packet and deserializes it into the world, returning a map of packet entity IDs to world entity IDs.
  */
-export const createSnapshotDeserializer = (world: World, components: (Record<string, PrimitiveBrand> | ComponentRef)[]) => {
+export const createSnapshotDeserializer = (world: World, components: (Record<string, PrimitiveBrand> | ComponentRef)[], constructorMapping?: Map<number, number>) => {
+    let entityIdMapping = constructorMapping || new Map<number, number>()
     const soaDeserializer = createSoADeserializer(components)
 
-    return (packet: ArrayBuffer): Map<number, number> => {
+    return (packet: ArrayBuffer, overrideMapping?: Map<number, number>): Map<number, number> => {
+        const currentMapping = overrideMapping || entityIdMapping
         const dataView = new DataView(packet)
         let offset = 0
-        const entityIdMap = new Map<number, number>()
 
         // Read entity count
         const entityCount = dataView.getUint32(offset)
@@ -110,8 +221,11 @@ export const createSnapshotDeserializer = (world: World, components: (Record<str
             const packetEntityId = dataView.getUint32(offset)
             offset += 4
 
-            const worldEntityId = addEntity(world)
-            entityIdMap.set(packetEntityId, worldEntityId)
+            let worldEntityId = currentMapping.get(packetEntityId)
+            if (worldEntityId === undefined) {
+                worldEntityId = addEntity(world)
+                currentMapping.set(packetEntityId, worldEntityId)
+            }
 
             const componentCount = dataView.getUint8(offset)
             offset += 1
@@ -124,14 +238,14 @@ export const createSnapshotDeserializer = (world: World, components: (Record<str
                 if (isRelation(component)) {
                     const targetId = dataView.getUint32(offset)
                     offset += 4
-                    // We need to wait until all entities are created before adding relations
-                    // Store relation info to add later
-                    if (!entityIdMap.has(targetId)) {
-                        const worldTargetId = addEntity(world)
-                        entityIdMap.set(targetId, worldTargetId)
+                    let worldTargetId = currentMapping.get(targetId)
+                    if (worldTargetId === undefined) {
+                        worldTargetId = addEntity(world)
+                        currentMapping.set(targetId, worldTargetId)
                     }
-                    const worldTargetId = entityIdMap.get(targetId)
-                    addComponent(world, worldEntityId, (component as (target: any) => any)(worldTargetId))
+                    const relationComponent = (component as (target: any) => any)(worldTargetId)
+                    addComponent(world, worldEntityId, relationComponent)
+                    offset = deserializeRelationData(relationComponent, worldEntityId, dataView, offset)
                 } else {
                     addComponent(world, worldEntityId, component)
                 }
@@ -139,8 +253,8 @@ export const createSnapshotDeserializer = (world: World, components: (Record<str
         }
 
         // Deserialize component data
-        soaDeserializer(packet.slice(offset), entityIdMap)
+        soaDeserializer(packet.slice(offset), currentMapping)
 
-        return entityIdMap
+        return currentMapping
     }
 }

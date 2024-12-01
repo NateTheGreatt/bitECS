@@ -223,8 +223,12 @@ export const createObserverSerializer = (world: World, networkedTag: ComponentRe
 /**
  * Creates a deserializer for applying serialized changes to a world.
  */
-export const createObserverDeserializer = (world: World, networkedTag: ComponentRef, components: ComponentRef[], entityIdMapping: Map<number, number> = new Map()) => {
-    return (packet: ArrayBuffer) => {
+export const createObserverDeserializer = (world: World, networkedTag: ComponentRef, components: ComponentRef[], constructorMapping?: Map<number, number>) => {
+    let entityIdMapping = constructorMapping || new Map<number, number>()
+    
+    return (packet: ArrayBuffer, overrideMapping?: Map<number, number>) => {
+        // Allow overriding the mapping for this call
+        const currentMapping = overrideMapping || entityIdMapping
         const dataView = new DataView(packet)
         let offset = 0
 
@@ -250,12 +254,12 @@ export const createObserverDeserializer = (world: World, networkedTag: Component
             }
 
             const component = components[componentId]
-            let worldEntityId = entityIdMapping.get(packetEntityId)
+            let worldEntityId = currentMapping.get(packetEntityId)
 
             if (operationType === OperationType.AddEntity) {
                 if (worldEntityId === undefined) {
                     worldEntityId = addEntity(world)
-                    entityIdMapping.set(packetEntityId, worldEntityId)
+                    currentMapping.set(packetEntityId, worldEntityId)
                     addComponent(world, worldEntityId, networkedTag)
                 } else {
                     throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`)
@@ -268,14 +272,14 @@ export const createObserverDeserializer = (world: World, networkedTag: Component
                 } else if (operationType === OperationType.RemoveComponent) {
                     removeComponent(world, worldEntityId, component)
                 } else if (operationType === OperationType.AddRelation) {
-                    const worldTargetId = entityIdMapping.get(targetId)
+                    const worldTargetId = currentMapping.get(targetId)
                     if (worldTargetId !== undefined) {
                         const relationComponent = component(worldTargetId)
                         addComponent(world, worldEntityId, relationComponent)
                         offset = deserializeRelationData(relationComponent, worldEntityId, dataView, offset)
                     }
                 } else if (operationType === OperationType.RemoveRelation) {
-                    const worldTargetId = entityIdMapping.get(targetId)
+                    const worldTargetId = currentMapping.get(targetId)
                     if (worldTargetId !== undefined) {
                         removeComponent(world, worldEntityId, component(worldTargetId))
                     }
@@ -283,6 +287,6 @@ export const createObserverDeserializer = (world: World, networkedTag: Component
             }
         }
 
-        return entityIdMapping
+        return currentMapping
     }
 }

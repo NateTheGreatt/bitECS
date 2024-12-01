@@ -872,8 +872,10 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
     return buffer.slice(0, offset);
   };
 };
-var createObserverDeserializer = (world, networkedTag, components, entityIdMapping = /* @__PURE__ */ new Map()) => {
-  return (packet) => {
+var createObserverDeserializer = (world, networkedTag, components, constructorMapping) => {
+  let entityIdMapping = constructorMapping || /* @__PURE__ */ new Map();
+  return (packet, overrideMapping) => {
+    const currentMapping = overrideMapping || entityIdMapping;
     const dataView = new DataView(packet);
     let offset = 0;
     while (offset < packet.byteLength) {
@@ -892,11 +894,11 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
         }
       }
       const component = components[componentId];
-      let worldEntityId = entityIdMapping.get(packetEntityId);
+      let worldEntityId = currentMapping.get(packetEntityId);
       if (operationType === 0 /* AddEntity */) {
         if (worldEntityId === void 0) {
           worldEntityId = (0, import_bitecs.addEntity)(world);
-          entityIdMapping.set(packetEntityId, worldEntityId);
+          currentMapping.set(packetEntityId, worldEntityId);
           (0, import_bitecs.addComponent)(world, worldEntityId, networkedTag);
         } else {
           throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
@@ -909,21 +911,21 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
         } else if (operationType === 3 /* RemoveComponent */) {
           (0, import_bitecs.removeComponent)(world, worldEntityId, component);
         } else if (operationType === 4 /* AddRelation */) {
-          const worldTargetId = entityIdMapping.get(targetId);
+          const worldTargetId = currentMapping.get(targetId);
           if (worldTargetId !== void 0) {
             const relationComponent = component(worldTargetId);
             (0, import_bitecs.addComponent)(world, worldEntityId, relationComponent);
             offset = deserializeRelationData(relationComponent, worldEntityId, dataView, offset);
           }
         } else if (operationType === 5 /* RemoveRelation */) {
-          const worldTargetId = entityIdMapping.get(targetId);
+          const worldTargetId = currentMapping.get(targetId);
           if (worldTargetId !== void 0) {
             (0, import_bitecs.removeComponent)(world, worldEntityId, component(worldTargetId));
           }
         }
       }
     }
-    return entityIdMapping;
+    return currentMapping;
   };
 };
 

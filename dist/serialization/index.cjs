@@ -173,94 +173,6 @@ var createSoADeserializer = (components) => {
 
 // src/serialization/SnapshotSerializer.ts
 var import_bitecs = require("bitecs");
-var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
-  const dataView = new DataView(buffer);
-  let offset = 0;
-  const serializeEntityComponentRelationships = (entities) => {
-    const entityCount = entities.length;
-    dataView.setUint32(offset, entityCount);
-    offset += 4;
-    for (let i = 0; i < entityCount; i++) {
-      const entityId = entities[i];
-      let componentCount = 0;
-      dataView.setUint32(offset, entityId);
-      offset += 4;
-      const componentCountOffset = offset;
-      offset += 1;
-      for (let j = 0; j < components.length; j++) {
-        const component = components[j];
-        if ((0, import_bitecs.isRelation)(component)) {
-          const targets = (0, import_bitecs.getRelationTargets)(world, entityId, component);
-          for (const target of targets) {
-            dataView.setUint8(offset, j);
-            offset += 1;
-            dataView.setUint32(offset, target);
-            offset += 4;
-            componentCount++;
-          }
-        } else if ((0, import_bitecs.hasComponent)(world, entityId, component)) {
-          dataView.setUint8(offset, j);
-          offset += 1;
-          componentCount++;
-        }
-      }
-      dataView.setUint8(componentCountOffset, componentCount);
-    }
-  };
-  const serializeComponentData = (entities) => {
-    const soaSerializer = createSoASerializer(components, buffer.slice(offset));
-    const componentData = soaSerializer(entities);
-    new Uint8Array(buffer).set(new Uint8Array(componentData), offset);
-    offset += componentData.byteLength;
-  };
-  return () => {
-    offset = 0;
-    const entities = (0, import_bitecs.getAllEntities)(world);
-    serializeEntityComponentRelationships(entities);
-    serializeComponentData(entities);
-    return buffer.slice(0, offset);
-  };
-};
-var createSnapshotDeserializer = (world, components) => {
-  const soaDeserializer = createSoADeserializer(components);
-  return (packet) => {
-    const dataView = new DataView(packet);
-    let offset = 0;
-    const entityIdMap = /* @__PURE__ */ new Map();
-    const entityCount = dataView.getUint32(offset);
-    offset += 4;
-    for (let entityIndex = 0; entityIndex < entityCount; entityIndex++) {
-      const packetEntityId = dataView.getUint32(offset);
-      offset += 4;
-      const worldEntityId = (0, import_bitecs.addEntity)(world);
-      entityIdMap.set(packetEntityId, worldEntityId);
-      const componentCount = dataView.getUint8(offset);
-      offset += 1;
-      for (let i = 0; i < componentCount; i++) {
-        const componentIndex = dataView.getUint8(offset);
-        offset += 1;
-        const component = components[componentIndex];
-        if ((0, import_bitecs.isRelation)(component)) {
-          const targetId = dataView.getUint32(offset);
-          offset += 4;
-          if (!entityIdMap.has(targetId)) {
-            const worldTargetId2 = (0, import_bitecs.addEntity)(world);
-            entityIdMap.set(targetId, worldTargetId2);
-          }
-          const worldTargetId = entityIdMap.get(targetId);
-          (0, import_bitecs.addComponent)(world, worldEntityId, component(worldTargetId));
-        } else {
-          (0, import_bitecs.addComponent)(world, worldEntityId, component);
-        }
-      }
-    }
-    soaDeserializer(packet.slice(offset), entityIdMap);
-    return entityIdMap;
-  };
-};
-
-// src/serialization/ObserverSerializer.ts
-var import_bitecs2 = require("bitecs");
 function serializeRelationData(data, eid, dataView, offset) {
   if (!data) return offset;
   if (Array.isArray(data)) {
@@ -308,6 +220,187 @@ function serializeRelationData(data, eid, dataView, offset) {
   return offset;
 }
 function deserializeRelationData(data, eid, dataView, offset) {
+  if (!data) return offset;
+  if (Array.isArray(data)) {
+    data[eid] = dataView.getFloat64(offset);
+    return offset + 8;
+  }
+  if (typeof data === "object") {
+    const keys = Object.keys(data).sort();
+    for (const key of keys) {
+      const arr = data[key];
+      if (arr instanceof Int8Array || $i8 in arr) {
+        arr[eid] = dataView.getInt8(offset);
+        offset += 1;
+      } else if (arr instanceof Uint8Array || $u8 in arr) {
+        arr[eid] = dataView.getUint8(offset);
+        offset += 1;
+      } else if (arr instanceof Int16Array || $i16 in arr) {
+        arr[eid] = dataView.getInt16(offset);
+        offset += 2;
+      } else if (arr instanceof Uint16Array || $u16 in arr) {
+        arr[eid] = dataView.getUint16(offset);
+        offset += 2;
+      } else if (arr instanceof Int32Array || $i32 in arr) {
+        arr[eid] = dataView.getInt32(offset);
+        offset += 4;
+      } else if (arr instanceof Uint32Array || $u32 in arr) {
+        arr[eid] = dataView.getUint32(offset);
+        offset += 4;
+      } else if (arr instanceof Float32Array || $f32 in arr) {
+        arr[eid] = dataView.getFloat32(offset);
+        offset += 4;
+      } else {
+        arr[eid] = dataView.getFloat64(offset);
+        offset += 8;
+      }
+    }
+  }
+  return offset;
+}
+var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+  const dataView = new DataView(buffer);
+  let offset = 0;
+  const serializeEntityComponentRelationships = (entities) => {
+    const entityCount = entities.length;
+    dataView.setUint32(offset, entityCount);
+    offset += 4;
+    for (let i = 0; i < entityCount; i++) {
+      const entityId = entities[i];
+      let componentCount = 0;
+      dataView.setUint32(offset, entityId);
+      offset += 4;
+      const componentCountOffset = offset;
+      offset += 1;
+      for (let j = 0; j < components.length; j++) {
+        const component = components[j];
+        if ((0, import_bitecs.isRelation)(component)) {
+          const targets = (0, import_bitecs.getRelationTargets)(world, entityId, component);
+          for (const target of targets) {
+            dataView.setUint8(offset, j);
+            offset += 1;
+            dataView.setUint32(offset, target);
+            offset += 4;
+            const relationData = component(target);
+            offset = serializeRelationData(relationData, entityId, dataView, offset);
+            componentCount++;
+          }
+        } else if ((0, import_bitecs.hasComponent)(world, entityId, component)) {
+          dataView.setUint8(offset, j);
+          offset += 1;
+          componentCount++;
+        }
+      }
+      dataView.setUint8(componentCountOffset, componentCount);
+    }
+  };
+  const serializeComponentData = (entities) => {
+    const soaSerializer = createSoASerializer(components, buffer.slice(offset));
+    const componentData = soaSerializer(entities);
+    new Uint8Array(buffer).set(new Uint8Array(componentData), offset);
+    offset += componentData.byteLength;
+  };
+  return () => {
+    offset = 0;
+    const entities = (0, import_bitecs.getAllEntities)(world);
+    serializeEntityComponentRelationships(entities);
+    serializeComponentData(entities);
+    return buffer.slice(0, offset);
+  };
+};
+var createSnapshotDeserializer = (world, components, constructorMapping) => {
+  let entityIdMapping = constructorMapping || /* @__PURE__ */ new Map();
+  const soaDeserializer = createSoADeserializer(components);
+  return (packet, overrideMapping) => {
+    const currentMapping = overrideMapping || entityIdMapping;
+    const dataView = new DataView(packet);
+    let offset = 0;
+    const entityCount = dataView.getUint32(offset);
+    offset += 4;
+    for (let entityIndex = 0; entityIndex < entityCount; entityIndex++) {
+      const packetEntityId = dataView.getUint32(offset);
+      offset += 4;
+      let worldEntityId = currentMapping.get(packetEntityId);
+      if (worldEntityId === void 0) {
+        worldEntityId = (0, import_bitecs.addEntity)(world);
+        currentMapping.set(packetEntityId, worldEntityId);
+      }
+      const componentCount = dataView.getUint8(offset);
+      offset += 1;
+      for (let i = 0; i < componentCount; i++) {
+        const componentIndex = dataView.getUint8(offset);
+        offset += 1;
+        const component = components[componentIndex];
+        if ((0, import_bitecs.isRelation)(component)) {
+          const targetId = dataView.getUint32(offset);
+          offset += 4;
+          let worldTargetId = currentMapping.get(targetId);
+          if (worldTargetId === void 0) {
+            worldTargetId = (0, import_bitecs.addEntity)(world);
+            currentMapping.set(targetId, worldTargetId);
+          }
+          const relationComponent = component(worldTargetId);
+          (0, import_bitecs.addComponent)(world, worldEntityId, relationComponent);
+          offset = deserializeRelationData(relationComponent, worldEntityId, dataView, offset);
+        } else {
+          (0, import_bitecs.addComponent)(world, worldEntityId, component);
+        }
+      }
+    }
+    soaDeserializer(packet.slice(offset), currentMapping);
+    return currentMapping;
+  };
+};
+
+// src/serialization/ObserverSerializer.ts
+var import_bitecs2 = require("bitecs");
+function serializeRelationData2(data, eid, dataView, offset) {
+  if (!data) return offset;
+  if (Array.isArray(data)) {
+    const value = data[eid];
+    if (value !== void 0) {
+      dataView.setFloat64(offset, value);
+      return offset + 8;
+    }
+    return offset;
+  }
+  if (typeof data === "object") {
+    const keys = Object.keys(data).sort();
+    for (const key of keys) {
+      const arr = data[key];
+      const value = arr[eid];
+      if (value !== void 0) {
+        if (arr instanceof Int8Array || $i8 in arr) {
+          dataView.setInt8(offset, value);
+          offset += 1;
+        } else if (arr instanceof Uint8Array || $u8 in arr) {
+          dataView.setUint8(offset, value);
+          offset += 1;
+        } else if (arr instanceof Int16Array || $i16 in arr) {
+          dataView.setInt16(offset, value);
+          offset += 2;
+        } else if (arr instanceof Uint16Array || $u16 in arr) {
+          dataView.setUint16(offset, value);
+          offset += 2;
+        } else if (arr instanceof Int32Array || $i32 in arr) {
+          dataView.setInt32(offset, value);
+          offset += 4;
+        } else if (arr instanceof Uint32Array || $u32 in arr) {
+          dataView.setUint32(offset, value);
+          offset += 4;
+        } else if (arr instanceof Float32Array || $f32 in arr) {
+          dataView.setFloat32(offset, value);
+          offset += 4;
+        } else {
+          dataView.setFloat64(offset, value);
+          offset += 8;
+        }
+      }
+    }
+  }
+  return offset;
+}
+function deserializeRelationData2(data, eid, dataView, offset) {
   if (!data) return offset;
   if (Array.isArray(data)) {
     data[eid] = dataView.getFloat64(offset);
@@ -408,7 +501,7 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
           dataView.setUint32(offset, targetId);
           offset += 4;
           if (type === 4 /* AddRelation */ && relationData) {
-            offset = serializeRelationData(relationData, entityId, dataView, offset);
+            offset = serializeRelationData2(relationData, entityId, dataView, offset);
           }
         }
       }
@@ -417,8 +510,10 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
     return buffer.slice(0, offset);
   };
 };
-var createObserverDeserializer = (world, networkedTag, components, entityIdMapping = /* @__PURE__ */ new Map()) => {
-  return (packet) => {
+var createObserverDeserializer = (world, networkedTag, components, constructorMapping) => {
+  let entityIdMapping = constructorMapping || /* @__PURE__ */ new Map();
+  return (packet, overrideMapping) => {
+    const currentMapping = overrideMapping || entityIdMapping;
     const dataView = new DataView(packet);
     let offset = 0;
     while (offset < packet.byteLength) {
@@ -437,11 +532,11 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
         }
       }
       const component = components[componentId];
-      let worldEntityId = entityIdMapping.get(packetEntityId);
+      let worldEntityId = currentMapping.get(packetEntityId);
       if (operationType === 0 /* AddEntity */) {
         if (worldEntityId === void 0) {
           worldEntityId = (0, import_bitecs2.addEntity)(world);
-          entityIdMapping.set(packetEntityId, worldEntityId);
+          currentMapping.set(packetEntityId, worldEntityId);
           (0, import_bitecs2.addComponent)(world, worldEntityId, networkedTag);
         } else {
           throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
@@ -454,21 +549,21 @@ var createObserverDeserializer = (world, networkedTag, components, entityIdMappi
         } else if (operationType === 3 /* RemoveComponent */) {
           (0, import_bitecs2.removeComponent)(world, worldEntityId, component);
         } else if (operationType === 4 /* AddRelation */) {
-          const worldTargetId = entityIdMapping.get(targetId);
+          const worldTargetId = currentMapping.get(targetId);
           if (worldTargetId !== void 0) {
             const relationComponent = component(worldTargetId);
             (0, import_bitecs2.addComponent)(world, worldEntityId, relationComponent);
-            offset = deserializeRelationData(relationComponent, worldEntityId, dataView, offset);
+            offset = deserializeRelationData2(relationComponent, worldEntityId, dataView, offset);
           }
         } else if (operationType === 5 /* RemoveRelation */) {
-          const worldTargetId = entityIdMapping.get(targetId);
+          const worldTargetId = currentMapping.get(targetId);
           if (worldTargetId !== void 0) {
             (0, import_bitecs2.removeComponent)(world, worldEntityId, component(worldTargetId));
           }
         }
       }
     }
-    return entityIdMapping;
+    return currentMapping;
   };
 };
 //# sourceMappingURL=index.cjs.map
