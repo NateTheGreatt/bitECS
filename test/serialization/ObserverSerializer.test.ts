@@ -23,7 +23,7 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
         addComponent(world, entity2, networkedTag)
 
         const serializedData = serialize()
-        
+
         removeComponent(world, entity1, Position)
         removeComponent(world, entity1, networkedTag)
         removeComponent(world, entity2, Velocity)

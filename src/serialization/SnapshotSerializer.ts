@@ -4,7 +4,12 @@ import {
     hasComponent,
     World,
     getAllEntities,
-    addEntity
+    addEntity,
+    isRelation,
+    getRelationTargets,
+    Wildcard,
+    Relation,
+    ComponentRef
 } from 'bitecs'
 
 /**
@@ -14,7 +19,7 @@ import {
  * @param {ArrayBuffer} [buffer=new ArrayBuffer(1024 * 1024 * 100)] - The buffer to use for serialization.
  * @returns {Function} A function that, when called, serializes the world state and returns a slice of the buffer.
  */
-export const createSnapshotSerializer = (world: World, components: Record<string, PrimitiveBrand>[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+export const createSnapshotSerializer = (world: World, components: (Record<string, PrimitiveBrand> | ComponentRef)[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
     const dataView = new DataView(buffer)
     let offset = 0
 
@@ -41,7 +46,17 @@ export const createSnapshotSerializer = (world: World, components: Record<string
             offset += 1
             
             for (let j = 0; j < components.length; j++) {
-                if (hasComponent(world, entityId, components[j])) {
+                const component = components[j]
+                if (isRelation(component)) {
+                    const targets = getRelationTargets(world, entityId, component as Relation<any>)
+                    for (const target of targets) {
+                        dataView.setUint8(offset, j)
+                        offset += 1
+                        dataView.setUint32(offset, target)
+                        offset += 4
+                        componentCount++
+                    }
+                } else if (hasComponent(world, entityId, component)) {
                     dataView.setUint8(offset, j)
                     offset += 1
                     componentCount++
@@ -78,7 +93,7 @@ export const createSnapshotSerializer = (world: World, components: Record<string
  * @param {Record<string, PrimitiveBrand>[]} components - An array of component definitions.
  * @returns {Function} A function that takes a serialized packet and deserializes it into the world, returning a map of packet entity IDs to world entity IDs.
  */
-export const createSnapshotDeserializer = (world: World, components: Record<string, PrimitiveBrand>[]) => {
+export const createSnapshotDeserializer = (world: World, components: (Record<string, PrimitiveBrand> | ComponentRef)[]) => {
     const soaDeserializer = createSoADeserializer(components)
 
     return (packet: ArrayBuffer): Map<number, number> => {
@@ -104,7 +119,22 @@ export const createSnapshotDeserializer = (world: World, components: Record<stri
             for (let i = 0; i < componentCount; i++) {
                 const componentIndex = dataView.getUint8(offset)
                 offset += 1
-                addComponent(world, worldEntityId, components[componentIndex])
+                const component = components[componentIndex]
+                
+                if (isRelation(component)) {
+                    const targetId = dataView.getUint32(offset)
+                    offset += 4
+                    // We need to wait until all entities are created before adding relations
+                    // Store relation info to add later
+                    if (!entityIdMap.has(targetId)) {
+                        const worldTargetId = addEntity(world)
+                        entityIdMap.set(targetId, worldTargetId)
+                    }
+                    const worldTargetId = entityIdMap.get(targetId)
+                    addComponent(world, worldEntityId, (component as (target: any) => any)(worldTargetId))
+                } else {
+                    addComponent(world, worldEntityId, component)
+                }
             }
         }
 

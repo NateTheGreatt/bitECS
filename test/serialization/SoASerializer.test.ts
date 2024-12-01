@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { addEntity, createWorld } from "../../src/core"
+import { addEntity, createWorld } from "bitecs"
 import { createSoADeserializer, createSoASerializer, f32, u8 } from "../../src/serialization"
 
 describe('SoA Serialization and Deserialization', () => {

@@ -188,7 +188,17 @@ var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024
       const componentCountOffset = offset;
       offset += 1;
       for (let j = 0; j < components.length; j++) {
-        if ((0, import_bitecs.hasComponent)(world, entityId, components[j])) {
+        const component = components[j];
+        if ((0, import_bitecs.isRelation)(component)) {
+          const targets = (0, import_bitecs.getRelationTargets)(world, entityId, component);
+          for (const target of targets) {
+            dataView.setUint8(offset, j);
+            offset += 1;
+            dataView.setUint32(offset, target);
+            offset += 4;
+            componentCount++;
+          }
+        } else if ((0, import_bitecs.hasComponent)(world, entityId, component)) {
           dataView.setUint8(offset, j);
           offset += 1;
           componentCount++;
@@ -229,7 +239,19 @@ var createSnapshotDeserializer = (world, components) => {
       for (let i = 0; i < componentCount; i++) {
         const componentIndex = dataView.getUint8(offset);
         offset += 1;
-        (0, import_bitecs.addComponent)(world, worldEntityId, components[componentIndex]);
+        const component = components[componentIndex];
+        if ((0, import_bitecs.isRelation)(component)) {
+          const targetId = dataView.getUint32(offset);
+          offset += 4;
+          if (!entityIdMap.has(targetId)) {
+            const worldTargetId2 = (0, import_bitecs.addEntity)(world);
+            entityIdMap.set(targetId, worldTargetId2);
+          }
+          const worldTargetId = entityIdMap.get(targetId);
+          (0, import_bitecs.addComponent)(world, worldEntityId, component(worldTargetId));
+        } else {
+          (0, import_bitecs.addComponent)(world, worldEntityId, component);
+        }
       }
     }
     soaDeserializer(packet.slice(offset), entityIdMap);

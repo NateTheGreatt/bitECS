@@ -138,7 +138,9 @@ import {
   addComponent,
   hasComponent,
   getAllEntities,
-  addEntity
+  addEntity,
+  isRelation,
+  getRelationTargets
 } from "bitecs";
 var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
   const dataView = new DataView(buffer);
@@ -155,7 +157,17 @@ var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024
       const componentCountOffset = offset;
       offset += 1;
       for (let j = 0; j < components.length; j++) {
-        if (hasComponent(world, entityId, components[j])) {
+        const component = components[j];
+        if (isRelation(component)) {
+          const targets = getRelationTargets(world, entityId, component);
+          for (const target of targets) {
+            dataView.setUint8(offset, j);
+            offset += 1;
+            dataView.setUint32(offset, target);
+            offset += 4;
+            componentCount++;
+          }
+        } else if (hasComponent(world, entityId, component)) {
           dataView.setUint8(offset, j);
           offset += 1;
           componentCount++;
@@ -196,7 +208,19 @@ var createSnapshotDeserializer = (world, components) => {
       for (let i = 0; i < componentCount; i++) {
         const componentIndex = dataView.getUint8(offset);
         offset += 1;
-        addComponent(world, worldEntityId, components[componentIndex]);
+        const component = components[componentIndex];
+        if (isRelation(component)) {
+          const targetId = dataView.getUint32(offset);
+          offset += 4;
+          if (!entityIdMap.has(targetId)) {
+            const worldTargetId2 = addEntity(world);
+            entityIdMap.set(targetId, worldTargetId2);
+          }
+          const worldTargetId = entityIdMap.get(targetId);
+          addComponent(world, worldEntityId, component(worldTargetId));
+        } else {
+          addComponent(world, worldEntityId, component);
+        }
       }
     }
     soaDeserializer(packet.slice(offset), entityIdMap);
@@ -214,9 +238,9 @@ import {
   onAdd,
   onRemove,
   entityExists,
-  isRelation,
-  getRelationTargets,
-  Wildcard
+  isRelation as isRelation2,
+  getRelationTargets as getRelationTargets2,
+  Wildcard as Wildcard2
 } from "bitecs";
 var createObserverSerializer = (world, networkedTag, components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
   const dataView = new DataView(buffer);
@@ -231,9 +255,9 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
     relationTargets.delete(eid);
   });
   components.forEach((component, i) => {
-    if (isRelation(component)) {
-      observe(world, onAdd(networkedTag, component(Wildcard)), (eid) => {
-        const targets = getRelationTargets(world, eid, component);
+    if (isRelation2(component)) {
+      observe(world, onAdd(networkedTag, component(Wildcard2)), (eid) => {
+        const targets = getRelationTargets2(world, eid, component);
         for (const target of targets) {
           if (!relationTargets.has(eid)) {
             relationTargets.set(eid, /* @__PURE__ */ new Map());
@@ -242,7 +266,7 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
           queue.push([eid, 4 /* AddRelation */, i, target]);
         }
       });
-      observe(world, onRemove(networkedTag, component(Wildcard)), (eid) => {
+      observe(world, onRemove(networkedTag, component(Wildcard2)), (eid) => {
         const targetMap = relationTargets.get(eid);
         if (targetMap) {
           const target = targetMap.get(i);

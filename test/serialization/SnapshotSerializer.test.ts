@@ -2,10 +2,14 @@ import { describe, it, expect } from 'vitest'
 import {
     addComponent,
     addEntity,
+    createRelation,
     createWorld,
     hasComponent,
-    removeEntity
-} from '../../src/core'
+    isRelation,
+    removeEntity,
+    Wildcard,
+    withAutoRemoveSubject
+} from 'bitecs'
 import { createSnapshotDeserializer, createSnapshotSerializer, f32, u8 } from '../../src/serialization'
 
 describe('Snapshot Serialization and Deserialization', () => {
@@ -64,5 +68,40 @@ describe('Snapshot Serialization and Deserialization', () => {
         expect(Position.x[newEntity2]).toBe(30)
         expect(Position.y[newEntity2]).toBe(40)
         expect(Health.value[newEntity2]).toBe(100)
+    })
+
+    it('should correctly serialize and deserialize relations', () => {
+        const world = createWorld()
+        const ChildOf = createRelation(withAutoRemoveSubject)
+        const components = [ChildOf]
+
+        const serialize = createSnapshotSerializer(world, components)
+        const deserialize = createSnapshotDeserializer(world, components)
+
+        // Create parent and child entities
+        const parent = addEntity(world)
+        const child = addEntity(world)
+        addComponent(world, child, ChildOf(parent))
+
+        // Serialize world state
+        const serializedData = serialize()
+
+        // Remove entities and relations
+        removeEntity(world, parent)
+        removeEntity(world, child)
+
+        // Deserialize into world
+        const entityIdMapping = deserialize(serializedData)
+
+        // Get mapped entity IDs
+        const mappedParent = entityIdMapping.get(parent)!
+        const mappedChild = entityIdMapping.get(child)!
+
+        // Verify relation was restored correctly
+        expect(hasComponent(world, mappedChild, ChildOf(mappedParent))).toBe(true)
+
+        // Verify implicit relation components
+        expect(hasComponent(world, mappedParent, Wildcard(ChildOf))).toBe(true)
+        expect(hasComponent(world, mappedChild, ChildOf(Wildcard))).toBe(true)
     })
 });
