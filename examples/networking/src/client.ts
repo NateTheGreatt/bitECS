@@ -2,15 +2,12 @@ import { createWorld, query } from 'bitecs'
 import { createSnapshotDeserializer, createObserverDeserializer, createSoADeserializer } from 'bitecs/serialization'
 import { components, Position, Networked, MESSAGE_TYPES, Health } from './shared'
 
-// Create client world
 const world = createWorld()
 
-// Create deserializers
 const snapshotDeserializer = createSnapshotDeserializer(world, components)
 const observerDeserializer = createObserverDeserializer(world, Networked, components)
 const soaDeserializer = createSoADeserializer(components)
 
-// Connect to server using Bun WebSocket client
 const socket = new WebSocket("ws://localhost:5001")
 
 socket.addEventListener("open", () => {

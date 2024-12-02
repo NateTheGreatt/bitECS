@@ -2,15 +2,13 @@ import { createWorld, addEntity, addComponent, removeEntity, query } from 'bitec
 import { createSnapshotSerializer, createObserverSerializer, createSoASerializer } from 'bitecs/serialization'
 import { components, Position, Health, Networked, MESSAGE_TYPES } from './shared'
 
-// Create server world
 const world = createWorld()
 
-// Create serializers
 const snapshotSerializer = createSnapshotSerializer(world, components)
 const observerSerializer = createObserverSerializer(world, Networked, components)
 const soaSerializer = createSoASerializer(components)
 
-// Helper to tag message with type
+// Needed to differentiate message types on the client
 const tagMessage = (type: number, data: ArrayBuffer) => {
     const tagged = new Uint8Array(data.byteLength + 1)
     tagged[0] = type
@@ -19,7 +17,6 @@ const tagMessage = (type: number, data: ArrayBuffer) => {
 }
 
 const createNetworkedEntity = () => {
-    // Create new player entity for this client
     const entity = addEntity(world)
     addComponent(world, entity, Position)
     addComponent(world, entity, Health)
@@ -35,7 +32,6 @@ createNetworkedEntity()
 
 const playerEntities = new Map()
 
-// Setup WebSocket server
 const server = Bun.serve({
     port: 5001,
     fetch(req, server) {
@@ -50,7 +46,7 @@ const server = Bun.serve({
 
             playerEntities.set(ws, createNetworkedEntity())
 
-            // Send initial snapshot when client first connects
+            // Initial state sync
             const snapshot = snapshotSerializer()
             ws.send(tagMessage(MESSAGE_TYPES.SNAPSHOT, snapshot))
         },
@@ -66,14 +62,14 @@ const server = Bun.serve({
             
             Position.x[playerEntity] += 1
 
-            // update the client with any newly created entities (like players, enemies, etc)
+            // Sync any new entities
             const updates = observerSerializer()
             if (updates.byteLength > 0) {
                 console.log('Sending OBSERVER update')
                 ws.send(tagMessage(MESSAGE_TYPES.OBSERVER, updates))
             }
 
-            // update the client with the position data of all networked entities
+            // Sync latest positions
             const soaUpdates = soaSerializer(query(world, [Networked, Position]))
             console.log('Sending SOA update')
             ws.send(tagMessage(MESSAGE_TYPES.SOA, soaUpdates))
