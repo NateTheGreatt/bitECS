@@ -18,8 +18,6 @@ export type TypedArray =
     | Float32Array
     | Float64Array
 
-type ComponentRef = Record<string, Array<any> | TypedArray>
-
 /**
  * Union type of all possible type symbols.
  */
@@ -29,6 +27,13 @@ export type TypeSymbol = typeof $u8 | typeof $i8 | typeof $u16 | typeof $i16 | t
  * Type representing a primitive brand, which is either a number array with a symbol property or a TypedArray.
  */
 export type PrimitiveBrand = (number[] & { [key: symbol]: true }) | TypedArray
+
+/**
+ * Type representing a component reference, which is a record mapping string keys to either
+ * a PrimitiveBrand (number array with type symbol) or TypedArray values.
+ * Used to define the structure of components that can be serialized.
+ */
+type ComponentRef = Record<string, PrimitiveBrand | TypedArray>
 
 /**
  * Creates a function that tags an array with a type symbol for serialization.
