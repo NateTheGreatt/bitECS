@@ -1,4 +1,3 @@
-import { ComponentRef } from "bitecs"
 
 /**
  * Symbols representing different data types for serialization.
@@ -18,6 +17,8 @@ export type TypedArray =
     | Uint32Array
     | Float32Array
     | Float64Array
+
+type ComponentRef = Record<string, Array<any> | TypedArray>
 
 /**
  * Union type of all possible type symbols.

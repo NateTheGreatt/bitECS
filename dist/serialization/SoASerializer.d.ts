@@ -1,6 +1,6 @@
-import { ComponentRef } from "bitecs";
 export declare const $u8: unique symbol, $i8: unique symbol, $u16: unique symbol, $i16: unique symbol, $u32: unique symbol, $i32: unique symbol, $f32: unique symbol, $f64: unique symbol;
 export type TypedArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
+type ComponentRef = Record<string, Array<any> | TypedArray>;
 export type TypeSymbol = typeof $u8 | typeof $i8 | typeof $u16 | typeof $i16 | typeof $u32 | typeof $i32 | typeof $f32 | typeof $f64;
 export type PrimitiveBrand = (number[] & {
     [key: symbol]: true;
@@ -10,4 +10,5 @@ export declare const createComponentSerializer: (component: ComponentRef) => (vi
 export declare const createComponentDeserializer: (component: ComponentRef) => (view: DataView, offset: number, entityIdMapping?: Map<number, number>) => number;
 export declare const createSoASerializer: (components: ComponentRef[], buffer?: ArrayBuffer) => (indices: number[]) => ArrayBuffer;
 export declare const createSoADeserializer: (components: ComponentRef[]) => (packet: ArrayBuffer, entityIdMapping?: Map<number, number>) => void;
+export {};
 //# sourceMappingURL=SoASerializer.d.ts.map

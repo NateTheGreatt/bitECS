@@ -171,342 +171,8 @@ var createSoADeserializer = (components) => {
   };
 };
 
-// src/core/utils/defineHiddenProperty.ts
-var defineHiddenProperty = (obj, key, value) => Object.defineProperty(obj, key, {
-  value,
-  enumerable: false,
-  writable: true,
-  configurable: true
-});
-
-// src/core/EntityIndex.ts
-var getId = (index, id) => id & index.entityMask;
-var addEntityId = (index) => {
-  if (index.aliveCount < index.dense.length) {
-    const recycledId = index.dense[index.aliveCount];
-    const entityId = recycledId;
-    index.sparse[entityId] = index.aliveCount;
-    index.aliveCount++;
-    return recycledId;
-  }
-  const id = ++index.maxId;
-  index.dense.push(id);
-  index.sparse[id] = index.aliveCount;
-  index.aliveCount++;
-  return id;
-};
-var isEntityIdAlive = (index, id) => {
-  const entityId = getId(index, id);
-  const denseIndex = index.sparse[entityId];
-  return denseIndex !== void 0 && denseIndex < index.aliveCount && index.dense[denseIndex] === id;
-};
-
-// src/core/World.ts
-var $internal = Symbol.for("bitecs_internal");
-var getAllEntities = (world) => world[$internal].entityIndex.dense.slice(0);
-
-// src/core/utils/Observer.ts
-var createObservable = () => {
-  const observers = /* @__PURE__ */ new Set();
-  const subscribe = (observer) => {
-    observers.add(observer);
-    return () => {
-      observers.delete(observer);
-    };
-  };
-  const notify = (entity, ...args) => {
-    return Array.from(observers).reduce((acc, listener) => {
-      const result = listener(entity, ...args);
-      return result && typeof result === "object" ? { ...acc, ...result } : acc;
-    }, {});
-  };
-  return {
-    subscribe,
-    notify
-  };
-};
-
-// src/core/Query.ts
-var $opType = Symbol.for("bitecs-opType");
-var $opTerms = Symbol.for("bitecs-opTerms");
-function queryCheckEntity(world, query2, eid) {
-  const ctx = world[$internal];
-  const { masks, notMasks, orMasks, generations } = query2;
-  for (let i = 0; i < generations.length; i++) {
-    const generationId = generations[i];
-    const qMask = masks[generationId];
-    const qNotMask = notMasks[generationId];
-    const qOrMask = orMasks[generationId];
-    const eMask = ctx.entityMasks[generationId][eid];
-    if (qNotMask && (eMask & qNotMask) !== 0) {
-      return false;
-    }
-    if (qMask && (eMask & qMask) !== qMask) {
-      return false;
-    }
-    if (qOrMask && (eMask & qOrMask) === 0) {
-      return false;
-    }
-  }
-  return true;
-}
-var queryAddEntity = (query2, eid) => {
-  query2.toRemove.remove(eid);
-  query2.addObservable.notify(eid);
-  query2.add(eid);
-};
-var queryRemoveEntity = (world, query2, eid) => {
-  const ctx = world[$internal];
-  const has = query2.has(eid);
-  if (!has || query2.toRemove.has(eid)) return;
-  query2.toRemove.add(eid);
-  ctx.dirtyQueries.add(query2);
-  query2.removeObservable.notify(eid);
-};
-
-// src/core/Relation.ts
-var $relation = Symbol.for("bitecs-relation");
-var $pairTarget = Symbol.for("bitecs-pairTarget");
-var $isPairComponent = Symbol.for("bitecs-isPairComponent");
-var $relationData = Symbol.for("bitecs-relationData");
-var createBaseRelation = () => {
-  const data = {
-    pairsMap: /* @__PURE__ */ new Map(),
-    initStore: void 0,
-    exclusiveRelation: false,
-    autoRemoveSubject: false,
-    onTargetRemoved: void 0
-  };
-  const relation = (target) => {
-    if (target === void 0) throw Error("Relation target is undefined");
-    const normalizedTarget = target === "*" ? Wildcard : target;
-    if (!data.pairsMap.has(normalizedTarget)) {
-      const component = data.initStore ? data.initStore() : {};
-      defineHiddenProperty(component, $relation, relation);
-      defineHiddenProperty(component, $pairTarget, normalizedTarget);
-      defineHiddenProperty(component, $isPairComponent, true);
-      data.pairsMap.set(normalizedTarget, component);
-    }
-    return data.pairsMap.get(normalizedTarget);
-  };
-  defineHiddenProperty(relation, $relationData, data);
-  return relation;
-};
-var Pair = (relation, target) => {
-  if (relation === void 0) throw Error("Relation is undefined");
-  return relation(target);
-};
-var getRelationTargets = (world, eid, relation) => {
-  const components = getEntityComponents(world, eid);
-  const targets = [];
-  for (const c of components) {
-    if (c[$relation] === relation && c[$pairTarget] !== Wildcard && !isRelation(c[$pairTarget])) {
-      targets.push(c[$pairTarget]);
-    }
-  }
-  return targets;
-};
-var $wildcard = Symbol.for("bitecs-wildcard");
-function createWildcardRelation() {
-  const relation = createBaseRelation();
-  Object.defineProperty(relation, $wildcard, {
-    value: true,
-    enumerable: false,
-    writable: false,
-    configurable: false
-  });
-  return relation;
-}
-function getWildcard() {
-  const GLOBAL_WILDCARD = Symbol.for("bitecs-global-wildcard");
-  if (!globalThis[GLOBAL_WILDCARD]) {
-    globalThis[GLOBAL_WILDCARD] = createWildcardRelation();
-  }
-  return globalThis[GLOBAL_WILDCARD];
-}
-var Wildcard = getWildcard();
-function createIsARelation() {
-  return createBaseRelation();
-}
-function getIsA() {
-  const GLOBAL_ISA = Symbol.for("bitecs-global-isa");
-  if (!globalThis[GLOBAL_ISA]) {
-    globalThis[GLOBAL_ISA] = createIsARelation();
-  }
-  return globalThis[GLOBAL_ISA];
-}
-var IsA = getIsA();
-function isRelation(component) {
-  if (!component) return false;
-  const symbols = Object.getOwnPropertySymbols(component);
-  return symbols.includes($relationData);
-}
-
-// src/core/Component.ts
-var registerComponent = (world, component) => {
-  if (!component) {
-    throw new Error(`bitECS - Cannot register null or undefined component`);
-  }
-  const ctx = world[$internal];
-  const queries = /* @__PURE__ */ new Set();
-  const data = {
-    id: ctx.componentCount++,
-    generationId: ctx.entityMasks.length - 1,
-    bitflag: ctx.bitflag,
-    ref: component,
-    queries,
-    setObservable: createObservable(),
-    getObservable: createObservable()
-  };
-  ctx.componentMap.set(component, data);
-  ctx.bitflag *= 2;
-  if (ctx.bitflag >= 2 ** 31) {
-    ctx.bitflag = 1;
-    ctx.entityMasks.push([]);
-  }
-  return data;
-};
-var hasComponent = (world, eid, component) => {
-  const ctx = world[$internal];
-  const registeredComponent = ctx.componentMap.get(component);
-  if (!registeredComponent) return false;
-  const { generationId, bitflag } = registeredComponent;
-  const mask = ctx.entityMasks[generationId][eid];
-  return (mask & bitflag) === bitflag;
-};
-var getComponentData = (world, eid, component) => {
-  const ctx = world[$internal];
-  const componentData = ctx.componentMap.get(component);
-  if (!componentData) {
-    return void 0;
-  }
-  if (!hasComponent(world, eid, component)) {
-    return void 0;
-  }
-  return componentData.getObservable.notify(eid);
-};
-var recursivelyInherit = (world, baseEid, inheritedEid, isFirstSuper = true) => {
-  const ctx = world[$internal];
-  addComponent(world, baseEid, IsA(inheritedEid));
-  for (const component of getEntityComponents(world, inheritedEid)) {
-    if (component === Prefab) {
-      continue;
-    }
-    addComponent(world, baseEid, component);
-    if (isFirstSuper) {
-      const componentData = ctx.componentMap.get(component);
-      if (componentData?.setObservable) {
-        const data = getComponentData(world, inheritedEid, component);
-        componentData.setObservable.notify(baseEid, data);
-      }
-    }
-  }
-  for (const inheritedEid2 of getRelationTargets(world, inheritedEid, IsA)) {
-    recursivelyInherit(world, baseEid, inheritedEid2, false);
-  }
-};
-var addComponent = (world, eid, ...components) => {
-  if (!entityExists(world, eid)) {
-    throw new Error(`Cannot add component - entity ${eid} does not exist in the world.`);
-  }
-  const ctx = world[$internal];
-  components.forEach((componentOrSet) => {
-    const component = "component" in componentOrSet ? componentOrSet.component : componentOrSet;
-    const data = "data" in componentOrSet ? componentOrSet.data : void 0;
-    if (!ctx.componentMap.has(component)) registerComponent(world, component);
-    const componentData = ctx.componentMap.get(component);
-    if (data !== void 0) {
-      componentData.setObservable.notify(eid, data);
-    }
-    if (hasComponent(world, eid, component)) return;
-    const { generationId, bitflag, queries } = componentData;
-    ctx.entityMasks[generationId][eid] |= bitflag;
-    if (!hasComponent(world, eid, Prefab)) {
-      queries.forEach((queryData) => {
-        queryData.toRemove.remove(eid);
-        const match = queryCheckEntity(world, queryData, eid);
-        if (match) queryAddEntity(queryData, eid);
-        else queryRemoveEntity(world, queryData, eid);
-      });
-    }
-    ctx.entityComponents.get(eid).add(component);
-    if (component[$isPairComponent]) {
-      const relation = component[$relation];
-      const target = component[$pairTarget];
-      addComponent(world, eid, Pair(relation, Wildcard));
-      addComponent(world, eid, Pair(Wildcard, target));
-      if (typeof target === "number") {
-        addComponent(world, target, Pair(Wildcard, relation));
-        ctx.entitiesWithRelations.add(target);
-      }
-      ctx.entitiesWithRelations.add(target);
-      const relationData = relation[$relationData];
-      if (relationData.exclusiveRelation === true && target !== Wildcard) {
-        const oldTarget = getRelationTargets(world, eid, relation)[0];
-        if (oldTarget !== void 0 && oldTarget !== null && oldTarget !== target) {
-          removeComponent(world, eid, relation(oldTarget));
-        }
-      }
-      if (relation === IsA) {
-        const inheritedTargets = getRelationTargets(world, eid, IsA);
-        for (const inherited of inheritedTargets) {
-          recursivelyInherit(world, eid, inherited);
-        }
-      }
-    }
-  });
-};
-var removeComponent = (world, eid, ...components) => {
-  const ctx = world[$internal];
-  if (!entityExists(world, eid)) {
-    throw new Error(`Cannot remove component - entity ${eid} does not exist in the world.`);
-  }
-  components.forEach((component) => {
-    if (!hasComponent(world, eid, component)) return;
-    const componentNode = ctx.componentMap.get(component);
-    const { generationId, bitflag, queries } = componentNode;
-    ctx.entityMasks[generationId][eid] &= ~bitflag;
-    queries.forEach((queryData) => {
-      queryData.toRemove.remove(eid);
-      const match = queryCheckEntity(world, queryData, eid);
-      if (match) queryAddEntity(queryData, eid);
-      else queryRemoveEntity(world, queryData, eid);
-    });
-    ctx.entityComponents.get(eid).delete(component);
-    if (component[$isPairComponent]) {
-      const target = component[$pairTarget];
-      removeComponent(world, eid, Pair(Wildcard, target));
-      const relation = component[$relation];
-      const otherTargets = getRelationTargets(world, eid, relation);
-      if (otherTargets.length === 0) {
-        removeComponent(world, eid, Pair(relation, Wildcard));
-      }
-    }
-  });
-};
-
-// src/core/Entity.ts
-var Prefab = {};
-var addEntity = (world) => {
-  const ctx = world[$internal];
-  const eid = addEntityId(ctx.entityIndex);
-  ctx.notQueries.forEach((q) => {
-    const match = queryCheckEntity(world, q, eid);
-    if (match) queryAddEntity(q, eid);
-  });
-  ctx.entityComponents.set(eid, /* @__PURE__ */ new Set());
-  return eid;
-};
-var getEntityComponents = (world, eid) => {
-  const ctx = world[$internal];
-  if (eid === void 0) throw new Error(`getEntityComponents: entity id is undefined.`);
-  if (!isEntityIdAlive(ctx.entityIndex, eid))
-    throw new Error(`getEntityComponents: entity ${eid} does not exist in the world.`);
-  return Array.from(ctx.entityComponents.get(eid));
-};
-var entityExists = (world, eid) => isEntityIdAlive(world[$internal].entityIndex, eid);
-
 // src/serialization/SnapshotSerializer.ts
+var import_bitecs = require("bitecs");
 function serializeRelationData(data, eid, dataView, offset) {
   if (!data) return offset;
   if (Array.isArray(data)) {
@@ -608,8 +274,8 @@ var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024
       offset += 1;
       for (let j = 0; j < components.length; j++) {
         const component = components[j];
-        if (isRelation(component)) {
-          const targets = getRelationTargets(world, entityId, component);
+        if ((0, import_bitecs.isRelation)(component)) {
+          const targets = (0, import_bitecs.getRelationTargets)(world, entityId, component);
           for (const target of targets) {
             dataView.setUint8(offset, j);
             offset += 1;
@@ -619,7 +285,7 @@ var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024
             offset = serializeRelationData(relationData, entityId, dataView, offset);
             componentCount++;
           }
-        } else if (hasComponent(world, entityId, component)) {
+        } else if ((0, import_bitecs.hasComponent)(world, entityId, component)) {
           dataView.setUint8(offset, j);
           offset += 1;
           componentCount++;
@@ -636,7 +302,7 @@ var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024
   };
   return () => {
     offset = 0;
-    const entities = getAllEntities(world);
+    const entities = (0, import_bitecs.getAllEntities)(world);
     serializeEntityComponentRelationships(entities);
     serializeComponentData(entities);
     return buffer.slice(0, offset);
@@ -656,7 +322,7 @@ var createSnapshotDeserializer = (world, components, constructorMapping) => {
       offset += 4;
       let worldEntityId = currentMapping.get(packetEntityId);
       if (worldEntityId === void 0) {
-        worldEntityId = addEntity(world);
+        worldEntityId = (0, import_bitecs.addEntity)(world);
         currentMapping.set(packetEntityId, worldEntityId);
       }
       const componentCount = dataView.getUint8(offset);
@@ -665,19 +331,19 @@ var createSnapshotDeserializer = (world, components, constructorMapping) => {
         const componentIndex = dataView.getUint8(offset);
         offset += 1;
         const component = components[componentIndex];
-        if (isRelation(component)) {
+        if ((0, import_bitecs.isRelation)(component)) {
           const targetId = dataView.getUint32(offset);
           offset += 4;
           let worldTargetId = currentMapping.get(targetId);
           if (worldTargetId === void 0) {
-            worldTargetId = addEntity(world);
+            worldTargetId = (0, import_bitecs.addEntity)(world);
             currentMapping.set(targetId, worldTargetId);
           }
           const relationComponent = component(worldTargetId);
-          addComponent(world, worldEntityId, relationComponent);
+          (0, import_bitecs.addComponent)(world, worldEntityId, relationComponent);
           offset = deserializeRelationData(relationComponent, worldEntityId, dataView, offset);
         } else {
-          addComponent(world, worldEntityId, component);
+          (0, import_bitecs.addComponent)(world, worldEntityId, component);
         }
       }
     }
@@ -687,7 +353,7 @@ var createSnapshotDeserializer = (world, components, constructorMapping) => {
 };
 
 // src/serialization/ObserverSerializer.ts
-var import_bitecs = require("bitecs");
+var import_bitecs2 = require("bitecs");
 function serializeRelationData2(data, eid, dataView, offset) {
   if (!data) return offset;
   if (Array.isArray(data)) {
@@ -778,17 +444,17 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
   let offset = 0;
   const queue = [];
   const relationTargets = /* @__PURE__ */ new Map();
-  (0, import_bitecs.observe)(world, (0, import_bitecs.onAdd)(networkedTag), (eid) => {
+  (0, import_bitecs2.observe)(world, (0, import_bitecs2.onAdd)(networkedTag), (eid) => {
     queue.push([eid, 0 /* AddEntity */, -1]);
   });
-  (0, import_bitecs.observe)(world, (0, import_bitecs.onRemove)(networkedTag), (eid) => {
+  (0, import_bitecs2.observe)(world, (0, import_bitecs2.onRemove)(networkedTag), (eid) => {
     queue.push([eid, 1 /* RemoveEntity */, -1]);
     relationTargets.delete(eid);
   });
   components.forEach((component, i) => {
-    if ((0, import_bitecs.isRelation)(component)) {
-      (0, import_bitecs.observe)(world, (0, import_bitecs.onAdd)(networkedTag, component(import_bitecs.Wildcard)), (eid) => {
-        const targets = (0, import_bitecs.getRelationTargets)(world, eid, component);
+    if ((0, import_bitecs2.isRelation)(component)) {
+      (0, import_bitecs2.observe)(world, (0, import_bitecs2.onAdd)(networkedTag, component(import_bitecs2.Wildcard)), (eid) => {
+        const targets = (0, import_bitecs2.getRelationTargets)(world, eid, component);
         for (const target of targets) {
           if (!relationTargets.has(eid)) {
             relationTargets.set(eid, /* @__PURE__ */ new Map());
@@ -798,7 +464,7 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
           queue.push([eid, 4 /* AddRelation */, i, target, relationData]);
         }
       });
-      (0, import_bitecs.observe)(world, (0, import_bitecs.onRemove)(networkedTag, component(import_bitecs.Wildcard)), (eid) => {
+      (0, import_bitecs2.observe)(world, (0, import_bitecs2.onRemove)(networkedTag, component(import_bitecs2.Wildcard)), (eid) => {
         const targetMap = relationTargets.get(eid);
         if (targetMap) {
           const target = targetMap.get(i);
@@ -812,10 +478,10 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
         }
       });
     } else {
-      (0, import_bitecs.observe)(world, (0, import_bitecs.onAdd)(networkedTag, component), (eid) => {
+      (0, import_bitecs2.observe)(world, (0, import_bitecs2.onAdd)(networkedTag, component), (eid) => {
         queue.push([eid, 2 /* AddComponent */, i]);
       });
-      (0, import_bitecs.observe)(world, (0, import_bitecs.onRemove)(networkedTag, component), (eid) => {
+      (0, import_bitecs2.observe)(world, (0, import_bitecs2.onRemove)(networkedTag, component), (eid) => {
         queue.push([eid, 3 /* RemoveComponent */, i]);
       });
     }
@@ -869,30 +535,30 @@ var createObserverDeserializer = (world, networkedTag, components, constructorMa
       let worldEntityId = currentMapping.get(packetEntityId);
       if (operationType === 0 /* AddEntity */) {
         if (worldEntityId === void 0) {
-          worldEntityId = (0, import_bitecs.addEntity)(world);
+          worldEntityId = (0, import_bitecs2.addEntity)(world);
           currentMapping.set(packetEntityId, worldEntityId);
-          (0, import_bitecs.addComponent)(world, worldEntityId, networkedTag);
+          (0, import_bitecs2.addComponent)(world, worldEntityId, networkedTag);
         } else {
           throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
         }
-      } else if (worldEntityId !== void 0 && (0, import_bitecs.entityExists)(world, worldEntityId)) {
+      } else if (worldEntityId !== void 0 && (0, import_bitecs2.entityExists)(world, worldEntityId)) {
         if (operationType === 1 /* RemoveEntity */) {
-          (0, import_bitecs.removeEntity)(world, worldEntityId);
+          (0, import_bitecs2.removeEntity)(world, worldEntityId);
         } else if (operationType === 2 /* AddComponent */) {
-          (0, import_bitecs.addComponent)(world, worldEntityId, component);
+          (0, import_bitecs2.addComponent)(world, worldEntityId, component);
         } else if (operationType === 3 /* RemoveComponent */) {
-          (0, import_bitecs.removeComponent)(world, worldEntityId, component);
+          (0, import_bitecs2.removeComponent)(world, worldEntityId, component);
         } else if (operationType === 4 /* AddRelation */) {
           const worldTargetId = currentMapping.get(targetId);
           if (worldTargetId !== void 0) {
             const relationComponent = component(worldTargetId);
-            (0, import_bitecs.addComponent)(world, worldEntityId, relationComponent);
+            (0, import_bitecs2.addComponent)(world, worldEntityId, relationComponent);
             offset = deserializeRelationData2(relationComponent, worldEntityId, dataView, offset);
           }
         } else if (operationType === 5 /* RemoveRelation */) {
           const worldTargetId = currentMapping.get(targetId);
           if (worldTargetId !== void 0) {
-            (0, import_bitecs.removeComponent)(world, worldEntityId, component(worldTargetId));
+            (0, import_bitecs2.removeComponent)(world, worldEntityId, component(worldTargetId));
           }
         }
       }
