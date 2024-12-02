@@ -1,6 +1,6 @@
-import { createWorld, addEntity, query } from '../../../src/core'
-import { createSnapshotDeserializer, createObserverDeserializer, createSoADeserializer } from '../../../src/serialization'
-import { components, Position, Health, Networked, MESSAGE_TYPES } from './shared'
+import { createWorld, query } from 'bitecs'
+import { createSnapshotDeserializer, createObserverDeserializer, createSoADeserializer } from 'bitecs/serialization'
+import { components, Position, Networked, MESSAGE_TYPES, Health } from './shared'
 
 // Create client world
 const world = createWorld()
@@ -24,7 +24,6 @@ socket.addEventListener("message", async ({data}) => {
     const messageView = new Uint8Array(arrayBuffer)
     const type = messageView[0]
     
-    // Get payload by creating new array with remaining data
     const payload = messageView.slice(1).buffer as ArrayBuffer
 
     switch (type) {
@@ -42,8 +41,8 @@ socket.addEventListener("message", async ({data}) => {
             break
     }
 
-    query(world, [Position]).forEach(eid => {
-        console.log(`Entity ${eid} position: (${Position.x[eid].toFixed(2)}, ${Position.y[eid].toFixed(2)})`)
+    query(world, [Position, Health]).forEach(eid => {
+        console.log(`Entity ${eid}: \n\t HP: ${Health.value[eid]} \n\t Position: (${Position.x[eid].toFixed(2)}, ${Position.y[eid].toFixed(2)})`)
     })
 })
 

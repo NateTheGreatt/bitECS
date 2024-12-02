@@ -1,5 +1,5 @@
-import { createWorld, addEntity, addComponent, removeEntity, query } from '../../../src/core'
-import { createSnapshotSerializer, createObserverSerializer, createSoASerializer } from '../../../src/serialization'
+import { createWorld, addEntity, addComponent, removeEntity, query } from 'bitecs'
+import { createSnapshotSerializer, createObserverSerializer, createSoASerializer } from 'bitecs/serialization'
 import { components, Position, Health, Networked, MESSAGE_TYPES } from './shared'
 
 // Create server world
