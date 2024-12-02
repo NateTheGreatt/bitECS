@@ -60,14 +60,40 @@ var typeGetters = {
   [$f32]: (view, offset) => ({ value: view.getFloat32(offset), size: 4 }),
   [$f64]: (view, offset) => ({ value: view.getFloat64(offset), size: 8 })
 };
+function isTypedArrayOrBranded(arr) {
+  return arr && (ArrayBuffer.isView(arr) || Array.isArray(arr) && typeof arr === "object");
+}
+function getTypeForArray(arr) {
+  for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
+    if (symbol in arr) return symbol;
+  }
+  if (arr instanceof Int8Array) return $i8;
+  if (arr instanceof Uint8Array) return $u8;
+  if (arr instanceof Int16Array) return $i16;
+  if (arr instanceof Uint16Array) return $u16;
+  if (arr instanceof Int32Array) return $i32;
+  if (arr instanceof Uint32Array) return $u32;
+  if (arr instanceof Float32Array) return $f32;
+  return $f64;
+}
 var createComponentSerializer = (component) => {
+  if (isTypedArrayOrBranded(component)) {
+    const type = getTypeForArray(component);
+    const setter = typeSetters[type];
+    return (view, offset, index) => {
+      let bytesWritten = 0;
+      bytesWritten += typeSetters[$u32](view, offset, index);
+      bytesWritten += setter(view, offset + bytesWritten, component[index]);
+      return bytesWritten;
+    };
+  }
   const props = Object.keys(component);
   const types = props.map((prop) => {
     const arr = component[prop];
-    for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
-      if (symbol in arr) return symbol;
+    if (!isTypedArrayOrBranded(arr)) {
+      throw new Error(`Invalid array type for property ${prop}`);
     }
-    return $f64;
+    return getTypeForArray(arr);
   });
   const setters = types.map((type) => typeSetters[type] || (() => {
     throw new Error(`Unsupported or unannotated type`);
@@ -82,13 +108,26 @@ var createComponentSerializer = (component) => {
   };
 };
 var createComponentDeserializer = (component) => {
+  if (isTypedArrayOrBranded(component)) {
+    const type = getTypeForArray(component);
+    const getter = typeGetters[type];
+    return (view, offset, entityIdMapping) => {
+      let bytesRead = 0;
+      const { value: originalIndex, size: indexSize } = typeGetters[$u32](view, offset);
+      bytesRead += indexSize;
+      const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex;
+      const { value, size } = getter(view, offset + bytesRead);
+      component[index] = value;
+      return bytesRead + size;
+    };
+  }
   const props = Object.keys(component);
   const types = props.map((prop) => {
     const arr = component[prop];
-    for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
-      if (symbol in arr) return symbol;
+    if (!isTypedArrayOrBranded(arr)) {
+      throw new Error(`Invalid array type for property ${prop}`);
     }
-    return $f64;
+    return getTypeForArray(arr);
   });
   const getters = types.map((type) => typeGetters[type] || (() => {
     throw new Error(`Unsupported or unannotated type`);

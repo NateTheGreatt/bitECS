@@ -80,18 +80,60 @@ const typeGetters = {
 }
 
 /**
+ * Checks if a value is a TypedArray or branded array
+ */
+function isTypedArrayOrBranded(arr: any): arr is PrimitiveBrand | TypedArray {
+    return arr && (
+        ArrayBuffer.isView(arr) || 
+        (Array.isArray(arr) && typeof arr === 'object')
+    )
+}
+
+/**
+ * Gets the type symbol for an array
+ */
+function getTypeForArray(arr: PrimitiveBrand | TypedArray): TypeSymbol {
+    // Check for branded arrays first
+    for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
+        if (symbol in arr) return symbol
+    }
+    // Then check TypedArrays
+    if (arr instanceof Int8Array) return $i8
+    if (arr instanceof Uint8Array) return $u8
+    if (arr instanceof Int16Array) return $i16
+    if (arr instanceof Uint16Array) return $u16
+    if (arr instanceof Int32Array) return $i32
+    if (arr instanceof Uint32Array) return $u32
+    if (arr instanceof Float32Array) return $f32
+    return $f64
+}
+
+/**
  * Creates a serializer function for a component.
  * @param {ComponentRef} component - The component to create a serializer for.
  * @returns {Function} A function that serializes the component.
  */
-export const createComponentSerializer = (component: ComponentRef) => {
+export const createComponentSerializer = (component: ComponentRef | PrimitiveBrand | TypedArray) => {
+    // Handle direct array case
+    if (isTypedArrayOrBranded(component)) {
+        const type = getTypeForArray(component)
+        const setter = typeSetters[type]
+        return (view: DataView, offset: number, index: number) => {
+            let bytesWritten = 0
+            bytesWritten += typeSetters[$u32](view, offset, index)
+            bytesWritten += setter(view, offset + bytesWritten, component[index])
+            return bytesWritten
+        }
+    }
+
+    // Handle component case
     const props = Object.keys(component)
     const types = props.map(prop => {
         const arr = component[prop]
-        for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
-            if (symbol in arr) return symbol
+        if (!isTypedArrayOrBranded(arr)) {
+            throw new Error(`Invalid array type for property ${prop}`)
         }
-        return $f64; // default to float64 if no type is specified
+        return getTypeForArray(arr)
     })
     const setters = types.map(type => typeSetters[type as keyof typeof typeSetters] || (() => { throw new Error(`Unsupported or unannotated type`); }))
     return (view: DataView, offset: number, index: number) => {
@@ -110,14 +152,30 @@ export const createComponentSerializer = (component: ComponentRef) => {
  * @param {ComponentRef} component - The component to create a deserializer for.
  * @returns {Function} A function that deserializes the component.
  */
-export const createComponentDeserializer = (component: ComponentRef) => {
+export const createComponentDeserializer = (component: ComponentRef | PrimitiveBrand | TypedArray) => {
+    // Handle direct array case
+    if (isTypedArrayOrBranded(component)) {
+        const type = getTypeForArray(component)
+        const getter = typeGetters[type]
+        return (view: DataView, offset: number, entityIdMapping?: Map<number, number>) => {
+            let bytesRead = 0
+            const { value: originalIndex, size: indexSize } = typeGetters[$u32](view, offset)
+            bytesRead += indexSize
+            const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex
+            const { value, size } = getter(view, offset + bytesRead)
+            component[index] = value
+            return bytesRead + size
+        }
+    }
+
+    // Handle component case
     const props = Object.keys(component)
     const types = props.map(prop => {
         const arr = component[prop]
-        for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
-            if (symbol in arr) return symbol
+        if (!isTypedArrayOrBranded(arr)) {
+            throw new Error(`Invalid array type for property ${prop}`)
         }
-        return $f64; // default to float64 if no type is specified
+        return getTypeForArray(arr)
     })
     const getters = types.map(type => typeGetters[type as keyof typeof typeGetters] || (() => { throw new Error(`Unsupported or unannotated type`); }))
     return (view: DataView, offset: number, entityIdMapping?: Map<number, number>) => {
@@ -143,7 +201,7 @@ export const createComponentDeserializer = (component: ComponentRef) => {
  * @param {ArrayBuffer} [buffer] - The buffer to use for serialization.
  * @returns {Function} A function that serializes the SoA data.
  */
-export const createSoASerializer = (components: ComponentRef[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+export const createSoASerializer = (components: (ComponentRef | PrimitiveBrand | TypedArray)[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
     const view = new DataView(buffer)
     const componentSerializers = components.map(createComponentSerializer)
     return (indices: number[] | readonly number[]): ArrayBuffer => {
@@ -163,7 +221,7 @@ export const createSoASerializer = (components: ComponentRef[], buffer: ArrayBuf
  * @param {ComponentRef[]} components - The components to deserialize.
  * @returns {Function} A function that deserializes the SoA data.
  */
-export const createSoADeserializer = (components: ComponentRef[]) => {
+export const createSoADeserializer = (components: (ComponentRef | PrimitiveBrand | TypedArray)[]) => {
     const componentDeserializers = components.map(createComponentDeserializer)
     return (packet: ArrayBuffer, entityIdMapping?: Map<number, number>): void => {
         const view = new DataView(packet)
