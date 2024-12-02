@@ -141,7 +141,7 @@ export const createComponentDeserializer = (component: ComponentRef) => {
 export const createSoASerializer = (components: ComponentRef[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
     const view = new DataView(buffer)
     const componentSerializers = components.map(createComponentSerializer)
-    return (indices: number[]): ArrayBuffer => {
+    return (indices: number[] | readonly number[]): ArrayBuffer => {
         let offset = 0
         for (let i = 0; i < indices.length; i++) {
             const index = indices[i]

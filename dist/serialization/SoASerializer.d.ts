@@ -8,7 +8,7 @@ export type PrimitiveBrand = (number[] & {
 export declare const u8: (a?: number[]) => PrimitiveBrand, i8: (a?: number[]) => PrimitiveBrand, u16: (a?: number[]) => PrimitiveBrand, i16: (a?: number[]) => PrimitiveBrand, u32: (a?: number[]) => PrimitiveBrand, i32: (a?: number[]) => PrimitiveBrand, f32: (a?: number[]) => PrimitiveBrand, f64: (a?: number[]) => PrimitiveBrand;
 export declare const createComponentSerializer: (component: ComponentRef) => (view: DataView, offset: number, index: number) => number;
 export declare const createComponentDeserializer: (component: ComponentRef) => (view: DataView, offset: number, entityIdMapping?: Map<number, number>) => number;
-export declare const createSoASerializer: (components: ComponentRef[], buffer?: ArrayBuffer) => (indices: number[]) => ArrayBuffer;
+export declare const createSoASerializer: (components: ComponentRef[], buffer?: ArrayBuffer) => (indices: number[] | readonly number[]) => ArrayBuffer;
 export declare const createSoADeserializer: (components: ComponentRef[]) => (packet: ArrayBuffer, entityIdMapping?: Map<number, number>) => void;
 export {};
 //# sourceMappingURL=SoASerializer.d.ts.map

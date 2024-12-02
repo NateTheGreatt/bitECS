@@ -262,7 +262,8 @@ export const createObserverDeserializer = (world: World, networkedTag: Component
                     currentMapping.set(packetEntityId, worldEntityId)
                     addComponent(world, worldEntityId, networkedTag)
                 } else {
-                    throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`)
+                    // TODO: figure out if this should ignore, throw, warn, or if the observer serializer should maybe do a snapshot on first call?
+                    // throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`)
                 }
             } else if (worldEntityId !== undefined && entityExists(world, worldEntityId)) {
                 if (operationType === OperationType.RemoveEntity) {

@@ -539,7 +539,6 @@ var createObserverDeserializer = (world, networkedTag, components, constructorMa
           currentMapping.set(packetEntityId, worldEntityId);
           (0, import_bitecs2.addComponent)(world, worldEntityId, networkedTag);
         } else {
-          throw new Error(`Entity with ID ${packetEntityId} already exists in the mapping.`);
         }
       } else if (worldEntityId !== void 0 && (0, import_bitecs2.entityExists)(world, worldEntityId)) {
         if (operationType === 1 /* RemoveEntity */) {
