@@ -39,7 +39,7 @@ socket.addEventListener("message", async ({data}) => {
     }
 
     query(world, [Position, Health]).forEach(eid => {
-        console.log(`Entity ${eid}: \n\t HP: ${Health.value[eid]} \n\t Position: (${Position.x[eid].toFixed(2)}, ${Position.y[eid].toFixed(2)})`)
+        console.log(`Entity ${eid}: \n\t HP: ${Health[eid]} \n\t Position: (${Position.x[eid].toFixed(2)}, ${Position.y[eid].toFixed(2)})`)
     })
 })
 

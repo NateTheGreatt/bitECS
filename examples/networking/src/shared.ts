@@ -1,7 +1,9 @@
-import { f32, u8 } from '../../../src/serialization'
+import { f32, u8 } from 'bitecs/serialization'
+
+export const Networked = {}
 
 export const Position = { x: f32([]), y: f32([]) }
-export const Health = { value: u8([]) }
+export const Health = u8([])
 
 export const components = [Position, Health]
 
@@ -11,4 +13,3 @@ export const MESSAGE_TYPES = {
     SOA: 2
 }
 
-export const Networked = {}

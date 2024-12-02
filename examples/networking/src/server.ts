@@ -17,15 +17,15 @@ const tagMessage = (type: number, data: ArrayBuffer) => {
 }
 
 const createNetworkedEntity = () => {
-    const entity = addEntity(world)
-    addComponent(world, entity, Position)
-    addComponent(world, entity, Health)
-    addComponent(world, entity, Networked)
+    const eid = addEntity(world)
+    addComponent(world, eid, Position)
+    addComponent(world, eid, Health)
+    addComponent(world, eid, Networked)
 
-    Position.x[entity] = Math.random() * 400
-    Position.y[entity] = Math.random() * 400
-    Health.value[entity] = 100
-    return entity
+    Position.x[eid] = Math.random() * 400
+    Position.y[eid] = Math.random() * 400
+    Health[eid] = 100
+    return eid
 }
 
 createNetworkedEntity()
