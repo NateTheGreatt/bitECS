@@ -94,7 +94,7 @@ function isTypedArrayOrBranded(arr: any): arr is PrimitiveBrand | TypedArray {
  */
 function getTypeForArray(arr: PrimitiveBrand | TypedArray): TypeSymbol {
     // Check for branded arrays first
-    for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
+    for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64] as TypeSymbol[]) {
         if (symbol in arr) return symbol
     }
     // Then check TypedArrays
