@@ -12,9 +12,7 @@ export declare const makeExclusive: <T>(relation: Relation<T>) => Relation<T>;
 export declare const withAutoRemoveSubject: <T>(relation: Relation<T>) => Relation<T>;
 export declare const withOnTargetRemoved: <T>(onRemove: OnTargetRemovedCallback) => (relation: Relation<T>) => Relation<T>;
 export declare const Pair: <T>(relation: Relation<T>, target: RelationTarget) => T;
-export declare const Wildcard: Relation<any>;
-export declare const IsA: Relation<any>;
-export declare const getRelationTargets: (world: World, eid: EntityId, relation: Relation<any>) => any[];
+export declare const getRelationTargets: (world: World, eid: EntityId, relation: Relation<any>) => number[];
 export declare function createRelation<T>(...modifiers: Array<(relation: Relation<T>) => Relation<T>>): Relation<T>;
 export declare function createRelation<T>(options: {
     store?: () => T;
@@ -22,5 +20,13 @@ export declare function createRelation<T>(options: {
     autoRemoveSubject?: boolean;
     onTargetRemoved?: OnTargetRemovedCallback;
 }): Relation<T>;
+export declare const $wildcard: unique symbol;
+export declare function createWildcardRelation<T>(): Relation<T>;
+export declare function getWildcard(): Relation<any>;
+export declare const Wildcard: Relation<any>;
+export declare function createIsARelation<T>(): Relation<T>;
+export declare function getIsA(): Relation<any>;
+export declare const IsA: Relation<any>;
+export declare function isWildcard(relation: any): boolean;
 export declare function isRelation(component: any): boolean;
 //# sourceMappingURL=Relation.d.ts.map

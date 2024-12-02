@@ -43,18 +43,19 @@ export const createSparseSet = (): SparseSet => {
 	}
 }
 
+const SharedArrayBufferOrArrayBuffer = typeof SharedArrayBuffer !== 'undefined' ? SharedArrayBuffer : ArrayBuffer
 
 export const createUint32SparseSet = (initialCapacity: number = 1000): SparseSet => {
 	const sparse: number[] = []
 	let length = 0
-	let dense: Uint32Array = new Uint32Array(initialCapacity)
+	let dense: Uint32Array = new Uint32Array(new SharedArrayBufferOrArrayBuffer(initialCapacity * 4))
 
 	const has = (val: number) => val < sparse.length && sparse[val] < length && dense[sparse[val]] === val
 
 	const add = (val: number) => {
 		if (has(val)) return
 		if (length >= dense.length) {
-			const newDense = new Uint32Array(dense.length * 2)
+			const newDense = new Uint32Array(new SharedArrayBufferOrArrayBuffer(dense.length * 2 * 4))
 			newDense.set(dense)
 			dense = newDense
 		}
@@ -87,4 +88,4 @@ export const createUint32SparseSet = (initialCapacity: number = 1000): SparseSet
 		},
 		reset,
 	}
-};
+}

@@ -50,6 +50,7 @@ __export(core_exports, {
   hasComponent: () => hasComponent,
   innerQuery: () => innerQuery,
   isRelation: () => isRelation,
+  isWildcard: () => isWildcard,
   observe: () => observe,
   onAdd: () => onAdd,
   onGet: () => onGet,
@@ -230,15 +231,16 @@ var createSparseSet = () => {
     reset
   };
 };
+var SharedArrayBufferOrArrayBuffer = typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
 var createUint32SparseSet = (initialCapacity = 1e3) => {
   const sparse = [];
   let length = 0;
-  let dense = new Uint32Array(initialCapacity);
+  let dense = new Uint32Array(new SharedArrayBufferOrArrayBuffer(initialCapacity * 4));
   const has = (val) => val < sparse.length && sparse[val] < length && dense[sparse[val]] === val;
   const add = (val) => {
     if (has(val)) return;
     if (length >= dense.length) {
-      const newDense = new Uint32Array(dense.length * 2);
+      const newDense = new Uint32Array(new SharedArrayBufferOrArrayBuffer(dense.length * 2 * 4));
       newDense.set(dense);
       dense = newDense;
     }
@@ -292,8 +294,8 @@ var createObservable = () => {
 };
 
 // src/core/Query.ts
-var $opType = Symbol("opType");
-var $opTerms = Symbol("opTerms");
+var $opType = Symbol.for("bitecs-opType");
+var $opTerms = Symbol.for("bitecs-opTerms");
 var Or = (...components) => ({
   [$opType]: "Or",
   [$opTerms]: components
@@ -519,10 +521,10 @@ var removeQuery = (world, terms) => {
 };
 
 // src/core/Relation.ts
-var $relation = Symbol("relation");
-var $pairTarget = Symbol("pairTarget");
-var $isPairComponent = Symbol("isPairComponent");
-var $relationData = Symbol("relationData");
+var $relation = Symbol.for("bitecs-relation");
+var $pairTarget = Symbol.for("bitecs-pairTarget");
+var $isPairComponent = Symbol.for("bitecs-isPairComponent");
+var $relationData = Symbol.for("bitecs-relationData");
 var createBaseRelation = () => {
   const data = {
     pairsMap: /* @__PURE__ */ new Map(),
@@ -570,13 +572,11 @@ var Pair = (relation, target) => {
   if (relation === void 0) throw Error("Relation is undefined");
   return relation(target);
 };
-var Wildcard = createRelation();
-var IsA = createRelation();
 var getRelationTargets = (world, eid, relation) => {
   const components = getEntityComponents(world, eid);
   const targets = [];
   for (const c of components) {
-    if (c[$relation] === relation && c[$pairTarget] !== Wildcard) {
+    if (c[$relation] === relation && c[$pairTarget] !== Wildcard && !isRelation(c[$pairTarget])) {
       targets.push(c[$pairTarget]);
     }
   }
@@ -596,6 +596,41 @@ function createRelation(...args) {
     const modifiers = args;
     return modifiers.reduce((acc, modifier) => modifier(acc), createBaseRelation());
   }
+}
+var $wildcard = Symbol.for("bitecs-wildcard");
+function createWildcardRelation() {
+  const relation = createBaseRelation();
+  Object.defineProperty(relation, $wildcard, {
+    value: true,
+    enumerable: false,
+    writable: false,
+    configurable: false
+  });
+  return relation;
+}
+function getWildcard() {
+  const GLOBAL_WILDCARD = Symbol.for("bitecs-global-wildcard");
+  if (!globalThis[GLOBAL_WILDCARD]) {
+    globalThis[GLOBAL_WILDCARD] = createWildcardRelation();
+  }
+  return globalThis[GLOBAL_WILDCARD];
+}
+var Wildcard = getWildcard();
+function createIsARelation() {
+  return createBaseRelation();
+}
+function getIsA() {
+  const GLOBAL_ISA = Symbol.for("bitecs-global-isa");
+  if (!globalThis[GLOBAL_ISA]) {
+    globalThis[GLOBAL_ISA] = createIsARelation();
+  }
+  return globalThis[GLOBAL_ISA];
+}
+var IsA = getIsA();
+function isWildcard(relation) {
+  if (!relation) return false;
+  const symbols = Object.getOwnPropertySymbols(relation);
+  return symbols.includes($wildcard);
 }
 function isRelation(component) {
   if (!component) return false;

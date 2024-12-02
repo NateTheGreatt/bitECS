@@ -9,10 +9,11 @@ import {
     getRelationTargets,
     Wildcard,
     Relation,
-    ComponentRef
-} from 'bitecs'
+    ComponentRef,
+    query
+} from '../core'
 import { $u8, $i8, $u16, $i16, $u32, $i32, $f32 } from './SoASerializer'
-
+query
 /**
  * Serializes relation data for a specific entity
  */
@@ -257,4 +258,9 @@ export const createSnapshotDeserializer = (world: World, components: (Record<str
 
         return currentMapping
     }
+}
+
+
+export const test = (w:any) => {
+    return w === Wildcard
 }

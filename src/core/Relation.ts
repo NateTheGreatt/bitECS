@@ -173,29 +173,17 @@ export const Pair = <T>(relation: Relation<T>, target: RelationTarget): T => {
 }
 
 /**
- * Wildcard relation.
- * @type {Relation<any>}
- */
-export const Wildcard: Relation<any> = createRelation()
-
-/**
- * IsA relation.
- * @type {Relation<any>}
- */
-export const IsA: Relation<any> = createRelation()
-
-/**
  * Gets the relation targets for an entity.
  * @param {World} world - The world object.
  * @param {Relation<any>} relation - The relation to get targets for.
  * @param {number} eid - The entity ID.
  * @returns {Array<any>} An array of relation targets.
  */
-export const getRelationTargets = (world: World, eid: EntityId, relation: Relation<any>) => {
+export const getRelationTargets = (world: World, eid: EntityId, relation: Relation<any>): number[] => {
 	const components = getEntityComponents(world, eid)
 	const targets = []
 	for (const c of components) {
-		if (c[$relation] === relation && c[$pairTarget] !== Wildcard) {
+		if (c[$relation] === relation && c[$pairTarget] !== Wildcard && !isRelation(c[$pairTarget])) {
 			targets.push(c[$pairTarget])
 		}
 	}
@@ -247,6 +235,87 @@ export function createRelation<T>(
         const modifiers = args as Array<(relation: Relation<T>) => Relation<T>>
         return modifiers.reduce((acc, modifier) => modifier(acc), createBaseRelation<T>())
     }
+}
+
+/**
+ * Symbol used to mark a relation as a wildcard relation
+ */
+export const $wildcard = Symbol.for('bitecs-wildcard')
+
+/**
+ * Creates a wildcard relation that matches any target.
+ * @template T
+ * @returns {Relation<T>} The created wildcard relation.
+ */
+export function createWildcardRelation<T>(): Relation<T> {
+    const relation = createBaseRelation<T>()
+    Object.defineProperty(relation, $wildcard, {
+        value: true,
+        enumerable: false,
+        writable: false,
+        configurable: false
+    })
+    return relation
+}
+
+/**
+ * Gets the singleton wildcard instance.
+ * @returns {Relation<any>} The global wildcard relation instance.
+ */
+export function getWildcard(): Relation<any> {
+    const GLOBAL_WILDCARD = Symbol.for('bitecs-global-wildcard')
+    
+    if (!(globalThis as any)[GLOBAL_WILDCARD]) {
+        (globalThis as any)[GLOBAL_WILDCARD] = createWildcardRelation()
+    }
+    
+    return (globalThis as any)[GLOBAL_WILDCARD]
+}
+
+/**
+ * Wildcard relation.
+ * @type {Relation<any>}
+ */
+export const Wildcard = getWildcard()
+
+/**
+ * Creates an IsA relation.
+ * @template T
+ * @returns {Relation<T>} The created IsA relation.
+ */
+export function createIsARelation<T>(): Relation<T> {
+    return createBaseRelation<T>()
+}
+
+/**
+ * Gets the singleton IsA instance.
+ * @returns {Relation<any>} The global IsA relation instance.
+ */
+export function getIsA(): Relation<any> {
+    const GLOBAL_ISA = Symbol.for('bitecs-global-isa')
+    
+    if (!(globalThis as any)[GLOBAL_ISA]) {
+        (globalThis as any)[GLOBAL_ISA] = createIsARelation()
+    }
+    
+    return (globalThis as any)[GLOBAL_ISA]
+}
+
+/**
+ * IsA relation.
+ * @type {Relation<any>}
+ */
+export const IsA = getIsA()
+
+/**
+ * Checks if a relation is a wildcard relation.
+ * @param {any} relation - The relation to check.
+ * @returns {boolean} True if the relation is a wildcard relation, false otherwise.
+ */
+export function isWildcard(relation: any): boolean {
+    if (!relation) return false
+    const symbols = Object.getOwnPropertySymbols(relation)
+    return symbols.includes($wildcard)
 }
 
 /**

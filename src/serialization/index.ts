@@ -8,7 +8,7 @@ export {
 
 export {
     createSnapshotSerializer,
-    createSnapshotDeserializer
+    createSnapshotDeserializer,
 } from './SnapshotSerializer'
 
 export {

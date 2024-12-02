@@ -7,6 +7,6 @@ export type { ComponentRef, ComponentData } from './Component';
 export { commitRemovals, removeQuery, registerQuery, innerQuery, query, observe, onAdd, onRemove, Or, And, Not, Any, All, None, onGet, onSet, } from './Query';
 export type { ObservableHookDef, ObservableHook, QueryResult, Query, QueryOperatorType, OpReturnType, QueryOperator, QueryTerm, OrOp, AndOp, NotOp, AnyOp, AllOp, NoneOp, } from './Query';
 export { pipe } from './utils/pipe';
-export { withAutoRemoveSubject, withOnTargetRemoved, withStore, createRelation, getRelationTargets, Wildcard, IsA, Pair, isRelation, } from './Relation';
+export { withAutoRemoveSubject, withOnTargetRemoved, withStore, createRelation, getRelationTargets, Wildcard, IsA, Pair, isRelation, isWildcard, } from './Relation';
 export type { OnTargetRemovedCallback, Relation, RelationTarget, } from './Relation';
 //# sourceMappingURL=index.d.ts.map

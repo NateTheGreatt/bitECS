@@ -96,6 +96,7 @@ export {
 	IsA,
 	Pair,
 	isRelation,
+	isWildcard,
 } from './Relation'
 
 export type {
