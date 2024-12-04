@@ -5,7 +5,17 @@ import { components, Position, Health, Networked, MESSAGE_TYPES } from './shared
 const world = createWorld()
 
 const snapshotSerializer = createSnapshotSerializer(world, components)
-const observerSerializer = createObserverSerializer(world, Networked, components)
+/* Each observer serializer has an internal queue that is cleared when serialized.
+ * We need a separate observer per client to track changes independently.
+ * This ensures each client gets all changes, since calling serialize() clears the queue.
+ * In most cases, we can use a single observer serializer and broadcast the same packet to all clients.
+ * However, in this example, we need separate observers per client because:
+ * 1. Each client needs to receive all changes since their last update
+ * 2. Calling serialize() clears the observer's queue
+ * 3. Clients may connect at different times and have different update rates
+ * So if we used a single observer, some clients would miss changes that happened between their updates
+ */
+const observerSerializers = new Map()
 const soaSerializer = createSoASerializer(components)
 
 // Needed to differentiate message types on the client
@@ -45,6 +55,8 @@ const server = Bun.serve({
             console.log('Client connected')
 
             playerEntities.set(ws, createNetworkedEntity())
+            // Create a new observer serializer for this client
+            observerSerializers.set(ws, createObserverSerializer(world, Networked, components))
 
             // Initial state sync
             const snapshot = snapshotSerializer()
@@ -55,6 +67,7 @@ const server = Bun.serve({
             const playerEntity = playerEntities.get(ws)
             removeEntity(world, playerEntity)
             playerEntities.delete(ws)
+            observerSerializers.delete(ws)
         },
         message(ws, message) {
             const playerEntity = playerEntities.get(ws)
@@ -62,17 +75,18 @@ const server = Bun.serve({
             
             Position.x[playerEntity] += 1
 
-            // Sync any new entities
+            // Sync latest positions
+            const soaUpdates = soaSerializer(query(world, [Networked, Position]))
+            console.log('Sending SOA update')
+            ws.send(tagMessage(MESSAGE_TYPES.SOA, soaUpdates))
+
+            // Get changes from this client's observer
+            const observerSerializer = observerSerializers.get(ws)
             const updates = observerSerializer()
             if (updates.byteLength > 0) {
                 console.log('Sending OBSERVER update')
                 ws.send(tagMessage(MESSAGE_TYPES.OBSERVER, updates))
             }
-
-            // Sync latest positions
-            const soaUpdates = soaSerializer(query(world, [Networked, Position]))
-            console.log('Sending SOA update')
-            ws.send(tagMessage(MESSAGE_TYPES.SOA, soaUpdates))
         }
     }
 })
