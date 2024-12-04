@@ -75,7 +75,7 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
         expect(hasComponent(world, entityIdMapping.get(entity2)!, Velocity)).toBe(false)
     })
 
-    it('should correctly handle add, remove, add sequence', () => {
+    it('should correctly handle add, remove, add component sequence', () => {
         const world = createWorld()
         const networkedTag = {}
         const Position = {}
@@ -142,6 +142,51 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
 
         // Check if entity is removed in world2
         expect(entityExists(world2, entityIdMapping.get(entity)!)).toBe(false)
+    })
+
+    it('should correctly handle add, remove, add entity sequence', () => {
+        const world1 = createWorld()
+        const world2 = createWorld()
+        const networkedTag = {}
+        const Position = {}
+        const components = [Position]
+        const idMap = new Map<number, number>()
+
+        const serialize = createObserverSerializer(world1, networkedTag, components)
+        const deserialize = createObserverDeserializer(world2, networkedTag, components)
+
+        // Add entity first time
+        const entity = addEntity(world1)
+        addComponent(world1, entity, networkedTag)
+        addComponent(world1, entity, Position)
+
+        let serializedData = serialize()
+        deserialize(serializedData,idMap)
+
+        // Verify first add
+        expect(idMap.has(entity)).toBe(true)
+        expect(hasComponent(world2, idMap.get(entity)!, Position)).toBe(true)
+
+        // Remove entity
+        removeEntity(world1, entity)
+
+        serializedData = serialize()
+        deserialize(serializedData, idMap)
+
+        // Verify removal
+        expect(entityExists(world2, idMap.get(entity)!)).toBe(false)
+
+        // Add entity second time
+        addEntity(world1)
+        addComponent(world1, entity, networkedTag)
+        addComponent(world1, entity, Position)
+
+        serializedData = serialize()
+        deserialize(serializedData, idMap)
+
+        // Verify second add
+        expect(idMap.has(entity)).toBe(true)
+        expect(hasComponent(world2, idMap.get(entity)!, Position)).toBe(true)
     })
 
     it('should correctly handle add and remove entity sequence with no components', () => {
