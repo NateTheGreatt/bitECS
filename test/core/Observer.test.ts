@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createWorld, addEntity, addComponent, getComponentData, setComponent, observe, onGet, onSet, set, IsA, addPrefab } from '../../src/core'
+import { createWorld, addEntity, addComponent, getComponentData, observe, onGet, onSet, set, IsA, addPrefab } from '../../src/core'
 
 describe('Observer Tests', () => {
 	it('should trigger onGet when component data is accessed', () => {
@@ -31,13 +31,13 @@ describe('Observer Tests', () => {
 		})
 		const unsubscribe = observe(world, onSet(Position), mockObserver)
 
-		setComponent(world, eid, Position, { x: 1, y: 1 })
+		addComponent(world, eid, set(Position, { x: 1, y: 1 }))
 		expect(mockObserver).toHaveBeenCalledWith(eid, { x: 1, y: 1 })
 		expect(Position.x[eid]).toBe(1)
 		expect(Position.y[eid]).toBe(1)
 
 		unsubscribe()
-		setComponent(world, eid, Position, { x: 2, y: 2 })
+		addComponent(world, eid, set(Position, { x: 2, y: 2 }))
 		expect(mockObserver).toHaveBeenCalledTimes(1)
 		expect(Position.x[eid]).toBe(1)
 		expect(Position.y[eid]).toBe(1)
@@ -58,7 +58,7 @@ describe('Observer Tests', () => {
 		const getObserver = vi.fn((eid) => ({ x: Position.x[eid], y: Position.y[eid] }))
 		observe(world, onGet(Position), getObserver)
 
-		setComponent(world, eid, Position, { x: 3, y: 4 })
+		addComponent(world, eid, set(Position, { x: 3, y: 4 }))
 		expect(setObserver).toHaveBeenCalledWith(eid, { x: 3, y: 4 })
 		expect(Position.x[eid]).toBe(3)
 		expect(Position.y[eid]).toBe(4)
@@ -85,7 +85,7 @@ describe('Observer Tests', () => {
 		}))
 		observe(world, onGet(Position), getObserver)
 
-		setComponent(world, eid, Position, { x: 5, y: 6 })
+		addComponent(world, eid, set(Position, { x: 5, y: 6 }))
 		expect(setObserver).toHaveBeenCalledWith(eid, { x: 5, y: 6 })
 		expect(Position.x[eid]).toBe(5)
 		expect(Position.y[eid]).toBe(6)
@@ -94,7 +94,7 @@ describe('Observer Tests', () => {
 		expect(getObserver).toHaveBeenCalledWith(eid)
 		expect(result).toEqual({ x: 5, y: 6 })
 
-		setComponent(world, eid, Position, { x: 5, y: 6 })
+		addComponent(world, eid, set(Position, { x: 5, y: 6 }))
 
 		const componentData = getComponentData(world, eid, Position)
 		const sum: number = componentData.x + componentData.y
@@ -117,7 +117,7 @@ describe('Observer Tests', () => {
 		observe(world, onGet(Vitals), getObserver)
 
 		// Set initial health
-		setComponent(world, eid, Vitals, { health: 100 })
+		addComponent(world, eid, set(Vitals, { health: 100 }))
 		expect(setObserver).toHaveBeenCalledWith(eid, { health: 100 })
 		expect(Vitals.health[eid]).toBe(100)
 
@@ -127,7 +127,7 @@ describe('Observer Tests', () => {
 		expect(result).toEqual({ health: 100 })
 
 		// Update health
-		setComponent(world, eid, Vitals, { health: 75 })
+		addComponent(world, eid, set(Vitals, { health: 75 }))
 		expect(setObserver).toHaveBeenCalledWith(eid, { health: 75 })
 		expect(Vitals.health[eid]).toBe(75)
 
@@ -214,7 +214,7 @@ describe('Observer Tests', () => {
 		addComponent(world, sheep, IsA(Sheep))
 
 		// Set health for Animal
-		setComponent(world, Animal, Health, { value: 100 })
+		addComponent(world, Animal, set(Health, { value: 100 }))
 		expect(healthObserver).toHaveBeenCalledWith(Animal, { value: 100 })
 		expect(Health.value[Animal]).toBe(100)
 
@@ -224,7 +224,7 @@ describe('Observer Tests', () => {
 		expect(Health.value[sheep]).toBe(100)
 
 		// Set health for individual sheep
-		setComponent(world, sheep, Health, { value: 50 })
+		addComponent(world, sheep, set(Health, { value: 50 }))
 		expect(healthObserver).toHaveBeenCalledWith(sheep, { value: 50 })
 		expect(Health.value[sheep]).toBe(50)
 

@@ -39,7 +39,6 @@ export {
 	removeComponent,
 	removeComponents,
 	getComponentData,
-	setComponent,
 	set
 } from './Component'
 

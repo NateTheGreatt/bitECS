@@ -137,33 +137,7 @@ export const set = <T extends ComponentRef>(component: T, data: any): { componen
 })
 
 /**
- * Sets the data for a component on an entity.
- * @param {World} world - The world object.
- * @param {EntityId} eid - The entity ID.
- * @param {ComponentRef} component - The component to set.
- * @param {any} data - The data to set for the component.
- */
-export const setComponent = (world: World, eid: EntityId, component: ComponentRef, data: any): void => {
-	const ctx = (world as InternalWorld)[$internal]
-	if (!entityExists(world, eid)) {
-		throw new Error(`Cannot set component - entity ${eid} does not exist in the world.`)
-	}
-
-	if (!ctx.componentMap.has(component)) {
-		registerComponent(world, component)
-	}
-
-	const componentData = ctx.componentMap.get(component)!
-
-	if (!hasComponent(world, eid, component)) {
-		addComponent(world, eid, component)
-	}
-
-	componentData.setObservable.notify(eid, data)
-}
-
-/**
- * Recursively inherits components from one entity to another.
+ * Recursvely inherits components from one entity to another.
  * @param {World} world - The world object.
  * @param {number} baseEid - The ID of the entity inheriting components.
  * @param {number} inheritedEid - The ID of the entity being inherited from.

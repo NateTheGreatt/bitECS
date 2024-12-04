@@ -117,9 +117,11 @@ const eid3 = addEntity(world)
 assert(eid1 === eid3)
 ```
 
-### Manual Entity ID Recycling
+### Manual Entity ID Recycling (Recommended)
 
-While immediate entity ID recycling is the default behavior, it can sometimes lead to unexpected issues, especially in complex systems. To avoid this, you can tag entities before actually removing them later on:
+Manual entity ID recycling lets you control exactly when entities are removed from the world. Instead of immediately recycling entity IDs when removed, you can mark entities for removal and process them later in batches.
+
+While immediate recycling is the default, deferring entity removal through manual recycling helps prevent bugs in complex systems where components or systems may still reference recently removed entities. This is especially important when iterating over query results, since an entity removed in one iteration could be referenced in a later iteration. Here's how to implement manual recycling:
 
 ```ts
 const Removed = {}
@@ -140,7 +142,6 @@ markEntityForRemoval(world, eid)
 // sometime later...
 removeMarkedEntities(world)
 ```
-
 
 ### Entity ID Versioning with Entity Index
 
@@ -468,7 +469,7 @@ const sun = addEntity(world)
 addComponent(world, earth, OrbitedBy(moon))
 addComponent(world, earth, IlluminatedBy(sun))
 
-const relatedToEarth = query(world, [Wildcard(earth)]); // Returns [OrbitedBy(moon), IlluminatedBy(sun)]
+const relatedToEarth = query(world, [Wildcard(earth)]); // Returns [moon, sun]
 ```
 
 ### Wildcard Search on Relations
@@ -616,10 +617,8 @@ observe(world, onRemove(Health), (eid) => {
 ### Observing component updates
 The `onSet` and `onGet` hooks in `bitECS` allow you to implement custom getters and setters for component data. Each component can have its own `onSet` and `onGet` hooks that control how data is written and read.
 
-These hooks operate at the component level rather than individual properties. When you call `setComponent()`, the `onSet` hook for that component is triggered with the entire data object:
+These hooks operate at the component level rather than individual properties. When you use the `set` function with `addComponent`, the `onSet` hook for that component is triggered with the entire data object:
 ```ts
-setComponent(world, eid, Position, {x:1, y:2})
-// or
 addComponent(world, eid, set(Position, {x:1, y:2}))
 ```
 
@@ -660,7 +659,7 @@ observe(world, onGet(Position), (eid) => ({
     x: Position[eid].x,
     y: Position[eid].y
 }))
-setComponent(world, eid, Position, { x: 10, y: 20 })
+addComponent(world, eid, set(Position, { x: 10, y: 20 }))
 ```
 
 ### Unsubscribing
