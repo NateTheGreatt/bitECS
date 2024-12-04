@@ -20,7 +20,6 @@ export declare const set: <T extends unknown>(component: T, data: any) => {
     component: T;
     data: any;
 };
-export declare const setComponent: (world: World, eid: EntityId, component: ComponentRef, data: any) => void;
 type ComponentSetter<T = any> = {
     component: ComponentRef;
     data: T;

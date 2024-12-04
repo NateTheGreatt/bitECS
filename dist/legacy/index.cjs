@@ -401,10 +401,12 @@ var createObserverDeserializer = (world, networkedTag, components, constructorMa
           currentMapping.set(packetEntityId, worldEntityId);
           (0, import_bitecs.addComponent)(world, worldEntityId, networkedTag);
         } else {
+          console.warn(`Attempted to deserialize addEntity with ID ${packetEntityId}, but it has already been deserialzied and exists in the mapping.`);
         }
       } else if (worldEntityId !== void 0 && (0, import_bitecs.entityExists)(world, worldEntityId)) {
         if (operationType === 1 /* RemoveEntity */) {
           (0, import_bitecs.removeEntity)(world, worldEntityId);
+          currentMapping.delete(packetEntityId);
         } else if (operationType === 2 /* AddComponent */) {
           (0, import_bitecs.addComponent)(world, worldEntityId, component);
         } else if (operationType === 3 /* RemoveComponent */) {

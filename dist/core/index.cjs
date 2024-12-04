@@ -67,7 +67,6 @@ __export(core_exports, {
   removeQuery: () => removeQuery,
   resetWorld: () => resetWorld,
   set: () => set,
-  setComponent: () => setComponent,
   withAutoRemoveSubject: () => withAutoRemoveSubject,
   withOnTargetRemoved: () => withOnTargetRemoved,
   withStore: () => withStore,
@@ -688,20 +687,6 @@ var set = (component, data) => ({
   component,
   data
 });
-var setComponent = (world, eid, component, data) => {
-  const ctx = world[$internal];
-  if (!entityExists(world, eid)) {
-    throw new Error(`Cannot set component - entity ${eid} does not exist in the world.`);
-  }
-  if (!ctx.componentMap.has(component)) {
-    registerComponent(world, component);
-  }
-  const componentData = ctx.componentMap.get(component);
-  if (!hasComponent(world, eid, component)) {
-    addComponent(world, eid, component);
-  }
-  componentData.setObservable.notify(eid, data);
-};
 var recursivelyInherit = (world, baseEid, inheritedEid, isFirstSuper = true) => {
   const ctx = world[$internal];
   addComponent(world, baseEid, IsA(inheritedEid));
