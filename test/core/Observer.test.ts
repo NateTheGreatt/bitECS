@@ -233,5 +233,104 @@ describe('Observer Tests', () => {
 		expect(Health.value[Sheep]).toBe(100)
 		expect(Health.value[sheep]).toBe(50)
 	})
+
+	it('should handle deep inheritance hierarchies with multiple layers', () => {
+		const world = createWorld()
+		
+
+		// Create Health components
+		const Health = { value: [] as number[] }
+
+		const setHealthObserver = vi.fn((eid: number, params: { value: number }) => {
+			Health.value[eid] = params.value
+		})
+		observe(world, onSet(Health), setHealthObserver)
+
+		const getHealthObserver = vi.fn((eid: number) => ({
+			value: Health.value[eid]
+		}))
+		observe(world, onGet(Health), getHealthObserver)
+
+		
+		// Create Speed component
+		const Speed = { value: [] as number[] }
+
+		const setSpeedObserver = vi.fn((eid: number, params: { value: number }) => {
+			Speed.value[eid] = params.value
+		})
+		observe(world, onSet(Speed), setSpeedObserver)
+
+		const getSpeedObserver = vi.fn((eid: number) => ({
+			value: Speed.value[eid]
+		}))
+		observe(world, onGet(Speed), getSpeedObserver)
+
+		
+		// Create Strength component
+		const Strength = { value: [] as number[] }
+
+		const setStrengthObserver = vi.fn((eid: number, params: { value: number }) => {
+			Strength.value[eid] = params.value
+		})
+		observe(world, onSet(Strength), setStrengthObserver)
+
+		const getStrengthObserver = vi.fn((eid: number) => ({
+			value: Strength.value[eid]
+		}))
+		observe(world, onGet(Strength), getStrengthObserver)
+
+
+		// Create hierarchy: Animal -> Mammal -> Canine -> Dog -> Husky
+		const Animal = addPrefab(world)
+		// Base health for all animals
+		addComponent(world, Animal, set(Health, { value: 100 }))
+		expect(setHealthObserver).toHaveBeenCalledWith(Animal, { value: 100 })
+		expect(Health.value[Animal]).toBe(100)
+
+		const Mammal = addPrefab(world)
+		// Base speed for mammals
+		addComponent(world, Mammal, IsA(Animal))
+		addComponent(world, Mammal, set(Speed, { value: 20 }))
+		expect(setSpeedObserver).toHaveBeenCalledWith(Mammal, { value: 20 })
+		expect(Speed.value[Mammal]).toBe(20)
+
+		const Canine = addPrefab(world)
+		// Override speed for canines
+		addComponent(world, Canine, IsA(Mammal))
+		addComponent(world, Canine, set(Speed, { value: 35 }))
+		expect(setSpeedObserver).toHaveBeenCalledWith(Canine, { value: 35 })
+		expect(Speed.value[Canine]).toBe(35)
+
+		const Dog = addPrefab(world)
+		// Add strength for dogs
+		addComponent(world, Dog, IsA(Canine))
+		addComponent(world, Dog, set(Strength, { value: 50 }))
+		expect(setStrengthObserver).toHaveBeenCalledWith(Dog, { value: 50 })
+		expect(Strength.value[Dog]).toBe(50)
+
+		const Husky = addPrefab(world)
+		// Override strength for Husky
+		addComponent(world, Husky, IsA(Dog))
+		addComponent(world, Husky, set(Strength, { value: 75 }))
+		expect(setStrengthObserver).toHaveBeenCalledWith(Husky, { value: 75 })
+		expect(Strength.value[Husky]).toBe(75)
+		// Husky should inherit the speed from Canine
+		expect(Speed.value[Husky]).toBe(35)
+
+		const myDog = addEntity(world)
+		// Override a value for specific instance
+		addComponent(world, myDog, IsA(Husky))
+		addComponent(world, myDog, set(Speed, { value: 40 }))
+		expect(setSpeedObserver).toHaveBeenCalledWith(myDog, { value: 40 })
+		expect(Speed.value[myDog]).toBe(40)      // Instance override
+
+		expect(Health.value[myDog]).toBe(100)    // Inherited from Animal
+		expect(Speed.value[myDog]).toBe(40)      // Inherited from Canine (overridden from Mammal)
+		expect(Strength.value[myDog]).toBe(75)   // Inherited from Husky (overridden from Dog)
+
+		// Verify other entities in hierarchy remain unchanged
+		expect(Speed.value[Canine]).toBe(35)
+		expect(Strength.value[Dog]).toBe(50)
+	})
 	
 })

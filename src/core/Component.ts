@@ -12,7 +12,7 @@ import {
 	$relation
 } from './Relation'
 import { createObservable, Observable } from './utils/Observer'
-import { $internal, InternalWorld, World } from './World'
+import { $internal, InternalWorld, World, WorldContext } from './World'
 
 /**
  * Represents a reference to a component.
@@ -143,18 +143,25 @@ export const set = <T extends ComponentRef>(component: T, data: any): { componen
  * @param {number} inheritedEid - The ID of the entity being inherited from.
  * @param {boolean} isFirstSuper - Whether this is the first super in the inheritance chain.
  */
-const recursivelyInherit = (world: World, baseEid: EntityId, inheritedEid: EntityId, isFirstSuper: boolean = true): void => {
-	const ctx = (world as InternalWorld)[$internal]
+const recursivelyInherit = (ctx: WorldContext, world: World, baseEid: EntityId, inheritedEid: EntityId, visited = new Set<EntityId>()): void => {
+	// Guard against circular inheritance
+	if (visited.has(inheritedEid)) return
+	visited.add(inheritedEid)
 	
+	// Add IsA relation first
 	addComponent(world, baseEid, IsA(inheritedEid))
-
+	
+	// Copy components and their data from this level
+	// This needs to happen before recursing to ancestors so closer ancestors take precedence
 	for (const component of getEntityComponents(world, inheritedEid)) {
-		if (component === Prefab) {
-			continue
-		}
-		addComponent(world, baseEid, component)
-		if (isFirstSuper) {
-			// TODO: inherit reference vs copy
+		// TODO: inherit reference vs copy
+		if (component === Prefab) continue
+		
+		// Only add component if entity doesn't already have it
+		// This ensures closer ancestors take precedence
+		if (!hasComponent(world, baseEid, component)) {
+			addComponent(world, baseEid, component)
+			
 			const componentData = ctx.componentMap.get(component)
 			if (componentData?.setObservable) {
 				const data = getComponentData(world, inheritedEid, component)
@@ -162,9 +169,11 @@ const recursivelyInherit = (world: World, baseEid: EntityId, inheritedEid: Entit
 			}
 		}
 	}
-
-	for (const inheritedEid2 of getRelationTargets(world, inheritedEid, IsA)) {
-		recursivelyInherit(world, baseEid, inheritedEid2, false)
+	
+	// Then recursively inherit from ancestors
+	// This ensures more distant ancestors don't override closer ones
+	for (const parentEid of getRelationTargets(world, inheritedEid, IsA)) {
+		recursivelyInherit(ctx, world, baseEid, parentEid, visited)
 	}
 }
 
@@ -245,7 +254,7 @@ export const addComponent = (world: World, eid: EntityId, ...components: (Compon
 			if (relation === IsA) {
 				const inheritedTargets = getRelationTargets(world, eid, IsA)
 				for (const inherited of inheritedTargets) {
-					recursivelyInherit(world, eid, inherited)
+					recursivelyInherit(ctx, world, eid, inherited)
 				}
 			}
 		}
