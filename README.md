@@ -29,17 +29,13 @@ Flexible, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-or
 
 ## ✨ Features
 
-
-`bitECS` is a minimal, less opinionated, and powerful Entity Component System (ECS) library. It provides a lean API that enables developers to build their architecture to their liking, offering flexibility while maintaining efficiency in data-oriented designs. Features include:
-
-- 🔮 Simple, declarative API
-- 🔍 Powerful queries
-- 🔗 Entity relationships
-- 🧵 Thread-friendly
-- 💾 Serialization included
-- 🌐 Node & browser compatible
-- 🤏 Tiny (`<4KB`)
-- ❤ Made with love
+`bitECS` is a minimal, less opinionated, and powerful Entity Component System (ECS) library. It provides a lean API that enables developers to build their architecture to their liking, offering flexibility while maintaining efficiency where needed. Features include:
+| | |
+|---|---|
+| 🔮 Simple, declarative API | 🍃 Lightweight (`<4kb` minzipped) |
+| 🔍 Powerful querying | 📦 Zero dependencies |
+| 🔗 Relational entity modeling | 🧵 Thread-friendly |
+| 💾 Serialization included | 💖 Made with love |
 
 ## 💿 Install
 ```
@@ -63,29 +59,6 @@ import {
   addEntity,
   addComponent,
 } from 'bitecs'
-
-const movementSystem = ({
-    components: { Position, Velocity },
-    time: { delta } 
-}) => {
-  for (const eid of query(world, [Position, Velocity])) {
-    Position.x[eid] += Velocity.x[eid] * delta
-    Position.y[eid] += Velocity.y[eid] * delta
-  }
-}
-
-const timeSystem = ({ time }) => {
-  const now = performance.now()
-  const delta = now - time.then
-  time.delta = delta
-  time.elapsed += delta
-  time.then = now
-}
-
-const update = (world) => {
-  movementSystem(world)
-  timeSystem(world)
-}
 
 const world = createWorld({
   components: {
@@ -111,10 +84,33 @@ Velocity.x[eid] = 1.23
 Velocity.y[eid] = 1.23
 Health[eid] = 100
 
+const movementSystem = ({
+    components: { Position, Velocity },
+    time: { delta } 
+}) => {
+  for (const eid of query(world, [Position, Velocity])) {
+    Position.x[eid] += Velocity.x[eid] * delta
+    Position.y[eid] += Velocity.y[eid] * delta
+  }
+}
+
+const timeSystem = ({ time }) => {
+  const now = performance.now()
+  const delta = now - time.then
+  time.delta = delta
+  time.elapsed += delta
+  time.then = now
+}
+
+const update = (world) => {
+  movementSystem(world)
+  timeSystem(world)
+}
+
 // Node environment
 setInterval(() => {
   update(world)
-}, 1e3/60)
+}, 1000/60)
 
 // Browser environment
 requestAnimationFrame(function animate() {
@@ -131,8 +127,6 @@ Microbenchmarks should be taken with a grain of salt. To get a feel for performa
 - [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks)
 
 ## 🔌 Used by
-
-Engines:
 
 - [iR Engine](https://github.com/ir-engine/ir-engine)
 - [Third Room](https://github.com/thirdroom/thirdroom)

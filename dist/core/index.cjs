@@ -687,15 +687,14 @@ var set = (component, data) => ({
   component,
   data
 });
-var recursivelyInherit = (world, baseEid, inheritedEid, isFirstSuper = true) => {
-  const ctx = world[$internal];
+var recursivelyInherit = (ctx, world, baseEid, inheritedEid, visited = /* @__PURE__ */ new Set()) => {
+  if (visited.has(inheritedEid)) return;
+  visited.add(inheritedEid);
   addComponent(world, baseEid, IsA(inheritedEid));
   for (const component of getEntityComponents(world, inheritedEid)) {
-    if (component === Prefab) {
-      continue;
-    }
-    addComponent(world, baseEid, component);
-    if (isFirstSuper) {
+    if (component === Prefab) continue;
+    if (!hasComponent(world, baseEid, component)) {
+      addComponent(world, baseEid, component);
       const componentData = ctx.componentMap.get(component);
       if (componentData?.setObservable) {
         const data = getComponentData(world, inheritedEid, component);
@@ -703,8 +702,8 @@ var recursivelyInherit = (world, baseEid, inheritedEid, isFirstSuper = true) => 
       }
     }
   }
-  for (const inheritedEid2 of getRelationTargets(world, inheritedEid, IsA)) {
-    recursivelyInherit(world, baseEid, inheritedEid2, false);
+  for (const parentEid of getRelationTargets(world, inheritedEid, IsA)) {
+    recursivelyInherit(ctx, world, baseEid, parentEid, visited);
   }
 };
 var addComponent = (world, eid, ...components) => {
@@ -752,7 +751,7 @@ var addComponent = (world, eid, ...components) => {
       if (relation === IsA) {
         const inheritedTargets = getRelationTargets(world, eid, IsA);
         for (const inherited of inheritedTargets) {
-          recursivelyInherit(world, eid, inherited);
+          recursivelyInherit(ctx, world, eid, inherited);
         }
       }
     }
