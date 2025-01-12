@@ -298,7 +298,7 @@ describe('Snapshot Serialization and Deserialization', () => {
         const Player = {}
 
         // Create serializer and deserializer
-        const serialize   = createSnapshotSerializer(serverWorld, [Damage, Player, ChildOf, Targetting])
+        const serialize = createSnapshotSerializer(serverWorld, [Damage, Player, ChildOf, Targetting])
         const deserialize = createSnapshotDeserializer(clientWorld, [Damage, Player, ChildOf, Targetting])
 
         // Create player in serverWorld
@@ -313,8 +313,8 @@ describe('Snapshot Serialization and Deserialization', () => {
         expect(initialPlayers.length).toBe(1)
 
         const damageEntity = addEntity(serverWorld)
-        addComponent(serverWorld, playerEntity, Damage)
-        addComponent(serverWorld, playerEntity, ChildOf(playerEntity))
+        addComponent(serverWorld, damageEntity, Damage)
+        addComponent(serverWorld, damageEntity, ChildOf(playerEntity))
 
         // Second deserialization
         const serializedData2 = serialize()
