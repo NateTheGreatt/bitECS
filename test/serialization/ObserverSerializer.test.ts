@@ -454,6 +454,7 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
         // Some other child entity to player is created
         const randomEntity = addEntity(serverWorld)
         addComponent(serverWorld, randomEntity, Random)
+        addComponent(serverWorld, randomEntity, Networked)
         addComponent(serverWorld, randomEntity, ChildOf(playerEntity))
 
         // Serialize and deserialize with observations
