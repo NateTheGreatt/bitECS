@@ -283,4 +283,63 @@ describe('Snapshot Serialization and Deserialization', () => {
             expect(hasComponent(world2, cardId, ChildOf2(userIdToEntityId2.get('user2')!))).toBe(true)
         }
     })
+
+    it('should properly deserialize ChildOf relations to players and work with removal', () => {
+        // Create two separate worlds
+        const clientWorld = createWorld()
+        const serverWorld = createWorld()
+
+        // Create relation components for both worlds
+        const ChildOf = createRelation(withAutoRemoveSubject)
+        const Targetting = createRelation()
+
+        // Create other components
+        const Damage = {}
+        const Player = {}
+
+        // Create serializer and deserializer
+        const serialize   = createSnapshotSerializer(serverWorld, [Damage, Player, ChildOf, Targetting])
+        const deserialize = createSnapshotDeserializer(clientWorld, [Damage, Player, ChildOf, Targetting])
+
+        // Create player in serverWorld
+        const playerEntity = addEntity(serverWorld)
+        addComponent(serverWorld, playerEntity, Player)
+
+        const serializedData = serialize()
+        const entityMapping = deserialize(serializedData)
+
+        // Player existing in
+        const initialPlayers = query(clientWorld, [Player])
+        expect(initialPlayers.length).toBe(1)
+
+        const damageEntity = addEntity(serverWorld)
+        addComponent(serverWorld, playerEntity, Damage)
+        addComponent(serverWorld, playerEntity, ChildOf(playerEntity))
+
+        // Second deserialization
+        const serializedData2 = serialize()
+        const entityMapping2 = deserialize(serializedData2, entityMapping)
+
+        const clientPlayerEntity = entityMapping2.get(playerEntity)
+        const clientDamageEntity = entityMapping2.get(damageEntity)
+
+        const allEntities = query(clientWorld, [ChildOf(clientPlayerEntity!)])
+        expect(allEntities.length).toBe(1)
+        expect(entityMapping2.get(damageEntity)).toBe(clientDamageEntity)
+
+        // 💩 Poops the test
+        removeEntity(serverWorld, damageEntity)
+
+        // Third deserialization
+        const serializedData3 = serialize()
+        const entityMapping3 = deserialize(serializedData3, entityMapping2)
+
+        const clientPlayerEntity2 = entityMapping3.get(playerEntity)
+        const clientDamageEntity2 = entityMapping3.get(damageEntity)
+        expect(clientPlayerEntity2).toBe(undefined)
+        expect(clientDamageEntity2).toBe(undefined)
+
+        const allEntities2 = query(clientWorld, [])
+        expect(allEntities2.length).toBe(0)
+    })
 });
