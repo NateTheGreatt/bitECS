@@ -1,6 +1,22 @@
 import assert from 'assert'
 import { describe, it } from 'vitest'
-import { registerComponent, addComponent, hasComponent, removeComponent, InternalWorld, createWorld, addEntity, removeEntity, $internal, getEntityComponents } from '../../src/core'
+import {
+	$default,
+	Default,
+	registerComponent,
+	addComponent,
+	hasComponent,
+	removeComponent,
+	InternalWorld,
+	createWorld,
+	addEntity,
+	removeEntity,
+	$internal,
+	getEntityComponents,
+	set,
+	observe,
+	onSet
+} from '../../src/core'
 
 describe('Component Tests', () => {
 
@@ -124,6 +140,77 @@ describe('Component Tests', () => {
 		components.forEach((component) => {
 			assert(entityComponents.includes(component), `Component ${component.index} should be in entity components`)
 			assert(hasComponent(world, eid, component), `Component ${component.index} should be present using hasComponent`)
+		})
+	})
+
+	it('should handle default initialization via $default method', () => {
+		const world = createWorld()
+		const eid = addEntity(world)
+
+		const TestComponent = {
+			x: [] as number[],
+			y: [] as number[],
+			[$default](eid: number) {
+				this.x[eid] = 1
+				this.y[eid] = 1
+			}
+		}
+
+		const TestComponent2 = Object.assign(
+			new Float32Array(10000),
+			{ [$default](eid: number) { this[eid] = 100 }}
+		)
+
+		const TestComponent3 = Object.assign(
+			[] as number[],
+			{ [$default](eid: number) { this[eid] = 100 }}
+		)
+
+		observe(world, onSet(TestComponent3), (eid, value) => {
+			TestComponent3[eid] = value
+		})
+
+		addComponent(world, eid, TestComponent)
+		assert(TestComponent.x[eid] === 1)
+		assert(TestComponent.y[eid] === 1)
+
+		addComponent(world, eid, TestComponent2)
+		assert(TestComponent2[eid] === 100)
+
+		addComponent(world, eid, set(TestComponent3, 42))
+		assert(TestComponent3[eid] === 42)
+	})
+
+	it('should pass params to default initializer via Default()', () => {
+		const world = createWorld()
+		const eid = addEntity(world)
+		const eid2 = addEntity(world)
+
+		const TestComponent = Object.assign(
+			[],
+			{[$default](eid: number, params: number) {
+				this[eid] = new Float32Array(params || 10000)
+			}}
+		)
+
+		addComponent(world, eid, TestComponent)
+		assert(TestComponent[eid].length === 10000)
+
+		addComponent(world, eid2, Default(TestComponent, 42))
+		assert(TestComponent[eid2].length === 42)
+	})
+
+	it('should throw if $default is not a function', () => {
+		const world = createWorld()
+		const eid = addEntity(world)
+
+		const BadComponent = {
+			value: [] as number[],
+			[$default]: 42
+		}
+
+		assert.throws(() => {
+			addComponent(world, eid, BadComponent)
 		})
 	})
 })

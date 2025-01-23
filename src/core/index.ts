@@ -31,6 +31,8 @@ export {
 } from './EntityIndex'
 
 export {
+	$default,
+	Default,
 	registerComponent,
 	registerComponents,
 	hasComponent,

@@ -270,6 +270,48 @@ addComponent(world, eid, Position, Velocity, Mass)
 removeComponent(world, eid, Position, Velocity)
 ```
 
+### Default Initialization
+
+Components can define a default initializer method keyed by the `$default` symbol that will be called automatically when the component is added to an entity. The method receives the entity ID as a parameter.
+
+The `Default()` function can be used to pass a parameter to the default initializer.
+
+```ts
+import { $default, Default } from 'bitecs'
+
+const Position = {
+    x: [] as number[],
+    y: [] as number[],
+    [$default](eid: number, { x = 0, y = 0 } = {}) {
+        this.x[eid] = x
+        this.y[eid] = y
+    }
+}
+
+const Health = Object.assign({
+    new Float32Array(10000),
+    [$default](eid: number) { this[eid] = 100 }
+})
+
+observe(world, onSet(Health), (eid, value) => {
+    Health[eid] = value
+})
+
+// The default initializer is called automatically.
+addComponent(world, eid, Position)
+assert(Position.x[eid] === 0)
+
+// You can still override defaults with set().
+addComponent(world, eid, set(Health, 42))
+assert(Health[eid] === 42)
+
+// You can also pass a parameter to the default initializer.
+// This helps avoid unnecessary allocations and garbage collection.
+addComponent(world, eid, Default(Position, { x: 10, y: 20 }))
+assert(Position[eid].x === 10)
+assert(Position[eid].y === 20)
+```
+
 ## Query
 
 Queries are used to retrieve information from the world, which acts as a dynamic database. You can query for entities based on their components, relationships, or hierarchies. A query returns a list of all entities that match the specified criteria.
