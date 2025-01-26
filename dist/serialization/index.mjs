@@ -481,7 +481,10 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
           if (!relationTargets.has(eid)) {
             relationTargets.set(eid, /* @__PURE__ */ new Map());
           }
-          relationTargets.get(eid).set(i, target);
+          if (!relationTargets.get(eid).has(i)) {
+            relationTargets.get(eid).set(i, /* @__PURE__ */ new Set());
+          }
+          relationTargets.get(eid).get(i).add(target);
           const relationData = component(target);
           queue.push([eid, 4 /* AddRelation */, i, target, relationData]);
         }
@@ -489,9 +492,11 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
       observe(world, onRemove(networkedTag, component(Wildcard2)), (eid) => {
         const targetMap = relationTargets.get(eid);
         if (targetMap) {
-          const target = targetMap.get(i);
-          if (target !== void 0) {
-            queue.push([eid, 5 /* RemoveRelation */, i, target]);
+          const targets = targetMap.get(i);
+          if (targets) {
+            for (const target of targets) {
+              queue.push([eid, 5 /* RemoveRelation */, i, target]);
+            }
             targetMap.delete(i);
             if (targetMap.size === 0) {
               relationTargets.delete(eid);

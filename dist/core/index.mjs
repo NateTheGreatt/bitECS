@@ -121,7 +121,7 @@ var deleteWorld = (world) => {
   delete world[$internal];
 };
 var getWorldComponents = (world) => Object.keys(world[$internal].componentMap);
-var getAllEntities = (world) => world[$internal].entityIndex.dense.slice(0);
+var getAllEntities = (world) => Array.from(world[$internal].entityComponents.keys());
 
 // src/core/utils/SparseSet.ts
 var createSparseSet = () => {
@@ -460,7 +460,7 @@ var createBaseRelation = () => {
     if (target === void 0) throw Error("Relation target is undefined");
     const normalizedTarget = target === "*" ? Wildcard : target;
     if (!data.pairsMap.has(normalizedTarget)) {
-      const component = data.initStore ? data.initStore() : {};
+      const component = data.initStore ? data.initStore(target) : {};
       defineHiddenProperty(component, $relation, relation);
       defineHiddenProperty(component, $pairTarget, normalizedTarget);
       defineHiddenProperty(component, $isPairComponent, true);
@@ -661,8 +661,10 @@ var addComponent = (world, eid, ...components) => {
       addComponent(world, eid, Pair(relation, Wildcard));
       addComponent(world, eid, Pair(Wildcard, target));
       if (typeof target === "number") {
+        addComponent(world, target, Pair(Wildcard, eid));
         addComponent(world, target, Pair(Wildcard, relation));
         ctx.entitiesWithRelations.add(target);
+        ctx.entitiesWithRelations.add(eid);
       }
       ctx.entitiesWithRelations.add(target);
       const relationData = relation[$relationData];

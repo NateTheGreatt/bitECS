@@ -26,5 +26,5 @@ export declare function createWorld<T extends object = {}>(...args: Array<Entity
 export declare const resetWorld: (world: World) => World<{}>;
 export declare const deleteWorld: (world: World) => void;
 export declare const getWorldComponents: (world: World) => string[];
-export declare const getAllEntities: (world: World) => number[];
+export declare const getAllEntities: (world: World) => readonly EntityId[];
 //# sourceMappingURL=World.d.ts.map
