@@ -46,7 +46,7 @@ export const $relationData = Symbol.for('bitecs-relationData')
  */
 type RelationData<T> = {
     pairsMap: Map<number | string | Relation<any>, T>
-    initStore: () => T
+    initStore: (eid: EntityId) => T
     exclusiveRelation: boolean
     autoRemoveSubject: boolean
     onTargetRemoved: OnTargetRemovedCallback
@@ -78,7 +78,7 @@ const createBaseRelation = <T>(): Relation<T> => {
         if (target === undefined) throw Error('Relation target is undefined')
         const normalizedTarget = target === '*' ? Wildcard : target
         if (!data.pairsMap.has(normalizedTarget)) {
-            const component = data.initStore ? data.initStore() : {} as T
+            const component = data.initStore ? data.initStore(target) : {} as T
             defineHiddenProperty(component, $relation, relation)
             defineHiddenProperty(component, $pairTarget, normalizedTarget)
             defineHiddenProperty(component, $isPairComponent, true)
@@ -99,7 +99,7 @@ const createBaseRelation = <T>(): Relation<T> => {
  * @param {function(): T} createStore - Function to create the store.
  * @returns {function(Relation<T>): Relation<T>} A function that modifies the relation.
  */
-export const withStore = <T>(createStore: () => T) => (relation: Relation<T>): Relation<T> => {
+export const withStore = <T>(createStore: (eid: EntityId) => T) => (relation: Relation<T>): Relation<T> => {
     const ctx = relation[$relationData] as RelationData<T>
     ctx.initStore = createStore
     return relation
