@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { addComponent, removeComponent, hasComponent, addEntity, entityExists, removeEntity, createWorld, createRelation, Wildcard, withAutoRemoveSubject, withStore } from 'bitecs'
+import { addComponent, removeComponent, hasComponent, addEntity, entityExists, removeEntity, createWorld, createRelation, Wildcard, withAutoRemoveSubject, withStore, query } from 'bitecs'
 
-import { createObserverSerializer, createObserverDeserializer, i32 } from '../../src/serialization'
+import { createObserverSerializer, createObserverDeserializer, i32, createSnapshotSerializer, createSnapshotDeserializer } from '../../src/serialization'
 
 describe('ObserverSerializer and ObserverDeserializer', () => {
     it('should correctly serialize and deserialize component additions', () => {
@@ -323,5 +323,161 @@ describe('ObserverSerializer and ObserverDeserializer', () => {
 
         // Verify relation was removed in world2
         expect(hasComponent(world2, mappedContainer, Contains2(mappedItem))).toBe(false)
+    })
+
+    it('should correctly serialize and deserialize relations after initial snapshot is sent', () => {
+        // Create two separate worlds
+        const clientWorld = createWorld()
+        const serverWorld = createWorld()
+
+        // Create relation components for both worlds
+        const ChildOf = createRelation(withAutoRemoveSubject)
+        const Targetting = createRelation()
+
+        // Create other components
+        const Networked = {}
+        const Damage = {}
+        const Player = {}
+
+        // Create snapshot serializer and deserializer
+        const serializeSnapshot = createSnapshotSerializer(serverWorld, [Damage, Player, ChildOf, Targetting])
+        const deserializeSnapshot = createSnapshotDeserializer(clientWorld, [Damage, Player, ChildOf, Targetting])
+
+        // Create observer serializer and deserializer
+        const serializeObservations = createObserverSerializer(serverWorld, Networked, [Damage, Player, ChildOf, Targetting])
+        const deserializeObservations = createObserverDeserializer(clientWorld, Networked, [Damage, Player, ChildOf, Targetting])
+
+        // Create player in serverWorld
+        const playerEntity = addEntity(serverWorld)
+        addComponent(serverWorld, playerEntity, Player)
+        addComponent(serverWorld, playerEntity, Networked)
+
+        // Send initial data with snapshot serializer
+        const serializedInitialData = serializeSnapshot()
+        let entityIdMapping = deserializeSnapshot(serializedInitialData)
+
+        // Player existing in client world
+        const initialPlayers = query(clientWorld, [Player])
+        expect(initialPlayers.length).toBe(1)
+
+        // Add damage entity to player in server world
+        const damageEntity = addEntity(serverWorld)
+        addComponent(serverWorld, damageEntity, Damage)
+        addComponent(serverWorld, damageEntity, Networked)
+        addComponent(serverWorld, damageEntity, ChildOf(playerEntity))
+
+        // Serialize and deserialize with observations
+        let serializedData = serializeObservations()
+        entityIdMapping = deserializeObservations(serializedData, entityIdMapping)
+
+        const clientPlayerEntity = entityIdMapping.get(playerEntity)
+        const clientDamageEntity = entityIdMapping.get(damageEntity)
+
+        const updatedPlayers = query(clientWorld, [Player])
+        expect(updatedPlayers.length).toBe(1)
+        const insertedDamages = query(clientWorld, [Damage])
+        expect(insertedDamages.length).toBe(1)
+        expect(insertedDamages[0]).not.toBeUndefined()
+
+        const childOfEntities = query(clientWorld, [ChildOf(clientPlayerEntity!)])
+        expect(childOfEntities.length).toBe(1)
+        expect(childOfEntities[0]).not.toBeUndefined()
+        expect(entityIdMapping.get(damageEntity)).not.toBeUndefined()
+        expect(entityIdMapping.get(damageEntity)).toBe(clientDamageEntity)
+
+        // Remove damage
+        removeEntity(serverWorld, damageEntity)
+        
+        serializedData = serializeObservations()
+        entityIdMapping = deserializeObservations(serializedData, entityIdMapping)
+
+        const clientPlayerEntity2 = entityIdMapping.get(playerEntity)
+        const clientDamageEntity2 = entityIdMapping.get(damageEntity)
+        expect(clientPlayerEntity2).toBe(clientPlayerEntity)
+        expect(clientDamageEntity2).toBeUndefined()
+
+        const updatedPlayers2 = query(clientWorld, [Player])
+        expect(updatedPlayers2.length).toBe(1)
+        const removedDamages = query(clientWorld, [Damage])
+        expect(removedDamages.length).toBe(0)
+
+        const childOfEntities2 = query(clientWorld, [ChildOf(clientPlayerEntity!)])
+        expect(childOfEntities2.length).toBe(0)
+        expect(entityIdMapping.get(damageEntity)).toBeUndefined()
+    })
+
+    it('should observe entity with relationships addition, removal and addition in same frame correctly', () => {
+        // Create two separate worlds
+        const clientWorld = createWorld()
+        const serverWorld = createWorld()
+
+        // Create relation components for both worlds
+        const ChildOf = createRelation(withAutoRemoveSubject)
+        const Targetting = createRelation()
+
+        // Create other components
+        const Networked = {}
+        const Damage = {}
+        const Player = {}
+        const Random = {}
+
+        // Create snapshot serializer and deserializer
+        const serializeSnapshot = createSnapshotSerializer(serverWorld, [Damage, Player,Random, ChildOf, Targetting])
+        const deserializeSnapshot = createSnapshotDeserializer(clientWorld, [Damage, Player, Random, ChildOf, Targetting])
+
+        // Create observer serializer and deserializer
+        const serializeObservations = createObserverSerializer(serverWorld, Networked, [Damage, Player, Random,ChildOf, Targetting])
+        const deserializeObservations = createObserverDeserializer(clientWorld, Networked, [Damage, Player,Random, ChildOf, Targetting])
+
+        // Create player in serverWorld
+        const playerEntity = addEntity(serverWorld)
+        addComponent(serverWorld, playerEntity, Player)
+        addComponent(serverWorld, playerEntity, Networked)
+
+        // Send initial data with snapshot serializer
+        const serializedInitialData = serializeSnapshot()
+        let entityIdMapping = deserializeSnapshot(serializedInitialData)
+
+        // Player existing in client world
+        const initialPlayers = query(clientWorld, [Player])
+        expect(initialPlayers.length).toBe(1)
+
+        // Add damage entity to player in server world
+        const damageEntity = addEntity(serverWorld)
+        addComponent(serverWorld, damageEntity, Damage)
+        addComponent(serverWorld, damageEntity, Networked)
+        addComponent(serverWorld, damageEntity, ChildOf(playerEntity))
+
+        // Damage entity is immediately processed and removed
+        removeEntity(serverWorld, damageEntity)
+
+        // Some other child entity to player is created
+        const randomEntity = addEntity(serverWorld)
+        addComponent(serverWorld, randomEntity, Random)
+        addComponent(serverWorld, randomEntity, Networked)
+        addComponent(serverWorld, randomEntity, ChildOf(playerEntity))
+
+        // Serialize and deserialize with observations
+        let serializedData = serializeObservations()
+        entityIdMapping = deserializeObservations(serializedData, entityIdMapping)
+
+        const clientPlayerEntity = entityIdMapping.get(playerEntity)
+        const clientDamageEntity = entityIdMapping.get(damageEntity)
+        const clientRandomEntity = entityIdMapping.get(randomEntity)
+
+        const childOfEntities = query(clientWorld, [ChildOf(clientPlayerEntity!)])
+        expect(childOfEntities.length).toBe(1)
+        expect(childOfEntities[0]).not.toBeUndefined()
+        expect(entityIdMapping.get(damageEntity)).toBeUndefined()
+        expect(entityIdMapping.get(damageEntity)).toBe(clientDamageEntity)
+        expect(entityIdMapping.get(randomEntity)).not.toBeUndefined()
+        expect(entityIdMapping.get(randomEntity)).toBe(clientRandomEntity)
+
+        const updatedPlayers = query(clientWorld, [Player])
+        expect(updatedPlayers.length).toBe(1)
+        const insertedDamages = query(clientWorld, [Damage])
+        expect(insertedDamages.length).toBe(0)
+        const insertedRandoms = query(clientWorld, [Random])
+        expect(insertedRandoms.length).toBe(1)
     })
 })
