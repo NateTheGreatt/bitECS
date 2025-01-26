@@ -84,17 +84,16 @@ Velocity.x[eid] = 1.23
 Velocity.y[eid] = 1.23
 Health[eid] = 100
 
-const movementSystem = ({
-    components: { Position, Velocity },
-    time: { delta } 
-}) => {
+const movementSystem = (world) => {
+  const { Position, Velocity, time } = world.components
   for (const eid of query(world, [Position, Velocity])) {
-    Position.x[eid] += Velocity.x[eid] * delta
-    Position.y[eid] += Velocity.y[eid] * delta
+    Position.x[eid] += Velocity.x[eid] * time.delta
+    Position.y[eid] += Velocity.y[eid] * time.delta
   }
 }
 
-const timeSystem = ({ time }) => {
+const timeSystem = (world) => {
+  const { time } = world
   const now = performance.now()
   const delta = now - time.then
   time.delta = delta

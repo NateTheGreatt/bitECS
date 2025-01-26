@@ -250,6 +250,9 @@ Position[eid].x += 1
 // Array of Typedarrays
 const pos = Position[eid]
 pos[0] += 1
+
+// Use a setter (needs to be setup first, see observer docs for more info)
+addComponent(world, eid, set(Position, { x: 1, y: 1 }))
 ```
 
 Removing a component updates the shape immediately.
@@ -548,11 +551,7 @@ Vitals.health[Animal] = 100
 `bitECS` includes a built-in relationship called `IsA` which is used to indicate that an entity is an instance of a prefab. This relationship helps manage prefab inheritance and component composition effectively.
 
 ```ts
-const Sheep = addPrefab(world)
-addComponent(world, Sheep, IsA(Animal)) // inherits Vitals component
-addComponent(world, Sheep, Contains(Wool))
-
-// component values will be inherited if an onSet and onGet observer is established
+// component values will be inherited if onSet and onGet observers are createdfirst
 observe(world, onSet(Vitals), (eid, params) => {
     Vitals.health[eid] = params.health
 })
@@ -560,6 +559,9 @@ observe(world, onGet(Vitals), (eid) => ({
     health: Vitals.health[eid] 
 }))
 
+const Sheep = addPrefab(world)
+addComponent(world, Sheep, IsA(Animal)) // inherits Vitals component
+addComponent(world, Sheep, Contains(Wool))
 ```
 
 ### Prefabs and Queries
@@ -595,12 +597,11 @@ that match a specific query.
 const unsubscribe = observe(world, hook, callback)
 ```
 
-- `world`: The ECS world object
-- `hook`: An observable hook (onAdd, onRemove, onSet, or onGet)
-- `callback`: A function to be called when the observed event occurs
+- `hook`: onAdd, onRemove, onSet, or onGet
+- `callback`: Called when the observed event occurs
+- `unsubscribe`: Call to stop observing
 
 ### Observing component adds and removes
-
 
 The `onAdd` and `onRemove` hooks can be used with any valid query terms, including components, `Or`, `Not`, and other query operators. This allows for complex observation patterns. Here are some examples:
 
@@ -651,22 +652,7 @@ observe(world, onSet(Inventory), (eid, params) => {
 })
 
 // Custom AoS data storage
-observe(world, onSet(Position), (eid, params) => {
-    Position[eid].x = params.x
-    Position[eid].y = params.y
-})
-observe(world, onGet(Position), (eid) => ({
-    x: Position[eid].x,
-    y: Position[eid].y
-}))
+observe(world, onSet(Position), (eid, params) => { Position[eid] = params })
+observe(world, onGet(Position), (eid) => Position[eid])
 addComponent(world, eid, set(Position, { x: 10, y: 20 }))
-```
-
-### Unsubscribing
-
-The `observe` function returns an unsubscribe function. Call this function
-to stop observing the specified changes:
-
-```typescript
-unsubscribe()
 ```
