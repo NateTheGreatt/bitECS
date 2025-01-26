@@ -113,4 +113,4 @@ export const getWorldComponents = (world: World) =>
  * @param {World} world
  * @returns Array
  */
-export const getAllEntities = (world: World) => (world as InternalWorld)[$internal].entityIndex.dense.slice(0)
+export const getAllEntities = (world: World): readonly EntityId[] => Array.from((world as InternalWorld)[$internal].entityComponents.keys())
