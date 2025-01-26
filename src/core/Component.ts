@@ -234,10 +234,11 @@ export const addComponent = (world: World, eid: EntityId, ...components: (Compon
 			// For non-Wildcard targets, add Wildcard pair to track relation targets
 			if (typeof target === 'number') {
 				// Add Wildcard pair for target being a relation target
+				addComponent(world, target, Pair(Wildcard, eid))
 				addComponent(world, target, Pair(Wildcard, relation))
-				
-				// add target to a set to make autoRemoveSubject checks faster
+				// Track entities with relations for autoRemoveSubject
 				ctx.entitiesWithRelations.add(target)
+				ctx.entitiesWithRelations.add(eid)
 			}
 
 			// add target to a set to make autoRemoveSubject checks faster
