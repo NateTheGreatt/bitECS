@@ -14,6 +14,9 @@ import {
 import { createObservable, Observable } from './utils/Observer'
 import { $internal, InternalWorld, World, WorldContext } from './World'
 
+export const $default = Symbol.for('bitecs-default')
+const $defaultParams = Symbol.for('bitecs-default-params')
+
 /**
  * Represents a reference to a component.
  * @typedef {any} ComponentRef
@@ -202,6 +205,8 @@ export const addComponent = (world: World, eid: EntityId, ...components: (Compon
 
 		if (!ctx.componentMap.has(component)) registerComponent(world, component)
 
+		setDefault(world, eid, component, componentOrSet[$defaultParams])
+
 		const componentData = ctx.componentMap.get(component)!
 		if (data !== undefined) {
 			componentData.setObservable.notify(eid, data)
@@ -316,3 +321,20 @@ export const removeComponent = (world: World, eid: EntityId, ...components: Comp
  * Alias for removeComponent.
  */
 export const removeComponents = removeComponent
+
+export function Default(component: ComponentRef, params: any) {
+	return {
+		component,
+		[$defaultParams]: params
+	}
+}
+
+function setDefault(world: World, eid: EntityId, component: ComponentRef, params: any) {
+	if (component[$default] !== undefined) {
+		if (typeof component[$default] !== 'function') {
+			throw new Error(`${$default.toString()} must be a function. Got "${typeof component[$default]}".`)
+		}
+
+		component[$default](eid, params)
+	}
+}
