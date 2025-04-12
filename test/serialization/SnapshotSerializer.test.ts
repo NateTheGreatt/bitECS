@@ -73,39 +73,86 @@ describe('Snapshot Serialization and Deserialization', () => {
         expect(Health.value[newEntity2]).toBe(100)
     })
 
-    it('should correctly serialize and deserialize world state for array of arrays', () => {
+    it('should correctly serialize and deserialize array of arrays components', () => {
         const world = createWorld()
         const Position = { value: array<[number, number]>() }
-        const components = [Position, ]
+        const Transform = {
+            position: array<[number, number, number]>(),
+            rotation: array<[number, number, number]>(),
+            scale: array<[number, number, number]>(),
+        }
+        const components = [Position, Transform]
 
         const serialize = createSnapshotSerializer(world, components)
         const deserialize = createSnapshotDeserializer(world, components)
 
         const entity1 = addEntity(world)
         addComponent(world, entity1, Position)
-        Position.value[entity1] = [1,2]
+        addComponent(world, entity1, Transform)
+        Position.value[entity1] = [10,20]
+        Transform.position[entity1] = [1,2,3]
+        Transform.rotation[entity1] = [4,5,6]
+        Transform.scale[entity1] = [7,8,9]
 
         const entity2 = addEntity(world)
         addComponent(world, entity2, Position)
-        Position.value[entity2] = [3,4]
+        addComponent(world, entity2, Transform)
+        Position.value[entity2] = [30,40]
+        Transform.position[entity2] = [10,20,30]
+        Transform.rotation[entity2] = [40,50,60]
+        Transform.scale[entity2] = [70,80,90]
+
+        const entity3 = addEntity(world)
+        addComponent(world, entity3, Position)
+        addComponent(world, entity3, Transform)
+        Position.value[entity3] = [30,40]
+        Transform.position[entity3] = [10,20,30]
+        Transform.rotation[entity3] = [40,50,60]
+        Transform.scale[entity3] = [70,80,90]
 
         const serializedData = serialize()
 
         removeEntity(world, entity1)
         removeEntity(world, entity2)
+        removeEntity(world, entity3)
         Position.value[entity1] = null
         Position.value[entity2] = null
+        Transform.position[entity1] = null
+        Transform.position[entity2] = null
+        Transform.scale[entity1] = null
+        Transform.scale[entity2] = null
+        Transform.rotation[entity1] = null
+        Transform.rotation[entity2] = null
+
+        Position.value[entity3] = null
+        Transform.position[entity3] = null
+        Transform.rotation[entity3] = null
+        Transform.scale[entity3] = null
+
         const deserializedEntities = deserialize(serializedData)
 
         const entityMap = new Map(deserializedEntities)
         const newEntity1 = entityMap.get(entity1)!
         const newEntity2 = entityMap.get(entity2)!
+        const newEntity3 = entityMap.get(entity3)!
 
         expect(hasComponent(world, newEntity1, Position)).toBe(true)
         expect(hasComponent(world, newEntity2, Position)).toBe(true)
+        expect(hasComponent(world, newEntity3, Position)).toBe(true)
 
-        expect(Position.value[newEntity1]).toEqual([1,2])
-        expect(Position.value[newEntity2]).toEqual([3,4])
+        expect(Position.value[newEntity1]).toEqual([10,20])
+        expect(Position.value[newEntity2]).toEqual([30,40])
+        expect(Position.value[newEntity3]).toEqual([30,40])
+
+        expect(Transform.position[newEntity1]).toEqual([1,2,3])
+        expect(Transform.rotation[newEntity1]).toEqual([4,5,6])
+        expect(Transform.scale[newEntity1]).toEqual([7,8,9])
+        expect(Transform.position[newEntity2]).toEqual([10,20,30])
+        expect(Transform.rotation[newEntity2]).toEqual([40,50,60])
+        expect(Transform.scale[newEntity2]).toEqual([70,80,90])
+        expect(Transform.position[newEntity3]).toEqual([10,20,30])
+        expect(Transform.rotation[newEntity3]).toEqual([40,50,60])
+        expect(Transform.scale[newEntity3]).toEqual([70,80,90])
     })
 
     it('should correctly serialize and deserialize relations in the same world', () => {

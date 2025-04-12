@@ -209,8 +209,7 @@ import {
   addEntity,
   isRelation,
   getRelationTargets,
-  Wildcard,
-  query
+  Wildcard
 } from "bitecs";
 function serializeRelationData(data, eid, dataView, offset) {
   if (!data) return offset;
