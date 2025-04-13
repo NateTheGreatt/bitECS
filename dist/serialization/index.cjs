@@ -19,6 +19,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/serialization/index.ts
 var serialization_exports = {};
 __export(serialization_exports, {
+  array: () => array,
   createObserverDeserializer: () => createObserverDeserializer,
   createObserverSerializer: () => createObserverSerializer,
   createSnapshotDeserializer: () => createSnapshotDeserializer,
@@ -45,6 +46,7 @@ var $u32 = Symbol.for("bitecs-u32");
 var $i32 = Symbol.for("bitecs-i32");
 var $f32 = Symbol.for("bitecs-f32");
 var $f64 = Symbol.for("bitecs-f64");
+var $arr = Symbol.for("bitecs-arr");
 var typeTagForSerialization = (symbol) => (a = []) => Object.defineProperty(a, symbol, { value: true, enumerable: false, writable: false, configurable: false });
 var u8 = typeTagForSerialization($u8);
 var i8 = typeTagForSerialization($i8);
@@ -98,6 +100,11 @@ var typeGetters = {
   [$f32]: (view, offset) => ({ value: view.getFloat32(offset), size: 4 }),
   [$f64]: (view, offset) => ({ value: view.getFloat64(offset), size: 8 })
 };
+var array = (type = $f32) => {
+  const arr = [];
+  Object.defineProperty(arr, $arr, { value: type, enumerable: false, writable: false, configurable: false });
+  return arr;
+};
 function isTypedArrayOrBranded(arr) {
   return arr && (ArrayBuffer.isView(arr) || Array.isArray(arr) && typeof arr === "object");
 }
@@ -140,7 +147,17 @@ var createComponentSerializer = (component) => {
     let bytesWritten = 0;
     bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index);
     for (let i = 0; i < props.length; i++) {
-      bytesWritten += setters[i](view, offset + bytesWritten, component[props[i]][index]);
+      const elementType = component[props[i]][$arr];
+      if (elementType !== void 0) {
+        const arr = component[props[i]][index];
+        const length = arr.length;
+        bytesWritten += typeSetters[$u32](view, offset + bytesWritten, length);
+        for (let j = 0; j < length; j++) {
+          bytesWritten += typeSetters[elementType](view, offset + bytesWritten, arr[j]);
+        }
+      } else {
+        bytesWritten += setters[i](view, offset + bytesWritten, component[props[i]][index]);
+      }
     }
     return bytesWritten;
   };
@@ -176,9 +193,22 @@ var createComponentDeserializer = (component) => {
     bytesRead += indexSize;
     const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex;
     for (let i = 0; i < props.length; i++) {
-      const { value, size } = getters[i](view, offset + bytesRead);
-      component[props[i]][index] = value;
-      bytesRead += size;
+      const elementType = component[props[i]][$arr];
+      if (elementType !== void 0) {
+        const { value, size } = typeGetters[$u32](view, offset + bytesRead);
+        const arr = new Array(value);
+        bytesRead += size;
+        for (let j = 0; j < value; j++) {
+          const { value: value2, size: size2 } = typeGetters[elementType](view, offset + bytesRead);
+          bytesRead += size2;
+          arr[j] = value2;
+        }
+        component[props[i]][index] = arr;
+      } else {
+        const { value, size } = getters[i](view, offset + bytesRead);
+        component[props[i]][index] = value;
+        bytesRead += size;
+      }
     }
     return bytesRead;
   };
@@ -498,10 +528,7 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
           if (!relationTargets.has(eid)) {
             relationTargets.set(eid, /* @__PURE__ */ new Map());
           }
-          if (!relationTargets.get(eid).has(i)) {
-            relationTargets.get(eid).set(i, /* @__PURE__ */ new Set());
-          }
-          relationTargets.get(eid).get(i).add(target);
+          relationTargets.get(eid).set(i, target);
           const relationData = component(target);
           queue.push([eid, 4 /* AddRelation */, i, target, relationData]);
         }
@@ -509,11 +536,9 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
       (0, import_bitecs2.observe)(world, (0, import_bitecs2.onRemove)(networkedTag, component(import_bitecs2.Wildcard)), (eid) => {
         const targetMap = relationTargets.get(eid);
         if (targetMap) {
-          const targets = targetMap.get(i);
-          if (targets) {
-            for (const target of targets) {
-              queue.push([eid, 5 /* RemoveRelation */, i, target]);
-            }
+          const target = targetMap.get(i);
+          if (target !== void 0) {
+            queue.push([eid, 5 /* RemoveRelation */, i, target]);
             targetMap.delete(i);
             if (targetMap.size === 0) {
               relationTargets.delete(eid);

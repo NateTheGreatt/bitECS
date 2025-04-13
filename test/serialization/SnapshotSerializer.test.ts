@@ -13,7 +13,7 @@ import {
     withAutoRemoveSubject,
     withStore
 } from 'bitecs'
-import { createSnapshotDeserializer, createSnapshotSerializer, f32, i32, u8 } from '../../src/serialization'
+import { array, createSnapshotDeserializer, createSnapshotSerializer, f32, i32, u8} from '../../src/serialization'
 
 describe('Snapshot Serialization and Deserialization', () => {
     it('should correctly serialize and deserialize world state', () => {
@@ -71,6 +71,41 @@ describe('Snapshot Serialization and Deserialization', () => {
         expect(Position.x[newEntity2]).toBe(30)
         expect(Position.y[newEntity2]).toBe(40)
         expect(Health.value[newEntity2]).toBe(100)
+    })
+
+    it('should correctly serialize and deserialize world state for array of arrays', () => {
+        const world = createWorld()
+        const Position = { value: array<[number, number]>() }
+        const components = [Position, ]
+
+        const serialize = createSnapshotSerializer(world, components)
+        const deserialize = createSnapshotDeserializer(world, components)
+
+        const entity1 = addEntity(world)
+        addComponent(world, entity1, Position)
+        Position.value[entity1] = [1,2]
+
+        const entity2 = addEntity(world)
+        addComponent(world, entity2, Position)
+        Position.value[entity2] = [3,4]
+
+        const serializedData = serialize()
+
+        removeEntity(world, entity1)
+        removeEntity(world, entity2)
+        Position.value[entity1] = null
+        Position.value[entity2] = null
+        const deserializedEntities = deserialize(serializedData)
+
+        const entityMap = new Map(deserializedEntities)
+        const newEntity1 = entityMap.get(entity1)!
+        const newEntity2 = entityMap.get(entity2)!
+
+        expect(hasComponent(world, newEntity1, Position)).toBe(true)
+        expect(hasComponent(world, newEntity2, Position)).toBe(true)
+
+        expect(Position.value[newEntity1]).toEqual([1,2])
+        expect(Position.value[newEntity2]).toEqual([3,4])
     })
 
     it('should correctly serialize and deserialize relations in the same world', () => {

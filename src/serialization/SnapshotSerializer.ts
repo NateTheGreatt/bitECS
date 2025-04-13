@@ -136,7 +136,7 @@ export const createSnapshotSerializer = (world: World, components: (Record<strin
      * Serializes entity-component relationships.
      * @param {number[]} entities - An array of entity IDs.
      */
-    const serializeEntityComponentRelationships = (entities: number[]) => {
+    const serializeEntityComponentRelationships = (entities: readonly number[]) => {
         const entityCount = entities.length
         
         // Write entity count
@@ -182,7 +182,7 @@ export const createSnapshotSerializer = (world: World, components: (Record<strin
      * Serializes component data for all entities.
      * @param {number[]} entities - An array of entity IDs.
      */
-    const serializeComponentData = (entities: number[]) => {
+    const serializeComponentData = (entities: readonly number[]) => {
         const soaSerializer = createSoASerializer(components, buffer.slice(offset))
         const componentData = soaSerializer(entities)
         new Uint8Array(buffer).set(new Uint8Array(componentData), offset)

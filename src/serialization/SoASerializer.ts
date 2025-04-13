@@ -3,7 +3,8 @@
  * Symbols representing different data types for serialization.
  */
 export const $u8 = Symbol.for('bitecs-u8'), $i8 = Symbol.for('bitecs-i8'), $u16 = Symbol.for('bitecs-u16'), $i16 = Symbol.for('bitecs-i16'),
-    $u32 = Symbol.for('bitecs-u32'), $i32 = Symbol.for('bitecs-i32'), $f32 = Symbol.for('bitecs-f32'), $f64 = Symbol.for('bitecs-f64')
+    $u32 = Symbol.for('bitecs-u32'), $i32 = Symbol.for('bitecs-i32'), $f32 = Symbol.for('bitecs-f32'), $f64 = Symbol.for('bitecs-f64'),
+    $arr = Symbol.for('bitecs-arr')
 
 /**
  * Union type of all possible TypedArray types.
@@ -40,7 +41,7 @@ type ComponentRef = Record<string, PrimitiveBrand | TypedArray>
  * @param {TypeSymbol} symbol - The type symbol to tag the array with.
  * @returns {Function} A function that tags an array with the given type symbol.
  */
-const typeTagForSerialization = (symbol: TypeSymbol) => (a: number[] = []): PrimitiveBrand => 
+const typeTagForSerialization = (symbol: TypeSymbol) => (a: number[] = []): PrimitiveBrand =>
     Object.defineProperty(a, symbol, { value: true, enumerable: false, writable: false, configurable: false }) as PrimitiveBrand
 
 /**
@@ -77,6 +78,14 @@ const typeGetters = {
     [$i32]: (view: DataView, offset: number) => ({ value: view.getInt32(offset), size: 4 }),
     [$f32]: (view: DataView, offset: number) => ({ value: view.getFloat32(offset), size: 4 }),
     [$f64]: (view: DataView, offset: number) => ({ value: view.getFloat64(offset), size: 8 })
+}
+
+export const array = <T extends any[] = []>(type: TypeSymbol = $f32)=>  {
+    const arr = [];
+
+    Object.defineProperty(arr, $arr, { value: type, enumerable: false, writable: false, configurable: false })
+
+    return arr as T[];
 }
 
 /**
@@ -141,7 +150,17 @@ export const createComponentSerializer = (component: ComponentRef | PrimitiveBra
         // Write index first
         bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index)
         for (let i = 0; i < props.length; i++) {
-            bytesWritten += setters[i](view, offset + bytesWritten, component[props[i]][index])
+            const elementType: TypeSymbol = component[props[i]][$arr]
+            if (elementType !== undefined) {
+                const arr = component[props[i]][index] as any;
+                const length = arr.length;
+                bytesWritten += typeSetters[$u32](view, offset + bytesWritten, length)
+                for (let j = 0; j < length; j++) {
+                    bytesWritten += typeSetters[elementType](view, offset + bytesWritten, arr[j])
+                }
+            } else {
+                bytesWritten += setters[i](view, offset + bytesWritten, component[props[i]][index])
+            }
         }
         return bytesWritten
     }
@@ -187,9 +206,22 @@ export const createComponentDeserializer = (component: ComponentRef | PrimitiveB
         const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex
         
         for (let i = 0; i < props.length; i++) {
-            const { value, size } = getters[i](view, offset + bytesRead)
-            component[props[i]][index] = value
-            bytesRead += size
+            const elementType: TypeSymbol = component[props[i]][$arr]
+            if (elementType !== undefined) {
+                const { value, size } = typeGetters[$u32](view, offset + bytesRead)
+                const arr = new Array(value) as any;
+                bytesRead += size;
+                for (let j = 0; j < value; j++) {
+                    const { value, size } = typeGetters[elementType](view, offset + bytesRead)
+                    bytesRead += size
+                    arr[j] = value
+                }
+                component[props[i]][index] = arr
+            } else {
+                const { value, size } = getters[i](view, offset + bytesRead)
+                component[props[i]][index] = value
+                bytesRead += size
+            }
         }
         return bytesRead
     }
