@@ -151,15 +151,21 @@ export const createComponentSerializer = (component: ComponentRef | PrimitiveBra
         bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index)
         for (let i = 0; i < props.length; i++) {
             const elementType: TypeSymbol = component[props[i]][$arr]
-            if (elementType !== undefined) {
-                const arr = component[props[i]][index] as any;
-                const length = arr.length;
-                bytesWritten += typeSetters[$u32](view, offset + bytesWritten, length)
-                for (let j = 0; j < length; j++) {
-                    bytesWritten += typeSetters[elementType](view, offset + bytesWritten, arr[j])
-                }
-            } else {
-                bytesWritten += setters[i](view, offset + bytesWritten, component[props[i]][index])
+            const componentValue = component[props[i]][index]
+            if (elementType === undefined) {
+                bytesWritten += setters[i](view, offset + bytesWritten, componentValue)
+                continue
+            }
+            const isArray = Array.isArray(componentValue)
+            bytesWritten += typeSetters[$u8](view, offset + bytesWritten, isArray ? 1 : 0)
+            if (!isArray) {
+                continue;
+            }
+            const arr = componentValue as number[]
+            const length = arr.length
+            bytesWritten += typeSetters[$u32](view, offset + bytesWritten, length)
+            for (let j = 0; j < length; j++) {
+                bytesWritten += typeSetters[elementType](view, offset + bytesWritten, arr[j])
             }
         }
         return bytesWritten
@@ -207,21 +213,27 @@ export const createComponentDeserializer = (component: ComponentRef | PrimitiveB
         
         for (let i = 0; i < props.length; i++) {
             const elementType: TypeSymbol = component[props[i]][$arr]
-            if (elementType !== undefined) {
-                const { value, size } = typeGetters[$u32](view, offset + bytesRead)
-                const arr = new Array(value) as any;
-                bytesRead += size;
-                for (let j = 0; j < value; j++) {
-                    const { value, size } = typeGetters[elementType](view, offset + bytesRead)
-                    bytesRead += size
-                    arr[j] = value
-                }
-                component[props[i]][index] = arr
-            } else {
+            if (elementType === undefined) {
                 const { value, size } = getters[i](view, offset + bytesRead)
                 component[props[i]][index] = value
                 bytesRead += size
+                continue
             }
+            const isArrayResult = typeGetters[$u8](view, offset + bytesRead)
+            bytesRead += isArrayResult.size
+            if (!isArrayResult.value) {
+                continue
+            }
+            const arrayLengthResult = typeGetters[$u32](view, offset + bytesRead)
+            bytesRead += arrayLengthResult.size;
+
+            const arr = new Array(arrayLengthResult.value) as any;
+            for (let j = 0; j < arr.length; j++) {
+                const { value, size } = typeGetters[elementType](view, offset + bytesRead)
+                bytesRead += size
+                arr[j] = value
+            }
+            component[props[i]][index] = arr
         }
         return bytesRead
     }
