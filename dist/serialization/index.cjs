@@ -19,6 +19,14 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/serialization/index.ts
 var serialization_exports = {};
 __export(serialization_exports, {
+  $f32: () => $f32,
+  $f64: () => $f64,
+  $i16: () => $i16,
+  $i32: () => $i32,
+  $i8: () => $i8,
+  $u16: () => $u16,
+  $u32: () => $u32,
+  $u8: () => $u8,
   array: () => array,
   createObserverDeserializer: () => createObserverDeserializer,
   createObserverSerializer: () => createObserverSerializer,

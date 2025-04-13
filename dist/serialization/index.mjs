@@ -618,6 +618,14 @@ var createObserverDeserializer = (world, networkedTag, components, constructorMa
   };
 };
 export {
+  $f32,
+  $f64,
+  $i16,
+  $i32,
+  $i8,
+  $u16,
+  $u32,
+  $u8,
   array,
   createObserverDeserializer,
   createObserverSerializer,
