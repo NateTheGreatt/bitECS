@@ -120,6 +120,55 @@ function getTypeForArray(arr) {
   if (arr instanceof Float32Array) return $f32;
   return $f64;
 }
+function isArrayType(value) {
+  return Array.isArray(value) && $arr in value;
+}
+function getArrayElementType(arrayType) {
+  return arrayType[$arr];
+}
+function serializeArrayValue(elementType, value, view, offset) {
+  let bytesWritten = 0;
+  const isArrayDefined = Array.isArray(value) ? 1 : 0;
+  bytesWritten += typeSetters[$u8](view, offset, isArrayDefined);
+  if (!isArrayDefined) {
+    return bytesWritten;
+  }
+  bytesWritten += typeSetters[$u32](view, offset + bytesWritten, value.length);
+  for (let i = 0; i < value.length; i++) {
+    const element = value[i];
+    if (isArrayType(elementType)) {
+      bytesWritten += serializeArrayValue(getArrayElementType(elementType), element, view, offset + bytesWritten);
+    } else if (typeof elementType === "symbol") {
+      bytesWritten += typeSetters[elementType](view, offset + bytesWritten, element);
+    }
+  }
+  return bytesWritten;
+}
+function deserializeArrayValue(elementType, view, offset) {
+  let bytesRead = 0;
+  const isArrayResult = typeGetters[$u8](view, offset + bytesRead);
+  bytesRead += isArrayResult.size;
+  if (!isArrayResult.value) {
+    return { size: bytesRead };
+  }
+  const arrayLengthResult = typeGetters[$u32](view, offset + bytesRead);
+  bytesRead += arrayLengthResult.size;
+  const arr = new Array(arrayLengthResult.value);
+  for (let i = 0; i < arr.length; i++) {
+    if (isArrayType(elementType)) {
+      const { value, size } = deserializeArrayValue(getArrayElementType(elementType), view, offset + bytesRead);
+      bytesRead += size;
+      if (Array.isArray(value)) {
+        arr[i] = value;
+      }
+    } else {
+      const { value, size } = typeGetters[elementType](view, offset + bytesRead);
+      bytesRead += size;
+      arr[i] = value;
+    }
+  }
+  return { value: arr, size: bytesRead };
+}
 var createComponentSerializer = (component) => {
   if (isTypedArrayOrBranded(component)) {
     const type = getTypeForArray(component);
@@ -146,22 +195,11 @@ var createComponentSerializer = (component) => {
     let bytesWritten = 0;
     bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index);
     for (let i = 0; i < props.length; i++) {
-      const elementType = component[props[i]][$arr];
-      const componentValue = component[props[i]][index];
-      if (elementType === void 0) {
-        bytesWritten += setters[i](view, offset + bytesWritten, componentValue);
-        continue;
-      }
-      const isArray = Array.isArray(componentValue);
-      bytesWritten += typeSetters[$u8](view, offset + bytesWritten, isArray ? 1 : 0);
-      if (!isArray) {
-        continue;
-      }
-      const arr = componentValue;
-      const length = arr.length;
-      bytesWritten += typeSetters[$u32](view, offset + bytesWritten, length);
-      for (let j = 0; j < length; j++) {
-        bytesWritten += typeSetters[elementType](view, offset + bytesWritten, arr[j]);
+      const componentProperty = component[props[i]];
+      if (isArrayType(componentProperty)) {
+        bytesWritten += serializeArrayValue(getArrayElementType(componentProperty), componentProperty[index], view, offset + bytesWritten);
+      } else {
+        bytesWritten += setters[i](view, offset + bytesWritten, componentProperty[index]);
       }
     }
     return bytesWritten;
@@ -198,27 +236,18 @@ var createComponentDeserializer = (component) => {
     bytesRead += indexSize;
     const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex;
     for (let i = 0; i < props.length; i++) {
-      const elementType = component[props[i]][$arr];
-      if (elementType === void 0) {
+      const componentProperty = component[props[i]];
+      if (isArrayType(componentProperty)) {
+        const { value, size } = deserializeArrayValue(getArrayElementType(componentProperty), view, offset + bytesRead);
+        if (Array.isArray(value)) {
+          componentProperty[index] = value;
+        }
+        bytesRead += size;
+      } else {
         const { value, size } = getters[i](view, offset + bytesRead);
         component[props[i]][index] = value;
         bytesRead += size;
-        continue;
       }
-      const isArrayResult = typeGetters[$u8](view, offset + bytesRead);
-      bytesRead += isArrayResult.size;
-      if (!isArrayResult.value) {
-        continue;
-      }
-      const arrayLengthResult = typeGetters[$u32](view, offset + bytesRead);
-      bytesRead += arrayLengthResult.size;
-      const arr = new Array(arrayLengthResult.value);
-      for (let j = 0; j < arr.length; j++) {
-        const { value, size } = typeGetters[elementType](view, offset + bytesRead);
-        bytesRead += size;
-        arr[j] = value;
-      }
-      component[props[i]][index] = arr;
     }
     return bytesRead;
   };

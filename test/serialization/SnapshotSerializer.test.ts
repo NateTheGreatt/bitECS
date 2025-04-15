@@ -6,7 +6,6 @@ import {
     createWorld,
     getRelationTargets,
     hasComponent,
-    isRelation,
     query,
     removeEntity,
     Wildcard,
@@ -164,10 +163,13 @@ describe('Snapshot Serialization and Deserialization', () => {
             rotation: array<[number, number, number]>(),
             scale: array<[number, number, number]>(),
         }
+        type MatrixRow = [number, number]
+        type Matrix = [MatrixRow, MatrixRow]
         const RelativeTransform = {
             position: array<[number, number, number]>(),
             rotation: array<[number, number, number]>(),
             scale: array<[number, number, number]>(),
+            matrix: array<Matrix>(array<MatrixRow>() as [MatrixRow, MatrixRow])
         }
         const childOf = createRelation(withAutoRemoveSubject)
         const components = [Position, Transform, RelativeTransform]
@@ -201,9 +203,14 @@ describe('Snapshot Serialization and Deserialization', () => {
         Transform.rotation[entity3] = [40,50,60]
         Transform.scale[entity3] = [70,80,90]
 
+        const matrix: Matrix = [
+            [1, 2],
+            [3, 4],
+        ]
         RelativeTransform.position[entity3] = [2,2,2]
         RelativeTransform.rotation[entity3] = [1,1,1]
         RelativeTransform.scale[entity3] = [3,3,3]
+        RelativeTransform.matrix[entity3] = matrix
 
         const serializedData = serialize()
 
@@ -227,6 +234,7 @@ describe('Snapshot Serialization and Deserialization', () => {
         RelativeTransform.position[entity3] = null
         RelativeTransform.rotation[entity3] = null
         RelativeTransform.scale[entity3] = null
+        RelativeTransform.matrix[entity3] = null
 
         const deserializedEntities = deserialize(serializedData)
 
@@ -249,6 +257,7 @@ describe('Snapshot Serialization and Deserialization', () => {
         expect(RelativeTransform.position[newEntity1]).toBeUndefined()
         expect(RelativeTransform.rotation[newEntity1]).toBeUndefined()
         expect(RelativeTransform.scale[newEntity1]).toBeUndefined()
+        expect(RelativeTransform.matrix[newEntity1]).toBeUndefined()
 
         expect(Transform.position[newEntity2]).toEqual([10,20,30])
         expect(Transform.rotation[newEntity2]).toEqual([40,50,60])
@@ -260,6 +269,7 @@ describe('Snapshot Serialization and Deserialization', () => {
         expect(RelativeTransform.position[newEntity3]).toEqual([2,2,2])
         expect(RelativeTransform.rotation[newEntity3]).toEqual([1,1,1])
         expect(RelativeTransform.scale[newEntity3]).toEqual([3,3,3])
+        expect(RelativeTransform.matrix[newEntity3]).toEqual(matrix)
     })
 
     it('should correctly serialize and deserialize relations in the same world', () => {

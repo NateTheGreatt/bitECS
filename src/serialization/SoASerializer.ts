@@ -36,6 +36,8 @@ export type PrimitiveBrand = (number[] & { [key: symbol]: true }) | TypedArray
  */
 type ComponentRef = Record<string, PrimitiveBrand | TypedArray>
 
+type ArrayType<T> = T[] & { $arr: TypeSymbol }
+
 /**
  * Creates a function that tags an array with a type symbol for serialization.
  * @param {TypeSymbol} symbol - The type symbol to tag the array with.
@@ -80,7 +82,7 @@ const typeGetters = {
     [$f64]: (view: DataView, offset: number) => ({ value: view.getFloat64(offset), size: 8 })
 }
 
-export const array = <T extends any[] = []>(type: TypeSymbol = $f32)=>  {
+export const array = <T extends any[] = []>(type: TypeSymbol | T = $f32)=>  {
     const arr = [];
 
     Object.defineProperty(arr, $arr, { value: type, enumerable: false, writable: false, configurable: false })
@@ -118,6 +120,90 @@ function getTypeForArray(arr: PrimitiveBrand | TypedArray): TypeSymbol {
 }
 
 /**
+ * Checks if a value is an array type
+ */
+export function isArrayType(value: any): value is ArrayType<any> {
+    return Array.isArray(value) && $arr in value
+}
+
+/**
+ * Gets the element type information for an array type
+ */
+export function getArrayElementType(arrayType: ArrayType<any>): TypeSymbol | ArrayType<any> {
+    return arrayType[$arr]
+}
+
+/**
+ * Serializes an array value to a DataView
+ */
+function serializeArrayValue(
+    elementType: ArrayType<any> | TypeSymbol,
+    value: any[],
+    view: DataView,
+    offset: number
+): number {
+    let bytesWritten = 0
+
+    const isArrayDefined = Array.isArray(value) ? 1 : 0
+    bytesWritten += typeSetters[$u8](view, offset, isArrayDefined)
+
+    if (!isArrayDefined) {
+        return bytesWritten
+    }
+
+    bytesWritten += typeSetters[$u32](view, offset + bytesWritten, value.length)
+
+
+    // Write each element
+    for (let i = 0; i < value.length; i++) {
+        const element = value[i]
+        if (isArrayType(elementType)) {
+            bytesWritten += serializeArrayValue(getArrayElementType(elementType), element, view, offset + bytesWritten)
+        } else if (typeof elementType === 'symbol') {
+            // Primitive type
+            bytesWritten += typeSetters[elementType](view, offset + bytesWritten, element)
+        }
+    }
+
+    return bytesWritten
+}
+
+
+function deserializeArrayValue(
+    elementType: ArrayType<any> | TypeSymbol,
+    view: DataView,
+    offset: number
+) {
+    let bytesRead = 0
+
+    const isArrayResult = typeGetters[$u8](view, offset + bytesRead)
+    bytesRead += isArrayResult.size
+    if (!isArrayResult.value) {
+        return { size: bytesRead }
+    }
+
+    const arrayLengthResult = typeGetters[$u32](view, offset + bytesRead)
+    bytesRead += arrayLengthResult.size;
+
+    const arr = new Array(arrayLengthResult.value) as any;
+    for (let i = 0; i < arr.length; i++) {
+        if (isArrayType(elementType)) {
+            const { value, size } = deserializeArrayValue(getArrayElementType(elementType), view, offset + bytesRead)
+            bytesRead += size
+            if (Array.isArray(value)) {
+                arr[i] = value
+            }
+        } else {
+            const { value, size } = typeGetters[elementType](view, offset + bytesRead)
+            bytesRead += size
+            arr[i] = value
+        }
+    }
+
+    return { value: arr, size: bytesRead }
+}
+
+/**
  * Creates a serializer function for a component.
  * @param {ComponentRef} component - The component to create a serializer for.
  * @returns {Function} A function that serializes the component.
@@ -150,22 +236,11 @@ export const createComponentSerializer = (component: ComponentRef | PrimitiveBra
         // Write index first
         bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index)
         for (let i = 0; i < props.length; i++) {
-            const elementType: TypeSymbol = component[props[i]][$arr]
-            const componentValue = component[props[i]][index]
-            if (elementType === undefined) {
-                bytesWritten += setters[i](view, offset + bytesWritten, componentValue)
-                continue
-            }
-            const isArray = Array.isArray(componentValue)
-            bytesWritten += typeSetters[$u8](view, offset + bytesWritten, isArray ? 1 : 0)
-            if (!isArray) {
-                continue;
-            }
-            const arr = componentValue as number[]
-            const length = arr.length
-            bytesWritten += typeSetters[$u32](view, offset + bytesWritten, length)
-            for (let j = 0; j < length; j++) {
-                bytesWritten += typeSetters[elementType](view, offset + bytesWritten, arr[j])
+            const componentProperty = component[props[i]]
+            if (isArrayType(componentProperty)) {
+                bytesWritten += serializeArrayValue(getArrayElementType(componentProperty), componentProperty[index], view, offset + bytesWritten)
+            } else {
+                bytesWritten += setters[i](view, offset + bytesWritten, componentProperty[index])
             }
         }
         return bytesWritten
@@ -212,28 +287,18 @@ export const createComponentDeserializer = (component: ComponentRef | PrimitiveB
         const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex
         
         for (let i = 0; i < props.length; i++) {
-            const elementType: TypeSymbol = component[props[i]][$arr]
-            if (elementType === undefined) {
+            const componentProperty = component[props[i]]
+            if (isArrayType(componentProperty)) {
+                const { value, size } = deserializeArrayValue(getArrayElementType(componentProperty), view, offset + bytesRead)
+                if (Array.isArray(value)){
+                    componentProperty[index] = value
+                }
+                bytesRead += size
+            } else {
                 const { value, size } = getters[i](view, offset + bytesRead)
                 component[props[i]][index] = value
                 bytesRead += size
-                continue
             }
-            const isArrayResult = typeGetters[$u8](view, offset + bytesRead)
-            bytesRead += isArrayResult.size
-            if (!isArrayResult.value) {
-                continue
-            }
-            const arrayLengthResult = typeGetters[$u32](view, offset + bytesRead)
-            bytesRead += arrayLengthResult.size;
-
-            const arr = new Array(arrayLengthResult.value) as any;
-            for (let j = 0; j < arr.length; j++) {
-                const { value, size } = typeGetters[elementType](view, offset + bytesRead)
-                bytesRead += size
-                arr[j] = value
-            }
-            component[props[i]][index] = arr
         }
         return bytesRead
     }

@@ -5,8 +5,13 @@ export type PrimitiveBrand = (number[] & {
     [key: symbol]: true;
 }) | TypedArray;
 type ComponentRef = Record<string, PrimitiveBrand | TypedArray>;
+type ArrayType<T> = T[] & {
+    $arr: TypeSymbol;
+};
 export declare const u8: (a?: number[]) => PrimitiveBrand, i8: (a?: number[]) => PrimitiveBrand, u16: (a?: number[]) => PrimitiveBrand, i16: (a?: number[]) => PrimitiveBrand, u32: (a?: number[]) => PrimitiveBrand, i32: (a?: number[]) => PrimitiveBrand, f32: (a?: number[]) => PrimitiveBrand, f64: (a?: number[]) => PrimitiveBrand;
-export declare const array: <T extends any[] = []>(type?: TypeSymbol) => T[];
+export declare const array: <T extends any[] = []>(type?: TypeSymbol | T) => T[];
+export declare function isArrayType(value: any): value is ArrayType<any>;
+export declare function getArrayElementType(arrayType: ArrayType<any>): TypeSymbol | ArrayType<any>;
 export declare const createComponentSerializer: (component: ComponentRef | PrimitiveBrand | TypedArray) => (view: DataView, offset: number, index: number) => number;
 export declare const createComponentDeserializer: (component: ComponentRef | PrimitiveBrand | TypedArray) => (view: DataView, offset: number, entityIdMapping?: Map<number, number>) => number;
 export declare const createSoASerializer: (components: (ComponentRef | PrimitiveBrand | TypedArray)[], buffer?: ArrayBuffer) => (indices: number[] | readonly number[]) => ArrayBuffer;
