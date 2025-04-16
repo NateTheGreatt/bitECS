@@ -4,7 +4,7 @@ export type TypeSymbol = typeof $u8 | typeof $i8 | typeof $u16 | typeof $i16 | t
 export type PrimitiveBrand = (number[] & {
     [key: symbol]: true;
 }) | TypedArray;
-type ComponentRef = Record<string, PrimitiveBrand | TypedArray>;
+type ComponentRef = Record<string, PrimitiveBrand | TypedArray | Array<any>>;
 type ArrayType<T> = T[] & {
     $arr: TypeSymbol;
 };

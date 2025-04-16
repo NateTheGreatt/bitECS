@@ -34,7 +34,7 @@ export type PrimitiveBrand = (number[] & { [key: symbol]: true }) | TypedArray
  * a PrimitiveBrand (number array with type symbol) or TypedArray values.
  * Used to define the structure of components that can be serialized.
  */
-type ComponentRef = Record<string, PrimitiveBrand | TypedArray>
+type ComponentRef = Record<string, PrimitiveBrand | TypedArray | Array<any>>
 
 type ArrayType<T> = T[] & { $arr: TypeSymbol }
 

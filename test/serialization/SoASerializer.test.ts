@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { addEntity, createWorld } from "bitecs"
-import { createSoADeserializer, createSoASerializer, f32, u8 } from "../../src/serialization"
+import {$f32, $f64, $u8, array, createSoADeserializer, createSoASerializer, f32, u8} from "../../src/serialization"
 
 describe('SoA Serialization and Deserialization', () => {
   it('should correctly serialize and deserialize component data', () => {
@@ -118,4 +118,119 @@ describe('SoA Serialization and Deserialization', () => {
 
     idMap.forEach((originalId, newId) => verifyEntity(originalId, newId))
   })
+
+  it('should correctly serialize and deserialize array of arrays as component properties', () => {
+    const Character = {
+      position: array<[number, number]>($f64),
+      inventory: array<number[]>($u8),
+      skills: array(array($f64))
+    }
+
+    const components = [Character]
+
+    const serialize = createSoASerializer(components)
+    const deserialize = createSoADeserializer(components)
+
+    const eid = 1
+
+    // Set regular component data
+    Character.position[eid] = [10.5, 20.4]
+
+    // Set array component data
+    Character.inventory[eid] = [1, 5, 10, 15]
+
+    // Set nested array component data
+    Character.skills[eid] = [
+      [1, 5.0, 100.5],  // Skill 1: level 5, 100.5 exp
+      [2, 3.0, 50.2],   // Skill 2: level 3, 50.2 exp
+      [3, 7.0, 200.8]   // Skill 3: level 7, 200.8 exp
+    ]
+
+    // Serialize component data for entity
+    const buffer = serialize([eid])
+
+    // Zero out components to prepare for deserialization
+    Character.position[eid] = null
+    Character.inventory[eid] = []
+    Character.skills[eid] = []
+
+    // Deserialize back into components
+    deserialize(buffer)
+
+    // Assert all component data was deserialized correctly
+    expect(Character.position[eid]).toEqual([10.5, 20.4])
+    expect(Character.inventory[eid]).toEqual([1, 5, 10, 15])
+    expect(Character.skills[eid]).toEqual([
+      [1, 5.0, 100.5],
+      [2, 3.0, 50.2],
+      [3, 7.0, 200.8]
+    ])
+  })
+
+  it('should serialize and deserialize basic array', () => {
+    // Define a component with a nested array property
+    const Waypoints = {
+      // Array of coordinate pairs stored as f32 values
+      points: array($f64)
+    }
+
+    const components = [Waypoints]
+
+    const serialize = createSoASerializer(components)
+    const deserialize = createSoADeserializer(components)
+
+    const eid = 1
+
+    // Add array data to component
+    Waypoints.points[eid] = [10.5, 20.2]
+
+    // Serialize component data
+    const buffer = serialize([eid])
+
+    // Zero out component to prepare for deserialization
+    Waypoints.points[eid] = null
+
+    // Deserialize back into component
+    deserialize(buffer)
+
+    // Assert array data was deserialized correctly
+    expect(Waypoints.points[eid]).toEqual([10.5, 20.2])
+  });
+
+  it('should serialize and deserialize nested array of arrays', () => {
+    // Define a component with a nested array structure
+    const Inventory = {
+      // Array of inventory pages, each containing arrays of item IDs
+      pages: array(array($u8))
+    }
+
+    const components = [Inventory]
+
+    const serialize = createSoASerializer(components)
+    const deserialize = createSoADeserializer(components)
+
+    const eid = 1
+
+    // Define a complex nested structure
+    const inventoryData = [
+        [1, 2, 3],       // Page 1: items 1, 2, 3
+        [10, 20],        // Page 2: items 10, 20
+        [100, 101, 102]  // Page 3: items 100, 101, 102
+    ]
+
+    // Add the nested array data to component
+    Inventory.pages[eid] = inventoryData
+
+    // Serialize component data for entity
+    const buffer = serialize([eid])
+
+    // Zero out component to prepare for deserialization
+    Inventory.pages[eid] = []
+
+    // Deserialize back into component
+    deserialize(buffer)
+
+    // Assert nested array data was deserialized correctly
+    expect(Inventory.pages[eid]).toEqual(inventoryData)
+  });
 })
