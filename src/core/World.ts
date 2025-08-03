@@ -57,7 +57,7 @@ export function createWorld<T extends object = {}>(
     let context: T | undefined
 
     args.forEach(arg => {
-        if (typeof arg === 'object' && 'add' in arg && 'remove' in arg) {
+        if (typeof arg === 'object' && 'dense' in arg && 'sparse' in arg && 'aliveCount' in arg) {
             entityIndex = arg as EntityIndex
         } else if (typeof arg === 'object') {
             context = arg as T

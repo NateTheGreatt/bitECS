@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createWorld, addEntity, addComponent, getComponentData, observe, onGet, onSet, set, IsA, addPrefab } from '../../src/core'
+import { createWorld, addEntity, addComponent, getComponent, observe, onGet, onSet, set, IsA, addPrefab } from '../../src/core'
 
 describe('Observer Tests', () => {
 	it('should trigger onGet when component data is accessed', () => {
@@ -11,11 +11,11 @@ describe('Observer Tests', () => {
 		const mockObserver = vi.fn((eid) => ({ x: Position.x[eid], y: Position.y[eid] }))
 		const unsubscribe = observe(world, onGet(Position), mockObserver)
 
-		getComponentData(world, eid, Position)
+		getComponent(world, eid, Position)
 		expect(mockObserver).toHaveBeenCalledWith(eid)
 
 		unsubscribe()
-		getComponentData(world, eid, Position)
+		getComponent(world, eid, Position)
 		expect(mockObserver).toHaveBeenCalledTimes(1)
 	})
 
@@ -63,7 +63,7 @@ describe('Observer Tests', () => {
 		expect(Position.x[eid]).toBe(3)
 		expect(Position.y[eid]).toBe(4)
 
-		const result = getComponentData(world, eid, Position)
+		const result = getComponent(world, eid, Position)
 		expect(getObserver).toHaveBeenCalledWith(eid)
 		expect(result).toEqual({ x: 3, y: 4 })
 	})
@@ -90,13 +90,13 @@ describe('Observer Tests', () => {
 		expect(Position.x[eid]).toBe(5)
 		expect(Position.y[eid]).toBe(6)
 
-		const result = getComponentData(world, eid, Position)
+		const result = getComponent(world, eid, Position)
 		expect(getObserver).toHaveBeenCalledWith(eid)
 		expect(result).toEqual({ x: 5, y: 6 })
 
 		addComponent(world, eid, set(Position, { x: 5, y: 6 }))
 
-		const componentData = getComponentData(world, eid, Position)
+		const componentData = getComponent(world, eid, Position)
 		const sum: number = componentData.x + componentData.y
 		expect(sum).toBe(11)
 	})
@@ -122,7 +122,7 @@ describe('Observer Tests', () => {
 		expect(Vitals.health[eid]).toBe(100)
 
 		// Get health
-		const result = getComponentData(world, eid, Vitals)
+		const result = getComponent(world, eid, Vitals)
 		expect(getObserver).toHaveBeenCalledWith(eid)
 		expect(result).toEqual({ health: 100 })
 
@@ -132,12 +132,12 @@ describe('Observer Tests', () => {
 		expect(Vitals.health[eid]).toBe(75)
 
 		// Get updated health
-		const updatedResult = getComponentData(world, eid, Vitals)
+		const updatedResult = getComponent(world, eid, Vitals)
 		expect(getObserver).toHaveBeenCalledWith(eid)
 		expect(updatedResult).toEqual({ health: 75 })
 
 		// Ensure type safety
-		const vitalData = getComponentData(world, eid, Vitals)
+		const vitalData = getComponent(world, eid, Vitals)
 		const healthValue: number = vitalData.health
 		expect(healthValue).toBe(75)
 	})
@@ -165,7 +165,7 @@ describe('Observer Tests', () => {
 		expect(Position.y[eid]).toBe(20)
 
 		// Get position
-		const result = getComponentData(world, eid, Position)
+		const result = getComponent(world, eid, Position)
 		expect(getObserver).toHaveBeenCalledWith(eid)
 		expect(result).toEqual({ x: 10, y: 20 })
 
@@ -176,12 +176,12 @@ describe('Observer Tests', () => {
 		expect(Position.y[eid]).toBe(40)
 
 		// Get updated position
-		const updatedResult = getComponentData(world, eid, Position)
+		const updatedResult = getComponent(world, eid, Position)
 		expect(getObserver).toHaveBeenCalledWith(eid)
 		expect(updatedResult).toEqual({ x: 30, y: 40 })
 
 		// Ensure type safety
-		const positionData = getComponentData(world, eid, Position)
+		const positionData = getComponent(world, eid, Position)
 		const xValue: number = positionData.x
 		const yValue: number = positionData.y
 		expect(xValue).toBe(30)

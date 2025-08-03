@@ -36,9 +36,10 @@ export {
 	hasComponent,
 	addComponent,
 	addComponents,
+	setComponent,
 	removeComponent,
 	removeComponents,
-	getComponentData,
+	getComponent,
 	set
 } from './Component'
 

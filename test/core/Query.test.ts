@@ -312,4 +312,64 @@ describe('Query Tests', () => {
 		expect(complexQueryResults).toContain(entity3)
 		expect(complexQueryResults).toContain(entity4)
 	})
+
+	it('should work with Or queries when components span multiple generations', () => {
+		const world = createWorld()
+		
+		// Create many components to force multiple generations
+		const manyComponents = Array(40).fill(null).map(() => ({ value: [] }))
+		
+		// Add many components to force generation overflow
+		const tempEntity = addEntity(world)
+		manyComponents.forEach(comp => addComponent(world, tempEntity, comp))
+		
+		// Now create our test components - they should be in different generations
+		const Mesh = { vertices: [] }
+		const InstancedMesh = { instances: [] }  
+		const Group = { children: [] }
+		
+		// Create entities with these components
+		const entity1 = addEntity(world)
+		addComponent(world, entity1, Mesh)
+		
+		const entity2 = addEntity(world)
+		addComponent(world, entity2, InstancedMesh)
+		
+		const entity3 = addEntity(world)
+		addComponent(world, entity3, Group)
+		
+		// This should find all entities even though components are in different generations
+		const results = query(world, [Or(Mesh, InstancedMesh, Group)])
+		
+		expect(results.length).toBe(3)
+		expect(results).toContain(entity1)
+		expect(results).toContain(entity2) 
+		expect(results).toContain(entity3)
+		
+		// Test the specific bug case: should work even if one component type has no entities
+		const world2 = createWorld()
+		
+		// Force multiple generations again
+		const tempEntity2 = addEntity(world2)
+		manyComponents.forEach(comp => addComponent(world2, tempEntity2, comp))
+		
+		// Create new test components in different generations
+		const Mesh2 = { vertices: [] }
+		const InstancedMesh2 = { instances: [] }  
+		const Group2 = { children: [] }
+		
+		// Only create entities with Mesh and InstancedMesh, NOT Group
+		const entityA = addEntity(world2)
+		addComponent(world2, entityA, Mesh2)
+		
+		const entityB = addEntity(world2)
+		addComponent(world2, entityB, InstancedMesh2)
+		
+		// This should still find both entities even though Group2 has no instances anywhere
+		const resultsNoGroup = query(world2, [Or(Mesh2, InstancedMesh2, Group2)])
+		
+		expect(resultsNoGroup.length).toBe(2)
+		expect(resultsNoGroup).toContain(entityA)
+		expect(resultsNoGroup).toContain(entityB)
+	})
 })

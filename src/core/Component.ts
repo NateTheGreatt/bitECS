@@ -109,7 +109,7 @@ export const hasComponent = (world: World, eid: EntityId, component: ComponentRe
  * @param {ComponentRef} component - The component to retrieve data for.
  * @returns {any} The component data, or undefined if the component is not found or the entity doesn't have the component.
  */
-export const getComponentData = (world: World, eid: EntityId, component: ComponentRef): any => {
+export const getComponent = (world: World, eid: EntityId, component: ComponentRef): any => {
 	const ctx = (world as InternalWorld)[$internal]
 	const componentData = ctx.componentMap.get(component)
 
@@ -164,7 +164,7 @@ const recursivelyInherit = (ctx: WorldContext, world: World, baseEid: EntityId, 
 			
 			const componentData = ctx.componentMap.get(component)
 			if (componentData?.setObservable) {
-				const data = getComponentData(world, inheritedEid, component)
+				const data = getComponent(world, inheritedEid, component)
 				componentData.setObservable.notify(baseEid, data)
 			}
 		}
@@ -183,89 +183,123 @@ const recursivelyInherit = (ctx: WorldContext, world: World, baseEid: EntityId, 
 type ComponentSetter<T = any> = { component: ComponentRef; data: T }
 
 /**
- * Adds one or more components to an entity.
+ * Sets component data on an entity. Always calls the setter observable even if entity already has the component.
  * @param {World} world - The world object.
  * @param {EntityId} eid - The entity ID.
- * @param {...(ComponentRef | ComponentSetter)} components - Components to add or set.
+ * @param {ComponentRef} component - The component to set.
+ * @param {any} data - The data to set for the component.
  * @throws {Error} If the entity does not exist in the world.
  */
-export const addComponent = (world: World, eid: EntityId, ...components: (ComponentRef | ComponentSetter)[]): void => {
+export const setComponent = (
+  world: World,
+  eid: EntityId,
+  component: ComponentRef,
+  data: any
+): void => {
+  addComponent(world, eid, set(component, data));
+};
+
+/**
+ * Adds a single component to an entity.
+ * @param {World} world - The world object.
+ * @param {EntityId} eid - The entity ID.
+ * @param {ComponentRef | ComponentSetter} componentOrSet - Component to add or set.
+ * @returns {boolean} True if component was added, false if it already existed.
+ * @throws {Error} If the entity does not exist in the world.
+ */
+export const addComponent = (world: World, eid: EntityId, componentOrSet: ComponentRef | ComponentSetter): boolean => {
 	if (!entityExists(world, eid)) {
 		throw new Error(`Cannot add component - entity ${eid} does not exist in the world.`)
 	}
 	
 	const ctx = (world as InternalWorld)[$internal]
+	const component = 'component' in componentOrSet ? componentOrSet.component : componentOrSet
+	const data = 'data' in componentOrSet ? componentOrSet.data : undefined
+
+	if (!ctx.componentMap.has(component)) registerComponent(world, component)
+
+	const componentData = ctx.componentMap.get(component)!
 	
-	components.forEach(componentOrSet => {
-		const component = 'component' in componentOrSet ? componentOrSet.component : componentOrSet
-		const data = 'data' in componentOrSet ? componentOrSet.data : undefined
-
-		if (!ctx.componentMap.has(component)) registerComponent(world, component)
-
-		const componentData = ctx.componentMap.get(component)!
+	// If entity already has component, just call setter and return false
+	if (hasComponent(world, eid, component)) {
 		if (data !== undefined) {
 			componentData.setObservable.notify(eid, data)
 		}
+		return false
+	}
 
-		if (hasComponent(world, eid, component)) return
+	const { generationId, bitflag, queries } = componentData
 
-		const { generationId, bitflag, queries } = componentData
+	ctx.entityMasks[generationId][eid] |= bitflag
 
-		ctx.entityMasks[generationId][eid] |= bitflag
+	if (!hasComponent(world, eid, Prefab)) {
+		queries.forEach((queryData: Query) => {
+			queryData.toRemove.remove(eid)
+			const match = queryCheckEntity(world, queryData, eid)
 
-		if (!hasComponent(world, eid, Prefab)) {
-			queries.forEach((queryData: Query) => {
-				queryData.toRemove.remove(eid)
-				const match = queryCheckEntity(world, queryData, eid)
+			if (match) queryAddEntity(queryData, eid)
+			else queryRemoveEntity(world, queryData, eid)
+		})
+	}
+	ctx.entityComponents.get(eid)!.add(component)
 
-				if (match) queryAddEntity(queryData, eid)
-				else queryRemoveEntity(world, queryData, eid)
-			})
-		}
-		ctx.entityComponents.get(eid)!.add(component)
-		if (component[$isPairComponent]) {
-			const relation = component[$relation]
-			const target = component[$pairTarget]
+	// Call setter AFTER component is added and onAdd callbacks have fired
+	if (data !== undefined) {
+		componentData.setObservable.notify(eid, data)
+	}
+	if (component[$isPairComponent]) {
+		const relation = component[$relation]
+		const target = component[$pairTarget]
 
-			// Add both Wildcard pairs for relation and target
-			addComponent(world, eid, Pair(relation, Wildcard))
-			addComponent(world, eid, Pair(Wildcard, target))
+		// Add both Wildcard pairs for relation and target
+		addComponents(world, eid, Pair(relation, Wildcard), Pair(Wildcard, target))
 
-			// For non-Wildcard targets, add Wildcard pair to track relation targets
-			if (typeof target === 'number') {
-				// Add Wildcard pair for target being a relation target
-				addComponent(world, target, Pair(Wildcard, eid))
-				addComponent(world, target, Pair(Wildcard, relation))
-				// Track entities with relations for autoRemoveSubject
-				ctx.entitiesWithRelations.add(target)
-				ctx.entitiesWithRelations.add(eid)
-			}
-
-			// add target to a set to make autoRemoveSubject checks faster
+		// For non-Wildcard targets, add Wildcard pair to track relation targets
+		if (typeof target === 'number') {
+			// Add Wildcard pair for target being a relation target
+			addComponents(world, target, Pair(Wildcard, eid), Pair(Wildcard, relation))
+			// Track entities with relations for autoRemoveSubject
 			ctx.entitiesWithRelations.add(target)
+			ctx.entitiesWithRelations.add(eid)
+		}
 
-			const relationData = relation[$relationData]
-			if (relationData.exclusiveRelation === true && target !== Wildcard) {
-				const oldTarget = getRelationTargets(world, eid, relation)[0]
-				if (oldTarget !== undefined && oldTarget !== null && oldTarget !== target) {
-					removeComponent(world, eid, relation(oldTarget))
-				}
-			}
+		// add target to a set to make autoRemoveSubject checks faster
+		ctx.entitiesWithRelations.add(target)
 
-			if (relation === IsA) {
-				const inheritedTargets = getRelationTargets(world, eid, IsA)
-				for (const inherited of inheritedTargets) {
-					recursivelyInherit(ctx, world, eid, inherited)
-				}
+		const relationData = relation[$relationData]
+		if (relationData.exclusiveRelation === true && target !== Wildcard) {
+			const oldTarget = getRelationTargets(world, eid, relation)[0]
+			if (oldTarget !== undefined && oldTarget !== null && oldTarget !== target) {
+				removeComponent(world, eid, relation(oldTarget))
 			}
 		}
-	})
+
+		if (relation === IsA) {
+			const inheritedTargets = getRelationTargets(world, eid, IsA)
+			for (const inherited of inheritedTargets) {
+				recursivelyInherit(ctx, world, eid, inherited)
+			}
+		}
+	}
+
+	return true
 }
 
 /**
- * Alias for addComponent.
+ * Adds multiple components to an entity.
+ * @param {World} world - The world object.
+ * @param {EntityId} eid - The entity ID.
+ * @param {(ComponentRef | ComponentSetter)[] | ComponentRef | ComponentSetter} components - Components to add or set (array or spread args).
+ * @throws {Error} If the entity does not exist in the world.
  */
-export const addComponents = addComponent
+export function addComponents(world: World, eid: EntityId, components: (ComponentRef | ComponentSetter)[]): void;
+export function addComponents(world: World, eid: EntityId, ...components: (ComponentRef | ComponentSetter)[]): void;
+export function addComponents(world: World, eid: EntityId, ...args: any[]): void {
+	const components = Array.isArray(args[0]) ? args[0] : args
+	components.forEach((componentOrSet: ComponentRef | ComponentSetter) => {
+		addComponent(world, eid, componentOrSet)
+	})
+}
 
 /**
  * Removes one or more components from an entity.
@@ -301,9 +335,18 @@ export const removeComponent = (world: World, eid: EntityId, ...components: Comp
 
 		if (component[$isPairComponent]) {
 			const target = component[$pairTarget]
+			const relation = component[$relation]
+			
+			// Remove Wildcard pair from subject
 			removeComponent(world, eid, Pair(Wildcard, target))
 
-			const relation = component[$relation]
+			// Remove Wildcard pairs from target (if target is an entity)
+			if (typeof target === 'number' && entityExists(world, target)) {
+				removeComponent(world, target, Pair(Wildcard, eid))
+				removeComponent(world, target, Pair(Wildcard, relation))
+			}
+
+			// Remove relation Wildcard pair if no other targets
 			const otherTargets = getRelationTargets(world, eid, relation)
 			if (otherTargets.length === 0) {
 				removeComponent(world, eid, Pair(relation, Wildcard))

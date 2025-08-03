@@ -422,6 +422,8 @@ export function queryCheckEntity(world: World, query: Query, eid: EntityId): boo
 	const ctx = (world as InternalWorld)[$internal]
 	const { masks, notMasks, orMasks, generations } = query
 
+	let hasOrMatch = Object.keys(orMasks).length === 0
+
 	for (let i = 0; i < generations.length; i++) {
 		const generationId = generations[i]
 		const qMask = masks[generationId]
@@ -437,12 +439,12 @@ export function queryCheckEntity(world: World, query: Query, eid: EntityId): boo
 			return false
 		}
 
-		if (qOrMask && (eMask & qOrMask) === 0) {
-			return false
+		if (qOrMask && (eMask & qOrMask) !== 0) {
+			hasOrMatch = true
 		}
 	}
 
-	return true
+	return hasOrMatch
 }
 
 /**
