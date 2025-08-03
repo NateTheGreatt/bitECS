@@ -498,10 +498,7 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
           if (!relationTargets.has(eid)) {
             relationTargets.set(eid, /* @__PURE__ */ new Map());
           }
-          if (!relationTargets.get(eid).has(i)) {
-            relationTargets.get(eid).set(i, /* @__PURE__ */ new Set());
-          }
-          relationTargets.get(eid).get(i).add(target);
+          relationTargets.get(eid).set(i, target);
           const relationData = component(target);
           queue.push([eid, 4 /* AddRelation */, i, target, relationData]);
         }
@@ -509,11 +506,9 @@ var createObserverSerializer = (world, networkedTag, components, buffer = new Ar
       (0, import_bitecs2.observe)(world, (0, import_bitecs2.onRemove)(networkedTag, component(import_bitecs2.Wildcard)), (eid) => {
         const targetMap = relationTargets.get(eid);
         if (targetMap) {
-          const targets = targetMap.get(i);
-          if (targets) {
-            for (const target of targets) {
-              queue.push([eid, 5 /* RemoveRelation */, i, target]);
-            }
+          const target = targetMap.get(i);
+          if (target !== void 0) {
+            queue.push([eid, 5 /* RemoveRelation */, i, target]);
             targetMap.delete(i);
             if (targetMap.size === 0) {
               relationTargets.delete(eid);
