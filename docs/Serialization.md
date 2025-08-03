@@ -86,7 +86,150 @@ const idMap = new Map([[1, 10]])
 // entity id 1 inside of the packet will have its data written to entity id 10
 deserialize(buffer, idMap)
 ```
+### Array of arrays
+The bitECS serialization system supports nested arrays (arrays of arrays) as component properties. This feature allows you to store more complex data structures while maintaining efficient binary serialization.
+```ts
+export const array = <T extends any[] = []>(type: TypeSymbol | T = $f32) => { /*...*/ }
+```
+The array() function annotates an array to indicate its elements' type for proper serialization:
+- array($f32) - Creates an array of 32-bit float values (default)
+- array($u8) - Creates an array of 8-bit unsigned integers
+- array(array($f32)) - Creates a nested array (array of arrays of floats)
 
+#### Usage Examples:
+##### Basic Usage with Primitive Types
+```ts
+import { createSoASerializer, createSoADeserializer, array, $f32 } from 'bitecs/serialization'
+
+// Define a component with an array property
+const Waypoints = {
+    // Array of coordinate pairs stored as f32 values
+    points: array($f32)
+}
+
+const components = [Waypoints]
+
+const serialize = createSoASerializer(components)
+const deserialize = createSoADeserializer(components)
+
+const eid = 1
+
+// Add array data to component
+Waypoints.points[eid] = [10.5, 20.2]
+
+// Serialize component data
+const buffer = serialize([eid])
+
+// Zero out component to prepare for deserialization
+Waypoints.points[eid] = null
+
+// Deserialize back into component
+deserialize(buffer)
+
+// Assert array data was deserialized correctly
+console.assert(Waypoints.points[eid].length === 1)
+console.assert(Waypoints.points[eid][0] === 10.5)
+console.assert(Waypoints.points[eid][1] === 20.2)
+```
+##### Multi-level Nesting Example
+```ts
+import { createSoASerializer, createSoADeserializer, array, $u8 } from 'bitecs/serialization'
+
+// Define a component with a nested array structure
+const Inventory = {
+    // Array of inventory pages, each containing arrays of item IDs
+    pages: array(array($u8))
+}
+
+const components = [Inventory]
+
+const serialize = createSoASerializer(components)
+const deserialize = createSoADeserializer(components)
+
+const eid = 1
+
+// Define a complex nested structure
+const inventoryData = [
+    [1, 2, 3],       // Page 1: items 1, 2, 3
+    [10, 20],        // Page 2: items 10, 20
+    [100, 101, 102]  // Page 3: items 100, 101, 102
+]
+
+// Add the nested array data to component
+Inventory.pages[eid] = inventoryData
+
+// Serialize component data for entity
+const buffer = serialize([eid])
+
+// Zero out component to prepare for deserialization
+Inventory.pages[eid] = []
+
+// Deserialize back into component
+deserialize(buffer)
+
+// Assert nested array data was deserialized correctly
+console.assert(Inventory.pages[eid].length === 3)
+console.assert(Inventory.pages[eid][0].length === 3)
+console.assert(Inventory.pages[eid][0][0] === 1)
+console.assert(Inventory.pages[eid][0][1] === 2)
+console.assert(Inventory.pages[eid][0][2] === 3)
+console.assert(Inventory.pages[eid][1].length === 2)
+console.assert(Inventory.pages[eid][1][0] === 10)
+console.assert(Inventory.pages[eid][1][1] === 20)
+console.assert(Inventory.pages[eid][2].length === 3)
+console.assert(Inventory.pages[eid][2][0] === 100)
+console.assert(Inventory.pages[eid][2][1] === 101)
+console.assert(Inventory.pages[eid][2][2] === 102)
+```
+##### Mixed Component Types Example
+```ts
+import { createSoASerializer, createSoADeserializer, array, $f32, $u8 } from 'bitecs/serialization'
+const Character = {
+    position: array<[number, number]>($f64),
+    inventory: array<number[]>($u8),
+    skills: array(array($f64))
+}
+
+const components = [Character]
+
+const serialize = createSoASerializer(components)
+const deserialize = createSoADeserializer(components)
+
+const eid = 1
+
+// Set regular component data
+Character.position[eid] = [10.5, 20.4]
+
+// Set array component data
+Character.inventory[eid] = [1, 5, 10, 15]
+
+// Set nested array component data
+Character.skills[eid] = [
+    [1, 5.0, 100.5],  // Skill 1: level 5, 100.5 exp
+    [2, 3.0, 50.2],   // Skill 2: level 3, 50.2 exp
+    [3, 7.0, 200.8]   // Skill 3: level 7, 200.8 exp
+]
+
+// Serialize component data for entity
+const buffer = serialize([eid])
+
+// Zero out components to prepare for deserialization
+Character.position[eid] = null
+Character.inventory[eid] = []
+Character.skills[eid] = []
+
+// Deserialize back into components
+deserialize(buffer)
+
+// Assert all component data was deserialized correctly
+console.assert(JSON.stringify(Character.position[eid]) == JSON.stringify([10.5, 20.4]))
+console.assert(JSON.stringify(Character.inventory[eid]) == JSON.stringify([1, 5, 10, 15]))
+console.assert(JSON.stringify(Character.skills[eid]) == JSON.stringify([
+    [1, 5.0, 100.5],
+    [2, 3.0, 50.2],
+    [3, 7.0, 200.8]
+]))
+```
 ## Observer Serialization 
 
 The Observer serializer tracks entity additions/removals and component additions/removals on entities. Unlike SoA serializers, observer serializers do depend on `bitECS`. For full network state synchronization, use it together with the SoA serializer:
