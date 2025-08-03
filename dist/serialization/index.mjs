@@ -7,6 +7,7 @@ var $u32 = Symbol.for("bitecs-u32");
 var $i32 = Symbol.for("bitecs-i32");
 var $f32 = Symbol.for("bitecs-f32");
 var $f64 = Symbol.for("bitecs-f64");
+var $arr = Symbol.for("bitecs-arr");
 var typeTagForSerialization = (symbol) => (a = []) => Object.defineProperty(a, symbol, { value: true, enumerable: false, writable: false, configurable: false });
 var u8 = typeTagForSerialization($u8);
 var i8 = typeTagForSerialization($i8);
@@ -60,6 +61,11 @@ var typeGetters = {
   [$f32]: (view, offset) => ({ value: view.getFloat32(offset), size: 4 }),
   [$f64]: (view, offset) => ({ value: view.getFloat64(offset), size: 8 })
 };
+var array = (type = $f32) => {
+  const arr = [];
+  Object.defineProperty(arr, $arr, { value: type, enumerable: false, writable: false, configurable: false });
+  return arr;
+};
 function isTypedArrayOrBranded(arr) {
   return arr && (ArrayBuffer.isView(arr) || Array.isArray(arr) && typeof arr === "object");
 }
@@ -75,6 +81,55 @@ function getTypeForArray(arr) {
   if (arr instanceof Uint32Array) return $u32;
   if (arr instanceof Float32Array) return $f32;
   return $f64;
+}
+function isArrayType(value) {
+  return Array.isArray(value) && $arr in value;
+}
+function getArrayElementType(arrayType) {
+  return arrayType[$arr];
+}
+function serializeArrayValue(elementType, value, view, offset) {
+  let bytesWritten = 0;
+  const isArrayDefined = Array.isArray(value) ? 1 : 0;
+  bytesWritten += typeSetters[$u8](view, offset, isArrayDefined);
+  if (!isArrayDefined) {
+    return bytesWritten;
+  }
+  bytesWritten += typeSetters[$u32](view, offset + bytesWritten, value.length);
+  for (let i = 0; i < value.length; i++) {
+    const element = value[i];
+    if (isArrayType(elementType)) {
+      bytesWritten += serializeArrayValue(getArrayElementType(elementType), element, view, offset + bytesWritten);
+    } else if (typeof elementType === "symbol") {
+      bytesWritten += typeSetters[elementType](view, offset + bytesWritten, element);
+    }
+  }
+  return bytesWritten;
+}
+function deserializeArrayValue(elementType, view, offset) {
+  let bytesRead = 0;
+  const isArrayResult = typeGetters[$u8](view, offset + bytesRead);
+  bytesRead += isArrayResult.size;
+  if (!isArrayResult.value) {
+    return { size: bytesRead };
+  }
+  const arrayLengthResult = typeGetters[$u32](view, offset + bytesRead);
+  bytesRead += arrayLengthResult.size;
+  const arr = new Array(arrayLengthResult.value);
+  for (let i = 0; i < arr.length; i++) {
+    if (isArrayType(elementType)) {
+      const { value, size } = deserializeArrayValue(getArrayElementType(elementType), view, offset + bytesRead);
+      bytesRead += size;
+      if (Array.isArray(value)) {
+        arr[i] = value;
+      }
+    } else {
+      const { value, size } = typeGetters[elementType](view, offset + bytesRead);
+      bytesRead += size;
+      arr[i] = value;
+    }
+  }
+  return { value: arr, size: bytesRead };
 }
 var createComponentSerializer = (component) => {
   if (isTypedArrayOrBranded(component)) {
@@ -102,7 +157,12 @@ var createComponentSerializer = (component) => {
     let bytesWritten = 0;
     bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index);
     for (let i = 0; i < props.length; i++) {
-      bytesWritten += setters[i](view, offset + bytesWritten, component[props[i]][index]);
+      const componentProperty = component[props[i]];
+      if (isArrayType(componentProperty)) {
+        bytesWritten += serializeArrayValue(getArrayElementType(componentProperty), componentProperty[index], view, offset + bytesWritten);
+      } else {
+        bytesWritten += setters[i](view, offset + bytesWritten, componentProperty[index]);
+      }
     }
     return bytesWritten;
   };
@@ -138,9 +198,18 @@ var createComponentDeserializer = (component) => {
     bytesRead += indexSize;
     const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex;
     for (let i = 0; i < props.length; i++) {
-      const { value, size } = getters[i](view, offset + bytesRead);
-      component[props[i]][index] = value;
-      bytesRead += size;
+      const componentProperty = component[props[i]];
+      if (isArrayType(componentProperty)) {
+        const { value, size } = deserializeArrayValue(getArrayElementType(componentProperty), view, offset + bytesRead);
+        if (Array.isArray(value)) {
+          componentProperty[index] = value;
+        }
+        bytesRead += size;
+      } else {
+        const { value, size } = getters[i](view, offset + bytesRead);
+        component[props[i]][index] = value;
+        bytesRead += size;
+      }
     }
     return bytesRead;
   };
@@ -180,8 +249,7 @@ import {
   addEntity,
   isRelation,
   getRelationTargets,
-  Wildcard,
-  query
+  Wildcard
 } from "bitecs";
 function serializeRelationData(data, eid, dataView, offset) {
   if (!data) return offset;
@@ -590,6 +658,15 @@ var createObserverDeserializer = (world, networkedTag, components, constructorMa
   };
 };
 export {
+  $f32,
+  $f64,
+  $i16,
+  $i32,
+  $i8,
+  $u16,
+  $u32,
+  $u8,
+  array,
   createObserverDeserializer,
   createObserverSerializer,
   createSnapshotDeserializer,
