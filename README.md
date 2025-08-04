@@ -19,29 +19,26 @@ bitECS
   <a href="https://github.com/NateTheGreatt/bitECS/blob/master/LICENSE">
     <img src="https://badgen.net/npm/license/bitecs" alt="License" />
   </a>
+  <a href="https://discord.gg/daUxSk5AwX">
+    <img src="https://img.shields.io/discord/1212857060731912202?color=7289da&label=Discord&logo=discord&logoColor=white" alt="Discord" />
+  </a>
 </p>
 
 <p align="center">
-Functional, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-oriented</a>, ultra-high performance <a href="https://en.wikipedia.org/wiki/Entity_component_system">ECS</a> library written using JavaScript TypedArrays.
+Flexible, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-oriented</a> <a href="https://en.wikipedia.org/wiki/Entity_component_system">ECS</a> library for Typescript.
 </p>
 
 </center>
 
 ## ✨ Features
 
-|   |   |
-| --------------------------------- | ---------------------------------------- |
-| 🔮  Simple, declarative API       | 🔥  Blazing fast iteration               |
-| 🔍  Powerful & performant queries | 💾  Serialization included              |
-| 🍃  Zero dependencies             | 🌐  Node or browser                     |
-| 🤏  `~5kb` minzipped              | 🏷  TypeScript support                   |
-| ❤  Made with love                | 🔺 [glMatrix](https://github.com/toji/gl-matrix) support |
-
-### 📈 Benchmarks
-
-|                                                                 |                                                                           |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark) | [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks) |
+`bitECS` is a minimal, less opinionated, and powerful Entity Component System (ECS) library. It provides a lean API that enables developers to build their architecture to their liking, offering flexibility while maintaining efficiency where needed. Features include:
+| | |
+|---|---|
+| 🔮 Simple, declarative API | 🍃 Lightweight (`<4kb` minzipped) |
+| 🔍 Powerful querying | 📦 Zero dependencies |
+| 🔗 Relational entity modeling | 🧵 Thread-friendly |
+| 💾 Serialization included | 💖 Made with love |
 
 ## 💿 Install
 ```
@@ -51,74 +48,92 @@ npm i bitecs
 ## 📘  Documentation
 |                  |
 | ---------------- |
-| 🏁  [Getting Started](https://github.com/NateTheGreatt/bitECS/blob/master/docs/INTRO.md) |
-| 📑  [API](https://github.com/NateTheGreatt/bitECS/blob/master/docs/API.md) |
-| ❔  [FAQ](https://github.com/NateTheGreatt/bitECS/blob/master/docs/FAQ.md) |
-| 🏛  [Tutorial](https://github.com/ourcade/phaser3-bitecs-getting-started) |
+| 🏁  [Introduction](/docs/Intro.md) |
+| 💾  [Serialization](/docs/Serialization.md) |
+| 🧵  [Multithreading](/docs/Multithreading.md) |
+| 📑  [API Docs](/docs/API.md) |
 
 ## 🕹 Example
 
 ```js
 import {
   createWorld,
-  Types,
-  defineComponent,
-  defineQuery,
+  query,
   addEntity,
   addComponent,
-  pipe,
 } from 'bitecs'
 
-const Vector3 = { x: Types.f32, y: Types.f32, z: Types.f32 }
-const Position = defineComponent(Vector3)
-const Velocity = defineComponent(Vector3)
+const world = createWorld({
+  components: {
+    Position: { x: [], y: [] },
+    Velocity: { x: new Float32Array(1e5), y: new Float32Array(1e5) },
+    Health: []
+  },
+  time: {
+    delta: 0, 
+    elapsed: 0, 
+    then: performance.now()
+  }
+})
 
-const movementQuery = defineQuery([Position, Velocity])
+const { Position, Velocity, Health } = world.components
+
+const eid = addEntity(world)
+addComponent(world, eid, Position)
+addComponent(world, eid, Velocity)
+Position.x[eid] = 0
+Position.y[eid] = 0
+Velocity.x[eid] = 1.23
+Velocity.y[eid] = 1.23
+Health[eid] = 100
 
 const movementSystem = (world) => {
-  const { time: { delta } } = world
-  const ents = movementQuery(world)
-  for (let i = 0; i < ents.length; i++) {
-    const eid = ents[i]
-    Position.x[eid] += Velocity.x[eid] * delta
-    Position.y[eid] += Velocity.y[eid] * delta
-    Position.z[eid] += Velocity.z[eid] * delta
+  const { Position, Velocity, time } = world.components
+  for (const eid of query(world, [Position, Velocity])) {
+    Position.x[eid] += Velocity.x[eid] * time.delta
+    Position.y[eid] += Velocity.y[eid] * time.delta
   }
-  return world
 }
 
-const timeSystem = world => {
+const timeSystem = (world) => {
   const { time } = world
   const now = performance.now()
   const delta = now - time.then
   time.delta = delta
   time.elapsed += delta
   time.then = now
-  return world
 }
 
-const pipeline = pipe(movementSystem, timeSystem)
+const update = (world) => {
+  movementSystem(world)
+  timeSystem(world)
+}
 
-const world = createWorld()
-world.time = { delta: 0, elapsed: 0, then: performance.now() }
-
-const eid = addEntity(world)
-addComponent(world, Position, eid)
-addComponent(world, Velocity, eid)
-Velocity.x[eid] = 1.23
-Velocity.y[eid] = 1.23
-
+// Node environment
 setInterval(() => {
-  pipeline(world)
-}, 16)
+  update(world)
+}, 1000/60)
+
+// Browser environment
+requestAnimationFrame(function animate() {
+  update(world)
+  requestAnimationFrame(animate)
+})
 ```
 
-## 🔌 Powering
+## 📈 Benchmarks
 
-<a href="https://github.com/etherealengine/etherealengine/"><img src="https://user-images.githubusercontent.com/5104160/275346499-878a74b0-11eb-463d-a70e-6cb7055683eb.png" width="420"/></a>
+Microbenchmarks should be taken with a grain of salt. To get a feel for performance possibilities in real scenarios, see the [demos](https://github.com/NateTheGreatt/bitECS/tree/master/demos).
 
-<a href="https://github.com/thirdroom/thirdroom"><img src="https://github.com/thirdroom/thirdroom/raw/main/docs/assets/logo.png" width="420"/></a>
+- [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark) 
+- [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks)
 
-<a href="https://github.com/mozilla/hubs"><img src="https://github.com/NateTheGreatt/bitECS/blob/master/mozilla-hubs.png" width="420"/></a>
+## 🔌 Used by
 
+- [iR Engine](https://github.com/ir-engine/ir-engine)
+- [Third Room](https://github.com/thirdroom/thirdroom)
+- [Hubs](https://github.com/Hubs-Foundation/hubs)
 
+## 🌟 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=NateTheGreatt/bitECS&type=Date)](https://star-history.com/#NateTheGreatt/bitECS&Date)

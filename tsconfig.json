@@ -1,23 +1,28 @@
 {
   "compilerOptions": {
-    "module": "ESNext",
-    "target": "ESNext",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "target": "ESNext", 
+    "moduleResolution": "NodeNext",
+    "lib": ["ESNext", "DOM"],
     "declaration": true,
     "declarationMap": true,
+    "emitDeclarationOnly": true,
     "esModuleInterop": true,
     "noImplicitAny": false,
     "noLib": false,
     "removeComments": true,
     "sourceMap": true,
-    "outDir": "./dist"
+    "rootDir": "src",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "bitecs": ["src/core/index.ts"],
+      "bitecs/*": ["src/*/index.ts"]
+    }
   },
-  "include": [
-    "./src"
-  ],
+  "include": [ "./src/core", "./src/serialization" ],
   "exclude": [
     "node_modules",
-    "test/*",
-    "examples/*"
+    "test/*"
   ]
 }

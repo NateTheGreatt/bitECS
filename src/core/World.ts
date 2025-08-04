@@ -1,0 +1,132 @@
+import { defineHiddenProperty } from './utils/defineHiddenProperty'
+import { createEntityIndex, EntityIndex } from './EntityIndex'
+import { ComponentRef, ComponentData } from './Component'
+import { Query } from './Query'
+import { EntityId } from './Entity'
+import { type SparseSet } from './utils/SparseSet'
+
+export const $internal = Symbol.for('bitecs_internal')
+
+export type WorldContext = {
+    entityIndex: EntityIndex
+    entityMasks: number[][]
+    entityComponents: Map<EntityId, Set<ComponentRef>>
+    bitflag: number
+    componentMap: Map<ComponentRef, ComponentData>
+    componentCount: number
+    queries: Set<Query>
+    queriesHashMap: Map<string, Query>
+    notQueries: Set<any>
+    dirtyQueries: Set<any>
+    entitiesWithRelations: Set<EntityId>
+    hierarchyData: Map<ComponentRef, {
+        depths: Uint32Array
+        dirty: SparseSet
+        depthToEntities: Map<number, SparseSet>
+        maxDepth: number
+    }>
+    hierarchyActiveRelations: Set<ComponentRef>
+    hierarchyQueryCache: Map<ComponentRef, { hash: string, result: readonly EntityId[] }>
+}
+
+export type InternalWorld = {
+    [$internal]: WorldContext
+}
+
+export type World<T extends object = {}> = { [K in keyof T]: T[K] }
+
+const createBaseWorld = <T extends object>(context?: T, entityIndex?: EntityIndex): World<T> => 
+    defineHiddenProperty(context || {} as T, $internal, {
+        entityIndex: entityIndex || createEntityIndex(),
+        entityMasks: [[]],
+        entityComponents: new Map(),
+        bitflag: 1,
+        componentMap: new Map(),
+        componentCount: 0,
+        queries: new Set(),
+        queriesHashMap: new Map(),
+        notQueries: new Set(),
+        dirtyQueries: new Set(),
+        entitiesWithRelations: new Set(),
+        // Initialize hierarchy tracking
+        hierarchyData: new Map(),
+        hierarchyActiveRelations: new Set(),
+        hierarchyQueryCache: new Map(),
+}) as World<T>
+
+/**
+ * Creates a new world with various configurations.
+ * @template T
+ * @param {...Array<EntityIndex | object>} args - EntityIndex, context object, or both.
+ * @returns {World<T>} The created world.
+ */
+
+// TODO: middleware
+
+export function createWorld<T extends object = {}>(
+    ...args: Array<EntityIndex | T>
+): World<T> {
+    let entityIndex: EntityIndex | undefined
+    let context: T | undefined
+
+    args.forEach(arg => {
+        if (typeof arg === 'object' && 'dense' in arg && 'sparse' in arg && 'aliveCount' in arg) {
+            entityIndex = arg as EntityIndex
+        } else if (typeof arg === 'object') {
+            context = arg as T
+        }
+    })
+
+    return createBaseWorld<T>(context, entityIndex)
+}
+
+/**
+ * Resets a world.
+ *
+ * @param {World} world
+ * @returns {object}
+ */
+export const resetWorld = (world: World) => {
+    const ctx = (world as InternalWorld)[$internal]
+    ctx.entityIndex = createEntityIndex()
+    ctx.entityMasks = [[]]
+    ctx.entityComponents = new Map()
+    ctx.bitflag = 1
+    ctx.componentMap = new Map()
+    ctx.componentCount = 0
+    ctx.queries = new Set()
+    ctx.queriesHashMap = new Map()
+    ctx.notQueries = new Set()
+    ctx.dirtyQueries = new Set()
+    ctx.entitiesWithRelations = new Set()
+    ctx.hierarchyData = new Map()
+    ctx.hierarchyActiveRelations = new Set()
+    ctx.hierarchyQueryCache = new Map()
+    return world
+}
+
+/**
+ * Deletes a world by removing its internal data.
+ *
+ * @param {World} world - The world to be deleted.
+ */
+export const deleteWorld = (world: World) => {
+    delete (world as any)[$internal];
+}
+
+/**
+ * Returns all components registered to a world
+ *
+ * @param {World} world
+ * @returns Array
+ */
+export const getWorldComponents = (world: World) =>
+    Object.keys((world as InternalWorld)[$internal].componentMap)
+
+/**
+ * Returns all existing entities in a world
+ *
+ * @param {World} world
+ * @returns Array
+ */
+export const getAllEntities = (world: World): readonly EntityId[] => Array.from((world as InternalWorld)[$internal].entityComponents.keys())
