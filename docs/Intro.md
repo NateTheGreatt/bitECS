@@ -318,6 +318,29 @@ query(world, [
 
 ```
 
+### Hierarchical Queries
+
+`queryHierarchy` returns entities in **topological order**—parents before children—based on a relation (usually a `ChildOf` relation).
+
+```ts
+const ChildOf = createRelation()
+
+// Query all entities that have Position **in hierarchy order**
+for (const eid of queryHierarchy(world, ChildOf, [Position])) {
+    // parent entities are guaranteed to be processed before children
+}
+```
+
+Other helpers:
+
+| helper | description |
+| ------ | ----------- |
+| `queryHierarchyDepth(world, ChildOf, depth)` | All entities exactly at `depth` |
+| `getHierarchyDepth(world, eid, ChildOf)`     | Cached depth for a single entity |
+| `getMaxHierarchyDepth(world, ChildOf)`       | Current maximum depth of the tree |
+
+The hierarchy system internally caches depth calculations and only recalculates when relation changes occur. Subsequent queries have minimal overhead.
+
 ### Inner Query
 
 By default, entity removals are deferred until queries are called. This is to avoid removing entities from a query during iteration. 

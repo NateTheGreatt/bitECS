@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { registerComponent, addComponent, addComponents, setComponent, hasComponent, removeComponent, InternalWorld, createWorld, addEntity, removeEntity, $internal, getEntityComponents, observe, onSet, onAdd, set, createRelation, query, Wildcard, withStore } from '../../src/core'
+import { registerComponent, addComponent, addComponents, setComponent, hasComponent, removeComponent, InternalWorld, createWorld, addEntity, removeEntity, $internal, getEntityComponents, observe, onSet, onAdd, set, createRelation, query, Wildcard, withStore, queryHierarchy, queryHierarchyDepth, getHierarchyDepth, getMaxHierarchyDepth } from '../../src/core'
 
 describe('Component Tests', () => {
 
@@ -328,5 +328,105 @@ describe('Component Tests', () => {
 		addComponents(world, eid2, [ComponentA, set(ComponentD, { priority: 5 })])
 		expect(hasComponent(world, eid2, ComponentA)).toBe(true)
 		expect(hasComponent(world, eid2, ComponentD)).toBe(true)
+	})
+
+	it('should support hierarchical queries with proper parent-child ordering', () => {
+		const world = createWorld()
+		
+		// Create entities
+		const parent = addEntity(world)
+		const child1 = addEntity(world)
+		const child2 = addEntity(world)
+		const grandchild1 = addEntity(world)
+		const grandchild2 = addEntity(world)
+		
+		// Create a transform component
+		const Transform = { matrix: [] as number[] }
+		
+		// Add transform to all entities
+		addComponent(world, parent, Transform)
+		addComponent(world, child1, Transform)
+		addComponent(world, child2, Transform)
+		addComponent(world, grandchild1, Transform)
+		addComponent(world, grandchild2, Transform)
+		
+		// Create hierarchy: parent -> child1 -> grandchild1
+		//                   parent -> child2 -> grandchild2
+		const ChildOf = createRelation()
+		
+		addComponent(world, child1, ChildOf(parent))
+		addComponent(world, child2, ChildOf(parent))
+		addComponent(world, grandchild1, ChildOf(child1))
+		addComponent(world, grandchild2, ChildOf(child2))
+		
+		// Query in hierarchical order
+		const orderedEntities = queryHierarchy(world, ChildOf, [Transform])
+		
+		// Should return entities in depth-first order: parent, then children, then grandchildren
+		expect(orderedEntities.length).toBe(5)
+		
+		// Find positions in the ordered list
+		const parentPos = orderedEntities.indexOf(parent)
+		const child1Pos = orderedEntities.indexOf(child1)
+		const child2Pos = orderedEntities.indexOf(child2)
+		const grandchild1Pos = orderedEntities.indexOf(grandchild1)
+		const grandchild2Pos = orderedEntities.indexOf(grandchild2)
+		
+		// Verify parent comes before children
+		expect(parentPos).toBeLessThan(child1Pos)
+		expect(parentPos).toBeLessThan(child2Pos)
+		
+		// Verify children come before grandchildren
+		expect(child1Pos).toBeLessThan(grandchild1Pos)
+		expect(child2Pos).toBeLessThan(grandchild2Pos)
+		
+		// Test depth queries
+		const depth0 = queryHierarchyDepth(world, ChildOf, 0)
+		const depth1 = queryHierarchyDepth(world, ChildOf, 1)
+		const depth2 = queryHierarchyDepth(world, ChildOf, 2)
+		
+		expect(depth0).toEqual([parent])
+		expect(depth1).toEqual([child1, child2])
+		expect(depth2).toEqual([grandchild1, grandchild2])
+		
+		// Test individual depth queries
+		expect(getHierarchyDepth(world, parent, ChildOf)).toBe(0)
+		expect(getHierarchyDepth(world, child1, ChildOf)).toBe(1)
+		expect(getHierarchyDepth(world, grandchild1, ChildOf)).toBe(2)
+		
+		// Test max depth
+		expect(getMaxHierarchyDepth(world, ChildOf)).toBe(2)
+	})
+
+	it('should maintain hierarchy when relations are removed', () => {
+		const world = createWorld()
+		
+		const parent = addEntity(world)
+		const child = addEntity(world)
+		const grandchild = addEntity(world)
+		
+		const Transform = { matrix: [] as number[] }
+		addComponent(world, parent, Transform)
+		addComponent(world, child, Transform)
+		addComponent(world, grandchild, Transform)
+		
+		const ChildOf = createRelation()
+		
+		// Build hierarchy
+		addComponent(world, child, ChildOf(parent))
+		addComponent(world, grandchild, ChildOf(child))
+		
+		// Verify initial hierarchy
+		expect(getHierarchyDepth(world, parent, ChildOf)).toBe(0)
+		expect(getHierarchyDepth(world, child, ChildOf)).toBe(1)
+		expect(getHierarchyDepth(world, grandchild, ChildOf)).toBe(2)
+		
+		// Remove middle relation
+		removeComponent(world, child, ChildOf(parent))
+		
+		// Child should now be a root (depth 0), grandchild should move to depth 1
+		expect(getHierarchyDepth(world, parent, ChildOf)).toBe(0)
+		expect(getHierarchyDepth(world, child, ChildOf)).toBe(0)
+		expect(getHierarchyDepth(world, grandchild, ChildOf)).toBe(1)
 	})
 })

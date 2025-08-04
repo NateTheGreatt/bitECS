@@ -104,3 +104,10 @@ export type {
 	Relation,
 	RelationTarget,
 } from './Relation'
+
+export {
+	queryHierarchy,
+	queryHierarchyDepth,
+	getHierarchyDepth,
+	getMaxHierarchyDepth,
+} from './Hierarchy'

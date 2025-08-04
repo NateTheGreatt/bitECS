@@ -13,6 +13,7 @@ import {
 } from './Relation'
 import { createObservable, Observable } from './utils/Observer'
 import { $internal, InternalWorld, World, WorldContext } from './World'
+import { updateHierarchyDepth, invalidateHierarchyDepth } from './Hierarchy'
 
 /**
  * Represents a reference to a component.
@@ -280,6 +281,9 @@ export const addComponent = (world: World, eid: EntityId, componentOrSet: Compon
 				recursivelyInherit(ctx, world, eid, inherited)
 			}
 		}
+
+		// Update hierarchy depth tracking for this relation
+		updateHierarchyDepth(world, relation, eid, typeof target === 'number' ? target : undefined)
 	}
 
 	return true
@@ -336,6 +340,9 @@ export const removeComponent = (world: World, eid: EntityId, ...components: Comp
 		if (component[$isPairComponent]) {
 			const target = component[$pairTarget]
 			const relation = component[$relation]
+			
+			// Invalidate hierarchy depth tracking for this relation
+			invalidateHierarchyDepth(world, relation, eid)
 			
 			// Remove Wildcard pair from subject
 			removeComponent(world, eid, Pair(Wildcard, target))

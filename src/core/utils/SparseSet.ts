@@ -5,6 +5,7 @@ export type SparseSet = {
     sparse: number[]
     dense: number[] | Uint32Array
     reset: () => void
+    sort: (compareFn?: (a: number, b: number) => number) => void
 }
 
 export const createSparseSet = (): SparseSet => {
@@ -33,6 +34,13 @@ export const createSparseSet = (): SparseSet => {
 		sparse.length = 0
 	}
 
+	const sort = (compareFn?: (a: number, b: number) => number) => {
+		dense.sort(compareFn)
+		for (let i = 0; i < dense.length; i++) {
+			sparse[dense[i]] = i
+		}
+	}
+
 	return {
 		add,
 		remove,
@@ -40,6 +48,7 @@ export const createSparseSet = (): SparseSet => {
 		sparse,
 		dense,
 		reset,
+		sort,
 	}
 }
 
@@ -78,6 +87,22 @@ export const createUint32SparseSet = (initialCapacity: number = 1000): SparseSet
 		sparse.length = 0
 	}
 
+	const sort = (compareFn?: (a: number, b: number) => number) => {
+		// Create temporary array for sorting
+		const temp = Array.from(dense.subarray(0, length))
+		temp.sort(compareFn)
+		
+		// Copy back to dense array
+		for (let i = 0; i < temp.length; i++) {
+			dense[i] = temp[i]
+		}
+		
+		// rebuild sparse mapping
+		for (let i = 0; i < length; i++) {
+			sparse[dense[i]] = i
+		}
+	}
+
 	return {
 		add,
 		remove,
@@ -87,5 +112,6 @@ export const createUint32SparseSet = (initialCapacity: number = 1000): SparseSet
 			return new Uint32Array(dense.buffer, 0, length)
 		},
 		reset,
+		sort,
 	}
 }

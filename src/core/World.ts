@@ -3,6 +3,7 @@ import { createEntityIndex, EntityIndex } from './EntityIndex'
 import { ComponentRef, ComponentData } from './Component'
 import { Query } from './Query'
 import { EntityId } from './Entity'
+import { type SparseSet } from './utils/SparseSet'
 
 export const $internal = Symbol.for('bitecs_internal')
 
@@ -18,6 +19,14 @@ export type WorldContext = {
     notQueries: Set<any>
     dirtyQueries: Set<any>
     entitiesWithRelations: Set<EntityId>
+    hierarchyData: Map<ComponentRef, {
+        depths: Uint32Array
+        dirty: SparseSet
+        depthToEntities: Map<number, SparseSet>
+        maxDepth: number
+    }>
+    hierarchyActiveRelations: Set<ComponentRef>
+    hierarchyQueryCache: Map<ComponentRef, { hash: string, result: readonly EntityId[] }>
 }
 
 export type InternalWorld = {
@@ -39,6 +48,10 @@ const createBaseWorld = <T extends object>(context?: T, entityIndex?: EntityInde
         notQueries: new Set(),
         dirtyQueries: new Set(),
         entitiesWithRelations: new Set(),
+        // Initialize hierarchy tracking
+        hierarchyData: new Map(),
+        hierarchyActiveRelations: new Set(),
+        hierarchyQueryCache: new Map(),
 }) as World<T>
 
 /**
@@ -86,6 +99,9 @@ export const resetWorld = (world: World) => {
     ctx.notQueries = new Set()
     ctx.dirtyQueries = new Set()
     ctx.entitiesWithRelations = new Set()
+    ctx.hierarchyData = new Map()
+    ctx.hierarchyActiveRelations = new Set()
+    ctx.hierarchyQueryCache = new Map()
     return world
 }
 
