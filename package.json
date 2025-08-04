@@ -52,7 +52,7 @@
     "human-readable": "^0.2.1",
     "jsdoc-to-markdown": "^7.1.0",
     "minimist": "^1.2.5",
-    "mocha": "^9.1.3",
+    "mocha": "^11.7.1",
     "ora": "^6.0.1",
     "sloc": "^0.2.1",
     "typescript": "^4.5.4"
