@@ -3,10 +3,10 @@
 
 When dealing with large numbers of entities or intensive calculations, worker threads can be utilized for parallel processing. While `bitECS` does not provide an explicit multithreading API, its data structures are designed to work efficiently with worker threads.
 
-The `bufferQuery` function can be used to return a `Uint32Array` instead of a `number[]`, making it ideal for multithreaded operations. `Uint32Array` is backed by a `SharedArrayBuffer` (SAB) and can be efficiently shared between threads or copied as raw data, enabling parallel processing of query results across different execution contexts.
+The `queryBuffer` function can be used to return a `Uint32Array` instead of a `number[]`, making it ideal for multithreaded operations. `Uint32Array` is backed by a `SharedArrayBuffer` (SAB) and can be efficiently shared between threads or copied as raw data, enabling parallel processing of query results across different execution contexts.
 
 ```ts
-const entities = bufferQuery(world, [Position, Mass]); // Returns SAB-backed Uint32Array
+const entities = queryBuffer(world, [Position, Mass]); // Returns SAB-backed Uint32Array
 ```
 
 This can be combined with component SoA stores made of TypedArrays backed by `SharedArrayBuffer`. This allows both query results and component data to be efficiently shared between threads
@@ -31,7 +31,7 @@ const worker = new Worker('./worker.js')
 
 // Send SAB-backed data to worker
 worker.postMessage({
-    entities: bufferQuery(world, [world.components.Position]),
+    entities: queryBuffer(world, [world.components.Position]),
     components: world.components
 })
 

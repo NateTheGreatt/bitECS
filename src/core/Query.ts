@@ -399,13 +399,13 @@ export function query(world: World, terms: QueryTerm[]): readonly EntityId[] {
 }
 
 /**
- * @function bufferQuery
+ * @function queryBuffer
  * @description Performs a buffered query operation.
  * @param {World} world - The world object.
  * @param {QueryTerm[]} terms - The query terms.
  * @returns {Uint32Array} The result of the query as a Uint32Array.
  */
-export function bufferQuery(world: World, terms: QueryTerm[]): Uint32Array {
+export function queryBuffer(world: World, terms: QueryTerm[]): Uint32Array {
 	commitRemovals(world)
 	return innerQuery(world, terms, { buffered: true }) as Uint32Array
 }

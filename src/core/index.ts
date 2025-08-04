@@ -57,6 +57,7 @@ export {
 	observe,
 	onAdd,
 	onRemove,
+	queryBuffer,
 	Or,
 	And,
 	Not,
