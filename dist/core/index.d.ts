@@ -9,4 +9,5 @@ export type { ObservableHookDef, ObservableHook, QueryResult, Query, QueryOperat
 export { pipe } from './utils/pipe';
 export { withAutoRemoveSubject, withOnTargetRemoved, withStore, createRelation, getRelationTargets, Wildcard, IsA, Pair, isRelation, isWildcard, } from './Relation';
 export type { OnTargetRemovedCallback, Relation, RelationTarget, } from './Relation';
+export { queryHierarchy, queryHierarchyDepth, getHierarchyDepth, getMaxHierarchyDepth, } from './Hierarchy';
 //# sourceMappingURL=index.d.ts.map

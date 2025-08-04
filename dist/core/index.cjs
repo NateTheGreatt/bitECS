@@ -43,7 +43,9 @@ __export(core_exports, {
   getAllEntities: () => getAllEntities,
   getComponent: () => getComponent,
   getEntityComponents: () => getEntityComponents,
+  getHierarchyDepth: () => getHierarchyDepth,
   getId: () => getId,
+  getMaxHierarchyDepth: () => getMaxHierarchyDepth,
   getRelationTargets: () => getRelationTargets,
   getVersion: () => getVersion,
   getWorldComponents: () => getWorldComponents,
@@ -58,6 +60,8 @@ __export(core_exports, {
   onSet: () => onSet,
   pipe: () => pipe,
   query: () => query,
+  queryHierarchy: () => queryHierarchy,
+  queryHierarchyDepth: () => queryHierarchyDepth,
   registerComponent: () => registerComponent,
   registerComponents: () => registerComponents,
   registerQuery: () => registerQuery,
@@ -165,7 +169,11 @@ var createBaseWorld = (context, entityIndex) => defineHiddenProperty(context || 
   queriesHashMap: /* @__PURE__ */ new Map(),
   notQueries: /* @__PURE__ */ new Set(),
   dirtyQueries: /* @__PURE__ */ new Set(),
-  entitiesWithRelations: /* @__PURE__ */ new Set()
+  entitiesWithRelations: /* @__PURE__ */ new Set(),
+  // Initialize hierarchy tracking
+  hierarchyData: /* @__PURE__ */ new Map(),
+  hierarchyActiveRelations: /* @__PURE__ */ new Set(),
+  hierarchyQueryCache: /* @__PURE__ */ new Map()
 });
 function createWorld(...args) {
   let entityIndex;
@@ -192,6 +200,9 @@ var resetWorld = (world) => {
   ctx.notQueries = /* @__PURE__ */ new Set();
   ctx.dirtyQueries = /* @__PURE__ */ new Set();
   ctx.entitiesWithRelations = /* @__PURE__ */ new Set();
+  ctx.hierarchyData = /* @__PURE__ */ new Map();
+  ctx.hierarchyActiveRelations = /* @__PURE__ */ new Set();
+  ctx.hierarchyQueryCache = /* @__PURE__ */ new Map();
   return world;
 };
 var deleteWorld = (world) => {
@@ -222,13 +233,20 @@ var createSparseSet = () => {
     dense.length = 0;
     sparse.length = 0;
   };
+  const sort = (compareFn) => {
+    dense.sort(compareFn);
+    for (let i = 0; i < dense.length; i++) {
+      sparse[dense[i]] = i;
+    }
+  };
   return {
     add,
     remove,
     has,
     sparse,
     dense,
-    reset
+    reset,
+    sort
   };
 };
 var SharedArrayBufferOrArrayBuffer = typeof SharedArrayBuffer !== "undefined" ? SharedArrayBuffer : ArrayBuffer;
@@ -260,6 +278,16 @@ var createUint32SparseSet = (initialCapacity = 1e3) => {
     length = 0;
     sparse.length = 0;
   };
+  const sort = (compareFn) => {
+    const temp = Array.from(dense.subarray(0, length));
+    temp.sort(compareFn);
+    for (let i = 0; i < temp.length; i++) {
+      dense[i] = temp[i];
+    }
+    for (let i = 0; i < length; i++) {
+      sparse[dense[i]] = i;
+    }
+  };
   return {
     add,
     remove,
@@ -268,7 +296,8 @@ var createUint32SparseSet = (initialCapacity = 1e3) => {
     get dense() {
       return new Uint32Array(dense.buffer, 0, length);
     },
-    reset
+    reset,
+    sort
   };
 };
 
@@ -639,6 +668,236 @@ function isRelation(component) {
   return symbols.includes($relationData);
 }
 
+// src/core/Hierarchy.ts
+var MAX_HIERARCHY_DEPTH = 64;
+var INVALID_DEPTH = 4294967295;
+var DEFAULT_BUFFER_GROWTH = 1024;
+function growDepthsArray(hierarchyData, entity) {
+  const { depths } = hierarchyData;
+  if (entity < depths.length) return depths;
+  const newSize = Math.max(entity + 1, depths.length * 2, depths.length + DEFAULT_BUFFER_GROWTH);
+  const newDepths = new Uint32Array(newSize);
+  newDepths.fill(INVALID_DEPTH);
+  newDepths.set(depths);
+  hierarchyData.depths = newDepths;
+  return newDepths;
+}
+function updateDepthCache(hierarchyData, entity, newDepth, oldDepth) {
+  const { depthToEntities } = hierarchyData;
+  if (oldDepth !== void 0 && oldDepth !== INVALID_DEPTH) {
+    const oldSet = depthToEntities.get(oldDepth);
+    if (oldSet) {
+      oldSet.remove(entity);
+      if (oldSet.dense.length === 0) depthToEntities.delete(oldDepth);
+    }
+  }
+  if (newDepth !== INVALID_DEPTH) {
+    if (!depthToEntities.has(newDepth)) depthToEntities.set(newDepth, createSparseSet());
+    depthToEntities.get(newDepth).add(entity);
+  }
+}
+function updateMaxDepth(hierarchyData, depth) {
+  if (depth > hierarchyData.maxDepth) {
+    hierarchyData.maxDepth = depth;
+  }
+}
+function setEntityDepth(hierarchyData, entity, newDepth, oldDepth) {
+  hierarchyData.depths[entity] = newDepth;
+  updateDepthCache(hierarchyData, entity, newDepth, oldDepth);
+  updateMaxDepth(hierarchyData, newDepth);
+}
+function invalidateQueryCache(world, relation) {
+  const ctx = world[$internal];
+  ctx.hierarchyQueryCache.delete(relation);
+}
+function getHierarchyData(world, relation) {
+  const ctx = world[$internal];
+  if (!ctx.hierarchyActiveRelations.has(relation)) {
+    ctx.hierarchyActiveRelations.add(relation);
+    ensureDepthTracking(world, relation);
+    populateExistingDepths(world, relation);
+  }
+  return ctx.hierarchyData.get(relation);
+}
+function populateExistingDepths(world, relation) {
+  const entitiesWithRelation = query(world, [Pair(relation, Wildcard)]);
+  for (const entity of entitiesWithRelation) {
+    getEntityDepth(world, relation, entity);
+  }
+  const processedTargets = /* @__PURE__ */ new Set();
+  for (const entity of entitiesWithRelation) {
+    for (const target of getRelationTargets(world, entity, relation)) {
+      if (!processedTargets.has(target)) {
+        processedTargets.add(target);
+        getEntityDepth(world, relation, target);
+      }
+    }
+  }
+}
+function ensureDepthTracking(world, relation) {
+  const ctx = world[$internal];
+  if (!ctx.hierarchyData.has(relation)) {
+    const initialSize = Math.max(DEFAULT_BUFFER_GROWTH, ctx.entityIndex.dense.length * 2);
+    const depthArray = new Uint32Array(initialSize);
+    depthArray.fill(INVALID_DEPTH);
+    ctx.hierarchyData.set(relation, {
+      depths: depthArray,
+      dirty: createSparseSet(),
+      depthToEntities: /* @__PURE__ */ new Map(),
+      maxDepth: 0
+    });
+  }
+}
+function calculateEntityDepth(world, relation, entity, visited = /* @__PURE__ */ new Set()) {
+  if (visited.has(entity)) return 0;
+  visited.add(entity);
+  const targets = getRelationTargets(world, entity, relation);
+  if (targets.length === 0) return 0;
+  if (targets.length === 1) return getEntityDepthWithVisited(world, relation, targets[0], visited) + 1;
+  let minDepth = Infinity;
+  for (const target of targets) {
+    const depth = getEntityDepthWithVisited(world, relation, target, visited);
+    if (depth < minDepth) {
+      minDepth = depth;
+      if (minDepth === 0) break;
+    }
+  }
+  return minDepth === Infinity ? 0 : minDepth + 1;
+}
+function getEntityDepthWithVisited(world, relation, entity, visited) {
+  const ctx = world[$internal];
+  ensureDepthTracking(world, relation);
+  const hierarchyData = ctx.hierarchyData.get(relation);
+  let { depths } = hierarchyData;
+  depths = growDepthsArray(hierarchyData, entity);
+  if (depths[entity] === INVALID_DEPTH) {
+    const depth = calculateEntityDepth(world, relation, entity, visited);
+    setEntityDepth(hierarchyData, entity, depth);
+    return depth;
+  }
+  return depths[entity];
+}
+function getEntityDepth(world, relation, entity) {
+  return getEntityDepthWithVisited(world, relation, entity, /* @__PURE__ */ new Set());
+}
+function markChildrenDirty(world, relation, parent, dirty, visited = createSparseSet()) {
+  if (visited.has(parent)) return;
+  visited.add(parent);
+  const children = query(world, [relation(parent)]);
+  for (const child of children) {
+    dirty.add(child);
+    markChildrenDirty(world, relation, child, dirty, visited);
+  }
+}
+function updateHierarchyDepth(world, relation, entity, parent, updating = /* @__PURE__ */ new Set()) {
+  const ctx = world[$internal];
+  if (!ctx.hierarchyActiveRelations.has(relation)) {
+    return;
+  }
+  ensureDepthTracking(world, relation);
+  const hierarchyData = ctx.hierarchyData.get(relation);
+  if (updating.has(entity)) {
+    hierarchyData.dirty.add(entity);
+    return;
+  }
+  updating.add(entity);
+  const { depths, dirty } = hierarchyData;
+  const newDepth = parent !== void 0 ? getEntityDepth(world, relation, parent) + 1 : 0;
+  if (newDepth > MAX_HIERARCHY_DEPTH) {
+    return;
+  }
+  const oldDepth = depths[entity];
+  setEntityDepth(hierarchyData, entity, newDepth, oldDepth === INVALID_DEPTH ? void 0 : oldDepth);
+  if (oldDepth !== newDepth) {
+    markChildrenDirty(world, relation, entity, dirty, createSparseSet());
+    invalidateQueryCache(world, relation);
+  }
+}
+function invalidateHierarchyDepth(world, relation, entity) {
+  const ctx = world[$internal];
+  if (!ctx.hierarchyActiveRelations.has(relation)) {
+    return;
+  }
+  const hierarchyData = ctx.hierarchyData.get(relation);
+  let { depths } = hierarchyData;
+  depths = growDepthsArray(hierarchyData, entity);
+  invalidateSubtree(world, relation, entity, depths, createSparseSet());
+  invalidateQueryCache(world, relation);
+}
+function invalidateSubtree(world, relation, entity, depths, visited) {
+  if (visited.has(entity)) return;
+  visited.add(entity);
+  const ctx = world[$internal];
+  const hierarchyData = ctx.hierarchyData.get(relation);
+  if (entity < depths.length) {
+    const oldDepth = depths[entity];
+    if (oldDepth !== INVALID_DEPTH) {
+      hierarchyData.depths[entity] = INVALID_DEPTH;
+      updateDepthCache(hierarchyData, entity, INVALID_DEPTH, oldDepth);
+    }
+  }
+  const children = query(world, [relation(entity)]);
+  for (const child of children) {
+    invalidateSubtree(world, relation, child, depths, visited);
+  }
+}
+function flushDirtyDepths(world, relation) {
+  const ctx = world[$internal];
+  const hierarchyData = ctx.hierarchyData.get(relation);
+  if (!hierarchyData) return;
+  const { dirty, depths } = hierarchyData;
+  if (dirty.dense.length === 0) return;
+  for (const entity of dirty.dense) {
+    if (depths[entity] === INVALID_DEPTH) {
+      const newDepth = calculateEntityDepth(world, relation, entity);
+      setEntityDepth(hierarchyData, entity, newDepth);
+    }
+  }
+  dirty.reset();
+}
+function queryHierarchy(world, relation, components) {
+  const ctx = world[$internal];
+  getHierarchyData(world, relation);
+  const queryKey = queryHash(world, [relation, ...components]);
+  const cached = ctx.hierarchyQueryCache.get(relation);
+  if (cached && cached.hash === queryKey) {
+    return cached.result;
+  }
+  flushDirtyDepths(world, relation);
+  const hash = queryHash(world, components);
+  let queryObj = ctx.queriesHashMap.get(hash);
+  if (!queryObj) {
+    query(world, components);
+    queryObj = ctx.queriesHashMap.get(hash);
+  }
+  const depths = ctx.hierarchyData.get(relation).depths;
+  queryObj.sort((a, b) => {
+    const depthA = depths[a];
+    const depthB = depths[b];
+    return depthA !== depthB ? depthA - depthB : a - b;
+  });
+  const result = queryObj.dense;
+  ctx.hierarchyQueryCache.set(relation, { hash: queryKey, result });
+  return result;
+}
+function queryHierarchyDepth(world, relation, depth) {
+  const hierarchyData = getHierarchyData(world, relation);
+  flushDirtyDepths(world, relation);
+  const entitiesAtDepth = hierarchyData.depthToEntities.get(depth);
+  if (entitiesAtDepth) {
+    return entitiesAtDepth.dense;
+  }
+  return [];
+}
+function getHierarchyDepth(world, entity, relation) {
+  getHierarchyData(world, relation);
+  return getEntityDepthWithVisited(world, relation, entity, /* @__PURE__ */ new Set());
+}
+function getMaxHierarchyDepth(world, relation) {
+  const hierarchyData = getHierarchyData(world, relation);
+  return hierarchyData.maxDepth;
+}
+
 // src/core/Component.ts
 var registerComponent = (world, component) => {
   if (!component) {
@@ -763,6 +1022,7 @@ var addComponent = (world, eid, componentOrSet) => {
         recursivelyInherit(ctx, world, eid, inherited);
       }
     }
+    updateHierarchyDepth(world, relation, eid, typeof target === "number" ? target : void 0);
   }
   return true;
 };
@@ -792,6 +1052,7 @@ var removeComponent = (world, eid, ...components) => {
     if (component[$isPairComponent]) {
       const target = component[$pairTarget];
       const relation = component[$relation];
+      invalidateHierarchyDepth(world, relation, eid);
       removeComponent(world, eid, Pair(Wildcard, target));
       if (typeof target === "number" && entityExists(world, target)) {
         removeComponent(world, target, Pair(Wildcard, eid));

@@ -2,6 +2,7 @@ import { EntityIndex } from './EntityIndex';
 import { ComponentRef, ComponentData } from './Component';
 import { Query } from './Query';
 import { EntityId } from './Entity';
+import { type SparseSet } from './utils/SparseSet';
 export declare const $internal: unique symbol;
 export type WorldContext = {
     entityIndex: EntityIndex;
@@ -15,6 +16,17 @@ export type WorldContext = {
     notQueries: Set<any>;
     dirtyQueries: Set<any>;
     entitiesWithRelations: Set<EntityId>;
+    hierarchyData: Map<ComponentRef, {
+        depths: Uint32Array;
+        dirty: SparseSet;
+        depthToEntities: Map<number, SparseSet>;
+        maxDepth: number;
+    }>;
+    hierarchyActiveRelations: Set<ComponentRef>;
+    hierarchyQueryCache: Map<ComponentRef, {
+        hash: string;
+        result: readonly EntityId[];
+    }>;
 };
 export type InternalWorld = {
     [$internal]: WorldContext;
