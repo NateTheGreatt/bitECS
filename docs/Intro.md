@@ -269,7 +269,7 @@ removeComponent(world, eid, Mass)
 These functions are composable to a degree:
 
 ```ts
-addComponent(world, eid, Position, Velocity, Mass)
+addComponents(world, eid, Position, Velocity, Mass)
 removeComponent(world, eid, Position, Velocity)
 ```
 
