@@ -363,6 +363,10 @@ export const removeComponent = (world: World, eid: EntityId, ...components: Comp
 }
 
 /**
- * Alias for removeComponent.
+ * Removes one or more components from an entity. This is an alias for removeComponent.
+ * @param {World} world - The world object.
+ * @param {EntityId} eid - The entity ID.
+ * @param {...ComponentRef} components - Components to remove.
+ * @throws {Error} If the entity does not exist in the world.
  */
 export const removeComponents = removeComponent

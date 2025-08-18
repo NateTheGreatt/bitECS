@@ -16,6 +16,13 @@ import { ComponentRef } from './Component'
 export type EntityId = number
 
 export const Prefab = {}
+
+/**
+ * Creates a new prefab entity in the world. Prefabs are special entities marked with the Prefab component
+ * that are excluded from normal queries and can be used as templates for creating other entities.
+ * @param {World} world - The world object to create the prefab in.
+ * @returns {EntityId} The entity ID of the created prefab.
+ */
 export const addPrefab = (world: World): EntityId => {
 	const eid = addEntity(world)
 

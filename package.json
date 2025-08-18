@@ -47,6 +47,7 @@
   ],
   "scripts": {
     "test": "vitest",
+    "docs": "bunx documentation build \"src/core/**/*.ts\" -f md -o docs/API.md",
     "build": "bun build:core && bun build:serialization && bun build:legacy && bun build:types",
     "build:types": "tsc",
     "build:core": "bun build:core:mjs && bun build:core:cjs && bun build:core:mjs:nonmin && bun build:core:cjs:nonmin",

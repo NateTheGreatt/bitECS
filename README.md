@@ -1,6 +1,3 @@
-:warning: [v0.4](https://github.com/NateTheGreatt/bitECS/blob/rc-0-4-0) coming soon! Read the [docs here](https://github.com/NateTheGreatt/bitECS/blob/rc-0-4-0/docs/Intro.md)
-
-
 <h1 align="center">
 ❤ ❤ ❤ <br />
 bitECS
@@ -35,7 +32,7 @@ Flexible, minimal, <a href="https://www.dataorienteddesign.com/dodbook/">data-or
 `bitECS` is a minimal, less opinionated, and powerful Entity Component System (ECS) library. It provides a lean API that enables developers to build their architecture to their liking, offering flexibility while maintaining efficiency where needed. Features include:
 | | |
 |---|---|
-| 🔮 Simple, declarative API | 🍃 Lightweight (`<4kb` minzipped) |
+| 🔮 Simple, declarative API | 🍃 Lightweight (`~5kb` minzipped) |
 | 🔍 Powerful querying | 📦 Zero dependencies |
 | 🔗 Relational entity modeling | 🧵 Thread-friendly |
 | 💾 Serialization included | 💖 Made with love |
@@ -60,14 +57,21 @@ import {
   createWorld,
   query,
   addEntity,
+  removeEntity,
   addComponent,
 } from 'bitecs'
 
+// Put components wherever you want
+const Health = [] as number[]
+
 const world = createWorld({
   components: {
+    // They can be any shape you want
+    // SoA:
     Position: { x: [], y: [] },
     Velocity: { x: new Float32Array(1e5), y: new Float32Array(1e5) },
-    Health: []
+    // AoS:
+    Player: [] as { level: number; experience: number; name: string }[]
   },
   time: {
     delta: 0, 
@@ -76,22 +80,42 @@ const world = createWorld({
   }
 })
 
-const { Position, Velocity, Health } = world.components
+const { Position, Velocity, Player } = world.components
 
 const eid = addEntity(world)
 addComponent(world, eid, Position)
 addComponent(world, eid, Velocity)
+addComponent(world, eid, Player)
+addComponent(world, eid, Health)
+
+// SoA access pattern
 Position.x[eid] = 0
 Position.y[eid] = 0
 Velocity.x[eid] = 1.23
 Velocity.y[eid] = 1.23
 Health[eid] = 100
 
+// AoS access pattern  
+Player[eid] = { level: 1, experience: 0, name: "Hero" }
+
 const movementSystem = (world) => {
-  const { Position, Velocity, time } = world.components
+  const { Position, Velocity, Player } = world.components
+  
   for (const eid of query(world, [Position, Velocity])) {
-    Position.x[eid] += Velocity.x[eid] * time.delta
-    Position.y[eid] += Velocity.y[eid] * time.delta
+    Position.x[eid] += Velocity.x[eid] * world.time.delta
+    Position.y[eid] += Velocity.y[eid] * world.time.delta
+  }
+  
+  for (const eid of query(world, [Player])) {
+    Player[eid].experience += 1
+    if (Player[eid].experience >= 100) {
+      Player[eid].level++
+      Player[eid].experience = 0
+    }
+  }
+  
+  for (const eid of query(world, [Health])) {
+    if (Health[eid] <= 0) removeEntity(world, eid)
   }
 }
 
@@ -120,13 +144,6 @@ requestAnimationFrame(function animate() {
   requestAnimationFrame(animate)
 })
 ```
-
-## 📈 Benchmarks
-
-Microbenchmarks should be taken with a grain of salt. To get a feel for performance possibilities in real scenarios, see the [demos](https://github.com/NateTheGreatt/bitECS/tree/master/demos).
-
-- [noctjs/ecs-benchmark](https://github.com/noctjs/ecs-benchmark) 
-- [ddmills/js-ecs-benchmarks](https://github.com/ddmills/js-ecs-benchmarks)
 
 ## 🔌 Used by
 

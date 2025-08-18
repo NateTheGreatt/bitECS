@@ -14,13 +14,16 @@ export type {
 } from './World'
 
 export {
-	type EntityId,
 	addEntity,
 	removeEntity,
 	getEntityComponents,
 	entityExists,
 	Prefab,
 	addPrefab,
+} from './Entity'
+
+export type {
+	EntityId,
 } from './Entity'
 
 export { 
@@ -69,9 +72,6 @@ export {
 	asBuffer,
 	isNested,
 	noCommit,
-	type QueryOptions,
-	type HierarchyTerm,
-	type QueryModifier,
 } from './Query'
 
 export type {
@@ -83,12 +83,9 @@ export type {
 	OpReturnType,
 	QueryOperator,
 	QueryTerm,
-	OrOp,
-	AndOp,
-	NotOp,
-	AnyOp,
-	AllOp,
-	NoneOp,
+	QueryOptions,
+	HierarchyTerm,
+	QueryModifier,
 } from './Query'
 
 export { pipe } from './utils/pipe'
