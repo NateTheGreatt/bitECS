@@ -2,8 +2,8 @@ import { World, InternalWorld, $internal } from './World'
 import { EntityId } from './Entity'
 import { ComponentRef } from './Component'
 import { getRelationTargets, Wildcard, Pair } from './Relation'
-import { query, queryHash } from './Query'
-import { createSparseSet, type SparseSet } from './utils/SparseSet'
+import { query, queryHash, queryInternal, type QueryResult } from './Query'
+import { createSparseSet, createUint32SparseSet, type SparseSet } from './utils/SparseSet'
 
 // Constants
 const MAX_HIERARCHY_DEPTH = 64 // Prevent stack overflow in deep hierarchies
@@ -49,7 +49,7 @@ function updateDepthCache(hierarchyData: HierarchyData, entity: EntityId, newDep
     
     // Add to new depth cache (skip INVALID_DEPTH)
     if (newDepth !== INVALID_DEPTH) {
-        if (!depthToEntities.has(newDepth)) depthToEntities.set(newDepth, createSparseSet())
+        if (!depthToEntities.has(newDepth)) depthToEntities.set(newDepth, createUint32SparseSet())
         depthToEntities.get(newDepth)!.add(entity)
     }
 }
@@ -328,9 +328,11 @@ export function flushDirtyDepths(world: World, relation: ComponentRef): void {
 }
 
 /**
- * Query entities in hierarchical order (parents before children)
+ * Query entities in hierarchical order (depth-based ordering)
+ * Returns entities grouped by depth: all depth 0, then depth 1, then depth 2, etc.
+ * This ensures parents always come before their children.
  */
-export function queryHierarchy(world: World, relation: ComponentRef, components: ComponentRef[]): readonly EntityId[] {
+export function queryHierarchy(world: World, relation: ComponentRef, components: ComponentRef[], options: { buffered?: boolean } = {}): QueryResult {
     const ctx = (world as InternalWorld)[$internal]
     
     // Ensure hierarchy is active
@@ -347,16 +349,12 @@ export function queryHierarchy(world: World, relation: ComponentRef, components:
     // Update any dirty depths before sorting
     flushDirtyDepths(world, relation)
     
-    // Get the actual Query object so we can sort it in place
-    const hash = queryHash(world, components)
-    let queryObj = ctx.queriesHashMap.get(hash)
-    if (!queryObj) {
-        // Create query if it doesn't exist by calling query() once
-        query(world, components)
-        queryObj = ctx.queriesHashMap.get(hash)!
-    }
+    // Ensure query is cached using existing infrastructure, then get Query object
+    queryInternal(world, components, options)
+    const queryObj = ctx.queriesHashMap.get(queryHash(world, components))!
     
-    const depths = ctx.hierarchyData.get(relation)!.depths
+    const hierarchyData = ctx.hierarchyData.get(relation)!
+    const { depths } = hierarchyData
     
     // Sort the query's sparse set in place - no allocation needed!
     queryObj.sort((a, b) => {
@@ -365,9 +363,9 @@ export function queryHierarchy(world: World, relation: ComponentRef, components:
         return depthA !== depthB ? depthA - depthB : a - b
     })
     
-    // Cache this result (queryObj.dense is the sorted array)
-    const result = queryObj.dense as readonly EntityId[]
-    ctx.hierarchyQueryCache.set(relation, { hash: queryKey, result })
+    // Cache this result (dense is already the correct type)
+    const result = queryObj.dense
+    ctx.hierarchyQueryCache.set(relation, { hash: queryKey, result: result as readonly EntityId[] })
     
     return result
 }
@@ -375,7 +373,7 @@ export function queryHierarchy(world: World, relation: ComponentRef, components:
 /**
  * Get all entities at a specific depth level
  */
-export function queryHierarchyDepth(world: World, relation: ComponentRef, depth: number): readonly EntityId[] {
+export function queryHierarchyDepth(world: World, relation: ComponentRef, depth: number, options: { buffered?: boolean } = {}): QueryResult {
     // Ensure hierarchy is active and get data
     const hierarchyData = getHierarchyData(world, relation)
     flushDirtyDepths(world, relation)
@@ -383,10 +381,10 @@ export function queryHierarchyDepth(world: World, relation: ComponentRef, depth:
     const entitiesAtDepth = hierarchyData.depthToEntities.get(depth)
     
     if (entitiesAtDepth) {
-        return entitiesAtDepth.dense as readonly EntityId[]
+        return entitiesAtDepth.dense
     }
     
-    return []
+    return options.buffered ? new Uint32Array(0) : []
 }
 
 /**

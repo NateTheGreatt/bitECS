@@ -2,7 +2,8 @@
 .gitignore
 __tests__
 scripts
-rollup.config.js
 src
 sandbox
 coverage
+.cursorrules
+examples

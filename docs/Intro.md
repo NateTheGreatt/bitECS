@@ -13,7 +13,7 @@ For optimal performance:
 These practices enhance data locality and processing efficiency in your ECS architecture, as well as feature modularity.
 
 ```ts
-import { createWorld, addEntity, addComponent, query } from 'bitecs'
+import { createWorld, addEntity, addComponent, addComponents, query } from 'bitecs'
 
 // Define components
 const Position = {
@@ -104,6 +104,20 @@ const eid = addEntity(world)
 removeEntity(world, eid)
 ```
 
+### Entity Utilities
+
+Additional entity management functions:
+
+```ts
+// Check if an entity exists
+if (entityExists(world, eid)) {
+  // Entity is valid
+}
+
+// Get all components for an entity
+const components = getEntityComponents(world, eid)
+```
+
 ### Entity ID Recycling
 
 Entity IDs are recycled immediately after removal.
@@ -121,7 +135,7 @@ assert(eid1 === eid3)
 
 Manual entity ID recycling lets you control exactly when entities are removed from the world. Instead of immediately recycling entity IDs when removed, you can mark entities for removal and process them later in batches.
 
-While immediate recycling is the default, deferring entity removal through manual recycling helps prevent bugs in complex systems where components or systems may still reference recently removed entities. This is especially important when iterating over query results, since an entity removed in one iteration could be referenced in a later iteration. Here's how to implement manual recycling:
+`bitECS` removes entities instantly when `removeEntity()` is called, but defers removing them from query results until the next time any query is executed. This means that an entity marked for removal will still appear in current query results but will be flushed from all query results on subsequent query calls. For even more control over entity lifecycle management, you can implement manual recycling patterns to batch removals or handle specific timing requirements. Here's how to implement manual recycling:
 
 ```ts
 const Removed = {}
@@ -266,10 +280,39 @@ addComponent(world, eid, Mass)
 removeComponent(world, eid, Mass)
 ```
 
-These functions are composable to a degree:
+### Component Utilities
+
+Additional component management functions:
 
 ```ts
-addComponent(world, eid, Position, Velocity, Mass)
+// Register a component (automatic on first addComponent call)
+registerComponent(world, Position)
+
+// Register multiple components
+registerComponents(world, [Position, Velocity, Mass])
+
+// Check if entity has component
+if (hasComponent(world, eid, Position)) {
+  // Entity has Position component
+}
+
+// Get component data (triggers onGet observers)
+const data = getComponent(world, eid, Position)
+
+// Set component data directly (alternative to addComponent with set())
+setComponent(world, eid, Position, { x: 10, y: 20 })
+```
+
+For multiple components, use the plural versions:
+
+```ts
+// Add multiple components at once
+addComponents(world, eid, Position, Velocity, Mass)
+
+// Or as an array
+addComponents(world, eid, [Position, Velocity, Mass])
+
+// Remove multiple components (removeComponent already supports multiple)
 removeComponent(world, eid, Position, Velocity)
 ```
 
@@ -318,7 +361,9 @@ query(world, [
 
 ```
 
-### Hierarchical Queries
+### Query Types
+
+#### Hierarchical Queries
 
 `queryHierarchy` returns entities in **topological order**—parents before children—based on a relation (usually a `ChildOf` relation).
 
@@ -341,24 +386,53 @@ Other helpers:
 
 The hierarchy system internally caches depth calculations and only recalculates when relation changes occur. Subsequent queries have minimal overhead.
 
-### Inner Query
+#### Query Options
 
-By default, entity removals are deferred until queries are called. This is to avoid removing entities from a query during iteration. 
+The `query()` function supports both options objects and query modifiers for configuring behavior:
 
-However, this has a caveat in the case of calling a query while iterating results of another related query. This will undesireably cause entities to be removed during iteration of a query.
+```ts
+// Basic usage
+const entities = query(world, [Position, Velocity])
 
-Inner queries provide a way to perform queries without triggering the removal of entities. This is particularly useful when you need to iterate over entities without modifying the world state. By using inner queries, you can avoid the automatic removal behavior that occurs during regular queries, ensuring that entities are not removed during iteration.
+// Options object approach
+const entities1 = query(world, [Position], { commit: false })                    // Nested (safe iteration)
+const entities2 = query(world, [Position], { buffered: true })                  // Returns Uint32Array  
+const entities3 = query(world, [Position], { commit: false, buffered: true })   // Nested + Uint32Array
+
+// Query modifier approach (new preferred syntax)
+const entities4 = query(world, [Position], isNested)                            // Safe iteration
+const entities5 = query(world, [Position], asBuffer)                           // Returns Uint32Array
+const entities6 = query(world, [Position], asBuffer, isNested)                 // Combined modifiers
+
+// Hierarchical queries
+const entities7 = query(world, [Position], Hierarchy(ChildOf))                  // Topological order
+const entities8 = query(world, [Position], Hierarchy(ChildOf, 2))              // Specific depth level
+const entities9 = query(world, [Position], Hierarchy(ChildOf), asBuffer)       // Hierarchy + Uint32Array
+```
+
+**Available Options:**
+- `commit?: boolean` (default: true) - Whether to commit pending entity removals before querying
+- `buffered?: boolean` (default: false) - Return `Uint32Array` instead of `readonly EntityId[]`
+
+**Available Query Modifiers:**
+- `asBuffer` - Return results as `Uint32Array` instead of `readonly EntityId[]`
+- `isNested` / `noCommit` - Skip committing pending removals (safe for nested iteration)
+- `Hierarchy(relation)` - Return results in hierarchical (topological) order
+- `Hierarchy(relation, depth)` - Query entities at a specific depth level
+
+**Nested Queries for Safe Iteration:**
+
+By default, entity removals are deferred until queries are called. However, calling a query while iterating another query will cause entities to be removed during iteration. Use `isNested` modifier or `{ commit: false }` option to prevent this.
 
 ```ts
 // This triggers entity removals, then queries
 for (const entity of query(world, [Position, Velocity])) {
-
-  // This does not trigger entity removals
-  for (const innerEntity of innerQuery(world, [Mass])) {}
+  // This would cause removals during iteration - use nested instead
+  for (const innerEntity of query(world, [Mass], { commit: false })) {}
+  // Or use the modifier:
+  for (const innerEntity of query(world, [Mass], isNested)) {}
 }
 ```
-
-Note: You can use query inside of another query loop with manual entity recycling, avoiding the need for `innerQuery`.
 
 
 ## Relationships
@@ -563,7 +637,7 @@ Components can be added to prefabs, creating a template for entities. When an en
 
 ```ts
 const Vitals = { health: [] }
-const Animal = addPrefab()
+const Animal = addPrefab(world)
 
 addComponent(world, Animal, Vitals)
 Vitals.health[Animal] = 100

@@ -52,20 +52,26 @@ export {
 	commitRemovals,
 	removeQuery,
 	registerQuery,
-	innerQuery,
 	query,
 	observe,
 	onAdd,
 	onRemove,
-	queryBuffer,
 	Or,
 	And,
 	Not,
 	Any,
 	All,
 	None,
-	onGet, 
+	onGet,
 	onSet,
+	Hierarchy,
+	Cascade,
+	asBuffer,
+	isNested,
+	noCommit,
+	type QueryOptions,
+	type HierarchyTerm,
+	type QueryModifier,
 } from './Query'
 
 export type {
@@ -107,8 +113,6 @@ export type {
 } from './Relation'
 
 export {
-	queryHierarchy,
-	queryHierarchyDepth,
 	getHierarchyDepth,
 	getMaxHierarchyDepth,
 } from './Hierarchy'

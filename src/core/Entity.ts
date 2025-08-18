@@ -1,6 +1,7 @@
 import { addComponent, removeComponent } from './Component'
 import {
-	innerQuery,
+	query,
+	noCommit,
 	queryAddEntity,
 	queryCheckEntity,
 	queryRemoveEntity,
@@ -69,7 +70,7 @@ export const removeEntity = (world: World, eid: EntityId) => {
         const componentRemovalQueue = []
 
 		if (ctx.entitiesWithRelations.has(currentEid)) {
-			for (const subject of innerQuery(world, [Wildcard(currentEid)])) {
+			for (const subject of query(world, [Wildcard(currentEid)], noCommit)) {
 				if (!entityExists(world, subject)) {
 					continue
 				}
