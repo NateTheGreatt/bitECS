@@ -22,8 +22,6 @@ The following features have been removed in 0.4.0 (available in `bitecs/legacy` 
 - **defineQuery()** - Use `query()` function directly
 - **enterQuery/exitQuery** - Use observers with `onAdd`/`onRemove`
 - **Changed() Queries** - Use observers or manual dirty flags
-- **queryBuffer()** - Use `query()` with `asBuffer` modifier
-- **queryNested()** - Use `query()` with `isNested` modifier
 - **Serialization API** - Redesigned and moved to `bitecs/serialization` module
 
 See [migration guide](docs/MIGRATION_GUIDE_0.4.0.md) for upgrade steps.
