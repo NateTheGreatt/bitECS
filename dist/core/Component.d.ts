@@ -16,7 +16,7 @@ export declare const registerComponent: (world: World, component: ComponentRef) 
 export declare const registerComponents: (world: World, components: ComponentRef[]) => void;
 export declare const hasComponent: (world: World, eid: EntityId, component: ComponentRef) => boolean;
 export declare const getComponent: (world: World, eid: EntityId, component: ComponentRef) => any;
-export declare const set: <T extends unknown>(component: T, data: any) => {
+export declare const set: <T extends ComponentRef>(component: T, data: any) => {
     component: T;
     data: any;
 };

@@ -1,1 +1,1 @@
-{"version":3,"file":"defineHiddenProperty.d.ts","sourceRoot":"","sources":["../../../src/core/utils/defineHiddenProperty.ts"],"names":[],"mappings":"AAAA,eAAO,MAAM,oBAAoB,QAAQ,GAAG,OAAK,GAAG,SAAO,GAAG,QAK5D,CAAA;AAEF,eAAO,MAAM,sBAAsB,QAAQ,GAAG,MAAI,GAAG,SAOpD,CAAA"}
+{"version":3,"file":"defineHiddenProperty.d.ts","sourceRoot":"","sources":["../../../src/core/utils/defineHiddenProperty.ts"],"names":[],"mappings":"AAAA,eAAO,MAAM,oBAAoB,GAAI,KAAI,GAAG,EAAC,KAAI,GAAG,EAAC,OAAM,GAAG,QAK5D,CAAA;AAEF,eAAO,MAAM,sBAAsB,GAAI,KAAI,GAAG,EAAC,IAAG,GAAG,SAOpD,CAAA"}
