@@ -365,14 +365,19 @@ query(world, [
 
 #### Hierarchical Queries
 
-`queryHierarchy` returns entities in **topological order**—parents before children—based on a relation (usually a `ChildOf` relation).
+Hierarchical queries return entities in **topological order**—parents before children—based on a relation (usually a `ChildOf` relation). Use the `Hierarchy()` or `Cascade()` (alias) term in the components array.
 
 ```ts
 const ChildOf = createRelation()
 
 // Query all entities that have Position **in hierarchy order**
-for (const eid of queryHierarchy(world, ChildOf, [Position])) {
+for (const eid of query(world, [Position, Hierarchy(ChildOf)])) {
     // parent entities are guaranteed to be processed before children
+}
+
+// Query entities at a specific depth level
+for (const eid of query(world, [Position, Hierarchy(ChildOf, 2)])) {
+    // only entities at depth 2 in the hierarchy
 }
 ```
 
@@ -380,7 +385,7 @@ Other helpers:
 
 | helper | description |
 | ------ | ----------- |
-| `queryHierarchyDepth(world, ChildOf, depth)` | All entities exactly at `depth` |
+| `query(world, [Position, Hierarchy(ChildOf, depth)])` | All entities exactly at `depth` |
 | `getHierarchyDepth(world, eid, ChildOf)`     | Cached depth for a single entity |
 | `getMaxHierarchyDepth(world, ChildOf)`       | Current maximum depth of the tree |
 
@@ -405,9 +410,9 @@ const entities5 = query(world, [Position], asBuffer)                           /
 const entities6 = query(world, [Position], asBuffer, isNested)                 // Combined modifiers
 
 // Hierarchical queries
-const entities7 = query(world, [Position], Hierarchy(ChildOf))                  // Topological order
-const entities8 = query(world, [Position], Hierarchy(ChildOf, 2))              // Specific depth level
-const entities9 = query(world, [Position], Hierarchy(ChildOf), asBuffer)       // Hierarchy + Uint32Array
+const entities7 = query(world, [Position, Hierarchy(ChildOf)])                 // Topological order
+const entities8 = query(world, [Position, Hierarchy(ChildOf, 2)])             // Specific depth level
+const entities9 = query(world, [Position, Hierarchy(ChildOf)], asBuffer)      // Hierarchy + Uint32Array
 ```
 
 **Available Options:**
@@ -417,12 +422,10 @@ const entities9 = query(world, [Position], Hierarchy(ChildOf), asBuffer)       /
 **Available Query Modifiers:**
 - `asBuffer` - Return results as `Uint32Array` instead of `readonly EntityId[]`
 - `isNested` / `noCommit` - Skip committing pending removals (safe for nested iteration)
-- `Hierarchy(relation)` - Return results in hierarchical (topological) order
-- `Hierarchy(relation, depth)` - Query entities at a specific depth level
 
 **Nested Queries for Safe Iteration:**
 
-By default, entity removals are deferred until queries are called. However, calling a query while iterating another query will cause entities to be removed during iteration. Use `isNested` modifier or `{ commit: false }` option to prevent this.
+By default, entity removals are deferred until queries are called. However, calling a query while iterating another query will cause entities to be removed during iteration. Use `isNested` or `noCommit` (alias) modifier or `{ commit: false }` option to prevent this.
 
 ```ts
 // This triggers entity removals, then queries
@@ -430,7 +433,7 @@ for (const entity of query(world, [Position, Velocity])) {
   // This would cause removals during iteration - use nested instead
   for (const innerEntity of query(world, [Mass], { commit: false })) {}
   // Or use the modifier:
-  for (const innerEntity of query(world, [Mass], isNested)) {}
+  for (const innerEntity of query(world, [Mass], noCommit)) {}
 }
 ```
 
