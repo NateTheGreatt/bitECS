@@ -23,6 +23,8 @@ __export(core_exports, {
   All: () => All,
   And: () => And,
   Any: () => Any,
+  Cascade: () => Cascade,
+  Hierarchy: () => Hierarchy,
   IsA: () => IsA,
   None: () => None,
   Not: () => Not,
@@ -34,6 +36,7 @@ __export(core_exports, {
   addComponents: () => addComponents,
   addEntity: () => addEntity,
   addPrefab: () => addPrefab,
+  asBuffer: () => asBuffer,
   commitRemovals: () => commitRemovals,
   createEntityIndex: () => createEntityIndex,
   createRelation: () => createRelation,
@@ -50,9 +53,10 @@ __export(core_exports, {
   getVersion: () => getVersion,
   getWorldComponents: () => getWorldComponents,
   hasComponent: () => hasComponent,
-  innerQuery: () => innerQuery,
+  isNested: () => isNested,
   isRelation: () => isRelation,
   isWildcard: () => isWildcard,
+  noCommit: () => noCommit,
   observe: () => observe,
   onAdd: () => onAdd,
   onGet: () => onGet,
@@ -60,8 +64,6 @@ __export(core_exports, {
   onSet: () => onSet,
   pipe: () => pipe,
   query: () => query,
-  queryHierarchy: () => queryHierarchy,
-  queryHierarchyDepth: () => queryHierarchyDepth,
   registerComponent: () => registerComponent,
   registerComponents: () => registerComponents,
   registerQuery: () => registerQuery,
@@ -322,234 +324,6 @@ var createObservable = () => {
   };
 };
 
-// src/core/Query.ts
-var $opType = Symbol.for("bitecs-opType");
-var $opTerms = Symbol.for("bitecs-opTerms");
-var Or = (...components) => ({
-  [$opType]: "Or",
-  [$opTerms]: components
-});
-var And = (...components) => ({
-  [$opType]: "And",
-  [$opTerms]: components
-});
-var Not = (...components) => ({
-  [$opType]: "Not",
-  [$opTerms]: components
-});
-var Any = Or;
-var All = And;
-var None = Not;
-var onAdd = (...terms) => ({
-  [$opType]: "add",
-  [$opTerms]: terms
-});
-var onRemove = (...terms) => ({
-  [$opType]: "remove",
-  [$opTerms]: terms
-});
-var onSet = (component) => ({
-  [$opType]: "set",
-  [$opTerms]: [component]
-});
-var onGet = (component) => ({
-  [$opType]: "get",
-  [$opTerms]: [component]
-});
-function observe(world, hook, callback) {
-  const ctx = world[$internal];
-  const { [$opType]: type, [$opTerms]: components } = hook;
-  if (type === "add" || type === "remove") {
-    const hash = queryHash(world, components);
-    let queryData = ctx.queriesHashMap.get(hash);
-    if (!queryData) {
-      queryData = registerQuery(world, components);
-    }
-    const observableKey = type === "add" ? "addObservable" : "removeObservable";
-    return queryData[observableKey].subscribe(callback);
-  } else if (type === "set" || type === "get") {
-    if (components.length !== 1) {
-      throw new Error("Set and Get hooks can only observe a single component");
-    }
-    const component = components[0];
-    let componentData = ctx.componentMap.get(component);
-    if (!componentData) {
-      componentData = registerComponent(world, component);
-    }
-    const observableKey = type === "set" ? "setObservable" : "getObservable";
-    return componentData[observableKey].subscribe(callback);
-  }
-  throw new Error(`Invalid hook type: ${type}`);
-}
-var queryHash = (world, terms) => {
-  const ctx = world[$internal];
-  const getComponentId = (component) => {
-    if (!ctx.componentMap.has(component)) {
-      registerComponent(world, component);
-    }
-    return ctx.componentMap.get(component).id;
-  };
-  const termToString = (term) => {
-    if ($opType in term) {
-      const componentIds = term[$opTerms].map(getComponentId);
-      const sortedComponentIds = componentIds.sort((a, b) => a - b);
-      const sortedType = term[$opType].toLowerCase();
-      return `${sortedType}(${sortedComponentIds.join(",")})`;
-    } else {
-      return getComponentId(term).toString();
-    }
-  };
-  return terms.map(termToString).sort().join("-");
-};
-var registerQuery = (world, terms, options = {}) => {
-  const ctx = world[$internal];
-  const hash = queryHash(world, terms);
-  const components = [];
-  const notComponents = [];
-  const orComponents = [];
-  const processComponents = (comps, targetArray) => {
-    comps.forEach((comp) => {
-      if (!ctx.componentMap.has(comp)) registerComponent(world, comp);
-      targetArray.push(comp);
-    });
-  };
-  terms.forEach((term) => {
-    if ($opType in term) {
-      if (term[$opType] === "Not") {
-        processComponents(term[$opTerms], notComponents);
-      } else if (term[$opType] === "Or") {
-        processComponents(term[$opTerms], orComponents);
-      }
-    } else {
-      if (!ctx.componentMap.has(term)) registerComponent(world, term);
-      components.push(term);
-    }
-  });
-  const mapComponents = (c) => ctx.componentMap.get(c);
-  const allComponents = components.concat(notComponents.flat()).concat(orComponents.flat()).map(mapComponents);
-  const sparseSet = options.buffered ? createUint32SparseSet() : createSparseSet();
-  const toRemove = createSparseSet();
-  const generations = allComponents.map((c) => c.generationId).reduce((a, v) => {
-    if (a.includes(v)) return a;
-    a.push(v);
-    return a;
-  }, []);
-  const reduceBitflags = (a, c) => {
-    if (!a[c.generationId]) a[c.generationId] = 0;
-    a[c.generationId] |= c.bitflag;
-    return a;
-  };
-  const masks = components.map(mapComponents).reduce(reduceBitflags, {});
-  const notMasks = notComponents.map(mapComponents).reduce(reduceBitflags, {});
-  const orMasks = orComponents.map(mapComponents).reduce(reduceBitflags, {});
-  const hasMasks = allComponents.reduce(reduceBitflags, {});
-  const addObservable = createObservable();
-  const removeObservable = createObservable();
-  const query2 = Object.assign(sparseSet, {
-    components,
-    notComponents,
-    orComponents,
-    allComponents,
-    masks,
-    notMasks,
-    orMasks,
-    hasMasks,
-    generations,
-    toRemove,
-    addObservable,
-    removeObservable,
-    queues: {}
-  });
-  ctx.queries.add(query2);
-  ctx.queriesHashMap.set(hash, query2);
-  allComponents.forEach((c) => {
-    c.queries.add(query2);
-  });
-  if (notComponents.length) ctx.notQueries.add(query2);
-  const entityIndex = ctx.entityIndex;
-  for (let i = 0; i < entityIndex.aliveCount; i++) {
-    const eid = entityIndex.dense[i];
-    if (hasComponent(world, eid, Prefab)) continue;
-    const match = queryCheckEntity(world, query2, eid);
-    if (match) {
-      queryAddEntity(query2, eid);
-    }
-  }
-  return query2;
-};
-function innerQuery(world, terms, options = {}) {
-  const ctx = world[$internal];
-  const hash = queryHash(world, terms);
-  let queryData = ctx.queriesHashMap.get(hash);
-  if (!queryData) {
-    queryData = registerQuery(world, terms, options);
-  } else if (options.buffered && !("buffer" in queryData.dense)) {
-    queryData = registerQuery(world, terms, { buffered: true });
-  }
-  return queryData.dense;
-}
-function query(world, terms) {
-  commitRemovals(world);
-  return innerQuery(world, terms);
-}
-function queryCheckEntity(world, query2, eid) {
-  const ctx = world[$internal];
-  const { masks, notMasks, orMasks, generations } = query2;
-  let hasOrMatch = Object.keys(orMasks).length === 0;
-  for (let i = 0; i < generations.length; i++) {
-    const generationId = generations[i];
-    const qMask = masks[generationId];
-    const qNotMask = notMasks[generationId];
-    const qOrMask = orMasks[generationId];
-    const eMask = ctx.entityMasks[generationId][eid];
-    if (qNotMask && (eMask & qNotMask) !== 0) {
-      return false;
-    }
-    if (qMask && (eMask & qMask) !== qMask) {
-      return false;
-    }
-    if (qOrMask && (eMask & qOrMask) !== 0) {
-      hasOrMatch = true;
-    }
-  }
-  return hasOrMatch;
-}
-var queryAddEntity = (query2, eid) => {
-  query2.toRemove.remove(eid);
-  query2.addObservable.notify(eid);
-  query2.add(eid);
-};
-var queryCommitRemovals = (query2) => {
-  for (let i = 0; i < query2.toRemove.dense.length; i++) {
-    const eid = query2.toRemove.dense[i];
-    query2.remove(eid);
-  }
-  query2.toRemove.reset();
-};
-var commitRemovals = (world) => {
-  const ctx = world[$internal];
-  if (!ctx.dirtyQueries.size) return;
-  ctx.dirtyQueries.forEach(queryCommitRemovals);
-  ctx.dirtyQueries.clear();
-};
-var queryRemoveEntity = (world, query2, eid) => {
-  const ctx = world[$internal];
-  const has = query2.has(eid);
-  if (!has || query2.toRemove.has(eid)) return;
-  query2.toRemove.add(eid);
-  ctx.dirtyQueries.add(query2);
-  query2.removeObservable.notify(eid);
-};
-var removeQuery = (world, terms) => {
-  const ctx = world[$internal];
-  const hash = queryHash(world, terms);
-  const query2 = ctx.queriesHashMap.get(hash);
-  if (query2) {
-    ctx.queries.delete(query2);
-    ctx.queriesHashMap.delete(hash);
-  }
-};
-
 // src/core/Relation.ts
 var $relation = Symbol.for("bitecs-relation");
 var $pairTarget = Symbol.for("bitecs-pairTarget");
@@ -692,7 +466,7 @@ function updateDepthCache(hierarchyData, entity, newDepth, oldDepth) {
     }
   }
   if (newDepth !== INVALID_DEPTH) {
-    if (!depthToEntities.has(newDepth)) depthToEntities.set(newDepth, createSparseSet());
+    if (!depthToEntities.has(newDepth)) depthToEntities.set(newDepth, createUint32SparseSet());
     depthToEntities.get(newDepth).add(entity);
   }
 }
@@ -855,7 +629,7 @@ function flushDirtyDepths(world, relation) {
   }
   dirty.reset();
 }
-function queryHierarchy(world, relation, components) {
+function queryHierarchy(world, relation, components, options = {}) {
   const ctx = world[$internal];
   getHierarchyData(world, relation);
   const queryKey = queryHash(world, [relation, ...components]);
@@ -864,13 +638,10 @@ function queryHierarchy(world, relation, components) {
     return cached.result;
   }
   flushDirtyDepths(world, relation);
-  const hash = queryHash(world, components);
-  let queryObj = ctx.queriesHashMap.get(hash);
-  if (!queryObj) {
-    query(world, components);
-    queryObj = ctx.queriesHashMap.get(hash);
-  }
-  const depths = ctx.hierarchyData.get(relation).depths;
+  queryInternal(world, components, options);
+  const queryObj = ctx.queriesHashMap.get(queryHash(world, components));
+  const hierarchyData = ctx.hierarchyData.get(relation);
+  const { depths } = hierarchyData;
   queryObj.sort((a, b) => {
     const depthA = depths[a];
     const depthB = depths[b];
@@ -880,14 +651,14 @@ function queryHierarchy(world, relation, components) {
   ctx.hierarchyQueryCache.set(relation, { hash: queryKey, result });
   return result;
 }
-function queryHierarchyDepth(world, relation, depth) {
+function queryHierarchyDepth(world, relation, depth, options = {}) {
   const hierarchyData = getHierarchyData(world, relation);
   flushDirtyDepths(world, relation);
   const entitiesAtDepth = hierarchyData.depthToEntities.get(depth);
   if (entitiesAtDepth) {
     return entitiesAtDepth.dense;
   }
-  return [];
+  return options.buffered ? new Uint32Array(0) : [];
 }
 function getHierarchyDepth(world, entity, relation) {
   getHierarchyData(world, relation);
@@ -897,6 +668,220 @@ function getMaxHierarchyDepth(world, relation) {
   const hierarchyData = getHierarchyData(world, relation);
   return hierarchyData.maxDepth;
 }
+
+// src/core/Query.ts
+var $opType = Symbol.for("bitecs-opType");
+var $opTerms = Symbol.for("bitecs-opTerms");
+var createOp = (type) => (...components) => ({ [$opType]: type, [$opTerms]: components });
+var Or = createOp("Or");
+var And = createOp("And");
+var Not = createOp("Not");
+var Any = Or;
+var All = And;
+var None = Not;
+var $hierarchyType = Symbol.for("bitecs-hierarchyType");
+var $hierarchyRel = Symbol.for("bitecs-hierarchyRel");
+var $hierarchyDepth = Symbol.for("bitecs-hierarchyDepth");
+var Hierarchy = (relation, depth) => ({
+  [$hierarchyType]: "Hierarchy",
+  [$hierarchyRel]: relation,
+  [$hierarchyDepth]: depth
+});
+var Cascade = Hierarchy;
+var $modifierType = Symbol.for("bitecs-modifierType");
+var asBuffer = { [$modifierType]: "buffer" };
+var isNested = { [$modifierType]: "nested" };
+var noCommit = isNested;
+var createHook = (type) => (...terms) => ({ [$opType]: type, [$opTerms]: terms });
+var onAdd = createHook("add");
+var onRemove = createHook("remove");
+var onSet = (component) => ({ [$opType]: "set", [$opTerms]: [component] });
+var onGet = (component) => ({ [$opType]: "get", [$opTerms]: [component] });
+function observe(world, hook, callback) {
+  const ctx = world[$internal];
+  const { [$opType]: type, [$opTerms]: components } = hook;
+  if (type === "add" || type === "remove") {
+    const queryData = ctx.queriesHashMap.get(queryHash(world, components)) || registerQuery(world, components);
+    return queryData[type === "add" ? "addObservable" : "removeObservable"].subscribe(callback);
+  }
+  if (type === "set" || type === "get") {
+    if (components.length !== 1) throw new Error("Set and Get hooks can only observe a single component");
+    const componentData = ctx.componentMap.get(components[0]) || registerComponent(world, components[0]);
+    return componentData[type === "set" ? "setObservable" : "getObservable"].subscribe(callback);
+  }
+  throw new Error(`Invalid hook type: ${type}`);
+}
+var queryHash = (world, terms) => {
+  const ctx = world[$internal];
+  const getComponentId = (component) => {
+    if (!ctx.componentMap.has(component)) registerComponent(world, component);
+    return ctx.componentMap.get(component).id;
+  };
+  const termToString = (term) => $opType in term ? `${term[$opType].toLowerCase()}(${term[$opTerms].map(termToString).sort().join(",")})` : getComponentId(term).toString();
+  return terms.map(termToString).sort().join("-");
+};
+var registerQuery = (world, terms, options = {}) => {
+  const ctx = world[$internal];
+  const hash = queryHash(world, terms);
+  const queryComponents = [];
+  const collect = (term) => {
+    if ($opType in term) term[$opTerms].forEach(collect);
+    else {
+      if (!ctx.componentMap.has(term)) registerComponent(world, term);
+      queryComponents.push(term);
+    }
+  };
+  terms.forEach(collect);
+  const components = [];
+  const notComponents = [];
+  const orComponents = [];
+  const addToArray = (arr, comps) => {
+    comps.forEach((comp) => {
+      if (!ctx.componentMap.has(comp)) registerComponent(world, comp);
+      arr.push(comp);
+    });
+  };
+  terms.forEach((term) => {
+    if ($opType in term) {
+      const { [$opType]: type, [$opTerms]: comps } = term;
+      if (type === "Not") addToArray(notComponents, comps);
+      else if (type === "Or") addToArray(orComponents, comps);
+      else if (type === "And") addToArray(components, comps);
+      else throw new Error(`Nested combinator ${type} not supported yet - use simple queries for best performance`);
+    } else {
+      if (!ctx.componentMap.has(term)) registerComponent(world, term);
+      components.push(term);
+    }
+  });
+  const allComponentsData = queryComponents.map((c) => ctx.componentMap.get(c));
+  const generations = [...new Set(allComponentsData.map((c) => c.generationId))];
+  const reduceBitflags = (a, c) => (a[c.generationId] = (a[c.generationId] || 0) | c.bitflag, a);
+  const masks = components.map((c) => ctx.componentMap.get(c)).reduce(reduceBitflags, {});
+  const notMasks = notComponents.map((c) => ctx.componentMap.get(c)).reduce(reduceBitflags, {});
+  const orMasks = orComponents.map((c) => ctx.componentMap.get(c)).reduce(reduceBitflags, {});
+  const hasMasks = allComponentsData.reduce(reduceBitflags, {});
+  const query2 = Object.assign(options.buffered ? createUint32SparseSet() : createSparseSet(), {
+    allComponents: queryComponents,
+    orComponents,
+    notComponents,
+    masks,
+    notMasks,
+    orMasks,
+    hasMasks,
+    generations,
+    toRemove: createSparseSet(),
+    addObservable: createObservable(),
+    removeObservable: createObservable(),
+    queues: {}
+  });
+  ctx.queries.add(query2);
+  ctx.queriesHashMap.set(hash, query2);
+  allComponentsData.forEach((c) => {
+    c.queries.add(query2);
+  });
+  if (notComponents.length) ctx.notQueries.add(query2);
+  const entityIndex = ctx.entityIndex;
+  for (let i = 0; i < entityIndex.aliveCount; i++) {
+    const eid = entityIndex.dense[i];
+    if (hasComponent(world, eid, Prefab)) continue;
+    const match = queryCheckEntity(world, query2, eid);
+    if (match) {
+      queryAddEntity(query2, eid);
+    }
+  }
+  return query2;
+};
+function queryInternal(world, terms, options = {}) {
+  const ctx = world[$internal];
+  const hash = queryHash(world, terms);
+  let queryData = ctx.queriesHashMap.get(hash);
+  if (!queryData) {
+    queryData = registerQuery(world, terms, options);
+  } else if (options.buffered && !("buffer" in queryData.dense)) {
+    queryData = registerQuery(world, terms, { buffered: true });
+  }
+  return queryData.dense;
+}
+function query(world, terms, ...modifiers) {
+  const hierarchyTerm = terms.find((term) => term && typeof term === "object" && $hierarchyType in term);
+  const regularTerms = terms.filter((term) => !(term && typeof term === "object" && $hierarchyType in term));
+  let buffered = false, commit = true;
+  const hasModifiers = modifiers.some((m) => m && typeof m === "object" && $modifierType in m);
+  for (const modifier of modifiers) {
+    if (hasModifiers && modifier && typeof modifier === "object" && $modifierType in modifier) {
+      const mod = modifier;
+      if (mod[$modifierType] === "buffer") buffered = true;
+      if (mod[$modifierType] === "nested") commit = false;
+    } else if (!hasModifiers) {
+      const opts = modifier;
+      if (opts.buffered !== void 0) buffered = opts.buffered;
+      if (opts.commit !== void 0) commit = opts.commit;
+    }
+  }
+  if (hierarchyTerm) {
+    const { [$hierarchyRel]: relation, [$hierarchyDepth]: depth } = hierarchyTerm;
+    return depth !== void 0 ? queryHierarchyDepth(world, relation, depth, { buffered }) : queryHierarchy(world, relation, regularTerms, { buffered });
+  }
+  if (commit) commitRemovals(world);
+  return queryInternal(world, regularTerms, { buffered });
+}
+function queryCheckEntity(world, query2, eid) {
+  const ctx = world[$internal];
+  const { masks, notMasks, orMasks, generations } = query2;
+  let hasOrMatch = Object.keys(orMasks).length === 0;
+  for (let i = 0; i < generations.length; i++) {
+    const generationId = generations[i];
+    const qMask = masks[generationId];
+    const qNotMask = notMasks[generationId];
+    const qOrMask = orMasks[generationId];
+    const eMask = ctx.entityMasks[generationId][eid];
+    if (qNotMask && (eMask & qNotMask) !== 0) {
+      return false;
+    }
+    if (qMask && (eMask & qMask) !== qMask) {
+      return false;
+    }
+    if (qOrMask && (eMask & qOrMask) !== 0) {
+      hasOrMatch = true;
+    }
+  }
+  return hasOrMatch;
+}
+var queryAddEntity = (query2, eid) => {
+  query2.toRemove.remove(eid);
+  query2.addObservable.notify(eid);
+  query2.add(eid);
+};
+var queryCommitRemovals = (query2) => {
+  for (let i = 0; i < query2.toRemove.dense.length; i++) {
+    const eid = query2.toRemove.dense[i];
+    query2.remove(eid);
+  }
+  query2.toRemove.reset();
+};
+var commitRemovals = (world) => {
+  const ctx = world[$internal];
+  if (!ctx.dirtyQueries.size) return;
+  ctx.dirtyQueries.forEach(queryCommitRemovals);
+  ctx.dirtyQueries.clear();
+};
+var queryRemoveEntity = (world, query2, eid) => {
+  const ctx = world[$internal];
+  const has = query2.has(eid);
+  if (!has || query2.toRemove.has(eid)) return;
+  query2.toRemove.add(eid);
+  ctx.dirtyQueries.add(query2);
+  query2.removeObservable.notify(eid);
+};
+var removeQuery = (world, terms) => {
+  const ctx = world[$internal];
+  const hash = queryHash(world, terms);
+  const query2 = ctx.queriesHashMap.get(hash);
+  if (query2) {
+    ctx.queries.delete(query2);
+    ctx.queriesHashMap.delete(hash);
+  }
+};
 
 // src/core/Component.ts
 var registerComponent = (world, component) => {
@@ -1095,7 +1080,7 @@ var removeEntity = (world, eid) => {
     processedEntities.add(currentEid);
     const componentRemovalQueue = [];
     if (ctx.entitiesWithRelations.has(currentEid)) {
-      for (const subject of innerQuery(world, [Wildcard(currentEid)])) {
+      for (const subject of query(world, [Wildcard(currentEid)], noCommit)) {
         if (!entityExists(world, subject)) {
           continue;
         }
