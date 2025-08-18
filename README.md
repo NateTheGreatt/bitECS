@@ -99,21 +99,28 @@ Health[eid] = 100
 Player[eid] = { level: 1, experience: 0, name: "Hero" }
 
 const movementSystem = (world) => {
-  const { Position, Velocity, Player } = world.components
+  const { Position, Velocity } = world.components
   
   for (const eid of query(world, [Position, Velocity])) {
     Position.x[eid] += Velocity.x[eid] * world.time.delta
     Position.y[eid] += Velocity.y[eid] * world.time.delta
   }
+}
+
+const experienceSystem = (world) => {
+  const { Player } = world.components
   
   for (const eid of query(world, [Player])) {
-    Player[eid].experience += 1
+    // Gain experience over time (1 per second instead of per frame)
+    Player[eid].experience += world.time.delta / 1000
     if (Player[eid].experience >= 100) {
       Player[eid].level++
       Player[eid].experience = 0
     }
   }
-  
+}
+
+const healthSystem = (world) => {
   for (const eid of query(world, [Health])) {
     if (Health[eid] <= 0) removeEntity(world, eid)
   }
@@ -129,8 +136,10 @@ const timeSystem = (world) => {
 }
 
 const update = (world) => {
-  movementSystem(world)
   timeSystem(world)
+  movementSystem(world)
+  experienceSystem(world)
+  healthSystem(world)
 }
 
 // Node environment
