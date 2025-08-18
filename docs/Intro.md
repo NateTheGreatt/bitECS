@@ -36,9 +36,7 @@ Position.y[entity] = 0
 
 // Define a system that moves entities with a Position component
 const moveEntity = (world) => {
-	const entities = query(world, [Position])
-
-	for (const eid of entities) {
+	for (const eid of query(world, [Position])) {
 		Position.x[eid] += 1
 		Position.y[eid] += 1
 	}
@@ -404,7 +402,7 @@ const entities1 = query(world, [Position], { commit: false })                   
 const entities2 = query(world, [Position], { buffered: true })                  // Returns Uint32Array  
 const entities3 = query(world, [Position], { commit: false, buffered: true })   // Nested + Uint32Array
 
-// Query modifier approach (new preferred syntax)
+// Query modifier approach
 const entities4 = query(world, [Position], isNested)                            // Safe iteration
 const entities5 = query(world, [Position], asBuffer)                           // Returns Uint32Array
 const entities6 = query(world, [Position], asBuffer, isNested)                 // Combined modifiers
