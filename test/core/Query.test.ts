@@ -8,6 +8,7 @@ import {
 	query,
 	removeComponent,
 	removeEntity,
+	entityExists,
 	Or,
 	And,
 	observe,
@@ -15,6 +16,7 @@ import {
 	Hierarchy,
 	Cascade,
 	createRelation,
+	withAutoRemoveSubject,
 	asBuffer,
 	isNested,
 	noCommit,
@@ -1000,6 +1002,195 @@ describe('New Query API Tests', () => {
 			expect(getHierarchyDepth(world, parent, ChildOf)).toBe(0)
 			expect(getHierarchyDepth(world, child, ChildOf)).toBe(0)
 			expect(getHierarchyDepth(world, grandchild, ChildOf)).toBe(1)
+		})
+
+		it('should handle multiple separate hierarchies', () => {
+			const world = createWorld()
+			
+			// Create two separate hierarchy trees
+			const treeA_root = addEntity(world)
+			const treeA_child1 = addEntity(world)
+			const treeA_child2 = addEntity(world)
+			
+			const treeB_root = addEntity(world)
+			const treeB_child1 = addEntity(world)
+			const treeB_child2 = addEntity(world)
+			
+			const Position = { x: [] as number[], y: [] as number[] }
+			const entities = [treeA_root, treeA_child1, treeA_child2, treeB_root, treeB_child1, treeB_child2]
+			entities.forEach(eid => addComponent(world, eid, Position))
+			
+			const ChildOf = createRelation()
+			
+			// Build tree A
+			addComponent(world, treeA_child1, ChildOf(treeA_root))
+			addComponent(world, treeA_child2, ChildOf(treeA_root))
+			
+			// Build tree B  
+			addComponent(world, treeB_child1, ChildOf(treeB_root))
+			addComponent(world, treeB_child2, ChildOf(treeB_root))
+			
+			// Query hierarchical order
+			const result = query(world, [Position, Hierarchy(ChildOf)])
+			const resultArray = Array.from(result)
+			
+			// All entities should be included
+			expect(result.length).toBe(6)
+			
+			// Verify each tree maintains proper ordering
+			const treeA_rootIndex = resultArray.indexOf(treeA_root)
+			const treeA_child1Index = resultArray.indexOf(treeA_child1)
+			const treeA_child2Index = resultArray.indexOf(treeA_child2)
+			
+			const treeB_rootIndex = resultArray.indexOf(treeB_root)
+			const treeB_child1Index = resultArray.indexOf(treeB_child1)
+			const treeB_child2Index = resultArray.indexOf(treeB_child2)
+			
+			// Tree A: root should come before children
+			expect(treeA_rootIndex).toBeLessThan(treeA_child1Index)
+			expect(treeA_rootIndex).toBeLessThan(treeA_child2Index)
+			
+			// Tree B: root should come before children
+			expect(treeB_rootIndex).toBeLessThan(treeB_child1Index)
+			expect(treeB_rootIndex).toBeLessThan(treeB_child2Index)
+			
+			// Verify depths are correct for both trees
+			expect(getHierarchyDepth(world, treeA_root, ChildOf)).toBe(0)
+			expect(getHierarchyDepth(world, treeA_child1, ChildOf)).toBe(1)
+			expect(getHierarchyDepth(world, treeA_child2, ChildOf)).toBe(1)
+			
+			expect(getHierarchyDepth(world, treeB_root, ChildOf)).toBe(0)
+			expect(getHierarchyDepth(world, treeB_child1, ChildOf)).toBe(1)
+			expect(getHierarchyDepth(world, treeB_child2, ChildOf)).toBe(1)
+		})
+
+		it('should handle entities with no hierarchy relations (orphans)', () => {
+			const world = createWorld()
+			
+			const parent = addEntity(world)
+			const child = addEntity(world)
+			const orphan1 = addEntity(world)
+			const orphan2 = addEntity(world)
+			
+			const Position = { x: [] as number[], y: [] as number[] }
+			addComponent(world, parent, Position)
+			addComponent(world, child, Position)
+			addComponent(world, orphan1, Position)
+			addComponent(world, orphan2, Position)
+			
+			const ChildOf = createRelation()
+			
+			// Only create one relation
+			addComponent(world, child, ChildOf(parent))
+			
+			// Query with hierarchy - should include orphans
+			const result = query(world, [Position, Hierarchy(ChildOf)])
+			expect(result.length).toBe(4)
+			
+			const resultArray = Array.from(result)
+			const parentIndex = resultArray.indexOf(parent)
+			const childIndex = resultArray.indexOf(child)
+			
+			// Parent should come before child
+			expect(parentIndex).toBeLessThan(childIndex)
+			
+			// Orphans should be included but can be at any position relative to each other
+			expect(resultArray).toContain(orphan1)
+			expect(resultArray).toContain(orphan2)
+			
+			// Verify depths
+			expect(getHierarchyDepth(world, parent, ChildOf)).toBe(0)
+			expect(getHierarchyDepth(world, child, ChildOf)).toBe(1)
+			expect(getHierarchyDepth(world, orphan1, ChildOf)).toBe(0) // orphans have depth 0
+			expect(getHierarchyDepth(world, orphan2, ChildOf)).toBe(0)
+		})
+
+		it('should work with auto-remove-subject relations', () => {
+			const world = createWorld()
+			
+			const parent = addEntity(world)
+			const child = addEntity(world)
+			const grandchild = addEntity(world)
+			
+			const Position = { x: [] as number[], y: [] as number[] }
+			addComponent(world, parent, Position)
+			addComponent(world, child, Position)
+			addComponent(world, grandchild, Position)
+			
+			const ChildOf = createRelation(withAutoRemoveSubject)
+			
+			// Build hierarchy
+			addComponent(world, child, ChildOf(parent))
+			addComponent(world, grandchild, ChildOf(child))
+			
+			// Verify initial hierarchy
+			expect(getHierarchyDepth(world, parent, ChildOf)).toBe(0)
+			expect(getHierarchyDepth(world, child, ChildOf)).toBe(1)
+			expect(getHierarchyDepth(world, grandchild, ChildOf)).toBe(2)
+			
+			const initialResult = query(world, [Position, Hierarchy(ChildOf)])
+			expect(initialResult.length).toBe(3)
+			
+			// Remove parent - should auto-remove child and grandchild
+			removeEntity(world, parent)
+			
+			// Child and grandchild should be auto-removed
+			expect(entityExists(world, parent)).toBe(false)
+			expect(entityExists(world, child)).toBe(false)
+			expect(entityExists(world, grandchild)).toBe(false)
+			
+			// Query should return empty (regular query first to flush removals)
+			const regularResult = query(world, [Position])
+			expect(regularResult.length).toBe(0)
+			
+			const finalResult = query(world, [Position, Hierarchy(ChildOf)])
+			expect(finalResult.length).toBe(0)
+		})
+
+		it('should handle deep hierarchies efficiently', () => {
+			const world = createWorld()
+			
+			const Position = { x: [] as number[], y: [] as number[] }
+			const ChildOf = createRelation()
+			const depth = 50
+			const entities: number[] = []
+			
+			// Create a deep hierarchy: root -> child1 -> child2 -> ... -> child50
+			for (let i = 0; i < depth; i++) {
+				const eid = addEntity(world)
+				addComponent(world, eid, Position)
+				entities.push(eid)
+				
+				if (i > 0) {
+					addComponent(world, eid, ChildOf(entities[i - 1]))
+				}
+			}
+			
+			// Query hierarchical order
+			const start = performance.now()
+			const result = query(world, [Position, Hierarchy(ChildOf)])
+			const end = performance.now()
+			
+			// Should include all entities
+			expect(result.length).toBe(depth)
+			
+			// Verify proper ordering - each entity should come before the next
+			const resultArray = Array.from(result)
+			for (let i = 0; i < depth - 1; i++) {
+				const currentIndex = resultArray.indexOf(entities[i])
+				const nextIndex = resultArray.indexOf(entities[i + 1])
+				expect(currentIndex).toBeLessThan(nextIndex)
+			}
+			
+			// Verify depths are correct
+			for (let i = 0; i < depth; i++) {
+				expect(getHierarchyDepth(world, entities[i], ChildOf)).toBe(i)
+			}
+			
+			expect(getMaxHierarchyDepth(world, ChildOf)).toBe(depth - 1)
+			
+			// Performance check - should complete reasonably quickly (under 10ms for 50 entities)
+			expect(end - start).toBeLessThan(10)
 		})
 	})
 })
