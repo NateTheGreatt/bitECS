@@ -43,6 +43,16 @@ var u32 = typeTagForSerialization($u32);
 var i32 = typeTagForSerialization($i32);
 var f32 = typeTagForSerialization($f32);
 var f64 = typeTagForSerialization($f64);
+var functionToSymbolMap = /* @__PURE__ */ new Map([
+  [u8, $u8],
+  [i8, $i8],
+  [u16, $u16],
+  [i16, $i16],
+  [u32, $u32],
+  [i32, $i32],
+  [f32, $f32],
+  [f64, $f64]
+]);
 var typeSetters = {
   [$u8]: (view, offset, value) => {
     view.setUint8(offset, value);
@@ -87,10 +97,27 @@ var typeGetters = {
   [$f32]: (view, offset) => ({ value: view.getFloat32(offset), size: 4 }),
   [$f64]: (view, offset) => ({ value: view.getFloat64(offset), size: 8 })
 };
+function resolveTypeToSymbol(type) {
+  if (typeof type === "symbol") {
+    return type;
+  }
+  if (typeof type === "function") {
+    const symbol = functionToSymbolMap.get(type);
+    if (symbol) return symbol;
+    throw new Error(`Unknown type function: ${type}`);
+  }
+  if (isArrayType(type)) {
+    return resolveTypeToSymbol(type[$arr]);
+  }
+  return $f32;
+}
 function isTypedArrayOrBranded(arr) {
   return arr && (ArrayBuffer.isView(arr) || Array.isArray(arr) && typeof arr === "object");
 }
 function getTypeForArray(arr) {
+  if (isArrayType(arr)) {
+    return resolveTypeToSymbol(arr[$arr]);
+  }
   for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
     if (symbol in arr) return symbol;
   }
@@ -121,8 +148,9 @@ function serializeArrayValue(elementType, value, view, offset) {
     const element = value[i];
     if (isArrayType(elementType)) {
       bytesWritten += serializeArrayValue(getArrayElementType(elementType), element, view, offset + bytesWritten);
-    } else if (typeof elementType === "symbol") {
-      bytesWritten += typeSetters[elementType](view, offset + bytesWritten, element);
+    } else {
+      const symbol = resolveTypeToSymbol(elementType);
+      bytesWritten += typeSetters[symbol](view, offset + bytesWritten, element);
     }
   }
   return bytesWritten;
@@ -145,7 +173,8 @@ function deserializeArrayValue(elementType, view, offset) {
         arr[i] = value;
       }
     } else {
-      const { value, size } = typeGetters[elementType](view, offset + bytesRead);
+      const symbol = resolveTypeToSymbol(elementType);
+      const { value, size } = typeGetters[symbol](view, offset + bytesRead);
       bytesRead += size;
       arr[i] = value;
     }
