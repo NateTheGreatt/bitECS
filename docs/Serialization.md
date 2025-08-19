@@ -89,22 +89,22 @@ deserialize(buffer, idMap)
 ### Array of arrays
 The bitECS serialization system supports nested arrays (arrays of arrays) as component properties. This feature allows you to store more complex data structures while maintaining efficient binary serialization.
 ```ts
-export const array = <T extends any[] = []>(type: TypeSymbol | T = $f32) => { /*...*/ }
+export const array = <T extends any[] = []>(type: TypeSymbol | T = f32) => { /*...*/ }
 ```
 The array() function annotates an array to indicate its elements' type for proper serialization:
-- array($f32) - Creates an array of 32-bit float values (default)
-- array($u8) - Creates an array of 8-bit unsigned integers
-- array(array($f32)) - Creates a nested array (array of arrays of floats)
+- array(f32) - Creates an array of 32-bit float values (default)
+- array(u8) - Creates an array of 8-bit unsigned integers
+- array(array(f32)) - Creates a nested array (array of arrays of floats)
 
 #### Usage Examples:
 ##### Basic Usage with Primitive Types
 ```ts
-import { createSoASerializer, createSoADeserializer, array, $f32 } from 'bitecs/serialization'
+import { createSoASerializer, createSoADeserializer, array, f32 } from 'bitecs/serialization'
 
 // Define a component with an array property
 const Waypoints = {
     // Array of coordinate pairs stored as f32 values
-    points: array($f32)
+    points: array(f32)
 }
 
 const components = [Waypoints]
@@ -133,12 +133,12 @@ console.assert(Waypoints.points[eid][1] === 20.2)
 ```
 ##### Multi-level Nesting Example
 ```ts
-import { createSoASerializer, createSoADeserializer, array, $u8 } from 'bitecs/serialization'
+import { createSoASerializer, createSoADeserializer, array, u8 } from 'bitecs/serialization'
 
 // Define a component with a nested array structure
 const Inventory = {
     // Array of inventory pages, each containing arrays of item IDs
-    pages: array(array($u8))
+    pages: array(array(u8))
 }
 
 const components = [Inventory]
@@ -183,11 +183,11 @@ console.assert(Inventory.pages[eid][2][2] === 102)
 ```
 ##### Mixed Component Types Example
 ```ts
-import { createSoASerializer, createSoADeserializer, array, $f32, $u8 } from 'bitecs/serialization'
+import { createSoASerializer, createSoADeserializer, array, f32, u8, f64 } from 'bitecs/serialization'
 const Character = {
-    position: array<[number, number]>($f64),
-    inventory: array<number[]>($u8),
-    skills: array(array($f64))
+    position: array<[number, number]>(f64),
+    inventory: array<number[]>(u8),
+    skills: array(array(f64))
 }
 
 const components = [Character]

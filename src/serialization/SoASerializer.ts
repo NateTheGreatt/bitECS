@@ -31,12 +31,12 @@ export type PrimitiveBrand = (number[] & { [key: symbol]: true }) | TypedArray
 
 /**
  * Type representing a component reference, which is a record mapping string keys to either
- * a PrimitiveBrand (number array with type symbol) or TypedArray values.
+ * a PrimitiveBrand (number array with type symbol), TypedArray, or ArrayType values.
  * Used to define the structure of components that can be serialized.
  */
-type ComponentRef = Record<string, PrimitiveBrand | TypedArray | Array<any>>
+type ComponentRef = Record<string, PrimitiveBrand | TypedArray | ArrayType<any>>
 
-type ArrayType<T> = T[] & { $arr: TypeSymbol }
+type ArrayType<T> = T[] & { [$arr]: TypeSymbol | TypeFunction | ArrayType<any> }
 
 /**
  * Creates a function that tags an array with a type symbol for serialization.
@@ -53,6 +53,19 @@ export const u8 = typeTagForSerialization($u8),     i8 = typeTagForSerialization
             u16 = typeTagForSerialization($u16),    i16 = typeTagForSerialization($i16),
             u32 = typeTagForSerialization($u32),    i32 = typeTagForSerialization($i32),
             f32 = typeTagForSerialization($f32),    f64 = typeTagForSerialization($f64)
+
+/**
+ * Mapping from type functions to their corresponding symbols.
+ */
+const functionToSymbolMap = new Map([
+    [u8, $u8], [i8, $i8], [u16, $u16], [i16, $i16],
+    [u32, $u32], [i32, $i32], [f32, $f32], [f64, $f64]
+])
+
+/**
+ * Type representing a type function.
+ */
+type TypeFunction = typeof u8 | typeof i8 | typeof u16 | typeof i16 | typeof u32 | typeof i32 | typeof f32 | typeof f64
 
 /**
  * Object containing setter functions for each data type.
@@ -82,18 +95,37 @@ const typeGetters = {
     [$f64]: (view: DataView, offset: number) => ({ value: view.getFloat64(offset), size: 8 })
 }
 
-export const array = <T extends any[] = []>(type: TypeSymbol | T = $f32)=>  {
-    const arr = [];
+/**
+ * Resolves a type (symbol, function, or array type) to its corresponding symbol.
+ */
+function resolveTypeToSymbol(type: TypeSymbol | TypeFunction | ArrayType<any>): TypeSymbol {
+    if (typeof type === 'symbol') {
+        return type
+    }
+    if (typeof type === 'function') {
+        const symbol = functionToSymbolMap.get(type as TypeFunction) as TypeSymbol | undefined
+        if (symbol) return symbol
+        throw new Error(`Unknown type function: ${type}`)
+    }
+    if (isArrayType(type)) {
+        return resolveTypeToSymbol(type[$arr])
+    }
+    // Default fallback
+    return $f32
+}
+
+export const array = <T extends any[] = any[]>(type: TypeSymbol | TypeFunction | ArrayType<any> = f32): ArrayType<T> => {
+    const arr = [] as any[];
 
     Object.defineProperty(arr, $arr, { value: type, enumerable: false, writable: false, configurable: false })
 
-    return arr as T[];
+    return arr as ArrayType<T>;
 }
 
 /**
- * Checks if a value is a TypedArray or branded array
+ * Checks if a value is a TypedArray, branded array, or ArrayType
  */
-function isTypedArrayOrBranded(arr: any): arr is PrimitiveBrand | TypedArray {
+function isTypedArrayOrBranded(arr: any): arr is PrimitiveBrand | TypedArray | ArrayType<any> {
     return arr && (
         ArrayBuffer.isView(arr) || 
         (Array.isArray(arr) && typeof arr === 'object')
@@ -103,8 +135,12 @@ function isTypedArrayOrBranded(arr: any): arr is PrimitiveBrand | TypedArray {
 /**
  * Gets the type symbol for an array
  */
-function getTypeForArray(arr: PrimitiveBrand | TypedArray): TypeSymbol {
-    // Check for branded arrays first
+function getTypeForArray(arr: PrimitiveBrand | TypedArray | ArrayType<any>): TypeSymbol {
+    // Check for ArrayType first
+    if (isArrayType(arr)) {
+        return resolveTypeToSymbol(arr[$arr])
+    }
+    // Check for branded arrays
     for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64] as TypeSymbol[]) {
         if (symbol in arr) return symbol
     }
@@ -129,7 +165,7 @@ export function isArrayType(value: any): value is ArrayType<any> {
 /**
  * Gets the element type information for an array type
  */
-export function getArrayElementType(arrayType: ArrayType<any>): TypeSymbol | ArrayType<any> {
+export function getArrayElementType(arrayType: ArrayType<any>): TypeSymbol | TypeFunction | ArrayType<any> {
     return arrayType[$arr]
 }
 
@@ -137,7 +173,7 @@ export function getArrayElementType(arrayType: ArrayType<any>): TypeSymbol | Arr
  * Serializes an array value to a DataView
  */
 function serializeArrayValue(
-    elementType: ArrayType<any> | TypeSymbol,
+    elementType: ArrayType<any> | TypeSymbol | TypeFunction,
     value: any[],
     view: DataView,
     offset: number
@@ -153,15 +189,15 @@ function serializeArrayValue(
 
     bytesWritten += typeSetters[$u32](view, offset + bytesWritten, value.length)
 
-
     // Write each element
     for (let i = 0; i < value.length; i++) {
         const element = value[i]
         if (isArrayType(elementType)) {
             bytesWritten += serializeArrayValue(getArrayElementType(elementType), element, view, offset + bytesWritten)
-        } else if (typeof elementType === 'symbol') {
-            // Primitive type
-            bytesWritten += typeSetters[elementType](view, offset + bytesWritten, element)
+        } else {
+            // Primitive type - resolve to symbol
+            const symbol = resolveTypeToSymbol(elementType)
+            bytesWritten += typeSetters[symbol](view, offset + bytesWritten, element)
         }
     }
 
@@ -170,7 +206,7 @@ function serializeArrayValue(
 
 
 function deserializeArrayValue(
-    elementType: ArrayType<any> | TypeSymbol,
+    elementType: ArrayType<any> | TypeSymbol | TypeFunction,
     view: DataView,
     offset: number
 ) {
@@ -194,7 +230,9 @@ function deserializeArrayValue(
                 arr[i] = value
             }
         } else {
-            const { value, size } = typeGetters[elementType](view, offset + bytesRead)
+            // Primitive type - resolve to symbol
+            const symbol = resolveTypeToSymbol(elementType)
+            const { value, size } = typeGetters[symbol](view, offset + bytesRead)
             bytesRead += size
             arr[i] = value
         }
@@ -208,7 +246,7 @@ function deserializeArrayValue(
  * @param {ComponentRef} component - The component to create a serializer for.
  * @returns {Function} A function that serializes the component.
  */
-export const createComponentSerializer = (component: ComponentRef | PrimitiveBrand | TypedArray) => {
+export const createComponentSerializer = (component: ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>) => {
     // Handle direct array case
     if (isTypedArrayOrBranded(component)) {
         const type = getTypeForArray(component)
@@ -252,7 +290,7 @@ export const createComponentSerializer = (component: ComponentRef | PrimitiveBra
  * @param {ComponentRef} component - The component to create a deserializer for.
  * @returns {Function} A function that deserializes the component.
  */
-export const createComponentDeserializer = (component: ComponentRef | PrimitiveBrand | TypedArray) => {
+export const createComponentDeserializer = (component: ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>) => {
     // Handle direct array case
     if (isTypedArrayOrBranded(component)) {
         const type = getTypeForArray(component)
@@ -310,7 +348,7 @@ export const createComponentDeserializer = (component: ComponentRef | PrimitiveB
  * @param {ArrayBuffer} [buffer] - The buffer to use for serialization.
  * @returns {Function} A function that serializes the SoA data.
  */
-export const createSoASerializer = (components: (ComponentRef | PrimitiveBrand | TypedArray)[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+export const createSoASerializer = (components: (ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>)[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
     const view = new DataView(buffer)
     const componentSerializers = components.map(createComponentSerializer)
     return (indices: number[] | readonly number[]): ArrayBuffer => {
@@ -330,7 +368,7 @@ export const createSoASerializer = (components: (ComponentRef | PrimitiveBrand |
  * @param {ComponentRef[]} components - The components to deserialize.
  * @returns {Function} A function that deserializes the SoA data.
  */
-export const createSoADeserializer = (components: (ComponentRef | PrimitiveBrand | TypedArray)[]) => {
+export const createSoADeserializer = (components: (ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>)[]) => {
     const componentDeserializers = components.map(createComponentDeserializer)
     return (packet: ArrayBuffer, entityIdMapping?: Map<number, number>): void => {
         const view = new DataView(packet)
