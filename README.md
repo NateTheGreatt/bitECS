@@ -52,7 +52,7 @@ npm i bitecs
 
 ## 🕹 Example
 
-```js
+```typescript
 import {
   createWorld,
   query,
@@ -111,7 +111,6 @@ const experienceSystem = (world) => {
   const { Player } = world.components
   
   for (const eid of query(world, [Player])) {
-    // Gain experience over time (1 per second instead of per frame)
     Player[eid].experience += world.time.delta / 1000
     if (Player[eid].experience >= 100) {
       Player[eid].level++

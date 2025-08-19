@@ -312,6 +312,8 @@ addComponents(world, eid, [Position, Velocity, Mass])
 
 // Remove multiple components (removeComponent already supports multiple)
 removeComponent(world, eid, Position, Velocity)
+// same thing
+removeComponents(world, eid, Position, Velocity)
 ```
 
 ## Query
