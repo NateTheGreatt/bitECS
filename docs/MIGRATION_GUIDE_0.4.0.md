@@ -171,7 +171,41 @@ for (const eid of exited) {
 }
 ```
 
-### 5. Legacy Compatibility Module
+### 5. Entity References → Relations
+
+**Before (0.3.x):**
+```js
+const Reference = defineComponent({ entity: Types.eid })
+addComponent(world, Reference, eid)
+Reference.entity[eid] = targetEid
+```
+
+**After (0.4.0):**
+```ts
+const References = createRelation()
+addComponent(world, eid, References(targetEid))
+const targets = getRelationTargets(world, eid, References)
+```
+
+### 6. Serialization Module Migration
+
+**Before (0.3.x):**
+```js
+import { defineSerializer, defineDeserializer } from 'bitecs'
+const serialize = defineSerializer([Position, Velocity])
+const entities = movementQuery(world)
+const packet = serialize(entities)
+```
+
+**After (0.4.0):**
+```ts
+// New API in separate module
+import { createSoASerializer } from 'bitecs/serialization'
+const serialize = createSoASerializer([Position, Velocity])
+const packet = serialize(entities)
+```
+
+### 7. Legacy Compatibility Module
 
 For easier migration, a legacy compatibility module is available that provides the old 0.3.x API:
 
@@ -205,37 +239,3 @@ This allows you to:
 - **Migrate gradually**: Update parts of your codebase over time
 - **Mix APIs**: Use new features alongside legacy code
 - **Reduce risk**: Keep existing systems working while learning new patterns
-
-### 6. Entity References → Relations
-
-**Before (0.3.x):**
-```js
-const Reference = defineComponent({ entity: Types.eid })
-addComponent(world, Reference, eid)
-Reference.entity[eid] = targetEid
-```
-
-**After (0.4.0):**
-```ts
-const References = createRelation()
-addComponent(world, eid, References(targetEid))
-const targets = getRelationTargets(world, eid, References)
-```
-
-### 7. Serialization Module Migration
-
-**Before (0.3.x):**
-```js
-import { defineSerializer, defineDeserializer } from 'bitecs'
-const serialize = defineSerializer([Position, Velocity])
-const entities = movementQuery(world)
-const packet = serialize(entities)
-```
-
-**After (0.4.0):**
-```ts
-// New API in separate module
-import { createSoASerializer } from 'bitecs/serialization'
-const serialize = createSoASerializer([Position, Velocity])
-const packet = serialize(entities)
-```
