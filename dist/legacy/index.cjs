@@ -50,6 +50,7 @@ var $u32 = Symbol.for("bitecs-u32");
 var $i32 = Symbol.for("bitecs-i32");
 var $f32 = Symbol.for("bitecs-f32");
 var $f64 = Symbol.for("bitecs-f64");
+var $str = Symbol.for("bitecs-str");
 var $arr = Symbol.for("bitecs-arr");
 var typeTagForSerialization = (symbol) => (a = []) => Object.defineProperty(a, symbol, { value: true, enumerable: false, writable: false, configurable: false });
 var u8 = typeTagForSerialization($u8);
@@ -60,6 +61,7 @@ var u32 = typeTagForSerialization($u32);
 var i32 = typeTagForSerialization($i32);
 var f32 = typeTagForSerialization($f32);
 var f64 = typeTagForSerialization($f64);
+var str = typeTagForSerialization($str);
 var functionToSymbolMap = /* @__PURE__ */ new Map([
   [u8, $u8],
   [i8, $i8],
@@ -68,7 +70,8 @@ var functionToSymbolMap = /* @__PURE__ */ new Map([
   [u32, $u32],
   [i32, $i32],
   [f32, $f32],
-  [f64, $f64]
+  [f64, $f64],
+  [str, $str]
 ]);
 var typeSetters = {
   [$u8]: (view, offset, value) => {
@@ -102,6 +105,15 @@ var typeSetters = {
   [$f64]: (view, offset, value) => {
     view.setFloat64(offset, value);
     return 8;
+  },
+  [$str]: (view, offset, value) => {
+    const enc = textEncoder;
+    const bytes = enc.encode(value);
+    let written = 0;
+    written += typeSetters[$u32](view, offset + written, bytes.length);
+    new Uint8Array(view.buffer, view.byteOffset + offset + written, bytes.length).set(bytes);
+    written += bytes.length;
+    return written;
   }
 };
 var typeGetters = {
@@ -112,7 +124,14 @@ var typeGetters = {
   [$u32]: (view, offset) => ({ value: view.getUint32(offset), size: 4 }),
   [$i32]: (view, offset) => ({ value: view.getInt32(offset), size: 4 }),
   [$f32]: (view, offset) => ({ value: view.getFloat32(offset), size: 4 }),
-  [$f64]: (view, offset) => ({ value: view.getFloat64(offset), size: 8 })
+  [$f64]: (view, offset) => ({ value: view.getFloat64(offset), size: 8 }),
+  [$str]: (view, offset) => {
+    const { value: len, size: lenSize } = typeGetters[$u32](view, offset);
+    const bytes = new Uint8Array(view.buffer, view.byteOffset + offset + lenSize, len);
+    const dec = textDecoder;
+    const strValue = dec.decode(bytes);
+    return { value: strValue, size: lenSize + len };
+  }
 };
 function resolveTypeToSymbol(type) {
   if (typeof type === "symbol") {
@@ -128,6 +147,8 @@ function resolveTypeToSymbol(type) {
   }
   return $f32;
 }
+var textEncoder = new TextEncoder();
+var textDecoder = new TextDecoder();
 function isTypedArrayOrBranded(arr) {
   return arr && (ArrayBuffer.isView(arr) || Array.isArray(arr) && typeof arr === "object");
 }
@@ -135,7 +156,7 @@ function getTypeForArray(arr) {
   if (isArrayType(arr)) {
     return resolveTypeToSymbol(arr[$arr]);
   }
-  for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64]) {
+  for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64, $str]) {
     if (symbol in arr) return symbol;
   }
   if (arr instanceof Int8Array) return $i8;
