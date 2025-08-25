@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { $f32, $u8, array, f32, u8 } from "../../src/serialization/SoASerializer"
+import { $f32, $u8, $str, array, f32, u8, str } from "../../src/serialization/SoASerializer"
 import { createAoSSerializer, createAoSDeserializer, AoSComponentRef } from "../../src/serialization/AoSSerializer"
 
 describe('AoS Serialization and Deserialization', () => {
@@ -58,6 +58,29 @@ describe('AoS Serialization and Deserialization', () => {
     expect(Position[2]).toEqual({ x: 50, y: 60 })
     expect(Velocity[2]).toEqual({ vx: 5, vy: 6 })
     expect(Health[2]).toBe(120)
+  })
+
+  it('should serialize and deserialize string fields in AoS components', () => {
+    const Name: AoSComponentRef = Object.assign([], { value: str() })
+    const Inventory: AoSComponentRef = Object.assign([], { items: array($str) })
+
+    const components = [Name, Inventory]
+
+    const serialize = createAoSSerializer(components)
+    const deserialize = createAoSDeserializer(components)
+
+    Name[0] = { value: "Alice" }
+    Inventory[0] = { items: ["sword", "盾", "🗝️"] }
+
+    const buf = serialize([0])
+
+    Name[0] = undefined
+    Inventory[0] = undefined
+
+    deserialize(buf)
+
+    expect(Name[0]).toEqual({ value: "Alice" })
+    expect(Inventory[0]).toEqual({ items: ["sword", "盾", "🗝️"] })
   })
 
   it('should work with custom entity IDs and ID mapping', () => {

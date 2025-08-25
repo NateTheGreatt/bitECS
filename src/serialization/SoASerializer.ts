@@ -4,6 +4,7 @@
  */
 export const $u8 = Symbol.for('bitecs-u8'), $i8 = Symbol.for('bitecs-i8'), $u16 = Symbol.for('bitecs-u16'), $i16 = Symbol.for('bitecs-i16'),
     $u32 = Symbol.for('bitecs-u32'), $i32 = Symbol.for('bitecs-i32'), $f32 = Symbol.for('bitecs-f32'), $f64 = Symbol.for('bitecs-f64'),
+    $str = Symbol.for('bitecs-str'),
     $arr = Symbol.for('bitecs-arr')
 
 /**
@@ -22,12 +23,12 @@ export type TypedArray =
 /**
  * Union type of all possible type symbols.
  */
-export type TypeSymbol = typeof $u8 | typeof $i8 | typeof $u16 | typeof $i16 | typeof $u32 | typeof $i32 | typeof $f32 | typeof $f64
+export type TypeSymbol = typeof $u8 | typeof $i8 | typeof $u16 | typeof $i16 | typeof $u32 | typeof $i32 | typeof $f32 | typeof $f64 | typeof $str
 
 /**
  * Type representing a primitive brand, which is either a number array with a symbol property or a TypedArray.
  */
-export type PrimitiveBrand = (number[] & { [key: symbol]: true }) | TypedArray
+export type PrimitiveBrand = ((number[] | string[]) & { [key: symbol]: true }) | TypedArray
 
 /**
  * Type representing a component reference, which is a record mapping string keys to either
@@ -43,7 +44,7 @@ export type ArrayType<T> = T[] & { [$arr]: TypeSymbol | TypeFunction | ArrayType
  * @param {TypeSymbol} symbol - The type symbol to tag the array with.
  * @returns {Function} A function that tags an array with the given type symbol.
  */
-const typeTagForSerialization = (symbol: TypeSymbol) => (a: number[] = []): PrimitiveBrand =>
+const typeTagForSerialization = (symbol: TypeSymbol) => (a: any[] = []): PrimitiveBrand =>
     Object.defineProperty(a, symbol, { value: true, enumerable: false, writable: false, configurable: false }) as PrimitiveBrand
 
 /**
@@ -52,25 +53,27 @@ const typeTagForSerialization = (symbol: TypeSymbol) => (a: number[] = []): Prim
 export const u8 = typeTagForSerialization($u8),     i8 = typeTagForSerialization($i8),
             u16 = typeTagForSerialization($u16),    i16 = typeTagForSerialization($i16),
             u32 = typeTagForSerialization($u32),    i32 = typeTagForSerialization($i32),
-            f32 = typeTagForSerialization($f32),    f64 = typeTagForSerialization($f64)
+            f32 = typeTagForSerialization($f32),    f64 = typeTagForSerialization($f64),
+            str = typeTagForSerialization($str)
 
 /**
  * Mapping from type functions to their corresponding symbols.
  */
 const functionToSymbolMap = new Map([
     [u8, $u8], [i8, $i8], [u16, $u16], [i16, $i16],
-    [u32, $u32], [i32, $i32], [f32, $f32], [f64, $f64]
+    [u32, $u32], [i32, $i32], [f32, $f32], [f64, $f64],
+    [str, $str]
 ])
 
 /**
  * Type representing a type function.
  */
-type TypeFunction = typeof u8 | typeof i8 | typeof u16 | typeof i16 | typeof u32 | typeof i32 | typeof f32 | typeof f64
+type TypeFunction = typeof u8 | typeof i8 | typeof u16 | typeof i16 | typeof u32 | typeof i32 | typeof f32 | typeof f64 | typeof str
 
 /**
  * Object containing setter functions for each data type.
  */
-export const typeSetters = {
+export const typeSetters: Record<TypeSymbol, (view: DataView, offset: number, value: any) => number> = {
     [$u8]: (view: DataView, offset: number, value: number) => { view.setUint8(offset, value); return 1; },
     [$i8]: (view: DataView, offset: number, value: number) => { view.setInt8(offset, value); return 1; },
     [$u16]: (view: DataView, offset: number, value: number) => { view.setUint16(offset, value); return 2; },
@@ -78,13 +81,22 @@ export const typeSetters = {
     [$u32]: (view: DataView, offset: number, value: number) => { view.setUint32(offset, value); return 4; },
     [$i32]: (view: DataView, offset: number, value: number) => { view.setInt32(offset, value); return 4; },
     [$f32]: (view: DataView, offset: number, value: number) => { view.setFloat32(offset, value); return 4; },
-    [$f64]: (view: DataView, offset: number, value: number) => { view.setFloat64(offset, value); return 8; }
-}
+    [$f64]: (view: DataView, offset: number, value: number) => { view.setFloat64(offset, value); return 8; },
+    [$str]: (view: DataView, offset: number, value: string) => {
+        const enc = textEncoder
+        const bytes = enc.encode(value)
+        let written = 0
+        written += typeSetters[$u32](view, offset + written, bytes.length)
+        new Uint8Array(view.buffer, view.byteOffset + offset + written, bytes.length).set(bytes)
+        written += bytes.length
+        return written
+    }
+} as Record<TypeSymbol, (view: DataView, offset: number, value: any) => number>
 
 /**
  * Object containing getter functions for each data type.
  */
-export const typeGetters = {
+export const typeGetters: Record<TypeSymbol, (view: DataView, offset: number) => { value: any, size: number }> = {
     [$u8]: (view: DataView, offset: number) => ({ value: view.getUint8(offset), size: 1 }),
     [$i8]: (view: DataView, offset: number) => ({ value: view.getInt8(offset), size: 1 }),
     [$u16]: (view: DataView, offset: number) => ({ value: view.getUint16(offset), size: 2 }),
@@ -92,8 +104,15 @@ export const typeGetters = {
     [$u32]: (view: DataView, offset: number) => ({ value: view.getUint32(offset), size: 4 }),
     [$i32]: (view: DataView, offset: number) => ({ value: view.getInt32(offset), size: 4 }),
     [$f32]: (view: DataView, offset: number) => ({ value: view.getFloat32(offset), size: 4 }),
-    [$f64]: (view: DataView, offset: number) => ({ value: view.getFloat64(offset), size: 8 })
-}
+    [$f64]: (view: DataView, offset: number) => ({ value: view.getFloat64(offset), size: 8 }),
+    [$str]: (view: DataView, offset: number) => {
+        const { value: len, size: lenSize } = typeGetters[$u32](view, offset)
+        const bytes = new Uint8Array(view.buffer, view.byteOffset + offset + lenSize, len)
+        const dec = textDecoder
+        const strValue = dec.decode(bytes)
+        return { value: strValue, size: lenSize + len }
+    }
+} as Record<TypeSymbol, (view: DataView, offset: number) => { value: any, size: number }>
 
 /**
  * Resolves a type (symbol, function, or array type) to its corresponding symbol.
@@ -113,6 +132,8 @@ function resolveTypeToSymbol(type: TypeSymbol | TypeFunction | ArrayType<any>): 
     // Default fallback
     return $f32
 }
+const textEncoder = new TextEncoder()
+const textDecoder = new TextDecoder()
 
 export const array = <T extends any[] = any[]>(type: TypeSymbol | TypeFunction | ArrayType<any> = f32): ArrayType<T> => {
     const arr = [] as any[];
@@ -141,7 +162,7 @@ export function getTypeForArray(arr: PrimitiveBrand | TypedArray | ArrayType<any
         return resolveTypeToSymbol(arr[$arr])
     }
     // Check for branded arrays
-    for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64] as TypeSymbol[]) {
+    for (const symbol of [$u8, $i8, $u16, $i16, $u32, $i32, $f32, $f64, $str] as TypeSymbol[]) {
         if (symbol in arr) return symbol
     }
     // Then check TypedArrays

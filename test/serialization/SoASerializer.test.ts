@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { addEntity, createWorld } from "bitecs"
-import {$f32, $f64, $u8, array, createSoADeserializer, createSoASerializer, f32, u8} from "../../src/serialization"
+import {$f32, $f64, $u8, $str, array, createSoADeserializer, createSoASerializer, f32, u8, str} from "../../src/serialization"
 
 describe('SoA Serialization and Deserialization', () => {
   it('should correctly serialize and deserialize component data', () => {
@@ -233,6 +233,33 @@ describe('SoA Serialization and Deserialization', () => {
     // Assert nested array data was deserialized correctly
     expect(Inventory.pages[eid]).toEqual(inventoryData)
   });
+
+  it('should serialize and deserialize string components and arrays of strings', () => {
+    const Meta = {
+      name: str([]),
+      tags: array($str)
+    }
+
+    const components = [Meta]
+
+    const serialize = createSoASerializer(components)
+    const deserialize = createSoADeserializer(components)
+
+    const eid = 2
+
+    Meta.name[eid] = "Player_二"
+    Meta.tags[eid] = ["alpha", "βeta", "γamma"]
+
+    const buffer = serialize([eid])
+
+    Meta.name[eid] = ""
+    Meta.tags[eid] = []
+
+    deserialize(buffer)
+
+    expect(Meta.name[eid]).toBe("Player_二")
+    expect(Meta.tags[eid]).toEqual(["alpha", "βeta", "γamma"])
+  })
 
   describe('Diff Mode Serialization', () => {
     it('should serialize all data on first call in diff mode', () => {
