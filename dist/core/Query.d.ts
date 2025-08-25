@@ -3,7 +3,7 @@ import { ComponentRef, ComponentData } from './Component';
 import { World } from "./World";
 import { createObservable } from './utils/Observer';
 import { EntityId } from './Entity';
-export type QueryResult = Uint32Array | readonly EntityId[];
+export type QueryResult = Readonly<Uint32Array> | readonly EntityId[];
 export interface QueryOptions {
     commit?: boolean;
     buffered?: boolean;

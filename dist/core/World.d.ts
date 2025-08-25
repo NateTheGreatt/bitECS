@@ -1,6 +1,6 @@
 import { EntityIndex } from './EntityIndex';
 import { ComponentRef, ComponentData } from './Component';
-import { Query } from './Query';
+import { Query, QueryResult } from './Query';
 import { EntityId } from './Entity';
 import { type SparseSet } from './utils/SparseSet';
 export declare const $internal: unique symbol;
@@ -25,7 +25,7 @@ export type WorldContext = {
     hierarchyActiveRelations: Set<ComponentRef>;
     hierarchyQueryCache: Map<ComponentRef, {
         hash: string;
-        result: readonly EntityId[];
+        result: QueryResult;
     }>;
 };
 export type InternalWorld = {

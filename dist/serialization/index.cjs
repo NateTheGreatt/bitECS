@@ -28,6 +28,8 @@ __export(serialization_exports, {
   $u32: () => $u32,
   $u8: () => $u8,
   array: () => array,
+  createAoSDeserializer: () => createAoSDeserializer,
+  createAoSSerializer: () => createAoSSerializer,
   createObserverDeserializer: () => createObserverDeserializer,
   createObserverSerializer: () => createObserverSerializer,
   createSnapshotDeserializer: () => createSnapshotDeserializer,
@@ -207,15 +209,49 @@ function deserializeArrayValue(elementType, view, offset) {
   }
   return { value: arr, size: bytesRead };
 }
-var createComponentSerializer = (component) => {
+var isFloatType = (array2) => {
+  const arrayType = getTypeForArray(array2);
+  return arrayType === $f32 || arrayType === $f64;
+};
+var getEpsilonForType = (array2, epsilon) => isFloatType(array2) ? epsilon : 0;
+var getShadow = (shadowMap, array2) => {
+  let shadow = shadowMap.get(array2);
+  if (!shadow) {
+    if (ArrayBuffer.isView(array2)) {
+      shadow = new array2.constructor(array2.length);
+    } else {
+      shadow = new Array(array2.length).fill(0);
+    }
+    shadowMap.set(array2, shadow);
+  }
+  return shadow;
+};
+var hasChanged = (shadowMap, array2, index, epsilon = 1e-4) => {
+  const shadow = getShadow(shadowMap, array2);
+  const currentValue = array2[index];
+  const actualEpsilon = getEpsilonForType(array2, epsilon);
+  const changed = actualEpsilon > 0 ? Math.abs(shadow[index] - currentValue) > actualEpsilon : shadow[index] !== currentValue;
+  shadow[index] = currentValue;
+  return changed;
+};
+var createComponentSerializer = (component, diff = false, shadowMap, epsilon = 1e-4) => {
   if (isTypedArrayOrBranded(component)) {
     const type = getTypeForArray(component);
     const setter = typeSetters[type];
-    return (view, offset, index) => {
-      let bytesWritten = 0;
-      bytesWritten += typeSetters[$u32](view, offset, index);
-      bytesWritten += setter(view, offset + bytesWritten, component[index]);
-      return bytesWritten;
+    return (view, offset, index, componentId) => {
+      if (diff && shadowMap) {
+        if (!hasChanged(shadowMap, component, index, epsilon)) return 0;
+        let bytesWritten = 0;
+        bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index);
+        bytesWritten += typeSetters[$u32](view, offset + bytesWritten, componentId);
+        bytesWritten += setter(view, offset + bytesWritten, component[index]);
+        return bytesWritten;
+      } else {
+        let bytesWritten = 0;
+        bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index);
+        bytesWritten += setter(view, offset + bytesWritten, component[index]);
+        return bytesWritten;
+      }
     };
   }
   const props = Object.keys(component);
@@ -229,21 +265,48 @@ var createComponentSerializer = (component) => {
   const setters = types.map((type) => typeSetters[type] || (() => {
     throw new Error(`Unsupported or unannotated type`);
   }));
-  return (view, offset, index) => {
-    let bytesWritten = 0;
-    bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index);
-    for (let i = 0; i < props.length; i++) {
-      const componentProperty = component[props[i]];
-      if (isArrayType(componentProperty)) {
-        bytesWritten += serializeArrayValue(getArrayElementType(componentProperty), componentProperty[index], view, offset + bytesWritten);
-      } else {
-        bytesWritten += setters[i](view, offset + bytesWritten, componentProperty[index]);
+  return (view, offset, index, componentId) => {
+    if (diff && shadowMap) {
+      let changeMask = 0;
+      for (let i = 0; i < props.length; i++) {
+        const componentProperty = component[props[i]];
+        if (hasChanged(shadowMap, componentProperty, index, epsilon)) {
+          changeMask |= 1 << i;
+        }
       }
+      if (changeMask === 0) return 0;
+      let bytesWritten = 0;
+      bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index);
+      bytesWritten += typeSetters[$u32](view, offset + bytesWritten, componentId);
+      const maskSetter = props.length <= 8 ? typeSetters[$u8] : props.length <= 16 ? typeSetters[$u16] : typeSetters[$u32];
+      bytesWritten += maskSetter(view, offset + bytesWritten, changeMask);
+      for (let i = 0; i < props.length; i++) {
+        if (changeMask & 1 << i) {
+          const componentProperty = component[props[i]];
+          if (isArrayType(componentProperty)) {
+            bytesWritten += serializeArrayValue(getArrayElementType(componentProperty), componentProperty[index], view, offset + bytesWritten);
+          } else {
+            bytesWritten += setters[i](view, offset + bytesWritten, componentProperty[index]);
+          }
+        }
+      }
+      return bytesWritten;
+    } else {
+      let bytesWritten = 0;
+      bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index);
+      for (let i = 0; i < props.length; i++) {
+        const componentProperty = component[props[i]];
+        if (isArrayType(componentProperty)) {
+          bytesWritten += serializeArrayValue(getArrayElementType(componentProperty), componentProperty[index], view, offset + bytesWritten);
+        } else {
+          bytesWritten += setters[i](view, offset + bytesWritten, componentProperty[index]);
+        }
+      }
+      return bytesWritten;
     }
-    return bytesWritten;
   };
 };
-var createComponentDeserializer = (component) => {
+var createComponentDeserializer = (component, diff = false) => {
   if (isTypedArrayOrBranded(component)) {
     const type = getTypeForArray(component);
     const getter = typeGetters[type];
@@ -252,6 +315,10 @@ var createComponentDeserializer = (component) => {
       const { value: originalIndex, size: indexSize } = typeGetters[$u32](view, offset);
       bytesRead += indexSize;
       const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex;
+      if (diff) {
+        const { size: cidSize } = typeGetters[$u32](view, offset + bytesRead);
+        bytesRead += cidSize;
+      }
       const { value, size } = getter(view, offset + bytesRead);
       component[index] = value;
       return bytesRead + size;
@@ -273,45 +340,280 @@ var createComponentDeserializer = (component) => {
     const { value: originalIndex, size: indexSize } = typeGetters[$u32](view, offset + bytesRead);
     bytesRead += indexSize;
     const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex;
-    for (let i = 0; i < props.length; i++) {
-      const componentProperty = component[props[i]];
-      if (isArrayType(componentProperty)) {
-        const { value, size } = deserializeArrayValue(getArrayElementType(componentProperty), view, offset + bytesRead);
-        if (Array.isArray(value)) {
-          componentProperty[index] = value;
+    if (diff) {
+      const { size: cidSize } = typeGetters[$u32](view, offset + bytesRead);
+      bytesRead += cidSize;
+      const maskGetter = props.length <= 8 ? typeGetters[$u8] : props.length <= 16 ? typeGetters[$u16] : typeGetters[$u32];
+      const { value: changeMask, size: maskSize } = maskGetter(view, offset + bytesRead);
+      bytesRead += maskSize;
+      for (let i = 0; i < props.length; i++) {
+        if (changeMask & 1 << i) {
+          const componentProperty = component[props[i]];
+          if (isArrayType(componentProperty)) {
+            const { value, size } = deserializeArrayValue(getArrayElementType(componentProperty), view, offset + bytesRead);
+            if (Array.isArray(value)) {
+              componentProperty[index] = value;
+            }
+            bytesRead += size;
+          } else {
+            const { value, size } = getters[i](view, offset + bytesRead);
+            component[props[i]][index] = value;
+            bytesRead += size;
+          }
         }
-        bytesRead += size;
-      } else {
-        const { value, size } = getters[i](view, offset + bytesRead);
-        component[props[i]][index] = value;
-        bytesRead += size;
+      }
+    } else {
+      for (let i = 0; i < props.length; i++) {
+        const componentProperty = component[props[i]];
+        if (isArrayType(componentProperty)) {
+          const { value, size } = deserializeArrayValue(getArrayElementType(componentProperty), view, offset + bytesRead);
+          if (Array.isArray(value)) {
+            componentProperty[index] = value;
+          }
+          bytesRead += size;
+        } else {
+          const { value, size } = getters[i](view, offset + bytesRead);
+          component[props[i]][index] = value;
+          bytesRead += size;
+        }
       }
     }
     return bytesRead;
   };
 };
-var createSoASerializer = (components, buffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+var createSoASerializer = (components, options = {}) => {
+  const {
+    diff = false,
+    buffer = new ArrayBuffer(1024 * 1024 * 100),
+    epsilon = 1e-4
+  } = options;
   const view = new DataView(buffer);
-  const componentSerializers = components.map(createComponentSerializer);
+  const shadowMap = diff ? /* @__PURE__ */ new Map() : void 0;
+  const componentSerializers = components.map((component) => createComponentSerializer(component, diff, shadowMap, epsilon));
   return (indices) => {
     let offset = 0;
     for (let i = 0; i < indices.length; i++) {
       const index = indices[i];
       for (let j = 0; j < componentSerializers.length; j++) {
-        offset += componentSerializers[j](view, offset, index);
+        offset += componentSerializers[j](view, offset, index, j);
       }
     }
     return buffer.slice(0, offset);
   };
 };
-var createSoADeserializer = (components) => {
-  const componentDeserializers = components.map(createComponentDeserializer);
+var createSoADeserializer = (components, options = {}) => {
+  const { diff = false } = options;
+  const componentDeserializers = components.map((component) => createComponentDeserializer(component, diff));
   return (packet, entityIdMapping) => {
     const view = new DataView(packet);
     let offset = 0;
     while (offset < packet.byteLength) {
-      for (let i = 0; i < componentDeserializers.length; i++) {
-        offset += componentDeserializers[i](view, offset, entityIdMapping);
+      if (diff) {
+        const { value: originalEid, size: eidSize } = typeGetters[$u32](view, offset);
+        const { value: componentId, size: cidSize } = typeGetters[$u32](view, offset + eidSize);
+        offset += componentDeserializers[componentId](view, offset, entityIdMapping);
+      } else {
+        for (let i = 0; i < componentDeserializers.length; i++) {
+          offset += componentDeserializers[i](view, offset, entityIdMapping);
+        }
+      }
+    }
+  };
+};
+
+// src/serialization/AoSSerializer.ts
+var isFloatType2 = (array2) => {
+  const arrayType = getTypeForArray(array2);
+  return arrayType === $f32 || arrayType === $f64;
+};
+var getEpsilonForType2 = (array2, epsilon) => isFloatType2(array2) ? epsilon : 0;
+var getShadowComponent = (shadowMap, component) => {
+  let shadow = shadowMap.get(component);
+  if (!shadow) {
+    shadow = [];
+    shadowMap.set(component, shadow);
+  }
+  return shadow;
+};
+var hasComponentChanged = (shadowMap, component, entityId, epsilon) => {
+  const shadow = getShadowComponent(shadowMap, component);
+  const currentValue = component[entityId];
+  const shadowValue = shadow[entityId];
+  if (currentValue === void 0) return false;
+  if (shadowValue === void 0) return true;
+  if (typeof currentValue === "object" && currentValue !== null) {
+    const componentDef = component;
+    for (const prop in currentValue) {
+      if (componentDef[prop]) {
+        const propEpsilon = getEpsilonForType2(componentDef[prop], epsilon);
+        const changed = propEpsilon > 0 ? Math.abs(shadowValue[prop] - currentValue[prop]) > propEpsilon : shadowValue[prop] !== currentValue[prop];
+        if (changed) return true;
+      }
+    }
+    return false;
+  } else {
+    const valueEpsilon = getEpsilonForType2(component, epsilon);
+    return valueEpsilon > 0 ? Math.abs(shadowValue - currentValue) > valueEpsilon : shadowValue !== currentValue;
+  }
+};
+var updateShadow = (shadowMap, component, entityId) => {
+  const shadow = getShadowComponent(shadowMap, component);
+  const currentValue = component[entityId];
+  if (typeof currentValue === "object" && currentValue !== null) {
+    shadow[entityId] = { ...currentValue };
+  } else {
+    shadow[entityId] = currentValue;
+  }
+};
+var createAoSComponentSerializer = (component, diff, shadowMap, epsilon = 1e-4) => {
+  const isObjectComponent = typeof component === "object" && Object.keys(component).some((key) => isNaN(parseInt(key)) && typeof component[key] === "object");
+  if (isObjectComponent) {
+    const props = Object.keys(component).filter((key) => isNaN(parseInt(key)));
+    const types = props.map((prop) => getTypeForArray(component[prop]));
+    const setters = types.map((type) => typeSetters[type]);
+    return (view, offset, entityId) => {
+      const value = component[entityId];
+      if (value === void 0) return 0;
+      if (diff && shadowMap) {
+        if (!hasComponentChanged(shadowMap, component, entityId, epsilon)) {
+          return 0;
+        }
+        updateShadow(shadowMap, component, entityId);
+      }
+      let bytesWritten = 0;
+      for (let i = 0; i < props.length; i++) {
+        const prop = component[props[i]];
+        const propValue = value[props[i]];
+        if (isArrayType(prop)) {
+          bytesWritten += serializeArrayValue(getArrayElementType(prop), propValue, view, offset + bytesWritten);
+        } else {
+          bytesWritten += setters[i](view, offset + bytesWritten, propValue);
+        }
+      }
+      return bytesWritten;
+    };
+  } else {
+    const type = getTypeForArray(component);
+    const setter = typeSetters[type];
+    return (view, offset, entityId) => {
+      const value = component[entityId];
+      if (value === void 0) return 0;
+      if (diff && shadowMap) {
+        if (!hasComponentChanged(shadowMap, component, entityId, epsilon)) {
+          return 0;
+        }
+        updateShadow(shadowMap, component, entityId);
+      }
+      return setter(view, offset, value);
+    };
+  }
+};
+var createAoSComponentDeserializer = (component) => {
+  const isObjectComponent = typeof component === "object" && Object.keys(component).some((key) => isNaN(parseInt(key)) && typeof component[key] === "object");
+  if (isObjectComponent) {
+    const props = Object.keys(component).filter((key) => isNaN(parseInt(key)));
+    const types = props.map((prop) => getTypeForArray(component[prop]));
+    const getters = types.map((type) => typeGetters[type]);
+    return (view, offset, entityId) => {
+      let bytesRead = 0;
+      const value = {};
+      for (let i = 0; i < props.length; i++) {
+        const prop = component[props[i]];
+        if (isArrayType(prop)) {
+          const { value: propValue, size } = deserializeArrayValue(getArrayElementType(prop), view, offset + bytesRead);
+          if (Array.isArray(propValue)) {
+            value[props[i]] = propValue;
+          }
+          bytesRead += size;
+        } else {
+          const { value: propValue, size } = getters[i](view, offset + bytesRead);
+          value[props[i]] = propValue;
+          bytesRead += size;
+        }
+      }
+      component[entityId] = value;
+      return bytesRead;
+    };
+  } else {
+    const type = getTypeForArray(component);
+    const getter = typeGetters[type];
+    return (view, offset, entityId) => {
+      const { value, size } = getter(view, offset);
+      component[entityId] = value;
+      return size;
+    };
+  }
+};
+var createAoSSerializer = (components, options = {}) => {
+  const {
+    diff = false,
+    buffer = new ArrayBuffer(1024 * 1024 * 100),
+    epsilon = 1e-4
+  } = options;
+  const view = new DataView(buffer);
+  const shadowMap = diff ? /* @__PURE__ */ new Map() : void 0;
+  const componentSerializers = components.map(
+    (component) => createAoSComponentSerializer(component, diff, shadowMap, epsilon)
+  );
+  return (entityIds) => {
+    let offset = 0;
+    for (let i = 0; i < entityIds.length; i++) {
+      const entityId = entityIds[i];
+      if (diff) {
+        let entityHasChanges = false;
+        for (let j = 0; j < components.length; j++) {
+          if (shadowMap && hasComponentChanged(shadowMap, components[j], entityId, epsilon)) {
+            entityHasChanges = true;
+            break;
+          }
+        }
+        if (!entityHasChanges) continue;
+        offset += typeSetters[$u32](view, offset, entityId);
+        const maskOffset = offset;
+        const maskSetter = components.length <= 8 ? typeSetters[$u8] : components.length <= 16 ? typeSetters[$u16] : typeSetters[$u32];
+        offset += maskSetter === typeSetters[$u8] ? 1 : maskSetter === typeSetters[$u16] ? 2 : 4;
+        let componentMask = 0;
+        for (let j = 0; j < componentSerializers.length; j++) {
+          const bytesWritten = componentSerializers[j](view, offset, entityId);
+          if (bytesWritten > 0) {
+            componentMask |= 1 << j;
+            offset += bytesWritten;
+          }
+        }
+        maskSetter(view, maskOffset, componentMask);
+      } else {
+        offset += typeSetters[$u32](view, offset, entityId);
+        for (let j = 0; j < componentSerializers.length; j++) {
+          offset += componentSerializers[j](view, offset, entityId);
+        }
+      }
+    }
+    return buffer.slice(0, offset);
+  };
+};
+var createAoSDeserializer = (components, options = {}) => {
+  const { diff = false } = options;
+  const componentDeserializers = components.map((component) => createAoSComponentDeserializer(component));
+  return (packet, entityIdMapping) => {
+    const view = new DataView(packet);
+    let offset = 0;
+    while (offset < packet.byteLength) {
+      const { value: originalEntityId, size: entityIdSize } = typeGetters[$u32](view, offset);
+      offset += entityIdSize;
+      const entityId = entityIdMapping ? entityIdMapping.get(originalEntityId) ?? originalEntityId : originalEntityId;
+      if (diff) {
+        const maskGetter = components.length <= 8 ? typeGetters[$u8] : components.length <= 16 ? typeGetters[$u16] : typeGetters[$u32];
+        const { value: componentMask, size: maskSize } = maskGetter(view, offset);
+        offset += maskSize;
+        for (let i = 0; i < components.length; i++) {
+          if (componentMask & 1 << i) {
+            offset += componentDeserializers[i](view, offset, entityId);
+          }
+        }
+      } else {
+        for (let i = 0; i < componentDeserializers.length; i++) {
+          offset += componentDeserializers[i](view, offset, entityId);
+        }
       }
     }
   };
@@ -441,7 +743,7 @@ var createSnapshotSerializer = (world, components, buffer = new ArrayBuffer(1024
     }
   };
   const serializeComponentData = (entities) => {
-    const soaSerializer = createSoASerializer(components, buffer.slice(offset));
+    const soaSerializer = createSoASerializer(components, { buffer: buffer.slice(offset) });
     const componentData = soaSerializer(entities);
     new Uint8Array(buffer).set(new Uint8Array(componentData), offset);
     offset += componentData.byteLength;

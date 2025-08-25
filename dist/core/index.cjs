@@ -647,7 +647,7 @@ function queryHierarchy(world, relation, components, options = {}) {
     const depthB = depths[b];
     return depthA !== depthB ? depthA - depthB : a - b;
   });
-  const result = queryObj.dense;
+  const result = options.buffered ? queryObj.dense : queryObj.dense;
   ctx.hierarchyQueryCache.set(relation, { hash: queryKey, result });
   return result;
 }
@@ -656,7 +656,7 @@ function queryHierarchyDepth(world, relation, depth, options = {}) {
   flushDirtyDepths(world, relation);
   const entitiesAtDepth = hierarchyData.depthToEntities.get(depth);
   if (entitiesAtDepth) {
-    return entitiesAtDepth.dense;
+    return options.buffered ? entitiesAtDepth.dense : entitiesAtDepth.dense;
   }
   return options.buffered ? new Uint32Array(0) : [];
 }
@@ -800,7 +800,7 @@ function queryInternal(world, terms, options = {}) {
   } else if (options.buffered && !("buffer" in queryData.dense)) {
     queryData = registerQuery(world, terms, { buffered: true });
   }
-  return queryData.dense;
+  return options.buffered ? queryData.dense : queryData.dense;
 }
 function query(world, terms, ...modifiers) {
   const hierarchyTerm = terms.find((term) => term && typeof term === "object" && $hierarchyType in term);
