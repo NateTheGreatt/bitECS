@@ -4,6 +4,7 @@
     "target": "ESNext", 
     "moduleResolution": "NodeNext",
     "lib": ["ESNext", "DOM"],
+    "downlevelIteration": true,
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": true,

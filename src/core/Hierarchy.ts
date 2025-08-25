@@ -397,8 +397,8 @@ export function queryHierarchy(world: World, relation: ComponentRef, components:
     })
     
     // Cache this result (dense is already the correct type)
-    const result = queryObj.dense
-    ctx.hierarchyQueryCache.set(relation, { hash: queryKey, result: result as readonly EntityId[] })
+    const result = options.buffered ? queryObj.dense as Readonly<Uint32Array> : queryObj.dense as readonly EntityId[]
+    ctx.hierarchyQueryCache.set(relation, { hash: queryKey, result: result as QueryResult })
     
     return result
 }
@@ -420,10 +420,10 @@ export function queryHierarchyDepth(world: World, relation: ComponentRef, depth:
     const entitiesAtDepth = hierarchyData.depthToEntities.get(depth)
     
     if (entitiesAtDepth) {
-        return entitiesAtDepth.dense
+        return options.buffered ? entitiesAtDepth.dense as Readonly<Uint32Array> : entitiesAtDepth.dense as readonly EntityId[]
     }
     
-    return options.buffered ? new Uint32Array(0) : []
+    return options.buffered ? new Uint32Array(0) as Readonly<Uint32Array> : [] as readonly EntityId[]
 }
 
 /**

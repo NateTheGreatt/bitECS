@@ -183,7 +183,7 @@ export const createSnapshotSerializer = (world: World, components: (Record<strin
      * @param {number[]} entities - An array of entity IDs.
      */
     const serializeComponentData = (entities: readonly number[]) => {
-        const soaSerializer = createSoASerializer(components, buffer.slice(offset))
+        const soaSerializer = createSoASerializer(components, { buffer: buffer.slice(offset) })
         const componentData = soaSerializer(entities)
         new Uint8Array(buffer).set(new Uint8Array(componentData), offset)
         offset += componentData.byteLength

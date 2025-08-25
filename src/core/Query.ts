@@ -9,10 +9,10 @@ import { EntityId, Prefab } from './Entity'
 import { queryHierarchy, queryHierarchyDepth } from './Hierarchy'
 
 /**
- * @typedef {Uint32Array | readonly number[]} QueryResult
- * @description The result of a query, either as a Uint32Array or a readonly array of numbers.
+ * @typedef {Readonly<Uint32Array> | readonly EntityId[]} QueryResult
+ * @description The result of a query as a readonly array of entity IDs.
  */
-export type QueryResult = Uint32Array | readonly EntityId[]
+export type QueryResult = Readonly<Uint32Array> | readonly EntityId[]
 
 /**
  * @typedef {Object} QueryOptions
@@ -333,7 +333,7 @@ export function queryInternal(world: World, terms: QueryTerm[], options: { buffe
 		queryData = registerQuery(world, terms, { buffered: true })
 	}
 
-	return queryData.dense
+	return options.buffered ? queryData.dense as Readonly<Uint32Array> : queryData.dense as readonly EntityId[]
 }
 
 /**

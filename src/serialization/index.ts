@@ -8,6 +8,14 @@ export {
 } from './SoASerializer'
 
 export {
+    createAoSSerializer,
+    createAoSDeserializer,
+    type AoSComponentRef,
+    type AoSSerializerOptions,
+    type AoSDeserializerOptions
+} from './AoSSerializer'
+
+export {
     createSnapshotSerializer,
     createSnapshotDeserializer,
 } from './SnapshotSerializer'

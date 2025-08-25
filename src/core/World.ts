@@ -1,7 +1,7 @@
 import { defineHiddenProperty } from './utils/defineHiddenProperty'
 import { createEntityIndex, EntityIndex } from './EntityIndex'
 import { ComponentRef, ComponentData } from './Component'
-import { Query } from './Query'
+import { Query, QueryResult } from './Query'
 import { EntityId } from './Entity'
 import { type SparseSet } from './utils/SparseSet'
 
@@ -26,7 +26,7 @@ export type WorldContext = {
         maxDepth: number
     }>
     hierarchyActiveRelations: Set<ComponentRef>
-    hierarchyQueryCache: Map<ComponentRef, { hash: string, result: readonly EntityId[] }>
+    hierarchyQueryCache: Map<ComponentRef, { hash: string, result: QueryResult }>
 }
 
 export type InternalWorld = {

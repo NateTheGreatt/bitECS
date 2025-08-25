@@ -233,4 +233,222 @@ describe('SoA Serialization and Deserialization', () => {
     // Assert nested array data was deserialized correctly
     expect(Inventory.pages[eid]).toEqual(inventoryData)
   });
+
+  describe('Diff Mode Serialization', () => {
+    it('should serialize all data on first call in diff mode', () => {
+      const Position = { x: f32([]), y: f32([]) }
+      const Health = { value: u8([]) }
+      const components = [Position, Health]
+
+      const serialize = createSoASerializer(components, { diff: true })
+      const deserialize = createSoADeserializer(components, { diff: true })
+
+      // Add initial data
+      Position.x[0] = 10; Position.y[0] = 20
+      Health.value[0] = 100
+
+      // First serialization should include all data
+      const data1 = serialize([0])
+      expect(data1.byteLength).toBeGreaterThan(0)
+
+      // Reset components
+      Position.x[0] = 0; Position.y[0] = 0
+      Health.value[0] = 0
+
+      // Deserialize
+      deserialize(data1)
+
+      // Verify all data was serialized and deserialized
+      expect(Position.x[0]).toBe(10)
+      expect(Position.y[0]).toBe(20)
+      expect(Health.value[0]).toBe(100)
+    })
+
+    it('should serialize only changed data on subsequent calls', () => {
+      const Position = { x: f32([]), y: f32([]) }
+      const Health = { value: u8([]) }
+      const components = [Position, Health]
+
+      const serialize = createSoASerializer(components, { diff: true })
+      const deserialize = createSoADeserializer(components, { diff: true })
+
+      // Add initial data
+      Position.x[0] = 10; Position.y[0] = 20
+      Health.value[0] = 100
+
+      // First call serializes everything
+      const data1 = serialize([0])
+      const initialSize = data1.byteLength
+
+      // Second call with no changes should return empty buffer
+      const data2 = serialize([0])
+      expect(data2.byteLength).toBe(0)
+
+      // Change only one property
+      Position.x[0] = 15
+
+      // Third call should serialize only the changed entity with change mask
+      const data3 = serialize([0])
+      expect(data3.byteLength).toBeGreaterThan(0)
+      expect(data3.byteLength).toBeLessThan(initialSize) // Should be smaller than full serialization
+    })
+
+    it('should handle partial property changes with correct change masks', () => {
+      const Position = { x: f32([]), y: f32([]) }
+      const Velocity = { vx: f32([]), vy: f32([]) }
+      const components = [Position, Velocity]
+
+      const serialize = createSoASerializer(components, { diff: true })
+      const deserialize = createSoADeserializer(components, { diff: true })
+
+      // Initial data
+      Position.x[0] = 10; Position.y[0] = 20
+      Velocity.vx[0] = 1; Velocity.vy[0] = 2
+
+      // First serialization
+      serialize([0])
+
+      // Change only Position.x and Velocity.vy
+      Position.x[0] = 15
+      Velocity.vy[0] = 5
+
+      // Serialize changes
+      const changedData = serialize([0])
+      expect(changedData.byteLength).toBeGreaterThan(0)
+
+      // Reset and deserialize to verify only changed properties are applied
+      Position.x[0] = 10; Position.y[0] = 20  // Reset to original
+      Velocity.vx[0] = 1; Velocity.vy[0] = 2   // Reset to original
+
+      deserialize(changedData)
+
+      // Only changed properties should be updated
+      expect(Position.x[0]).toBe(15)  // Changed
+      expect(Position.y[0]).toBe(20)  // Unchanged, should remain original
+      expect(Velocity.vx[0]).toBe(1)  // Unchanged, should remain original
+      expect(Velocity.vy[0]).toBe(5)  // Changed
+    })
+
+    it('should work with multiple entities and selective changes', () => {
+      const Position = { x: f32([]), y: f32([]) }
+      const components = [Position]
+
+      const serialize = createSoASerializer(components, { diff: true })
+
+      // Initial data for 3 entities
+      Position.x[0] = 10; Position.y[0] = 20
+      Position.x[1] = 30; Position.y[1] = 40
+      Position.x[2] = 50; Position.y[2] = 60
+
+      // First serialization
+      serialize([0, 1, 2])
+
+      // Change only entity 1
+      Position.x[1] = 35
+
+      // Serialize changes - should only include entity 1
+      const changedData = serialize([0, 1, 2])
+      
+      // Should be much smaller than full serialization
+      const fullData = serialize([0, 1, 2]) // This will include all again since entity 1 changed again
+      expect(changedData.byteLength).toBeGreaterThan(0)
+    })
+
+    it('should handle mixed component types with changes', () => {
+      const Position = { x: f32([]), y: f32([]) }
+      const Health = { value: u8([]) }
+      const Tags = { data: array($u8) }
+      const components = [Position, Health, Tags]
+
+      const serialize = createSoASerializer(components, { diff: true })
+      const deserialize = createSoADeserializer(components, { diff: true })
+
+      // Initial data
+      Position.x[0] = 10; Position.y[0] = 20
+      Health.value[0] = 100
+      Tags.data[0] = [1, 2, 3]
+
+      // First serialization
+      serialize([0])
+
+      // Change different types of properties
+      Position.y[0] = 25        // Change f32 property
+      Tags.data[0] = [4, 5, 6]  // Change array property
+
+      // Serialize changes
+      const changedData = serialize([0])
+      expect(changedData.byteLength).toBeGreaterThan(0)
+
+      // Reset and verify selective deserialization
+      Position.x[0] = 10; Position.y[0] = 20  // Reset
+      Health.value[0] = 100                   // Reset
+      Tags.data[0] = [1, 2, 3]               // Reset
+
+      deserialize(changedData)
+
+      // Only changed properties should be updated
+      expect(Position.x[0]).toBe(10)      // Unchanged
+      expect(Position.y[0]).toBe(25)      // Changed
+      expect(Health.value[0]).toBe(100)   // Unchanged
+      expect(Tags.data[0]).toEqual([4, 5, 6]) // Changed
+    })
+
+    it('should handle single property components correctly', () => {
+      const Health = { value: u8([]) }
+      const components = [Health]
+
+      const serialize = createSoASerializer(components, { diff: true })
+      const deserialize = createSoADeserializer(components, { diff: true })
+
+      // Initial data
+      Health.value[0] = 100
+
+      // First serialization
+      const data1 = serialize([0])
+      expect(data1.byteLength).toBeGreaterThan(0)
+
+      // No changes
+      const data2 = serialize([0])
+      expect(data2.byteLength).toBe(0)
+
+      // Change value
+      Health.value[0] = 90
+      const data3 = serialize([0])
+      expect(data3.byteLength).toBeGreaterThan(0)
+
+      // Reset and verify
+      Health.value[0] = 100
+      deserialize(data3)
+      expect(Health.value[0]).toBe(90)
+    })
+
+    it('should work correctly with direct array components', () => {
+      const scores = f32([])
+      const components = [scores]
+
+      const serialize = createSoASerializer(components, { diff: true })
+      const deserialize = createSoADeserializer(components, { diff: true })
+
+      // Initial data
+      scores[0] = 100.5
+
+      // First serialization
+      const data1 = serialize([0])
+      expect(data1.byteLength).toBeGreaterThan(0)
+
+      // No changes
+      const data2 = serialize([0])
+      expect(data2.byteLength).toBe(0)
+
+      // Change value
+      scores[0] = 95.2
+      const data3 = serialize([0])
+      expect(data3.byteLength).toBeGreaterThan(0)
+
+      // Reset and verify
+      scores[0] = 100.5
+      deserialize(data3)
+      expect(scores[0]).toBeCloseTo(95.2)
+    })
+  })
 })

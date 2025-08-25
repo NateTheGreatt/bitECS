@@ -34,9 +34,9 @@ export type PrimitiveBrand = (number[] & { [key: symbol]: true }) | TypedArray
  * a PrimitiveBrand (number array with type symbol), TypedArray, or ArrayType values.
  * Used to define the structure of components that can be serialized.
  */
-type ComponentRef = Record<string, PrimitiveBrand | TypedArray | ArrayType<any>>
+export type ComponentRef = Record<string, PrimitiveBrand | TypedArray | ArrayType<any>>
 
-type ArrayType<T> = T[] & { [$arr]: TypeSymbol | TypeFunction | ArrayType<any> }
+export type ArrayType<T> = T[] & { [$arr]: TypeSymbol | TypeFunction | ArrayType<any> }
 
 /**
  * Creates a function that tags an array with a type symbol for serialization.
@@ -70,7 +70,7 @@ type TypeFunction = typeof u8 | typeof i8 | typeof u16 | typeof i16 | typeof u32
 /**
  * Object containing setter functions for each data type.
  */
-const typeSetters = {
+export const typeSetters = {
     [$u8]: (view: DataView, offset: number, value: number) => { view.setUint8(offset, value); return 1; },
     [$i8]: (view: DataView, offset: number, value: number) => { view.setInt8(offset, value); return 1; },
     [$u16]: (view: DataView, offset: number, value: number) => { view.setUint16(offset, value); return 2; },
@@ -84,7 +84,7 @@ const typeSetters = {
 /**
  * Object containing getter functions for each data type.
  */
-const typeGetters = {
+export const typeGetters = {
     [$u8]: (view: DataView, offset: number) => ({ value: view.getUint8(offset), size: 1 }),
     [$i8]: (view: DataView, offset: number) => ({ value: view.getInt8(offset), size: 1 }),
     [$u16]: (view: DataView, offset: number) => ({ value: view.getUint16(offset), size: 2 }),
@@ -135,7 +135,7 @@ function isTypedArrayOrBranded(arr: any): arr is PrimitiveBrand | TypedArray | A
 /**
  * Gets the type symbol for an array
  */
-function getTypeForArray(arr: PrimitiveBrand | TypedArray | ArrayType<any>): TypeSymbol {
+export function getTypeForArray(arr: PrimitiveBrand | TypedArray | ArrayType<any>): TypeSymbol {
     // Check for ArrayType first
     if (isArrayType(arr)) {
         return resolveTypeToSymbol(arr[$arr])
@@ -172,7 +172,7 @@ export function getArrayElementType(arrayType: ArrayType<any>): TypeSymbol | Typ
 /**
  * Serializes an array value to a DataView
  */
-function serializeArrayValue(
+export function serializeArrayValue(
     elementType: ArrayType<any> | TypeSymbol | TypeFunction,
     value: any[],
     view: DataView,
@@ -205,7 +205,7 @@ function serializeArrayValue(
 }
 
 
-function deserializeArrayValue(
+export function deserializeArrayValue(
     elementType: ArrayType<any> | TypeSymbol | TypeFunction,
     view: DataView,
     offset: number
@@ -242,20 +242,82 @@ function deserializeArrayValue(
 }
 
 /**
+ * Checks if an array type is a float type
+ */
+const isFloatType = (array: any) => {
+    const arrayType = getTypeForArray(array)
+    return arrayType === $f32 || arrayType === $f64
+}
+
+/**
+ * Gets epsilon value for an array type (0 for non-floats)
+ */
+const getEpsilonForType = (array: any, epsilon: number) => 
+    isFloatType(array) ? epsilon : 0
+
+/**
+ * Gets or creates a shadow array for change detection
+ */
+const getShadow = (shadowMap: Map<any, any>, array: any) => {
+    let shadow = shadowMap.get(array)
+    if (!shadow) {
+        // Create shadow array with proper initialization
+        if (ArrayBuffer.isView(array)) {
+            // TypedArray
+            shadow = new (array.constructor as any)((array as any).length)
+        } else {
+            // Regular array (like f32([]) arrays) - initialize with zeros
+            shadow = new Array(array.length).fill(0)
+        }
+        shadowMap.set(array, shadow)
+    }
+    return shadow
+}
+
+/**
+ * Checks if a value has changed and updates the shadow
+ */
+const hasChanged = (shadowMap: Map<any, any>, array: any, index: number, epsilon = 0.0001) => {
+    const shadow = getShadow(shadowMap, array)
+    const currentValue = array[index]
+    const actualEpsilon = getEpsilonForType(array, epsilon)
+    
+    const changed = actualEpsilon > 0
+        ? Math.abs(shadow[index] - currentValue) > actualEpsilon
+        : shadow[index] !== currentValue
+    
+    shadow[index] = currentValue
+    return changed
+}
+
+/**
  * Creates a serializer function for a component.
  * @param {ComponentRef} component - The component to create a serializer for.
+ * @param {boolean} diff - Whether to use diff mode (only serialize changed values).
+ * @param {Map} shadowMap - Map to store shadow copies for diff mode.
+ * @param {number} epsilon - Epsilon for float comparison in diff mode.
  * @returns {Function} A function that serializes the component.
  */
-export const createComponentSerializer = (component: ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>) => {
+export const createComponentSerializer = (component: ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>, diff = false, shadowMap?: Map<any, any>, epsilon = 0.0001) => {
     // Handle direct array case
     if (isTypedArrayOrBranded(component)) {
         const type = getTypeForArray(component)
         const setter = typeSetters[type]
-        return (view: DataView, offset: number, index: number) => {
-            let bytesWritten = 0
-            bytesWritten += typeSetters[$u32](view, offset, index)
-            bytesWritten += setter(view, offset + bytesWritten, component[index])
-            return bytesWritten
+        return (view: DataView, offset: number, index: number, componentId: number) => {
+            if (diff && shadowMap) {
+                if (!hasChanged(shadowMap, component, index, epsilon)) return 0 // No change
+                
+                let bytesWritten = 0
+                bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index) // eid
+                bytesWritten += typeSetters[$u32](view, offset + bytesWritten, componentId) // cid
+                bytesWritten += setter(view, offset + bytesWritten, component[index])
+                return bytesWritten
+            } else {
+                let bytesWritten = 0
+                bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index) // eid
+                bytesWritten += setter(view, offset + bytesWritten, component[index])
+                return bytesWritten
+            }
         }
     }
 
@@ -269,28 +331,64 @@ export const createComponentSerializer = (component: ComponentRef | PrimitiveBra
         return getTypeForArray(arr)
     })
     const setters = types.map(type => typeSetters[type as keyof typeof typeSetters] || (() => { throw new Error(`Unsupported or unannotated type`); }))
-    return (view: DataView, offset: number, index: number) => {
-        let bytesWritten = 0
-        // Write index first
-        bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index)
-        for (let i = 0; i < props.length; i++) {
-            const componentProperty = component[props[i]]
-            if (isArrayType(componentProperty)) {
-                bytesWritten += serializeArrayValue(getArrayElementType(componentProperty), componentProperty[index], view, offset + bytesWritten)
-            } else {
-                bytesWritten += setters[i](view, offset + bytesWritten, componentProperty[index])
+    return (view: DataView, offset: number, index: number, componentId: number) => {
+        if (diff && shadowMap) {
+            let changeMask = 0
+            // First pass: check what changed and build mask
+            for (let i = 0; i < props.length; i++) {
+                const componentProperty = component[props[i]]
+                
+                if (hasChanged(shadowMap, componentProperty, index, epsilon)) {
+                    changeMask |= 1 << i
+                }
             }
+            
+            if (changeMask === 0) return 0 // No changes for this component
+            
+            let bytesWritten = 0
+            bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index) // eid
+            bytesWritten += typeSetters[$u32](view, offset + bytesWritten, componentId) // cid
+            
+            // Write mask
+            const maskSetter = props.length <= 8 ? typeSetters[$u8] : props.length <= 16 ? typeSetters[$u16] : typeSetters[$u32]
+            bytesWritten += maskSetter(view, offset + bytesWritten, changeMask)
+            
+            // Write only changed values (shadows already updated by hasChanged)
+            for (let i = 0; i < props.length; i++) {
+                if (changeMask & (1 << i)) {
+                    const componentProperty = component[props[i]]
+                    
+                    if (isArrayType(componentProperty)) {
+                        bytesWritten += serializeArrayValue(getArrayElementType(componentProperty), componentProperty[index], view, offset + bytesWritten)
+                    } else {
+                        bytesWritten += setters[i](view, offset + bytesWritten, componentProperty[index])
+                    }
+                }
+            }
+            return bytesWritten
+        } else {
+            let bytesWritten = 0
+            bytesWritten += typeSetters[$u32](view, offset + bytesWritten, index) // eid
+            for (let i = 0; i < props.length; i++) {
+                const componentProperty = component[props[i]]
+                if (isArrayType(componentProperty)) {
+                    bytesWritten += serializeArrayValue(getArrayElementType(componentProperty), componentProperty[index], view, offset + bytesWritten)
+                } else {
+                    bytesWritten += setters[i](view, offset + bytesWritten, componentProperty[index])
+                }
+            }
+            return bytesWritten
         }
-        return bytesWritten
     }
 }
 
 /**
  * Creates a deserializer function for a component.
  * @param {ComponentRef} component - The component to create a deserializer for.
+ * @param {boolean} diff - Whether to expect diff mode data with change masks.
  * @returns {Function} A function that deserializes the component.
  */
-export const createComponentDeserializer = (component: ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>) => {
+export const createComponentDeserializer = (component: ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>, diff = false) => {
     // Handle direct array case
     if (isTypedArrayOrBranded(component)) {
         const type = getTypeForArray(component)
@@ -300,6 +398,13 @@ export const createComponentDeserializer = (component: ComponentRef | PrimitiveB
             const { value: originalIndex, size: indexSize } = typeGetters[$u32](view, offset)
             bytesRead += indexSize
             const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex
+            
+            if (diff) {
+                // Skip cid (component ID)
+                const { size: cidSize } = typeGetters[$u32](view, offset + bytesRead)
+                bytesRead += cidSize
+            }
+            
             const { value, size } = getter(view, offset + bytesRead)
             component[index] = value
             return bytesRead + size
@@ -324,18 +429,45 @@ export const createComponentDeserializer = (component: ComponentRef | PrimitiveB
         
         const index = entityIdMapping ? entityIdMapping.get(originalIndex) ?? originalIndex : originalIndex
         
-        for (let i = 0; i < props.length; i++) {
-            const componentProperty = component[props[i]]
-            if (isArrayType(componentProperty)) {
-                const { value, size } = deserializeArrayValue(getArrayElementType(componentProperty), view, offset + bytesRead)
-                if (Array.isArray(value)){
-                    componentProperty[index] = value
+        if (diff) {
+            // Skip cid (component ID)
+            const { size: cidSize } = typeGetters[$u32](view, offset + bytesRead)
+            bytesRead += cidSize
+            
+            const maskGetter = props.length <= 8 ? typeGetters[$u8] : props.length <= 16 ? typeGetters[$u16] : typeGetters[$u32]
+            const { value: changeMask, size: maskSize } = maskGetter(view, offset + bytesRead)
+            bytesRead += maskSize
+            
+            for (let i = 0; i < props.length; i++) {
+                if (changeMask & (1 << i)) {
+                    const componentProperty = component[props[i]]
+                    if (isArrayType(componentProperty)) {
+                        const { value, size } = deserializeArrayValue(getArrayElementType(componentProperty), view, offset + bytesRead)
+                        if (Array.isArray(value)){
+                            componentProperty[index] = value
+                        }
+                        bytesRead += size
+                    } else {
+                        const { value, size } = getters[i](view, offset + bytesRead)
+                        component[props[i]][index] = value
+                        bytesRead += size
+                    }
                 }
-                bytesRead += size
-            } else {
-                const { value, size } = getters[i](view, offset + bytesRead)
-                component[props[i]][index] = value
-                bytesRead += size
+            }
+        } else {
+            for (let i = 0; i < props.length; i++) {
+                const componentProperty = component[props[i]]
+                if (isArrayType(componentProperty)) {
+                    const { value, size } = deserializeArrayValue(getArrayElementType(componentProperty), view, offset + bytesRead)
+                    if (Array.isArray(value)){
+                        componentProperty[index] = value
+                    }
+                    bytesRead += size
+                } else {
+                    const { value, size } = getters[i](view, offset + bytesRead)
+                    component[props[i]][index] = value
+                    bytesRead += size
+                }
             }
         }
         return bytesRead
@@ -343,20 +475,35 @@ export const createComponentDeserializer = (component: ComponentRef | PrimitiveB
 }
 
 /**
+ * Options for SoA serializer
+ */
+export type SoASerializerOptions = {
+    diff?: boolean
+    buffer?: ArrayBuffer
+    epsilon?: number
+}
+
+/**
  * Creates a serializer function for Structure of Arrays (SoA) data.
  * @param {ComponentRef[]} components - The components to serialize.
- * @param {ArrayBuffer} [buffer] - The buffer to use for serialization.
+ * @param {SoASerializerOptions} [options] - Serializer options.
  * @returns {Function} A function that serializes the SoA data.
  */
-export const createSoASerializer = (components: (ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>)[], buffer: ArrayBuffer = new ArrayBuffer(1024 * 1024 * 100)) => {
+export const createSoASerializer = (components: (ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>)[], options: SoASerializerOptions = {}) => {
+    const { 
+        diff = false, 
+        buffer = new ArrayBuffer(1024 * 1024 * 100), 
+        epsilon = 0.0001 
+    } = options
     const view = new DataView(buffer)
-    const componentSerializers = components.map(createComponentSerializer)
+    const shadowMap = diff ? new Map() : undefined
+    const componentSerializers = components.map(component => createComponentSerializer(component, diff, shadowMap, epsilon))
     return (indices: number[] | readonly number[]): ArrayBuffer => {
         let offset = 0
         for (let i = 0; i < indices.length; i++) {
             const index = indices[i]
             for (let j = 0; j < componentSerializers.length; j++) {
-                offset += componentSerializers[j](view, offset, index)
+                offset += componentSerializers[j](view, offset, index, j) // Pass component ID
             }
         }
         return buffer.slice(0, offset)
@@ -364,18 +511,36 @@ export const createSoASerializer = (components: (ComponentRef | PrimitiveBrand |
 }
 
 /**
+ * Options for SoA deserializer
+ */
+export type SoADeserializerOptions = {
+    diff?: boolean
+}
+
+/**
  * Creates a deserializer function for Structure of Arrays (SoA) data.
  * @param {ComponentRef[]} components - The components to deserialize.
+ * @param {SoADeserializerOptions} [options] - Deserializer options.
  * @returns {Function} A function that deserializes the SoA data.
  */
-export const createSoADeserializer = (components: (ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>)[]) => {
-    const componentDeserializers = components.map(createComponentDeserializer)
+export const createSoADeserializer = (components: (ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>)[], options: SoADeserializerOptions = {}) => {
+    const { diff = false } = options
+    const componentDeserializers = components.map(component => createComponentDeserializer(component, diff))
     return (packet: ArrayBuffer, entityIdMapping?: Map<number, number>): void => {
         const view = new DataView(packet)
         let offset = 0
         while (offset < packet.byteLength) {
-            for (let i = 0; i < componentDeserializers.length; i++) {
-                offset += componentDeserializers[i](view, offset, entityIdMapping)
+            if (diff) {
+                // Read eid, cid
+                const { value: originalEid, size: eidSize } = typeGetters[$u32](view, offset)
+                const { value: componentId, size: cidSize } = typeGetters[$u32](view, offset + eidSize)
+                
+                // Call component deserializer starting from eid position
+                offset += componentDeserializers[componentId](view, offset, entityIdMapping)
+            } else {
+                for (let i = 0; i < componentDeserializers.length; i++) {
+                    offset += componentDeserializers[i](view, offset, entityIdMapping)
+                }
             }
         }
     }
