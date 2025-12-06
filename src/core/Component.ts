@@ -138,7 +138,7 @@ export const set = <T extends ComponentRef>(component: T, data: any): { componen
 })
 
 /**
- * Recursvely inherits components from one entity to another.
+ * Recursively inherits components from one entity to another.
  * @param {World} world - The world object.
  * @param {number} baseEid - The ID of the entity inheriting components.
  * @param {number} inheritedEid - The ID of the entity being inherited from.

@@ -59,7 +59,10 @@ type RelationData<T> = {
  * @param {RelationTarget} target - The target of the relation.
  * @returns {T} The relation component.
  */
-export type Relation<T> = (target: RelationTarget) => T
+export interface Relation<T> {
+    (target: RelationTarget):T
+    [$relationData]: RelationData<T>
+} 
 
 /**
  * Creates a base relation.
@@ -100,7 +103,7 @@ const createBaseRelation = <T>(): Relation<T> => {
  * @returns {function(Relation<T>): Relation<T>} A function that modifies the relation.
  */
 export const withStore = <T>(createStore: (eid: EntityId) => T) => (relation: Relation<T>): Relation<T> => {
-    const ctx = relation[$relationData] as RelationData<T>
+    const ctx = relation[$relationData]
     ctx.initStore = createStore
     return relation
 }
@@ -112,7 +115,7 @@ export const withStore = <T>(createStore: (eid: EntityId) => T) => (relation: Re
  * @returns {Relation<T>} The modified relation.
  */
 export const makeExclusive = <T>(relation: Relation<T>): Relation<T> => {
-    const ctx = relation[$relationData] as RelationData<T>
+    const ctx = relation[$relationData]
     ctx.exclusiveRelation = true
     return relation
 }
@@ -124,7 +127,7 @@ export const makeExclusive = <T>(relation: Relation<T>): Relation<T> => {
  * @returns {Relation<T>} The modified relation.
  */
 export const withAutoRemoveSubject = <T>(relation: Relation<T>): Relation<T> => {
-    const ctx = relation[$relationData] as RelationData<T>
+    const ctx = relation[$relationData]
     ctx.autoRemoveSubject = true
     return relation
 }
@@ -136,7 +139,7 @@ export const withAutoRemoveSubject = <T>(relation: Relation<T>): Relation<T> => 
  * @returns {function(Relation<T>): Relation<T>} A function that modifies the relation.
  */
 export const withOnTargetRemoved = <T>(onRemove: OnTargetRemovedCallback) => (relation: Relation<T>): Relation<T> => {
-    const ctx = relation[$relationData] as RelationData<T>
+    const ctx = relation[$relationData]
     ctx.onTargetRemoved = onRemove
     return relation
 }
