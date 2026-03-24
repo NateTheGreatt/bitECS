@@ -162,7 +162,8 @@ export const createObserverSerializer = (world: World, networkedTag: ComponentRe
     let offset = 0
     const queue: [number, OperationType, number, number?, any?][] = []
     const relationTargets = new Map<number, Map<number, number>>()
-    
+    const removedEntities = new Set<number>()
+
     observe(world, onAdd(networkedTag), (eid: EntityId) => {
         queue.push([eid, OperationType.AddEntity, -1])
     })
@@ -170,6 +171,7 @@ export const createObserverSerializer = (world: World, networkedTag: ComponentRe
     observe(world, onRemove(networkedTag), (eid: EntityId) => {
         queue.push([eid, OperationType.RemoveEntity, -1])
         relationTargets.delete(eid)
+        removedEntities.add(eid)
     })
 
     components.forEach((component, i) => {
@@ -210,9 +212,9 @@ export const createObserverSerializer = (world: World, networkedTag: ComponentRe
         }
     })
     
-    return () => {
+    const serialize = () => {
         offset = 0
-        
+
         for (let i = 0; i < queue.length; i++) {
             const [entityId, type, componentId, targetId, relationData] = queue[i]
             dataView.setUint32(offset, entityId)
@@ -240,6 +242,27 @@ export const createObserverSerializer = (world: World, networkedTag: ComponentRe
 
         return backingBuffer.slice(0, offset)
     }
+
+    /**
+     * Returns and clears the set of entity IDs that were removed since the last
+     * call. Pass the returned set to the SoA serializer's getRemovals option so
+     * it can clear stale shadow values before diffing, preventing recycled entity
+     * IDs with unchanged field values from being silently skipped.
+     */
+    const getRemovals = (): Set<number> => {
+        const result = new Set(removedEntities)
+        removedEntities.clear()
+        return result
+    }
+
+    const serializerFn = serialize as ObserverSerializerFunction
+    serializerFn.getRemovals = getRemovals
+    return serializerFn
+}
+
+export type ObserverSerializerFunction = {
+    (): ArrayBuffer
+    getRemovals: () => Set<number>
 }
 
 export type ObserverDeserializerOptions = {

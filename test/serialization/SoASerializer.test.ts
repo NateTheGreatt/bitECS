@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 import { addEntity, createWorld } from "bitecs"
-import {$f32, $f64, $u8, $str, $ref, array, createSoADeserializer, createSoASerializer, f32, u8, str, ref} from "../../src/serialization"
+import {$f32, $f64, $u8, $str, $ref, array, createSoADeserializer, createSoASerializer, f32, f64, u8, str, ref} from "../../src/serialization"
 
 describe('SoA Serialization and Deserialization', () => {
   it('should correctly serialize and deserialize component data', () => {
@@ -511,6 +511,108 @@ describe('SoA Serialization and Deserialization', () => {
       scores[0] = 100.5
       deserialize(data3)
       expect(scores[0]).toBeCloseTo(95.2)
+    })
+
+    it('should serialize float values for new entities in diff mode', () => {
+      const Position = { x: f32([]), y: f32([]) }
+      const Health = { value: u8([]) }
+      const components = [Position, Health]
+
+      const world = createWorld()
+
+      // Create serializer and serialize an initial entity first
+      // This creates and caches the shadow arrays
+      const serialize = createSoASerializer(components, { diff: true })
+      const deserialize = createSoADeserializer(components, { diff: true })
+
+      const e1 = addEntity(world)
+      Position.x[e1] = 10
+      Position.y[e1] = 20
+      Health.value[e1] = 50
+      serialize([e1]) // This initializes shadow arrays with current length
+
+      // Now add a NEW entity - shadow arrays won't have space for this!
+      const e2 = addEntity(world)
+      Position.x[e2] = 1.5
+      Position.y[e2] = 2.5
+      Health.value[e2] = 100
+
+      // Serialization should include the new entity's float values
+      // BUG: shadow[e2] is undefined, Math.abs(undefined - 1.5) = NaN, NaN > epsilon is false
+      const data = serialize([e2])
+      expect(data.byteLength).toBeGreaterThan(0)
+
+      // Reset values to verify deserialization
+      Position.x[e2] = 0
+      Position.y[e2] = 0
+      Health.value[e2] = 0
+
+      deserialize(data)
+
+      // Float values should be deserialized (this is the bug - they come back as undefined/0)
+      expect(Position.x[e2]).toBe(1.5)
+      expect(Position.y[e2]).toBe(2.5)
+      expect(Health.value[e2]).toBe(100)
+    })
+
+    it('should serialize f64 values for new entities in diff mode', () => {
+      const Precision = { value: f64([]) }
+      const components = [Precision]
+
+      const world = createWorld()
+
+      const serialize = createSoASerializer(components, { diff: true })
+      const deserialize = createSoADeserializer(components, { diff: true })
+
+      // First entity initializes shadow arrays
+      const e1 = addEntity(world)
+      Precision.value[e1] = 1.0
+      serialize([e1])
+
+      // New entity - shadow won't have this index
+      const e2 = addEntity(world)
+      Precision.value[e2] = 3.141592653589793
+
+      const data = serialize([e2])
+      expect(data.byteLength).toBeGreaterThan(0)
+
+      // Reset
+      Precision.value[e2] = 0
+
+      deserialize(data)
+
+      expect(Precision.value[e2]).toBeCloseTo(3.141592653589793)
+    })
+
+    it('should not report changes for entities without a component (undefined slots)', () => {
+      const Force = { count: u8([]) }
+      const Position = { x: f32([]), y: f32([]) }
+      const components = [Force, Position]
+
+      const serialize = createSoASerializer(components, { diff: true })
+
+      // Entity 1 has Position but NOT Force
+      // Entity 2 has Force
+      Position.x[1] = 10; Position.y[1] = 20
+      Force.count[2] = 5
+      Position.x[2] = 30; Position.y[2] = 40
+
+      // Force.count[1] is undefined (entity 1 has no Force)
+      // Force.count[2] is 5 (entity 2 has Force)
+
+      // First call records all values and returns data
+      const data1 = serialize([1, 2])
+      expect(data1.byteLength).toBeGreaterThan(0)
+
+      // Second call with NO changes should return empty buffer
+      // BUG PREVIOUSLY: undefined vs 0 in shadow caused false positive change
+      const data2 = serialize([1, 2])
+      expect(data2.byteLength).toBe(0)
+
+      // Actual change should still work
+      Force.count[2] = 10
+      const data3 = serialize([1, 2])
+      expect(data3.byteLength).toBeGreaterThan(0)
     })
   })
 })
