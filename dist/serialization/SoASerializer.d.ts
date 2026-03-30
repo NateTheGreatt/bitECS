@@ -35,8 +35,13 @@ export type SoASerializerOptions = {
     diff?: boolean;
     buffer?: ArrayBuffer;
     epsilon?: number;
+    getRemovals?: () => Set<number>;
 };
-export declare const createSoASerializer: (components: (ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>)[], options?: SoASerializerOptions) => (indices: number[] | readonly number[]) => ArrayBuffer;
+export declare const createSoASerializer: (components: (ComponentRef | PrimitiveBrand | TypedArray | ArrayType<any>)[], options?: SoASerializerOptions) => SoASerializerFunction;
+export type SoASerializerFunction = {
+    (indices: number[] | readonly number[]): ArrayBuffer;
+    clearEntity?: (eid: number) => void;
+};
 export type SoADeserializerOptions = {
     diff?: boolean;
 };

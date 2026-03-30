@@ -1,78 +1,82 @@
 {
-  "name": "bitecs",
-  "version": "0.4.0",
-  "description": "Flexible, minimal, data-oriented ECS library for Typescript",
-  "license": "MPL-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/NateTheGreatt/bitECS"
-  },
-  "main": "./dist/core/index.min.cjs",
-  "module": "./dist/core/index.min.mjs",
-  "types": "./dist/core/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/core/index.d.ts",
-      "import": "./dist/core/index.min.mjs",
-      "require": "./dist/core/index.min.cjs"
-    },
-    "./serialization": {
-      "types": "./dist/serialization/index.d.ts",
-      "import": "./dist/serialization/index.min.mjs",
-      "require": "./dist/serialization/index.min.cjs"
-    },
-    "./legacy": {
-      "types": "./dist/legacy/index.d.ts",
-      "import": "./dist/legacy/index.min.mjs",
-      "require": "./dist/legacy/index.min.cjs"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "serialization": ["./dist/serialization/index.d.ts"],
-      "legacy": ["./dist/legacy/index.d.ts"]
-    }
-  },
-  "author": {
-    "name": "Nathaniel Martin",
-    "email": "mrtn.nathaniel@gmail.com",
-    "url": "https://github.com/NateTheGreatt"
-  },
-  "contributors": [
-    {
-      "name": "Randy Lebeau",
-      "email": "randylebeau@gmail.com",
-      "url": "https://github.com/SupremeTechnopriest"
-    }
-  ],
-  "scripts": {
-    "test": "bun test",
-    "docs": "bunx documentation build \"src/core/**/*.ts\" -f md -o docs/API.md",
-    "build": "bun build:core && bun build:serialization && bun build:legacy && bun build:types",
-    "build:types": "tsc",
-    "build:core": "bun build:core:mjs && bun build:core:cjs && bun build:core:mjs:nonmin && bun build:core:cjs:nonmin",
-    "build:core:mjs": "esbuild src/core/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/core/index.min.mjs",
-    "build:core:cjs": "esbuild src/core/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/core/index.min.cjs",
-    "build:core:mjs:nonmin": "esbuild src/core/index.ts --bundle --sourcemap --format=esm --outfile=dist/core/index.mjs",
-    "build:core:cjs:nonmin": "esbuild src/core/index.ts --bundle --sourcemap --format=cjs --outfile=dist/core/index.cjs",
-    "build:serialization": "bun build:serialization:mjs && bun build:serialization:cjs && bun build:serialization:mjs:nonmin && bun build:serialization:cjs:nonmin",
-    "build:serialization:mjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/serialization/index.min.mjs --external:bitecs",
-    "build:serialization:cjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/serialization/index.min.cjs --external:bitecs",
-    "build:serialization:mjs:nonmin": "esbuild src/serialization/index.ts --bundle --sourcemap --format=esm --outfile=dist/serialization/index.mjs --external:bitecs",
-    "build:serialization:cjs:nonmin": "esbuild src/serialization/index.ts --bundle --sourcemap --format=cjs --outfile=dist/serialization/index.cjs --external:bitecs",
-    "build:legacy": "bun build:legacy:mjs && bun build:legacy:cjs && bun build:legacy:mjs:nonmin && bun build:legacy:cjs:nonmin",
-    "build:legacy:mjs": "esbuild src/legacy/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/legacy/index.min.mjs --external:bitecs",
-    "build:legacy:cjs": "esbuild src/legacy/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/legacy/index.min.cjs --external:bitecs",
-    "build:legacy:mjs:nonmin": "esbuild src/legacy/index.ts --bundle --sourcemap --format=esm --outfile=dist/legacy/index.mjs --external:bitecs",
-    "build:legacy:cjs:nonmin": "esbuild src/legacy/index.ts --bundle --sourcemap --format=cjs --outfile=dist/legacy/index.cjs --external:bitecs",
-    "build:next": "bun build:next:mjs && bun build:next:cjs && bun build:next:mjs:nonmin && bun build:next:cjs:nonmin",
-    "build:next:mjs": "esbuild src/next/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/next/index.min.mjs --external:bitecs",
-    "build:next:cjs": "esbuild src/next/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/next/index.min.cjs --external:bitecs",
-    "build:next:mjs:nonmin": "esbuild src/next/index.ts --bundle --sourcemap --format=esm --outfile=dist/next/index.mjs --external:bitecs",
-    "build:next:cjs:nonmin": "esbuild src/next/index.ts --bundle --sourcemap --format=cjs --outfile=dist/next/index.cjs --external:bitecs"
-  },
-  "devDependencies": {
-    "bun-types": "^1.2.21",
-    "esbuild": "^0.23.1"
-  }
+	"name": "bitecs",
+	"version": "0.4.0",
+	"description": "Flexible, minimal, data-oriented ECS library for Typescript",
+	"license": "MPL-2.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/NateTheGreatt/bitECS"
+	},
+	"main": "./dist/core/index.min.cjs",
+	"module": "./dist/core/index.min.mjs",
+	"types": "./dist/core/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/core/index.d.ts",
+			"import": "./dist/core/index.min.mjs",
+			"require": "./dist/core/index.min.cjs"
+		},
+		"./serialization": {
+			"types": "./dist/serialization/index.d.ts",
+			"import": "./dist/serialization/index.min.mjs",
+			"require": "./dist/serialization/index.min.cjs"
+		},
+		"./legacy": {
+			"types": "./dist/legacy/index.d.ts",
+			"import": "./dist/legacy/index.min.mjs",
+			"require": "./dist/legacy/index.min.cjs"
+		}
+	},
+	"typesVersions": {
+		"*": {
+			"serialization": [
+				"./dist/serialization/index.d.ts"
+			],
+			"legacy": [
+				"./dist/legacy/index.d.ts"
+			]
+		}
+	},
+	"author": {
+		"name": "Nathaniel Martin",
+		"email": "mrtn.nathaniel@gmail.com",
+		"url": "https://github.com/NateTheGreatt"
+	},
+	"contributors": [
+		{
+			"name": "Randy Lebeau",
+			"email": "randylebeau@gmail.com",
+			"url": "https://github.com/SupremeTechnopriest"
+		}
+	],
+	"scripts": {
+		"test": "bun test",
+		"docs": "bunx documentation build \"src/core/**/*.ts\" -f md -o docs/API.md",
+		"build": "bun build:core && bun build:serialization && bun build:legacy && bun build:types",
+		"build:types": "tsc",
+		"build:core": "bun build:core:mjs && bun build:core:cjs && bun build:core:mjs:nonmin && bun build:core:cjs:nonmin",
+		"build:core:mjs": "esbuild src/core/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/core/index.min.mjs",
+		"build:core:cjs": "esbuild src/core/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/core/index.min.cjs",
+		"build:core:mjs:nonmin": "esbuild src/core/index.ts --bundle --sourcemap --format=esm --outfile=dist/core/index.mjs",
+		"build:core:cjs:nonmin": "esbuild src/core/index.ts --bundle --sourcemap --format=cjs --outfile=dist/core/index.cjs",
+		"build:serialization": "bun build:serialization:mjs && bun build:serialization:cjs && bun build:serialization:mjs:nonmin && bun build:serialization:cjs:nonmin",
+		"build:serialization:mjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/serialization/index.min.mjs --external:bitecs",
+		"build:serialization:cjs": "esbuild src/serialization/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/serialization/index.min.cjs --external:bitecs",
+		"build:serialization:mjs:nonmin": "esbuild src/serialization/index.ts --bundle --sourcemap --format=esm --outfile=dist/serialization/index.mjs --external:bitecs",
+		"build:serialization:cjs:nonmin": "esbuild src/serialization/index.ts --bundle --sourcemap --format=cjs --outfile=dist/serialization/index.cjs --external:bitecs",
+		"build:legacy": "bun build:legacy:mjs && bun build:legacy:cjs && bun build:legacy:mjs:nonmin && bun build:legacy:cjs:nonmin",
+		"build:legacy:mjs": "esbuild src/legacy/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/legacy/index.min.mjs --external:bitecs",
+		"build:legacy:cjs": "esbuild src/legacy/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/legacy/index.min.cjs --external:bitecs",
+		"build:legacy:mjs:nonmin": "esbuild src/legacy/index.ts --bundle --sourcemap --format=esm --outfile=dist/legacy/index.mjs --external:bitecs",
+		"build:legacy:cjs:nonmin": "esbuild src/legacy/index.ts --bundle --sourcemap --format=cjs --outfile=dist/legacy/index.cjs --external:bitecs",
+		"build:next": "bun build:next:mjs && bun build:next:cjs && bun build:next:mjs:nonmin && bun build:next:cjs:nonmin",
+		"build:next:mjs": "esbuild src/next/index.ts --bundle --minify --sourcemap --format=esm --outfile=dist/next/index.min.mjs --external:bitecs",
+		"build:next:cjs": "esbuild src/next/index.ts --bundle --minify --sourcemap --format=cjs --outfile=dist/next/index.min.cjs --external:bitecs",
+		"build:next:mjs:nonmin": "esbuild src/next/index.ts --bundle --sourcemap --format=esm --outfile=dist/next/index.mjs --external:bitecs",
+		"build:next:cjs:nonmin": "esbuild src/next/index.ts --bundle --sourcemap --format=cjs --outfile=dist/next/index.cjs --external:bitecs"
+	},
+	"devDependencies": {
+		"bun-types": "^1.2.21",
+		"esbuild": "^0.23.1"
+	}
 }
