@@ -255,8 +255,8 @@ export function updateHierarchyDepth(
     }
     
     updating.add(entity)
-    
-    const { depths, dirty } = hierarchyData
+
+    const { depths } = hierarchyData
     
     // Calculate new depth
     const newDepth = parent !== undefined ? 
@@ -270,9 +270,19 @@ export function updateHierarchyDepth(
     const oldDepth = depths[entity]
     setEntityDepth(hierarchyData, entity, newDepth, oldDepth === INVALID_DEPTH ? undefined : oldDepth)
     
-    // If depth changed, mark children as dirty for recalculation
+    // If depth changed, eagerly invalidate every descendant's cached depth so it is
+    // recomputed on next read. markChildrenDirty only queued descendants in the
+    // `dirty` set without resetting their depths to INVALID_DEPTH, but both the read
+    // path (getEntityDepthWithVisited) and flushDirtyDepths only recompute entries
+    // equal to INVALID_DEPTH, so "dirty but still valid-looking" descendants kept
+    // stale cached depths. This mirrors the removal path (invalidateSubtree). Seed
+    // `visited` with `entity` so its already-updated depth is not clobbered.
     if (oldDepth !== newDepth) {
-        markChildrenDirty(world, relation, entity, dirty, createSparseSet())
+        const visited = createSparseSet()
+        visited.add(entity)
+        for (const child of query(world, [relation(entity)])) {
+            invalidateSubtree(world, relation, child, hierarchyData.depths, visited)
+        }
         invalidateQueryCache(world, relation)
     }
 }

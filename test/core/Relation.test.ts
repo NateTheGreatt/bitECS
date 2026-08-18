@@ -13,6 +13,8 @@ import {
 	query,
 	Not,
 	withStore,
+	makeExclusive,
+	getHierarchyDepth,
 } from '../../src/core'
 
 describe('Relation Tests', () => {
@@ -192,5 +194,38 @@ describe('Relation Tests', () => {
 		expect(relatedToEarth.length).toBe(2)
 		expect(relatedToEarth).toContain(moon)
 		expect(relatedToEarth).toContain(sun)
+	})
+
+	// Regression test for issue #214: attaching a subtree to a deeper parent must
+	// update the hierarchy depth of the whole subtree, not just the attached root.
+	// Previously the add/re-parent path only queued descendants as dirty without
+	// resetting their cached depths, so getHierarchyDepth returned stale values for
+	// grandchildren (e.g. [0,1,2,3,1,2] instead of [0,1,2,3,4,5]).
+	test('should propagate hierarchy depth to descendants when a subtree is re-parented (#214)', () => {
+		const world = createWorld()
+		const ChildOf = createRelation(makeExclusive)
+
+		const e1 = addEntity(world)
+		const e2 = addEntity(world)
+		const e3 = addEntity(world)
+		const e4 = addEntity(world)
+		const e5 = addEntity(world)
+		const e6 = addEntity(world)
+
+		// Two separate chains: e1 <- e2 <- e3 and e4 <- e5 <- e6
+		addComponent(world, e2, ChildOf(e1))
+		addComponent(world, e3, ChildOf(e2))
+		addComponent(world, e5, ChildOf(e4))
+		addComponent(world, e6, ChildOf(e5))
+
+		expect([e1, e2, e3, e4, e5, e6].map(e => getHierarchyDepth(world, e, ChildOf)))
+			.toEqual([0, 1, 2, 0, 1, 2])
+
+		// Re-parent the second chain under the tail of the first: e3 <- e4 <- e5 <- e6
+		addComponent(world, e4, ChildOf(e3))
+
+		// e4 becomes depth 3, and its descendants e5/e6 must follow to 4/5.
+		expect([e1, e2, e3, e4, e5, e6].map(e => getHierarchyDepth(world, e, ChildOf)))
+			.toEqual([0, 1, 2, 3, 4, 5])
 	})
 })
