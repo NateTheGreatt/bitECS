@@ -314,16 +314,39 @@ const getShadow = (shadowMap: Map<any, any>, array: any) => {
 /**
  * Checks if a value has changed and updates the shadow
  */
+const isList = (value: any): value is ArrayLike<any> =>
+    Array.isArray(value) || ArrayBuffer.isView(value)
+
+/**
+ * Compares a value with its shadow, looking inside array(...) values element by element
+ */
+const valuesDiffer = (previous: any, current: any, epsilon: number): boolean => {
+    if (isList(current)) {
+        if (!isList(previous) || previous.length !== current.length) return true
+        for (let i = 0; i < current.length; i++) {
+            if (valuesDiffer(previous[i], current[i], epsilon)) return true
+        }
+        return false
+    }
+    return epsilon > 0
+        ? Math.abs(previous - current) > epsilon
+        : previous !== current
+}
+
+/**
+ * Copies array(...) values so later in-place edits still show up as changes
+ */
+const snapshotValue = (value: any): any =>
+    isList(value) ? Array.from(value as ArrayLike<any>, snapshotValue) : value
+
 const hasChanged = (shadowMap: Map<any, any>, array: any, index: number, epsilon = 0.0001) => {
     const shadow = getShadow(shadowMap, array)
     const currentValue = array[index]
     const actualEpsilon = getEpsilonForType(array, epsilon)
-    
-    const changed = actualEpsilon > 0
-        ? Math.abs(shadow[index] - currentValue) > actualEpsilon
-        : shadow[index] !== currentValue
-    
-    shadow[index] = currentValue
+
+    const changed = valuesDiffer(shadow[index], currentValue, actualEpsilon)
+
+    shadow[index] = snapshotValue(currentValue)
     return changed
 }
 

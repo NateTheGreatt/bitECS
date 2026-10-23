@@ -512,5 +512,35 @@ describe('SoA Serialization and Deserialization', () => {
       deserialize(data3)
       expect(scores[0]).toBeCloseTo(95.2)
     })
+
+    it('should detect changes inside array(...) properties', () => {
+      const Trail = { xs: array(f32), tags: array(u8) }
+      const ClientTrail = { xs: array(f32), tags: array(u8) }
+
+      const serialize = createSoASerializer([Trail], { diff: true })
+      const deserialize = createSoADeserializer([ClientTrail], { diff: true })
+
+      Trail.xs[0] = [1, 2]
+      Trail.tags[0] = [3]
+      deserialize(serialize([0]))
+      expect(ClientTrail.xs[0]).toEqual([1, 2])
+
+      // No changes
+      expect(serialize([0]).byteLength).toBe(0)
+
+      // Edits in place, a longer list and a change below epsilon
+      Trail.xs[0].push(3)
+      Trail.tags[0][0] = 4
+      deserialize(serialize([0]))
+      expect(ClientTrail.xs[0]).toEqual([1, 2, 3])
+      expect(ClientTrail.tags[0]).toEqual([4])
+
+      Trail.xs[0][1] = 2.00001
+      expect(serialize([0]).byteLength).toBe(0)
+
+      Trail.xs[0][1] = 5
+      deserialize(serialize([0]))
+      expect(ClientTrail.xs[0]).toEqual([1, 5, 3])
+    })
   })
 })
