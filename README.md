@@ -159,6 +159,10 @@ requestAnimationFrame(function animate() {
 - [Third Room](https://github.com/thirdroom/thirdroom)
 - [Hubs](https://github.com/Hubs-Foundation/hubs)
 
+## 🎮 Games made with bitECS
+
+- [Ael Myr Online](https://aelmyr.com): a full-loot PvP sandbox MMORPG you play in the browser
+
 ## 🌟 Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=NateTheGreatt/bitECS&type=Date)](https://star-history.com/#NateTheGreatt/bitECS&Date)
