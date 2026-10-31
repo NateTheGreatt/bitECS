@@ -161,7 +161,7 @@ requestAnimationFrame(function animate() {
 
 ## 🎮 Games made with bitECS
 
-- [The Olde World: Online](https://theoldeworld.com): a full-loot PvP sandbox MMORPG you play in the browser
+- [Ael Myr Online](https://aelmyr.com): a full-loot PvP sandbox MMORPG you play in the browser
 
 ## 🌟 Star History
 
